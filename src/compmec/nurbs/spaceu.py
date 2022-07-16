@@ -122,4 +122,4 @@ class VectorU(object):
         self._n = m - self.p
 
     def __getitem__(self, tup):
-        return self.U[tup]
+        return self._U[tup]

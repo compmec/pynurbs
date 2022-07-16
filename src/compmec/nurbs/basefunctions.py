@@ -1,63 +1,14 @@
 import numpy as np
+from typing import Iterable
+from compmec.nurbs.spaceu import VectorU 
 
-
-def VerifyValidU(U: np.ndarray) -> None:
-    if isinstance(U, (int, float)):
-        raise TypeError("U must be an array/list/tuple")
-    if not isinstance(U, np.ndarray):
-        try:
-            U = np.array(U)
-        except Exception as e:
-            raise TypeError("U must be an array")
-
-    if len(U.shape) != 1:
-        raise ValueError("U must be an 1D numpy array")
-    if np.any(U[1:]-U[:-1] < 0):
-        raise ValueError("U must be ordened")
-    if np.any(U < 0):
-        raise ValueError("All values of U must be >= 0")
-    if np.any(U > 1):
-        raise ValueError("All values of U must be <= 1")
-    if U[0] != 0:
-        raise ValueError("The frist value of U must be 0")
-    if U[-1] != 1:
-        raise ValueError("The last value of U must be 1")
-    if np.sum(U == 0) != np.sum(U == 1):
-        raise ValueError("U must contain the same quantity of 0 and 1")
-
-def isValidU(U: np.ndarray) -> bool:
-    try:
-        VerifyValidU(U)
-        return True
-    except Exception as e:
-        return False
-
-def compute_np(U: np.ndarray) -> tuple([int, int]):
-    """
-
-    We have that U = [0, ..., 0, ?, ..., ?, 1, ..., 1]
-    And that U[p] = 0, but U[p+1] != 0
-    The same way, U[n] = 1, but U[n-1] != 0
-
-    Using that, we know that
-        len(U) = m + 1 = n + p + 1
-    That means that 
-        m = n + p
-
-    """
-    VerifyValidU(U)
-    m = len(U) - 1
-    p = np.sum(U == 0) - 1
-    n = m - p
-    return n, p
-
-
-def N(i: int, j: int, k: int, u: float, U: np.ndarray) -> float:
+def N(i: int, j: int, k: int, u: float, U: VectorU) -> float:
     """
     Returns the value of N_{ij}(u) in the interval [u_{k}, u_{k+1}]
     Remember that N_{i, j}(u) = 0   if  ( u not in [U[i], U[i+j+1]] )
     """
-    n, p = compute_np(U)
+    
+    n = U.n
     
     if k < i:
         return 0
@@ -84,11 +35,61 @@ def N(i: int, j: int, k: int, u: float, U: np.ndarray) -> float:
     else:
         factor2 = (U[i+j+1]-u)/(U[i+j+1]-U[i+1])
 
-    
     result = factor1 * N(i, j-1, k, u, U) + factor2 * N(i+1, j-1, k, u, U)
     return result
 
-class SplineBaseFunction(object):
+class BaseFunction(object):
+
+    def __init__(self, U: Iterable[float]):
+        """
+        We have that the object can be called like
+        N = SplineBaseFunction(U)
+
+        And so, to get the value of N_{i, j}(u) can be express like
+        N[i, j](u)
+        """
+        self.U = VectorU(U)
+        n, p = compute_np(self.U)
+        self.__p = int(p)
+        self.__n = int(n)
+        # self.__get_divisors()
+
+    @property
+    def p(self):
+        return self.__p
+
+    @property
+    def n(self):
+        return self.__n
+
+    def __transform_index(self, tup):
+        if isinstance(tup, tuple):
+            if len(tup) > 2:
+                raise IndexError("The dimension of N is maximum 2")
+            i, j = tup
+        else:
+            i = tup
+            j = self.p
+
+        if not isinstance(j, int):
+            raise TypeError("The second value must be an integer, not %s" % type(j))
+        elif j < 0:
+            raise ValueError("The second value (%d) must be >= 0" % j)
+        elif self.p < j:
+            raise ValueError("The second value (%d) must be <= p = %d" % (j, self.p))
+
+        if isinstance(i, int):
+            if i > self.n:
+                raise ValueError("The frist value must be <= n = %d" % self.n)
+        return i, j
+
+    def eval(self, u: np.ndarray) -> np.ndarray:
+        return self.evalfunction()(u)
+
+    def __call__(self, u: np.ndarray) -> np.ndarray:
+        return self.eval(u)
+
+class SplineBaseFunction(BaseFunction):
 
     def __doc__(self):
         """
@@ -113,60 +114,17 @@ class SplineBaseFunction(object):
 
     
 
-    def __init__(self, U: np.ndarray):
-        """
-        We have that the object can be called like
-        N = SplineBaseFunction(U)
-
-        And so, to get the value of N_{i, j}(u) can be express like
-        N[i, j](u)
-        """
-        VerifyValidU(U)
-        self.U = np.copy(U)
-        n, p = compute_np(self.U)
-        self.__p = int(p)
-        self.__n = int(n)
-        # self.__get_divisors()
-
-    @property
-    def p(self):
-        return self.__p
-
-    @property
-    def n(self):
-        return self.__n
+    
 
     def __getitem__(self, tup):
-        if isinstance(tup, tuple):
-            if len(tup) > 2:
-                raise IndexError("The dimension of N is maximum 2")
-            i, j = tup
-        else:
-            i = tup
-            j = self.p
-
-        if not isinstance(j, int):
-            raise TypeError("The second value must be an integer, not %s" % type(j))
-        elif j < 0:
-            raise ValueError("The second value (%d) must be >= 0" % j)
-        elif self.p < j:
-            raise ValueError("The second value (%d) must be <= p = %d" % (j, self.p))
-
-        if isinstance(i, int):
-            if i > self.n:
-                raise ValueError("The frist value must be <= n = %d" % self.n)
-
+        i, j = self.__transform_index(tup)
         newobject = SplineEvaluationFunction(self.U, i, j)
         return newobject
 
     def evalfunction(self):
         return SplineEvaluationFunction(self.U, slice(None,None,None), self.p)
 
-    def eval(self, u: np.ndarray) -> np.ndarray:
-        return self.evalfunction()(u)
-
-    def __call__(self, u: np.ndarray) -> np.ndarray:
-        return self.eval(u)
+    
 
 
 class SplineEvaluationFunction(SplineBaseFunction):
