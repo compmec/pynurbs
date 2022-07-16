@@ -125,8 +125,26 @@ class SplineBaseFunction(BaseFunction):
     def evalfunction(self):
         return SplineEvaluationFunction(self._U.vector, slice(None,None,None), self.p)
 
+class RationalBaseFunction(BaseFunction):
+    def __init__(self, U: Iterable[float]):
+        super().__init__(U)
+
+    def __getitem__(self, tup: slice):
+        i, j = self.transform_index(tup)
+        newobject = RationalEvaluationFunction(self._U.vector, i, j)
+        return newobject
+
+    def evalfunction(self):
+        return RationalEvaluationFunction(self._U.vector, slice(None,None,None), self.p)
+
+
+class EvaluationFunction(object):
+
+    def __init__(self):
+        pass
+
     
-class SplineEvaluationFunction(SplineBaseFunction):
+class SplineEvaluationFunction(SplineBaseFunction, EvaluationFunction):
 
     # def __doc__(self):
     #     pass
@@ -251,3 +269,8 @@ class SplineEvaluationFunction(SplineBaseFunction):
             else:
                 return self.compute_vectori(u)
         raise ValueError("Cannot compute :(")
+
+class RationalEvaluationFunction(RationalBaseFunction, EvaluationFunction):
+    def __init__(self, U: Iterable[float], i, j:int):
+        super().__init__(U)
+        
