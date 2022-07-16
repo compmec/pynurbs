@@ -1,5 +1,6 @@
 import pytest
 from compmec.nurbs import SplineBaseFunction
+from compmec.nurbs.spaceu import getU_uniform, getU_random
 import numpy as np
 
 def test_getEvaluationFunctions_p1n2():
@@ -246,6 +247,37 @@ def test_tablevalues_p3n5():
                        [ 0, 0.000, 0.000, 0.000, 0.000, 0.000, 0.008, 0.064, 0.216, 0.512, 1]])
     np.testing.assert_allclose(M3test, M3good)
 
+def test_tableUuniform():
+    ntests = 10
+    for i in range(ntests):
+        p = np.random.randint(0, 6)
+        n = np.random.randint(p+1, p+21)
+        U = getU_uniform(n, p)
+        u = np.random.rand(11)
+        N = SplineBaseFunction(U)
+        for j in range(p+1):
+            M = N[:, j](u)
+            # assert np.all(M[:j, p-j] == 0)
+            assert np.all(M >= 0)
+            for k in range(len(u)):
+                np.testing.assert_almost_equal(np.sum(M[:, k]), 1)
+
+def test_tableUrandom():
+    ntests = 10
+    for i in range(ntests):
+        p = np.random.randint(0, 6)
+        n = np.random.randint(p+1, p+21)
+        U = getU_random(n, p)
+        u = np.random.rand(11)
+        N = SplineBaseFunction(U)
+        for j in range(p+1):
+            M = N[:, j](u)
+            # assert np.all(M[:j, p-j] == 0)
+            assert np.all(M >= 0)
+            for k in range(len(u)):
+                np.testing.assert_almost_equal(np.sum(M[:, k]), 1)
+
+
 def main():
     test_getEvaluationFunctions_p1n2()
     test_getEvaluationFunctions_p1n3()
@@ -258,6 +290,8 @@ def main():
     test_tablevalues_p2n4()
     test_tablevalues_p3n4()
     test_tablevalues_p3n5()
+    test_tableUuniform()
+    test_tableUrandom()
 
 if __name__ == "__main__":
     main()
