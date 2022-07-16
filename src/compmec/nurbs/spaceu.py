@@ -1,0 +1,125 @@
+import numpy as np
+from typing import Iterable
+
+class VerifyVectorU(object):
+
+    __minU = 0
+    __maxU = 1
+
+    @staticmethod
+    def isIterable(U: Iterable) -> None:
+        try:
+            iter(U)
+        except TypeError as e:
+            raise TypeError(f"The give U ({type(U)}) is not iterable")
+        
+    @staticmethod
+    def eachElementIsFloat(U: Iterable[float]) -> None:
+        try:
+            for u in U:
+                float(u)
+        except Exception as e:
+            raise TypeError(f"Each element inside U must be a float, cannot transform {type(u)} on float")
+        
+    @staticmethod
+    def isOrdenedVector(U: Iterable[float]) -> None:
+        n = len(U)
+        for i in range(n-1):
+            if U[i] > U[i+1]:
+                raise ValueError("The given U must be ordened")
+            
+    @staticmethod
+    def Limits(U: Iterable[float]) -> None:
+        if VerifyVectorU.__minU is not None:
+            VerifyVectorU.InferiorLimit(U)
+        if VerifyVectorU.__maxU is not None:
+            VerifyVectorU.SuperiorLimit(U)
+
+    @staticmethod
+    def InferiorLimit(U: Iterable[float]) -> None:
+        for u in U:
+            if u < VerifyVectorU.__minU:
+                raise ValueError(f"All the values in U must be bigger than {VerifyVectorU.__minU}")
+
+    @staticmethod
+    def SuperiorLimit(U: Iterable[float]) -> None:
+        for u in U:
+            if u > VerifyVectorU.__maxU:
+                raise ValueError(f"All the values in U must be less than {VerifyVectorU.__maxU}")
+        
+    @staticmethod
+    def SameQuantityBoundary(U: Iterable[float]) -> None:
+        U = np.array(U)
+        minU = np.min(U)
+        maxU = np.max(U)
+        if np.sum(U == minU) != np.sum(U == maxU):
+            raise ValueError("U must contain the same quantity of 0 and 1")
+
+    @staticmethod
+    def all(U: Iterable[float]) -> None:
+        VerifyVectorU.isIterable(U)
+        VerifyVectorU.eachElementIsFloat(U)
+        VerifyVectorU.Limits(U)
+        VerifyVectorU.SameQuantityBoundary(U)
+
+def getU_uniform(n, p):
+    if n < p:
+        n = p
+    U = np.linspace(0, 1, n - p + 1)
+    U = np.concatenate((np.zeros(p), U))
+    U = np.concatenate((U, np.ones(p)))
+    return VectorU(U)
+
+def getU_random(n, p):
+    if n < p:
+        n = p
+    hs = np.random.random(n - p)
+    hs *= 1.2
+    hs[hs> 1] = 0
+    U = np.cumsum(hs)
+    if U[0] == 0:
+        U += 0.1*np.random.random(1)
+    
+    U /= U[-1]*(1+0.4*np.random.random(1))
+    
+    U = np.concatenate((np.zeros(p+1), U))
+    U = np.concatenate((U, np.ones(p+1)))
+    return VectorU(U)
+
+class VectorU(object):
+
+    def __init__(self, U: Iterable[float]):
+        VerifyVectorU.all(U)
+        self._U = np.copy(U)
+        self.compute_np()
+        
+    @property
+    def p(self):
+        return self._p
+    
+    @property
+    def n(self):
+        return self._n
+    
+    @property
+    def vector(self):
+        return np.copy(self._U)
+
+    def compute_np(self):
+        """
+        We have that U = [0, ..., 0, ?, ..., ?, 1, ..., 1]
+        And that U[p] = 0, but U[p+1] != 0
+        The same way, U[n] = 1, but U[n-1] != 0
+
+        Using that, we know that
+            len(U) = m + 1 = n + p + 1
+        That means that 
+            m = n + p
+        """
+        minU = min(self._U)
+        m = len(self._U) - 1
+        self._p = sum(self._U == minU) - 1
+        self._n = m - self.p
+
+    def __getitem__(self, tup):
+        return self.U[tup]
