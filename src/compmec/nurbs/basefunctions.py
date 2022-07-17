@@ -38,6 +38,19 @@ def N(i: int, j: int, k: int, u: float, U: VectorU) -> float:
     result = factor1 * N(i, j-1, k, u, U) + factor2 * N(i+1, j-1, k, u, U)
     return result
 
+def R(i: int, j: int, k: int, u: float, U: VectorU, w: Iterable[float]) -> float:
+    """
+    Returns the value of R_{ij}(u) in the interval [u_{k}, u_{k+1}]
+    """
+    Niju = N(i, j, k, u, U)
+    if Niju == 0:
+        return 0
+    n = len(w)
+    soma = 0
+    for z in range(n):
+        soma += w[z] * N(z, j, k, u, U)
+    return w[i] * Niju / soma
+
 
 
 class EvaluationFunction(object):
@@ -251,12 +264,26 @@ class SplineBaseFunction(BaseFunction):
         return SplineEvaluationFunction
 
 class RationalBaseFunction(BaseFunction):
-    def __init__(self, U: Iterable[float]):
+    def __init__(self, U: Iterable[float], w: Iterable[float]):
         super().__init__(U)
+        self.w = w
 
     @property
     def evalfunction(self) -> type[EvaluationFunction]:
         return RationalEvaluationFunction
+
+    @property
+    def w(self):
+        return self._w
+
+    @w.setter
+    def w(self, value: Iterable[float]):
+        for v in value:
+            v = float(v)
+            if v < 0:
+                raise ValueError("The weights must be positive")
+        self._w = value
+    
 
 
 class SplineEvaluationFunction(SplineBaseFunction, EvaluationFunction):
@@ -271,6 +298,10 @@ class SplineEvaluationFunction(SplineBaseFunction, EvaluationFunction):
 
 
 class RationalEvaluationFunction(RationalBaseFunction, EvaluationFunction):
-    def __init__(self, U: Iterable[float], tup: Any):
-        super().__init__(U=U)
-        super().__init__(tup=tup)
+    def __init__(self, U: Iterable[float], w: Iterable[float], tup: Any):
+        RationalBaseFunction.__init__(self, U, w)
+        EvaluationFunction.__init__(self, tup)
+        
+    @property
+    def f(self) -> function:
+        return R
