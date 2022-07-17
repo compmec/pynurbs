@@ -118,7 +118,7 @@ class EvaluationFunction(object):
         minU = np.min(U)
         maxU = np.max(U)
         if not np.all((minU <= u) * (u <= maxU)):
-            raise Exception("u must be inside the interval [", minU, ", ", maxU, "]")
+            raise Exception(f"All values of u must be inside the interval [{minU}, {maxU}]")
 
     def compute_scalar(self, u: float) -> float:
         k = self._U.spot(u)
