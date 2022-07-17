@@ -31,24 +31,6 @@ def test_getEvaluationFunctions_p1n3():
     N[:, 1]
     N[:]
 
-def test_findSpots():
-    U = [0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1]   # p = 1, n =7
-    N = SplineBaseFunction(U).evalfunction()
-    assert N.spot(0) == 1
-    assert N.spot(0.1) == 1
-    assert N.spot(0.2) == 2
-    assert N.spot(0.3) == 2
-    assert N.spot(0.4) == 3
-    assert N.spot(0.5) == 4
-    assert N.spot(0.6) == 5
-    assert N.spot(0.7) == 5
-    assert N.spot(0.8) == 6
-    assert N.spot(0.9) == 6
-    assert N.spot(1.0) == 7
-    array = np.linspace(0, 1, 11)  # (0, 0.1, 0.2, ..., 0.9, 1.0)
-    suposedspots = N.spot(array)
-    correctspots = [1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7]
-    np.testing.assert_equal(suposedspots, correctspots)
 
 def test_somesinglevalues_p1n2():
     U = [0, 0, 1, 1]  # p = 1, n = 2
@@ -281,7 +263,6 @@ def test_tableUrandom():
 def main():
     test_getEvaluationFunctions_p1n2()
     test_getEvaluationFunctions_p1n3()
-    test_findSpots()
     test_somesinglevalues_p1n2()
     test_getEvaluationFunctions_p1n3()
     test_tablevalues_p1n2()

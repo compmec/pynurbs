@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 from compmec.nurbs import VectorU
 
 
@@ -66,6 +67,26 @@ def test_ValuesOfN():
     assert V.n == 5
     V = VectorU([0, 0, 0, 0, 0.2, 0.6, 1, 1, 1, 1])
     assert V.n == 6
+
+
+
+def test_findSpots():
+    U = VectorU([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1]) # p = 1, n =7
+    assert U.spot(0) == 1
+    assert U.spot(0.1) == 1
+    assert U.spot(0.2) == 2
+    assert U.spot(0.3) == 2
+    assert U.spot(0.4) == 3
+    assert U.spot(0.5) == 4
+    assert U.spot(0.6) == 5
+    assert U.spot(0.7) == 5
+    assert U.spot(0.8) == 6
+    assert U.spot(0.9) == 6
+    assert U.spot(1.0) == 7
+    array = np.linspace(0, 1, 11)  # (0, 0.1, 0.2, ..., 0.9, 1.0)
+    suposedspots = U.spot(array)
+    correctspots = [1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7]
+    np.testing.assert_equal(suposedspots, correctspots)
 
 def main():
     test_CreationClass()

@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Iterable
+from typing import Iterable, Union
 
 class VerifyVectorU(object):
 
@@ -11,7 +11,7 @@ class VerifyVectorU(object):
         try:
             iter(U)
         except TypeError as e:
-            raise TypeError(f"The give U ({type(U)}) is not iterable")
+            raise TypeError(f"The given U ({type(U)}) is not iterable")
         
     @staticmethod
     def eachElementIsFloat(U: Iterable[float]) -> None:
@@ -86,11 +86,13 @@ def getU_random(n, p):
     U = np.concatenate((U, np.ones(p+1)))
     return VectorU(U)
 
-class VectorU(object):
+class VectorU(tuple):
+
+    def __new__(cls, U: Iterable[float]):
+        VerifyVectorU.all(U)
+        return super().__new__(cls, U)
 
     def __init__(self, U: Iterable[float]):
-        VerifyVectorU.all(U)
-        self._U = np.copy(U)
         self.compute_np()
         
     @property
@@ -100,10 +102,6 @@ class VectorU(object):
     @property
     def n(self):
         return self._n
-    
-    @property
-    def vector(self):
-        return np.copy(self._U)
 
     def compute_np(self):
         """
@@ -116,10 +114,46 @@ class VectorU(object):
         That means that 
             m = n + p
         """
-        minU = min(self._U)
-        m = len(self._U) - 1
-        self._p = sum(self._U == minU) - 1
+        minU = min(self)
+        m = len(self) - 1
+        for i in range(m):
+            if self[i] != minU:
+                break
+        self._p = i-1
         self._n = m - self.p
 
-    def __getitem__(self, tup):
-        return self._U[tup]
+    def __find_spot_onevalue(self, u: float) -> int:
+        U = np.array(self)
+        minU = np.min(self)
+        maxU = np.max(self)
+        lower = int(np.max(np.where(U == minU)))
+        upper = int(np.min(np.where(U == maxU)))
+        if u == minU:
+            return lower
+        if u == maxU:
+            return upper
+        mid = (lower + upper) // 2
+        while True:
+            if u < U[mid]:
+                upper = mid
+            elif U[mid + 1] <= u:
+                lower = mid
+            else:
+                return mid
+            mid = (lower + upper) // 2
+
+    def __find_spot_vector(self, u: Iterable[float]) -> np.ndarray:
+        """
+        find the spots of an vector. It's not very efficient, but ok for the moment
+        """
+        spots = np.zeros(len(u), dtype="int64")
+        for i, ui in enumerate(u):
+            spots[i] = self.__find_spot_onevalue(ui)
+        return spots
+
+    def spot(self, u: Union[float, Iterable[float]]) -> Union[int, np.ndarray]:
+        if isinstance(u, np.ndarray):
+            return self.__find_spot_vector(u)
+        else:
+            return np.array(self.__find_spot_onevalue(u))
+
