@@ -293,8 +293,11 @@ class SplineEvaluationFunction(SplineBaseFunction, EvaluationFunction):
         EvaluationFunction.__init__(self, tup)
         
     @property
-    def f(self) -> function:
+    def f(self):
         return N
+
+    def __call__(self, u):
+        return EvaluationFunction.__call__(self, u)
 
 
 class RationalEvaluationFunction(RationalBaseFunction, EvaluationFunction):
@@ -303,5 +306,8 @@ class RationalEvaluationFunction(RationalBaseFunction, EvaluationFunction):
         EvaluationFunction.__init__(self, tup)
         
     @property
-    def f(self) -> function:
+    def f(self):
         return R
+
+    def __call__(self, u):
+        return EvaluationFunction.__call__(self, u)
