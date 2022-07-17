@@ -100,6 +100,80 @@ class EvaluationFunction(object):
             raise TypeError(f"Type {type(value)} is incorrect to set j")
 
 
+    def __validate_evaluation_u(self, u: np.ndarray):
+        U = self._U
+        minU = np.min(U)
+        maxU = np.max(U)
+        if not np.all((minU <= u) * (u <= maxU)):
+            raise Exception("u must be inside the interval [", minU, ", ", maxU, "]")
+
+    def compute_scalar(self, u: float) -> float:
+        k = self._U.spot(u)
+        return self.f(self.i, self.j, k, u, self._U)
+
+    def compute_vectori(self, u: float) -> np.ndarray:
+        """
+        In this function, u is a scalar, while i is a vector
+        """
+        r = np.zeros(self.n)
+        k = self._U.spot(u)
+        for i in range(self.n):
+            r[i] = self.f(i, self.j, k, u, self._U)
+        return r
+
+    def compute_vectoru(self, u: np.ndarray) -> np.ndarray:
+        """
+        In this function, u is a vector, while i is a integer
+        """
+        u = np.copy(u)
+        r = np.zeros(u.shape)
+        for w, uw in enumerate(u):
+            k = self._U.spot(uw)
+            r[w] = self.f(self.i, self.j, k, uw, self._U)
+        return r
+
+    def compute_matrix(self, u: np.ndarray) -> np.ndarray:
+        """
+        In this function, u is a vector, while i is a range
+        """
+        r = np.zeros((self.n, len(u)))
+        for w, uw in enumerate(u):
+            k = self._U.spot(uw)
+            for ind in self.i:
+                r[ind, w] = self.f(ind, self.j, k, uw, self._U)
+        return r
+
+    def compute_all(self, u: np.ndarray) -> np.ndarray:
+        r = np.zeros((self.n, len(u)))
+        for w, uw in enumerate(u):
+            r[:, w] += self.compute_vectori(uw)
+        return r
+
+    def __call__(self, u: np.ndarray) -> np.ndarray:
+        """
+
+        """
+        self.__validate_evaluation_u(u)
+        if np.array(u).ndim > 1:
+            raise ValueError("For the moment we can only evaluate scalars or 1D array")
+        
+        if isinstance(self.i, int):
+            if np.array(u).ndim == 1:
+                return self.compute_vectoru(u)
+            else:
+                return self.compute_scalar(u)
+        else:
+            if np.array(u).ndim == 1:
+                if isinstance(self.i, range):
+                    return self.compute_matrix(u)
+                else:
+                    return self.compute_all(u)
+            else:
+                return self.compute_vectori(u)
+        raise ValueError("Cannot compute :(")
+        
+
+
 
 class BaseFunction(object):
 
@@ -191,79 +265,10 @@ class SplineEvaluationFunction(SplineBaseFunction, EvaluationFunction):
         SplineBaseFunction.__init__(self, U)
         EvaluationFunction.__init__(self, tup)
         
-    def __validate_evaluation_u(self, u: np.ndarray):
-        U = self._U
-        minU = np.min(U)
-        maxU = np.max(U)
-        if not np.all((minU <= u) * (u <= maxU)):
-            raise Exception("u must be inside the interval [", minU, ", ", maxU, "]")
+    @property
+    def f(self) -> function:
+        return N
 
-    
-            
-    def compute_scalar(self, u: float) -> float:
-        k = self._U.spot(u)
-        return N(self.i, self.j, k, u, self._U)
-
-    def compute_vectori(self, u: float) -> np.ndarray:
-        """
-        In this function, u is a scalar, while i is a vector
-        """
-        r = np.zeros(self.n)
-        k = self._U.spot(u)
-        for i in range(self.n):
-            r[i] = N(i, self.j, k, u, self._U)
-        return r
-
-    def compute_vectoru(self, u: np.ndarray) -> np.ndarray:
-        """
-        In this function, u is a vector, while i is a integer
-        """
-        u = np.copy(u)
-        r = np.zeros(u.shape)
-        for w, uw in enumerate(u):
-            k = self.spot(uw)
-            r[w] = N(self.i, self.j, k, uw, self._U)
-        return r
-
-    def compute_matrix(self, u: np.ndarray) -> np.ndarray:
-        """
-        In this function, u is a vector, while i is a range
-        """
-        r = np.zeros((self.n, len(u)))
-        for w, uw in enumerate(u):
-            k = self.spot(uw)
-            for ind in self.i:
-                r[ind, w] = N(ind, self.j, k, uw, self._U)
-        return r
-
-    def compute_all(self, u: np.ndarray) -> np.ndarray:
-        r = np.zeros((self.n, len(u)))
-        for w, uw in enumerate(u):
-            r[:, w] += self.compute_vectori(uw)
-        return r
-
-    def __call__(self, u: np.ndarray) -> np.ndarray:
-        """
-
-        """
-        self.__validate_evaluation_u(u)
-        if np.array(u).ndim > 1:
-            raise ValueError("For the moment we can only evaluate scalars or 1D array")
-        
-        if isinstance(self.i, int):
-            if np.array(u).ndim == 1:
-                return self.compute_vectoru(u)
-            else:
-                return self.compute_scalar(u)
-        else:
-            if np.array(u).ndim == 1:
-                if isinstance(self.i, range):
-                    return self.compute_matrix(u)
-                else:
-                    return self.compute_all(u)
-            else:
-                return self.compute_vectori(u)
-        raise ValueError("Cannot compute :(")
 
 class RationalEvaluationFunction(RationalBaseFunction, EvaluationFunction):
     def __init__(self, U: Iterable[float], tup: Any):
