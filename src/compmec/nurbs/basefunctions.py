@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Iterable
+from typing import Iterable, Any, Optional, Union, Tuple, Type
 from compmec.nurbs.spaceu import VectorU 
 
 def N(i: int, j: int, k: int, u: float, U: VectorU) -> float:
@@ -38,6 +38,69 @@ def N(i: int, j: int, k: int, u: float, U: VectorU) -> float:
     result = factor1 * N(i, j-1, k, u, U) + factor2 * N(i+1, j-1, k, u, U)
     return result
 
+
+
+class EvaluationFunction(object):
+
+    def __init__(self, tup : Union[None, int, slice, Tuple]= None):
+        if tup is None:
+            self.i = None
+            self.j = None
+        elif isinstance(tup, tuple):
+            if len(tup) > 2:
+                raise IndexError("The dimension of N is maximum 2")
+            self.i = tup[0]
+            self.j = tup[1]
+        else:
+            self.i = tup
+            self.j = None
+
+    @property
+    def i(self):
+        return self._i
+    
+    @property
+    def j(self):
+        return self._j
+
+    @i.setter
+    def i(self, value: Union[None, int, slice]):
+        if value is None:
+            self._i = slice(0, self.n, 1)
+            return
+        if isinstance(value, slice):
+            start = 0 if value.start is None else value.start
+            stop = self.n if value.stop is None else value.stop
+            step = 1 if value.step is None else value.step
+            self._i = slice(start, stop, step)
+            return
+        try:
+            value = int(value)
+            if value > self.n:
+                raise ValueError("The frist value must be <= n = %d" % self.n)
+            self._i = value
+            return
+        except Exception as e:
+            raise TypeError(f"Type {type(value)} is incorrect to set i")
+        
+    @j.setter
+    def j(self, value: Union[None, int]):
+        if value is None:
+            self._j = self.p
+            return
+        try:
+            value = int(value)
+            if value < 0:
+                raise ValueError("The second value (%d) must be >= 0" % value)
+            elif self.p < value:
+                raise ValueError("The second value (%d) must be <= p = %d" % (value, self.p))
+            self._j = value
+            return
+        except Exception as e:
+            raise TypeError(f"Type {type(value)} is incorrect to set j")
+
+
+
 class BaseFunction(object):
 
     def __init__(self, U: Iterable[float]):
@@ -54,43 +117,35 @@ class BaseFunction(object):
             self._U = VectorU(U)
 
     @property
-    def p(self):
+    def p(self) -> int:
         return self._U.p
 
     @property
-    def n(self):
+    def n(self) -> int:
         return self._U.n
 
-    def transform_index(self, tup):
-        if isinstance(tup, tuple):
-            if len(tup) > 2:
-                raise IndexError("The dimension of N is maximum 2")
-            i, j = tup
-        else:
-            i = tup
-            j = self.p
-        j = int(j)
+    @property
+    def U(self) -> Tuple[float]:
+        return tuple(self._U)
 
-        if not isinstance(j, int):
-            raise TypeError("The second value must be an integer, not %s" % type(j))
-        elif j < 0:
-            raise ValueError("The second value (%d) must be >= 0" % j)
-        elif self.p < j:
-            raise ValueError("The second value (%d) must be <= p = %d" % (j, self.p))
-
-        if isinstance(i, int):
-            if i > self.n:
-                raise ValueError("The frist value must be <= n = %d" % self.n)
-        return i, j
-
-    def evalfunction(self, u: Iterable[float]) -> np.ndarray:
+    @property
+    def evalfunction(self) -> type[EvaluationFunction]:
         raise NotImplementedError("This function must be overwritten")
 
-    def eval(self, u: np.ndarray) -> np.ndarray:
-        return self.evalfunction()(u)
+    def evaluationobject(self, tup: Union[None, int, slice]= None) -> EvaluationFunction:
+        return self.evalfunction(self.U, tup)
+
+    def eval(self, u: np.ndarray, tup = None) -> np.ndarray:
+        function = self.evalfunction(self.U, tup)
+        return function(u)
+
+    def __getitem__(self, tup: slice) -> EvaluationFunction:
+        return self.evaluationobject(tup)
 
     def __call__(self, u: np.ndarray) -> np.ndarray:
         return self.eval(u)
+
+
 
 class SplineBaseFunction(BaseFunction):
 
@@ -117,96 +172,36 @@ class SplineBaseFunction(BaseFunction):
     def __init__(self, U: Iterable[float]):
         super().__init__(U)
 
-    def __getitem__(self, tup: slice):
-        i, j = self.transform_index(tup)
-        newobject = SplineEvaluationFunction(self._U.vector, i, j)
-        return newobject
-
-    def evalfunction(self):
-        return SplineEvaluationFunction(self._U.vector, slice(None,None,None), self.p)
+    @property
+    def evalfunction(self) -> type[EvaluationFunction]:
+        return SplineEvaluationFunction
 
 class RationalBaseFunction(BaseFunction):
     def __init__(self, U: Iterable[float]):
         super().__init__(U)
 
-    def __getitem__(self, tup: slice):
-        i, j = self.transform_index(tup)
-        newobject = RationalEvaluationFunction(self._U.vector, i, j)
-        return newobject
-
-    def evalfunction(self):
-        return RationalEvaluationFunction(self._U.vector, slice(None,None,None), self.p)
+    @property
+    def evalfunction(self) -> type[EvaluationFunction]:
+        return RationalEvaluationFunction
 
 
-class EvaluationFunction(object):
-
-    def __init__(self):
-        pass
-
-    
 class SplineEvaluationFunction(SplineBaseFunction, EvaluationFunction):
 
-    # def __doc__(self):
-    #     pass
-
-    def __init__(self, U: Iterable[float], i, j:int):
-        super().__init__(U)
-        # self.U = np.copy(U)
-        if isinstance(i, slice):
-            start = 0 if i.start is None else i.start
-            stop = self.n if i.stop is None else i.stop
-            step = 1 if i.step is None else i.step
-            self.i = range(start, stop, step)
-        else:
-            self.i = i
-        self.j = j
-
+    def __init__(self, U: Iterable[float], tup: Any):
+        SplineBaseFunction.__init__(self, U)
+        EvaluationFunction.__init__(self, tup)
+        
     def __validate_evaluation_u(self, u: np.ndarray):
-        U = self._U.vector
+        U = self._U
         minU = np.min(U)
         maxU = np.max(U)
         if not np.all((minU <= u) * (u <= maxU)):
             raise Exception("u must be inside the interval [", minU, ", ", maxU, "]")
 
-    def __find_spot_onevalue(self, u: float) -> int:
-        U = self._U.vector
-        minU = np.min(U)
-        maxU = np.max(U)
-        lower = int(np.max(np.where(U == minU)))
-        upper = int(np.min(np.where(U == maxU)))
-        if u == minU:
-            return lower
-        if u == maxU:
-            return upper
-        mid = (lower + upper) // 2
-        while True:
-            if u < U[mid]:
-                upper = mid
-            elif U[mid + 1] <= u:
-                lower = mid
-            else:
-                return mid
-            mid = (lower + upper) // 2
-
-    def __find_spot_vector(self, u: np.ndarray) -> np.ndarray:
-        """
-        find the spots of an vector. It's not very efficient, but ok for the moment
-        """
-        spots = np.zeros(u.shape, dtype="int64")
-        for i, ui in enumerate(u):
-            spots[i] = self.__find_spot_onevalue(ui)
-        return spots
-
-
-
-    def spot(self, u: np.ndarray) -> np.ndarray:
-        if isinstance(u, np.ndarray):
-            return self.__find_spot_vector(u)
-        else:
-            return np.array(self.__find_spot_onevalue(u))
+    
             
     def compute_scalar(self, u: float) -> float:
-        k = self.spot(u)
+        k = self._U.spot(u)
         return N(self.i, self.j, k, u, self._U)
 
     def compute_vectori(self, u: float) -> np.ndarray:
@@ -214,7 +209,7 @@ class SplineEvaluationFunction(SplineBaseFunction, EvaluationFunction):
         In this function, u is a scalar, while i is a vector
         """
         r = np.zeros(self.n)
-        k = self.spot(u)
+        k = self._U.spot(u)
         for i in range(self.n):
             r[i] = N(i, self.j, k, u, self._U)
         return r
@@ -244,7 +239,7 @@ class SplineEvaluationFunction(SplineBaseFunction, EvaluationFunction):
     def compute_all(self, u: np.ndarray) -> np.ndarray:
         r = np.zeros((self.n, len(u)))
         for w, uw in enumerate(u):
-            r[:, w] += self.compute_vetori(uw)
+            r[:, w] += self.compute_vectori(uw)
         return r
 
     def __call__(self, u: np.ndarray) -> np.ndarray:
@@ -271,6 +266,6 @@ class SplineEvaluationFunction(SplineBaseFunction, EvaluationFunction):
         raise ValueError("Cannot compute :(")
 
 class RationalEvaluationFunction(RationalBaseFunction, EvaluationFunction):
-    def __init__(self, U: Iterable[float], i, j:int):
-        super().__init__(U)
-        
+    def __init__(self, U: Iterable[float], tup: Any):
+        super().__init__(U=U)
+        super().__init__(tup=tup)
