@@ -2,7 +2,7 @@ import numpy as np
 from numpy import linalg as la
 from typing import Iterable, Optional
 from compmec.nurbs import SplineBaseFunction
-from compmec.nurbs.curves import SplineBaseCurve
+from compmec.nurbs.curves import SplineCurve
 
 def transform2U(u: Iterable[float], n: float, p: float, algorithm: int = 1):
     U = np.zeros(n+p+1)
@@ -34,7 +34,7 @@ def curve_spline(t: Iterable[float], points: np.ndarray, p: Optional[int] = None
     N = SplineBaseFunction(U)
     L = N(t)
     controlpts = curve_control_points(L, points)
-    return SplineBaseCurve(N, controlpts)
+    return SplineCurve(N, controlpts)
 
 
 def function_control_points(x: Iterable[float], y: Iterable[float], p: Optional[int] = None, n: Optional[int] = None):
