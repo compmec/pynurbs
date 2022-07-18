@@ -16,13 +16,17 @@ def transform2U(u: Iterable[float], n: float, p: float, algorithm: int = 1):
 
 
 
-def curve_spline(u: Iterable[float], points: np.ndarray, p: int):
+def curve_spline(u: Iterable[float], points: np.ndarray, p: int, dpoints: Optional[np.ndarray] = None):
     n = len(u)
     U = transform2U(u, n, p)
     N = SplineBaseFunction(U)
+    dN = N.derivate()
     L = N(u)
+    dL = dN(u)
+    dim = len(points[0])
     controlpts = curve_control_points(L, points)
     return SplineCurve(N, controlpts)
+
 
 def function_spline(x: Iterable[float], y: Iterable[float], p: int):
     ubar = (np.array(x)-min(x))/(max(x)-min(x))
