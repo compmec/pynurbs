@@ -1,7 +1,5 @@
 import numpy as np
-from matplotlib import pyplot as plt
 from compmec.nurbs.interpolate import curve_spline, function_spline
-from compmec.nurbs.curves import SplineXYFunction
 from numpy import linalg as la
 
 

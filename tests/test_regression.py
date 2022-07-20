@@ -1,5 +1,4 @@
 import numpy as np
-from matplotlib import pyplot as plt
 from compmec.nurbs.approx import curve_spline
 from numpy import linalg as la
 

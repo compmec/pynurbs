@@ -1,8 +1,7 @@
 import numpy as np
 from numpy import iterable, linalg as la
 from typing import Iterable, Optional, Any
-from compmec.nurbs import SplineBaseFunction
-from compmec.nurbs.curves import SplineCurve, SplineXYFunction
+from compmec.nurbs import SplineBaseFunction, SplineCurve, SplineXYFunction
 
 def transform2U(u: Iterable[float], n: float, p: int, algorithm: int = 1):
     if p < 1:

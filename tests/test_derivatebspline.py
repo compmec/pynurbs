@@ -1,8 +1,7 @@
 import pytest
 from compmec.nurbs import SplineBaseFunction
-from compmec.nurbs.spaceu import getU_uniform, getU_random
+from compmec.nurbs.spaceu import getU_uniform
 import numpy as np
-from matplotlib import pyplot as plt
 
 
 def test_1():
