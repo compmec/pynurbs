@@ -37,12 +37,6 @@ def test_curvecossin():
     print("Error L2 x = %.3f" % L2x)
     print("Error L2 y = %.3f" % L2y)
 
-    plt.scatter(x, y, label="sample")
-    plt.plot(xplot, yplot, label="plot", ls="dotted")
-    plt.plot(xsuposed, ysuposed, label="supposed")
-    plt.legend()
-    plt.show()
-
 
 def main():
     test_curvecossin()
