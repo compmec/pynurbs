@@ -1,3 +1,7 @@
+[![PyPi Version](https://img.shields.io/pypi/v/compmec-nurbs.svg?style=flat-square)](https://pypi.org/project/compmec-nurbs/)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/compmec-nurbs.svg?style=flat-square)](https://pypi.org/project/compmec-nurbs/)
+![Tests](https://github.com/compmec/nurbs/actions/workflows/tests.yml/badge.svg)
+
 # Nurbs
 
 This repository contains code for inteporlate functions using B-Splines and Nurbs.
