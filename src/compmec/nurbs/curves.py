@@ -11,6 +11,10 @@ class BaseCurve(object):
         L = self.f(u)
         return L.T @ self.P
 
+    def derivate(self):
+        df = self.f.derivate()
+        return self.__class__(df, self.P)
+
 
 class SplineCurve(BaseCurve):
     def __init__(self, f: SplineBaseFunction, controlpoints: np.ndarray):
