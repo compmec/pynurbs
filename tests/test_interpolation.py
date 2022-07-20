@@ -5,70 +5,54 @@ from compmec.nurbs.curves import SplineXYFunction
 from numpy import linalg as la
 
 
-def test_polynomial1():
+def test_functionspline_smallpolynomials():
     ntests = 10
-    for i in range(ntests):
-        a, b = 4*np.random.rand(2)
-        a -= 2
-        b += 2
-        
-        a0, a1 = np.random.rand(2)
-        nsample = 10
-        nrefine = 100
-        xsample = np.linspace(a, b, nsample)
-        ysample = a0 + a1 * xsample
-        xrefine = np.linspace(a, b, nrefine)
-        yrefine = a0 + a1 * xrefine
+    for p in range(1, 5):
+        for i in range(ntests):
+            a, b = 4*np.random.rand(2)
+            a -= 2.1
+            b += 2.1
+            
+            coefs = np.random.rand(p+1)
 
-        F = function_spline(xsample, ysample, p=1)
-        ysuposed = F(xrefine)
+            nsample = 10
+            nrefine = 100
+            xsample = np.linspace(a, b, nsample)
+            ysample = np.zeros(xsample.shape)
+            xrefine = np.linspace(a, b, nrefine)
+            yrefine = np.zeros(xrefine.shape)
+            for j in range(p+1):
+                ysample += coefs[j]*(xsample**j)
+                yrefine += coefs[j]*(xrefine**j)
 
-        L2y = la.norm(ysuposed - yrefine)
-        assert L2y < 1e-9
+            F = function_spline(xsample, ysample, p=p)
+            ysuposed = F(xrefine)
 
+            L2y = la.norm(ysuposed - yrefine)
+            assert L2y < 1e-9
 
-def test_polynomial2():
-    ntests = 10
-    for i in range(ntests):
-        a, b = 4*np.random.rand(2)
-        a -= 2
-        b += 2
-        
-        a0, a1, a2 = np.random.rand(3)
-        nsample = 10
-        nrefine = 100
-        xsample = np.linspace(a, b, nsample)
-        ysample = a0 + a1 * xsample + a2 * xsample**2
-        xrefine = np.linspace(a, b, nrefine)
-        yrefine = a0 + a1 * xrefine + a2 * xrefine**2
+def test_curvespline_smallvalues():
+    ntests = 1
+    for p in range(1, 5):
+        for i in range(ntests):
+            nsample = 10
+            qsample = np.linspace(0, 1, nsample)
+            pointssample = np.random.rand(nsample, 2)
+            
+            F = curve_spline(p, [qsample], [pointssample])
+            pointssuposed = F(qsample)
 
-        F = function_spline(xsample, ysample, p=2)
-        ysuposed = F(xrefine)
+            qplot = np.linspace(0, 1, 129)
 
-        L2y = la.norm(ysuposed - yrefine)
-        assert L2y < 1e-9
-
-def test_polynomial3():
-    ntests = 10
-    for i in range(ntests):
-        a, b = 4*np.random.rand(2)
-        a -= 2
-        b += 2
-        
-        a0, a1, a2, a3 = np.random.rand(4)
-        nsample = 10
-        nrefine = 100
-        xsample = np.linspace(a, b, nsample)
-        ysample = a0 + a1 * xsample + a2 * xsample**2 + a3 * xsample**3
-        xrefine = np.linspace(a, b, nrefine)
-        yrefine = a0 + a1 * xrefine + a2 * xrefine**2 + a3 * xrefine**3
-
-        F = function_spline(xsample, ysample, p=3)
-        ysuposed = F(xrefine)
-
-        L2y = la.norm(ysuposed - yrefine)
-        assert L2y < 1e-9
-
+            L2y = la.norm(pointssuposed - pointssample)
+            assert L2y < 1e-9
+            plt.figure()
+            plt.scatter(qsample, pointssample[:, 0], color="b", ls="dotted", label="sample x")
+            plt.scatter(qsample, pointssample[:, 1], color="r", ls="dotted", label="sample y")
+            plt.plot(qplot, F(qplot)[:, 0], color="b", label="interp x")
+            plt.plot(qplot, F(qplot)[:, 1], color="r", label="interp y")
+            plt.legend()
+            plt.show()
 
 def test_functionXYsin():
     a, b = 0, 2*np.pi
@@ -89,10 +73,9 @@ def test_functionXYsin():
     assert L2y < 0.2
 
 def main():
-    test_polynomial1()
-    test_polynomial2()
-    test_polynomial3()
-    test_functionXYsin()
+    # test_functionspline_smallpolynomials()
+    test_curvespline_smallvalues()
+    # test_functionXYsin()
 
 if __name__ == "__main__":
     main()

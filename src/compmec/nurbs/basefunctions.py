@@ -186,8 +186,6 @@ class EvaluationClass(object):
     def __call__(self, u: Union[float, np.ndarray]) -> np.ndarray:
         self.__validate_evaluation_u(u)
         u = self.__treat_input(u)
-        print("self.A = ")
-        print(self.A)
         result = self.A @ self.compute_matrix(u)
         return result[self.i]
 

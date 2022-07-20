@@ -1,10 +1,12 @@
 import numpy as np
 from numpy import iterable, linalg as la
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Any
 from compmec.nurbs import SplineBaseFunction
 from compmec.nurbs.curves import SplineCurve, SplineXYFunction
 
-def transform2U(u: Iterable[float], n: float, p: float, algorithm: int = 1):
+def transform2U(u: Iterable[float], n: float, p: int, algorithm: int = 1):
+    if p < 1:
+        raise ValueError("p must be > 0")
     U = np.zeros(n+p+1)
     if algorithm == 1:
         for j in range(1, n-p):
@@ -16,16 +18,39 @@ def transform2U(u: Iterable[float], n: float, p: float, algorithm: int = 1):
 
 
 
-def curve_spline(u: Iterable[float], points: np.ndarray, p: int, dpoints: Optional[np.ndarray] = None):
-    n = len(u)
-    U = transform2U(u, n, p)
+def curve_spline(p: int, u: Iterable[Iterable[float]], points: Iterable[Iterable[Any]]):
+    p = int(p)
+    for i, ui in enumerate(u):
+        u[i] = np.array(ui)
+    for i, pi in enumerate(points):
+        points[i] = np.array(pi)
+    number_derivatives = len(u)-1
+    ndofs = []
+    for ui in u:
+        ndofs.append(len(ui))
+    totalndofs = np.sum(ndofs)
+    uequaly = np.linspace(0, 1, totalndofs)
+    U = transform2U(uequaly, totalndofs, p)
+    
     N = SplineBaseFunction(U)
-    dN = N.derivate()
-    L = N(u)
-    dL = dN(u)
-    dim = len(points[0])
-    controlpts = curve_control_points(L, points)
-    return SplineCurve(N, controlpts)
+    functions = [N]
+    for i in range(number_derivatives):
+        functions.append(functions[-1].derivate())
+
+    Ls = []
+    for ui, function in zip(u, functions):
+        Ls.append(function(ui))
+
+    dim = points[0].shape[1]
+    M = np.zeros((totalndofs, totalndofs))
+    B = np.zeros((totalndofs, dim))
+    summe = 0
+    for i, ndof in enumerate(ndofs):
+        M[summe:summe+ndof, :] = Ls[i].T
+        B[summe:summe+ndof, :] = points[i][:, :]
+        summe += ndof
+    controlpoints = np.linalg.solve(M, B)
+    return SplineCurve(N, controlpoints)
 
 
 def function_spline(x: Iterable[float], y: Iterable[float], p: int):
