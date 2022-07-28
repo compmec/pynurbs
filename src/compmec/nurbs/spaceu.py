@@ -53,7 +53,7 @@ class VerifyVectorU(object):
         minU = np.min(U)
         maxU = np.max(U)
         if np.sum(U == minU) != np.sum(U == maxU):
-            raise ValueError("U must contain the same quantity of 0 and 1")
+            raise ValueError("U must contain the same quantity of 0 and 1. U = ", U)
 
     @staticmethod
     def all(U: Iterable[float]) -> None:

@@ -125,14 +125,14 @@ class EvaluationClass(object):
     def j(self, value: int):
         try:
             value = int(value)
-            if value < 0:
-                raise ValueError("The second value (%d) must be >= 0" % value)
-            elif self.p < value:
-                raise ValueError("The second value (%d) must be <= p = %d" % (value, self.p))
-            self._j = value
-            return
         except Exception as e:
             raise TypeError(f"Type {type(value)} is incorrect to set j")
+        if value < 0:
+            raise ValueError("The second value (%d) must be >= 0" % value)
+        elif self.p < value:
+            raise ValueError("The second value (%d) must be <= p = %d" % (value, self.p))
+        self._j = value
+        return
 
     @p.setter
     def p(self, value: int):

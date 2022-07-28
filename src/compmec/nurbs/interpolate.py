@@ -5,7 +5,9 @@ from compmec.nurbs import SplineBaseFunction, SplineCurve, SplineXYFunction
 
 def transform2U(u: Iterable[float], n: float, p: int, algorithm: int = 1):
     if p < 1:
-        raise ValueError("p must be > 0")
+        raise ValueError(f"p must be > 0. Received {p}")
+    if n <= p:
+        raise ValueError(f"({n} = n must be greater than p = {p}")
     U = np.zeros(n+p+1)
     if algorithm == 1:
         for j in range(1, n-p):
@@ -14,7 +16,6 @@ def transform2U(u: Iterable[float], n: float, p: int, algorithm: int = 1):
         ValueError("Algorithm is nod valid!")
     U[n:] = 1
     return U
-
 
 
 def curve_spline(p: int, u: Iterable[Iterable[float]], points: Iterable[Iterable[Any]]):
@@ -28,9 +29,10 @@ def curve_spline(p: int, u: Iterable[Iterable[float]], points: Iterable[Iterable
     for ui in u:
         ndofs.append(len(ui))
     totalndofs = np.sum(ndofs)
+    if totalndofs <=  p:
+        raise ValueError(f"The number of informations {totalndofs} very small to interpolate a curve with p = {p}")
     uequaly = np.linspace(0, 1, totalndofs)
     U = transform2U(uequaly, totalndofs, p)
-    
     N = SplineBaseFunction(U)
     functions = [N]
     for i in range(number_derivatives):
