@@ -1,6 +1,6 @@
 import pytest
 from compmec.nurbs import SplineBaseFunction
-from compmec.nurbs.spaceu import getU_uniform
+from compmec.nurbs.knotspace import getU_uniform
 import numpy as np
 
 

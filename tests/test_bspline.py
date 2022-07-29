@@ -1,6 +1,6 @@
 import pytest
 from compmec.nurbs import SplineBaseFunction
-from compmec.nurbs.spaceu import getU_uniform, getU_random
+from compmec.nurbs.knotspace import getU_uniform, getU_random
 import numpy as np
 
 def test_getEvaluationFunctions_p1n2():

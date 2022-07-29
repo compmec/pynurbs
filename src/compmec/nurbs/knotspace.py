@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Iterable, Union
 
-class VerifyVectorU(object):
+class VerifyKnotVector(object):
 
     __minU = 0
     __maxU = 1
@@ -30,22 +30,22 @@ class VerifyVectorU(object):
             
     @staticmethod
     def Limits(U: Iterable[float]) -> None:
-        if VerifyVectorU.__minU is not None:
-            VerifyVectorU.InferiorLimit(U)
-        if VerifyVectorU.__maxU is not None:
-            VerifyVectorU.SuperiorLimit(U)
+        if VerifyKnotVector.__minU is not None:
+            VerifyKnotVector.InferiorLimit(U)
+        if VerifyKnotVector.__maxU is not None:
+            VerifyKnotVector.SuperiorLimit(U)
 
     @staticmethod
     def InferiorLimit(U: Iterable[float]) -> None:
         for u in U:
-            if u < VerifyVectorU.__minU:
-                raise ValueError(f"All the values in U must be bigger than {VerifyVectorU.__minU}")
+            if u < VerifyKnotVector.__minU:
+                raise ValueError(f"All the values in U must be bigger than {VerifyKnotVector.__minU}")
 
     @staticmethod
     def SuperiorLimit(U: Iterable[float]) -> None:
         for u in U:
-            if u > VerifyVectorU.__maxU:
-                raise ValueError(f"All the values in U must be less than {VerifyVectorU.__maxU}")
+            if u > VerifyKnotVector.__maxU:
+                raise ValueError(f"All the values in U must be less than {VerifyKnotVector.__maxU}")
         
     @staticmethod
     def SameQuantityBoundary(U: Iterable[float]) -> None:
@@ -57,10 +57,10 @@ class VerifyVectorU(object):
 
     @staticmethod
     def all(U: Iterable[float]) -> None:
-        VerifyVectorU.isIterable(U)
-        VerifyVectorU.eachElementIsFloat(U)
-        VerifyVectorU.Limits(U)
-        VerifyVectorU.SameQuantityBoundary(U)
+        VerifyKnotVector.isIterable(U)
+        VerifyKnotVector.eachElementIsFloat(U)
+        VerifyKnotVector.Limits(U)
+        VerifyKnotVector.SameQuantityBoundary(U)
 
 def getU_uniform(n, p):
     if n < p:
@@ -68,7 +68,7 @@ def getU_uniform(n, p):
     U = np.linspace(0, 1, n - p + 1)
     U = np.concatenate((np.zeros(p), U))
     U = np.concatenate((U, np.ones(p)))
-    return VectorU(U)
+    return KnotVector(U)
 
 def getU_random(n, p):
     if n < p:
@@ -84,12 +84,12 @@ def getU_random(n, p):
     
     U = np.concatenate((np.zeros(p+1), U))
     U = np.concatenate((U, np.ones(p+1)))
-    return VectorU(U)
+    return KnotVector(U)
 
-class VectorU(tuple):
+class KnotVector(list):
 
     def __new__(cls, U: Iterable[float]):
-        VerifyVectorU.all(U)
+        VerifyKnotVector.all(U)
         return super().__new__(cls, U)
 
     def __init__(self, U: Iterable[float]):
@@ -97,11 +97,11 @@ class VectorU(tuple):
         
     @property
     def p(self):
-        return self._p
+        return self.__p
     
     @property
     def n(self):
-        return self._n
+        return self.__n
 
     def compute_np(self):
         """
@@ -119,8 +119,8 @@ class VectorU(tuple):
         for i in range(m):
             if self[i] != minU:
                 break
-        self._p = i-1
-        self._n = m - self.p
+        self.__p = i-1
+        self.__n = m - self.p
 
     def __find_spot_onevalue(self, u: float) -> int:
         U = np.array(self)
@@ -157,3 +157,9 @@ class VectorU(tuple):
         else:
             return np.array(self.__find_spot_onevalue(u))
 
+
+    def insert_knot(self, knot: float, times: int = 1):
+        k = self.spot(knot)
+        for i in range(times):
+            self.insert(k+1, knot)
+        

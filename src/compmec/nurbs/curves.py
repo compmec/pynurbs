@@ -15,6 +15,16 @@ class BaseCurve(object):
         df = self.f.derivate()
         return self.__class__(df, self.P)
 
+    def insert_knot(self, knot: float, times: int = 1):
+        npts, dim = self.P.shape
+        knot = float(knot)
+        times = int(times)
+        spot = self.f.U.spot(knot)
+        Unew = list(self.f.U)
+        for i in range(times):
+            Unew.insert(spot, knot)
+        
+
 
 class SplineCurve(BaseCurve):
     def __init__(self, f: SplineBaseFunction, controlpoints: np.ndarray):

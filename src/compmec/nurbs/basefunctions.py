@@ -1,8 +1,8 @@
 import numpy as np
 from typing import Iterable, Any, Optional, Union, Tuple, Type
-from compmec.nurbs.spaceu import VectorU 
+from compmec.nurbs.knotspace import KnotVector 
 
-def N(i: int, j: int, k: int, u: float, U: VectorU) -> float:
+def N(i: int, j: int, k: int, u: float, U: KnotVector) -> float:
     """
     Returns the value of N_{ij}(u) in the interval [u_{k}, u_{k+1}]
     Remember that N_{i, j}(u) = 0   if  ( u not in [U[i], U[i+j+1]] )
@@ -38,7 +38,7 @@ def N(i: int, j: int, k: int, u: float, U: VectorU) -> float:
     result = factor1 * N(i, j-1, k, u, U) + factor2 * N(i+1, j-1, k, u, U)
     return result
 
-def R(i: int, j: int, k: int, u: float, U: VectorU, w: Iterable[float]) -> float:
+def R(i: int, j: int, k: int, u: float, U: KnotVector, w: Iterable[float]) -> float:
     """
     Returns the value of R_{ij}(u) in the interval [u_{k}, u_{k+1}]
     """
@@ -56,7 +56,7 @@ def R(i: int, j: int, k: int, u: float, U: VectorU, w: Iterable[float]) -> float
 class EvaluationClass(object):
 
     def __init__(self, U: Iterable[float], p: int, tup: Union[None, int, slice, Tuple]= None, A: Optional[np.ndarray]=None):
-        self._U = VectorU(U)
+        self.__U = KnotVector(U)
         self._p = p
         self.__initialize_tup(tup)
         self.A = A
@@ -92,7 +92,7 @@ class EvaluationClass(object):
 
     @property
     def U(self):
-        return self._U
+        return self.__U
 
     @property
     def A(self):
@@ -151,8 +151,8 @@ class EvaluationClass(object):
             self._A = np.array(value)
 
 
-    def __validate_evaluation_u(self, u: np.ndarray):
-        U = self._U
+    def __validate_evaluation__U(self, u: np.ndarray):
+        U = self.__U
         minU = np.min(U)
         maxU = np.max(U)
         if not np.all((minU <= u) * (u <= maxU)):
@@ -175,16 +175,16 @@ class EvaluationClass(object):
         u = self.__treat_input(u)
         r = np.zeros((self.n, len(u)))
         for w, uw in enumerate(u):
-            k = self._U.spot(uw)
+            k = self.__U.spot(uw)
             for ind in self.i:
-                r[ind, w] = self.f(ind, self.j, k, uw, self._U)
+                r[ind, w] = self.f(ind, self.j, k, uw, self.__U)
         return r
     
     def compute_all(self, u: np.ndarray) -> np.ndarray:
         return self.A @ self.compute_matrix(u)
 
     def __call__(self, u: Union[float, np.ndarray]) -> np.ndarray:
-        self.__validate_evaluation_u(u)
+        self.__validate_evaluation__U(u)
         u = self.__treat_input(u)
         result = self.A @ self.compute_matrix(u)
         return result[self.i]
@@ -200,11 +200,11 @@ class BaseFunction(object):
         And so, to get the value of N_{i, j}(u) can be express like
         N[i, j](u)
         """
-        if isinstance(U, VectorU):
-            self._U = U
+        if isinstance(U, KnotVector):
+            self.__U = U
         else:
-            self._U = VectorU(U)
-        self._p = self._U.p
+            self.__U = KnotVector(U)
+        self._p = self.__U.p
 
     @property
     def p(self) -> int:
@@ -212,11 +212,11 @@ class BaseFunction(object):
 
     @property
     def n(self) -> int:
-        return self._U.n
+        return self.__U.n
 
     @property
     def U(self) -> Tuple[float]:
-        return tuple(self._U)
+        return self.__U
 
     @property
     def evaluationClass(self) -> type[EvaluationClass]:
@@ -226,6 +226,15 @@ class BaseFunction(object):
         If it's rational, evalfunction = R
         """
         raise NotImplementedError("This function must be overwritten")
+
+    def insert_knot(self, knot: float, times: int = 1):
+        knot = float(knot)
+        times = int(times)
+        spot = self.__U.spot(knot)
+        Unew = list(self.__U)
+        for i in range(times):
+            Unew.insert(spot, knot)
+        self.__U = KnotVector(Unew)
 
     def createEvaluationInstance(self, tup: Tuple[slice, int]) -> EvaluationClass:
         return self.evaluationClass(self.U, self.p, tup)
