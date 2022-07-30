@@ -142,7 +142,21 @@ def test_generateUrandom():
         assert U.p == p
 
 @pytest.mark.order(1)
-@pytest.mark.dependency(depends=["test_begin", "test_findSpots_array", "test_generateUuniform", "test_generateUrandom"])
+@pytest.mark.timeout(4)
+@pytest.mark.dependency(depends=["test_generateUuniform"])
+def test_comparetwo_knotvectors():
+    ntests = 10
+    for i in range(ntests):
+        p = np.random.randint(0, 6)
+        n = np.random.randint(p+1, p+11)
+        U1 = getU_uniform(n=n, p=p)
+        U2 = getU_uniform(n=n, p=p)
+        assert U1 == U2
+
+        
+@pytest.mark.order(1)
+@pytest.mark.dependency(depends=["test_begin", "test_findSpots_array",
+            "test_generateUuniform", "test_generateUrandom", "test_comparetwo_knotvectors"])
 def test_end():
     pass
 
@@ -156,6 +170,7 @@ def main():
     test_findSpots_array()
     test_generateUuniform()
     test_generateUrandom()
+    test_comparetwo_knotvectors()
     test_end()
 
 if __name__ == "__main__":

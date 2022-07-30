@@ -197,7 +197,7 @@ class EvaluationClass(object):
 
 class BaseFunction(object):
 
-    def __init__(self, U: Iterable[float]):
+    def __init__(self, U: KnotVector):
         """
         We have that the object can be called like
         N = SplineBaseFunction(U)
@@ -205,10 +205,7 @@ class BaseFunction(object):
         And so, to get the value of N_{i, j}(u) can be express like
         N[i, j](u)
         """
-        if isinstance(U, KnotVector):
-            self.__U = U
-        else:
-            self.__U = KnotVector(U)
+        self.U = KnotVector(U)
         self.p = self.__U.p
         self.A = np.eye(self.n)
 
@@ -222,8 +219,8 @@ class BaseFunction(object):
         return self.__U.n
 
     @property
-    def U(self) -> Tuple[float]:
-        return self.__U
+    def U(self) -> KnotVector:
+        return KnotVector(self.__U)
 
     @property
     def A(self) -> np.ndarray:
@@ -234,6 +231,10 @@ class BaseFunction(object):
         if value < 0:
             raise ValueError("Cannot set p = ", value)
         self.__p = int(value)
+
+    @U.setter
+    def U(self, value: KnotVector) -> None:
+        self.__U = KnotVector(value)
 
     @A.setter
     def A(self, value: np.ndarray) -> None:
@@ -278,6 +279,14 @@ class BaseFunction(object):
         newinstance.A = A @ newA
         return newinstance
 
+    def __eq__(self, value):
+        if not isinstance(value, self.__class__):
+            raise TypeError(f"Cannot compare a {self.__class__} instance with a {type(value)}")
+        if self.U != value.U:
+            return False
+        if np.any(self.A != value.A):
+            return False
+        return True
 
 class SplineBaseFunction(BaseFunction):
 
@@ -319,7 +328,7 @@ class RationalBaseFunction(BaseFunction):
 
     @property
     def w(self):
-        return self._w
+        return self.__w
 
     @w.setter
     def w(self, value: Iterable[float]):
@@ -327,8 +336,14 @@ class RationalBaseFunction(BaseFunction):
             v = float(v)
             if v < 0:
                 raise ValueError("The weights must be positive")
-        self._w = value
+        self.__w = value
     
+    def __eq__(self, value):
+        if not super().__eq__(value):
+            return False
+        if self.w != value.w:
+            return False
+        return True
 
 
 class SplineEvaluationClass(EvaluationClass):

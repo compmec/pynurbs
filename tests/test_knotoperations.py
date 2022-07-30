@@ -2,7 +2,7 @@ import pytest
 from compmec.nurbs import SplineBaseFunction
 from compmec.nurbs import SplineCurve
 from compmec.nurbs.knotspace import KnotVector, getU_random, getU_uniform
-from compmec.nurbs.advanced import insert_knot_basefunction, insert_knot_controlpoints
+from compmec.nurbs.advanced import insert_knot_basefunction, insert_knot_controlpoints, remove_knot_basefunction, remove_knot_controlpoints
 from matplotlib import pyplot as plt 
 from geomdl import BSpline
 from geomdl.operations import insert_knot
@@ -50,12 +50,12 @@ def test_insertknot_curve_basic():
     C = SplineCurve(N, P)
     knot = 0.01+0.98*np.random.rand()
     newN = insert_knot_basefunction(N, knot)
+    assert N != newN
     newP = insert_knot_controlpoints(N.U, P, knot)
+    assert not np.any(P != newP)
     newC = SplineCurve(newN, newP)
-    utest = np.linspace(0, 1, 2*n+1)
-    Cugood = C(utest)
-    Cutest = newC(utest)
-    np.testing.assert_almost_equal(Cugood, Cutest)
+    assert C == newC
+    
 
 
 @pytest.mark.order(4)
@@ -96,17 +96,48 @@ def test_insertknot_with_geomdl():
             np.testing.assert_allclose(Pcustom, Pgeomdl)
 
 
+@pytest.mark.skip(reason="Needs implementation")
 @pytest.mark.order(4)
-@pytest.mark.dependency(depends=["test_begin", "test_curve_basic"])
+@pytest.mark.timeout(5)
+@pytest.mark.dependency(depends=["test_insertknot_curve_basic"])
+def test_removeinsertedknot():
+    ntests = 10
+    dim = 2
+    for i in range(ntests):
+        p = np.random.randint(1, 6)
+        n = 10*np.random.randint(p+1, p+11)
+        U = getU_random(n=n, p=p)
+        knotvector = KnotVector(U)
+        N = SplineBaseFunction(knotvector)
+        P = np.random.rand(n, dim)
+        C = SplineCurve(N, P)
+
+        knot = 0.01+0.98*np.random.rand()
+        Ntemp = insert_knot_basefunction(N, knot)
+        Ptemp = insert_knot_controlpoints(N.U, P, knot)
+        Ctemp = SplineCurve(Ntemp, Ptemp)
+        assert C == Ctemp
+        Nnew = remove_knot_basefunction(Ntemp, knot)
+        Pnew = remove_knot_controlpoints(Ntemp.U, Ptemp, knot)
+        Cnew = SplineCurve(Nnew, Pnew)
+        assert N == Nnew
+        np.testing.assert_allclose(P, Pnew)
+        assert C == Cnew
+
+        
+
+@pytest.mark.order(4)
+@pytest.mark.dependency(depends=["test_begin", "test_curve_basic", "test_removeinsertedknot"])
 def test_end():
     pass
 
 def main():
+    test_begin()
     test_insertknot_basefunction_basic()
     test_insertknot_curve_basic()
     test_insertknot_with_geomdl()
-    # test_curve_plot()
-
+    test_removeinsertedknot()
+    test_end()
 
 if __name__ == "__main__":
     main()

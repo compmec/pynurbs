@@ -327,7 +327,22 @@ def test_tableUrandom_sum1():
                 np.testing.assert_almost_equal(np.sum(M[:, k]), 1)
 
 @pytest.mark.order(2)
-@pytest.mark.dependency(depends=["test_begin", "test_tableUuniform_sum1", "test_tableUrandom_sum1"])
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_CreationSplineBaseFunction"])
+def test_comparetwo_splinebasefunctions():
+    ntests = 10
+    for i in range(ntests):
+        p = np.random.randint(0, 6)
+        n = np.random.randint(p+1, p+11)
+        U = list(getU_random(n=n, p=p))
+        N1 = SplineBaseFunction(U)
+        N2 = SplineBaseFunction(U)
+        assert N1 == N2
+
+
+@pytest.mark.order(2)
+@pytest.mark.dependency(depends=["test_begin", "test_tableUuniform_sum1",
+    "test_tableUrandom_sum1", "test_comparetwo_splinebasefunctions"])
 def test_end():
     pass
 

@@ -19,7 +19,7 @@ def insert_knot_basefunction(basefunction: BaseFunction, knot: float, times: Opt
     return basefunction.__class__(newU)
 
 
-def insert_knot_controlpoints(U: KnotVector, P: np.ndarray, knot: float, times: Optional[int]=1):
+def insert_knot_controlpoints(U: KnotVector, P: np.ndarray, knot: float, times: Optional[int]=1) -> np.ndarray:
     """
     Receives a curve and returns the controlpoints of the new curve
         * the new base function and the control points
@@ -44,3 +44,9 @@ def insert_knot_controlpoints(U: KnotVector, P: np.ndarray, knot: float, times: 
         j = i - k + p - 1
         Q[i] = a[j]*P[i] + (1-a[j])*P[i-1]
     return Q
+
+def remove_knot_basefunction(basefunction: BaseFunction, knot: float, times: Optional[int] = 1) -> BaseFunction:
+    raise NotImplementedError("Stop")
+
+def remove_knot_controlpoints(U: KnotVector, P: np.ndarray, knot: float, times: Optional[int]=1) -> np.ndarray:
+    raise NotImplementedError("Stop")

@@ -164,3 +164,22 @@ class KnotVector(list):
         else:
             return np.array(self.__find_spot_onevalue(u))
         
+
+    def __eq__(self, __obj: object):
+        if not isinstance(__obj, (list, tuple, self.__class__)):
+            raise TypeError(f"Cannot compare {type(__obj)} with a {self.__class__} instance")
+        try:
+            __obj = self.__class__(__obj)
+        except Exception as e:
+            raise ValueError(f"No sucess trying to convert {type(__obj)} into {self.__class__}. Cause {str(e)}")
+        if self.n != __obj.n:
+            return False
+        if self.p != __obj.p:
+            return False
+        for i, v in enumerate(self):
+            if v != __obj[i]:
+                return False
+        return True
+
+    def __ne__(self, __obj: object) -> bool:
+        return not self.__eq__(__obj)
