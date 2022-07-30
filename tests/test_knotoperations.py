@@ -52,7 +52,7 @@ def test_insertknot_curve_basic():
     newN = insert_knot_basefunction(N, knot)
     assert N != newN
     newP = insert_knot_controlpoints(N.U, P, knot)
-    assert not np.any(P != newP)
+    assert not np.all(P == newP)
     newC = SplineCurve(newN, newP)
     assert C == newC
     
