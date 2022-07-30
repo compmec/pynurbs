@@ -12,15 +12,26 @@ def test_begin():
     pass
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(2)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_begin"])
-def test_CreationClass():
+def test_CreationSplineBaseFunction():
     N = SplineBaseFunction([0, 0, 1, 1])
+    assert callable(N)
+    assert N.p == 1
+    assert N.n == 2
     N = SplineBaseFunction([0, 0, 0.5, 1, 1])
+    assert callable(N)
+    assert N.p == 1
+    assert N.n == 3
     N = SplineBaseFunction([0, 0, 0, 1, 1, 1])
+    assert callable(N)
+    assert N.p == 2
+    assert N.n == 3
     N = SplineBaseFunction([0, 0, 0, 0.5, 1, 1, 1])
     assert callable(N)
+    assert N.p == 2
+    assert N.n == 4
 
     
 
@@ -28,8 +39,8 @@ def test_CreationClass():
 
 @pytest.mark.order(2)
 @pytest.mark.timeout(2)
-@pytest.mark.dependency(depends=["test_CreationClass"])
-def test_getEvaluationFunctions_p1n2():
+@pytest.mark.dependency(depends=["test_CreationSplineBaseFunction"])
+def test_SplineEvaluationFunctions_p1n2():
     U = [0, 0, 1, 1]  # p = 1, n = 2
     N = SplineBaseFunction(U)
     N[0, 0]
@@ -44,8 +55,8 @@ def test_getEvaluationFunctions_p1n2():
 
 @pytest.mark.order(2)
 @pytest.mark.timeout(2)
-@pytest.mark.dependency(depends=["test_getEvaluationFunctions_p1n2"])
-def test_getEvaluationFunctions_p1n3():
+@pytest.mark.dependency(depends=["test_SplineEvaluationFunctions_p1n2"])
+def test_SplineEvaluationFunctions_p1n3():
     U = [0, 0, 0.5, 1, 1]  # p = 1, n = 3
     N = SplineBaseFunction(U)
     N[0, 0]
@@ -62,7 +73,7 @@ def test_getEvaluationFunctions_p1n3():
 
 @pytest.mark.order(2)
 @pytest.mark.timeout(2)
-@pytest.mark.dependency(depends=["test_getEvaluationFunctions_p1n2"])
+@pytest.mark.dependency(depends=["test_SplineEvaluationFunctions_p1n2"])
 def test_somesinglevalues_p1n2():
     U = [0, 0, 1, 1]  # p = 1, n = 2
     N = SplineBaseFunction(U)
@@ -321,10 +332,10 @@ def test_end():
     pass
 
 def main():
-    test_getEvaluationFunctions_p1n2()
-    test_getEvaluationFunctions_p1n3()
+    test_SplineEvaluationFunctions_p1n2()
+    test_SplineEvaluationFunctions_p1n3()
     test_somesinglevalues_p1n2()
-    test_getEvaluationFunctions_p1n3()
+    test_SplineEvaluationFunctions_p1n3()
     test_tablevalues_p1n2()
     test_tablevalues_p1n3()
     test_tablevalues_p2n3()

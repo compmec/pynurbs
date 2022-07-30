@@ -10,7 +10,7 @@ import numpy as np
 
 @pytest.mark.order(3)
 @pytest.mark.dependency(
-	depends=["tests/test_bspline.py::test_end"],
+	depends=["tests/test_basefunctions.py::test_end"],
     scope='session')
 def test_begin():
     pass

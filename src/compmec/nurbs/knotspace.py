@@ -123,7 +123,7 @@ class KnotVector(list):
         """
         minU = min(self)
         m = len(self) - 1
-        for i in range(m):
+        for i in range(m+1):
             if self[i] != minU:
                 break
         self.p = i-1

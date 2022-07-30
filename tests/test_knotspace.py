@@ -129,12 +129,12 @@ def test_generateUuniform():
 
 
 @pytest.mark.order(1)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(4)
 @pytest.mark.dependency(depends=["test_CreationClass"])
 def test_generateUrandom():
-    ntests = 100
+    ntests = 1000
     for i in range(ntests):
-        p = np.random.randint(1, 6)
+        p = np.random.randint(0, 6)
         n = np.random.randint(p+1, p+11)
         U = getU_random(n=n, p=p)
         assert isinstance(U, KnotVector)
@@ -154,6 +154,8 @@ def main():
     test_ValuesOfN()
     test_findSpots_single()
     test_findSpots_array()
+    test_generateUuniform()
+    test_generateUrandom()
     test_end()
 
 if __name__ == "__main__":
