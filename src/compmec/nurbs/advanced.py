@@ -1,12 +1,17 @@
 from compmec.nurbs.knotspace import KnotVector
-from compmec.nurbs.basefunctions import BaseFunction, SplineBaseFunction
-from compmec.nurbs.curves import BaseCurve
+from compmec.nurbs.basefunctions import BaseFunction
 from compmec.nurbs.knotspace import KnotVector
-from typing import List, Optional
+from typing import List, Optional, Dict
 import numpy as np
-from geomdl import BSpline
-from geomdl.operations import remove_knot
 
+
+def getMultiplicities(U: KnotVector) -> Dict:
+    s = {}
+    for i, ui in enumerate(U):
+        if ui not in s:
+            s[ui] = 0
+        s[ui] += 1
+    return s
 
 
 def insert_knot_basefunction(F: BaseFunction, knot: float, times: Optional[int] = 1) -> BaseFunction:
@@ -70,11 +75,10 @@ def remove_knot_controlpoints(F: BaseFunction, P: np.ndarray, knot: float, times
     n, p = F.n, F.p
     Pw = np.copy(P)
     r = U.index(knot)
-    s = 0
-    for i, ui in enumerate(U):
-        if ui == knot:
-            s += 1
-    t, newU, newP = RemoveCurveKnot(n, p, U, Pw, knot, r, s, times)
+    s = getMultiplicities(U)
+    if knot not in s.keys():
+        raise ValueError("The given knot is not in the KnotVector")
+    t, newU, newP = RemoveCurveKnot(n, p, U, Pw, knot, r, s[knot], times)
     if t == 0:
         newP = newP.tolist()
         newP.pop(r-p+1)
