@@ -67,12 +67,91 @@ def remove_knot_controlpoints(F: BaseFunction, P: np.ndarray, knot: float, times
     if not isinstance(F, BaseFunction):
         raise TypeError("F must be a BaseFunction instance")
     U = list(F.U)
-    curve = BSpline.Curve()
-    curve.degree = F.p
-    Ps = []
-    for i, Pi in enumerate(P):
-        Ps.append(list(Pi))
-    curve.ctrlpts = Ps
-    curve.knotvector = list(U)
-    remove_knot(curve, [knot], [times])
-    return np.array(curve.ctrlpts)
+    n, p = F.n, F.p
+    Pw = np.copy(P)
+    r = U.index(knot)
+    s = 0
+    for i, ui in enumerate(U):
+        if ui == knot:
+            s += 1
+    t, newU, newP = RemoveCurveKnot(n, p, U, Pw, knot, r, s, times)
+    if t == 0:
+        newP = newP.tolist()
+        newP.pop(r-p+1)
+        newP = np.array(newP)
+    else:
+        raise ValueError("Cannot knot what happens here. Needs testing")
+    return np.array(newP)
+
+def Distance4D(P1, P2):
+    return np.linalg.norm(np.array(P1)-np.array(P2))
+
+def RemoveCurveKnot(n, p, U, Pw, u, r, s, num):
+    """
+    Algorith A5.8 from Nurbs Book at page 185
+    Remove knot u (index r) num times.
+    Input: n, p, U, Pw, u, r, s, num
+    Output: t, nw knots & ctrl pts in U & Pw
+    s is the multiplicity of of knot u
+    """
+    Pw = np.array(Pw)
+    TOLERANCE = 1e-7
+    m = n + p + 1
+    ord = p+1
+    fout = (2*r-s-p)/2
+    last = r-s
+    first = r-p
+    temp = np.zeros(Pw.shape)
+    for t in range(num):  # This loop is Eq. (5.28)
+        off = first - 1  # Diff in index between temp and P
+        temp[0] = Pw[off]
+        temp[last+1-off] = Pw[last+1]
+        i = first
+        j = last
+        ii = 1
+        jj = last - off
+        remflag = 0
+        while j - i > t:  # Compute new control points for one removal step
+            alfi = (u-U[i])/(U[i+ord+t]-U[i])
+            alfj = (u-U[j-t])/(U[j+ord]-U[j-t])
+            temp[ii] = (Pw[i] - (1-alfi)*temp[ii-1])/alfi
+            temp[jj] = (Pw[j] - alfj*temp[jj+1])/(1-alfj)
+            i += 1
+            ii += 1
+            j -= 1
+            jj -= 1
+        if j - i < t:  # Check if knot removable
+            if Distance4D(temp[ii-1], temp[jj+1]) <= TOLERANCE:
+                remflag = 1
+        else:
+            alfi = (u-U[i])/(U[i+ord+t]-U[i])
+            if Distance4D(Pw[i], alfi*temp[ii+t+1] + (1-alfi)*temp[ii-1]) <= TOLERANCE:
+                remflag = 1
+        if remflag == 0:  # Cannot remove any more knots
+            break
+        else:  # Successful removal. Save new cont. pts.
+            i = first
+            j = last
+            while j - i > t:
+                Pw[i] = temp[i-off]
+                Pw[j] = temp[j-off]
+                i += 1
+                j -= 1
+        first -= 1
+        last += 1
+    if t == 0:
+        return t, U, Pw
+    for k in range(r+1, m+1):
+        U[k-t] = U[k]  # Shift knots
+    j = fout
+    i = j  # Pj thru Pi will be overwritten
+    for k in range(1, t):
+        if k % 2 == 1:  # k modulo 2
+            i += 1
+        else:
+            j -= 1
+    for k in range(i+1, n+1):  # Shift
+        Pw[j] = Pw[k]
+        j += 1
+    return t, U, Pw
+
