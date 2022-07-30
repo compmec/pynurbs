@@ -52,7 +52,6 @@ def R(i: int, j: int, k: int, u: float, U: KnotVector, w: Iterable[float]) -> fl
     return w[i] * Niju / soma
 
 
-
 class EvaluationClass(object):
 
     def __init__(self, U: Iterable[float], p: int, tup: Union[None, int, slice, Tuple]= None, A: Optional[np.ndarray]=None):
@@ -204,11 +203,13 @@ class BaseFunction(object):
             self.__U = U
         else:
             self.__U = KnotVector(U)
-        self._p = self.__U.p
+        self.p = self.__U.p
+        self.A = np.eye(self.n)
+
 
     @property
     def p(self) -> int:
-        return self._p
+        return self.__p
 
     @property
     def n(self) -> int:
@@ -219,77 +220,60 @@ class BaseFunction(object):
         return self.__U
 
     @property
+    def A(self) -> np.ndarray:
+        return self.__A
+
+    @p.setter
+    def p(self, value: int) -> None:
+        if value < 0:
+            raise ValueError("Cannot set p = ", value)
+        self.__p = int(value)
+
+    @A.setter
+    def A(self, value: np.ndarray) -> None:
+        self.__A = value
+
+    
+
+    @property
     def evaluationClass(self) -> type[EvaluationClass]:
         """
         This function must be overwritten.
-        If it's spline, evalfunction = N
-        If it's rational, evalfunction = R
+        * If it's spline, evalfunction = N
+        * If it's rational, evalfunction = R
         """
         raise NotImplementedError("This function must be overwritten")
 
-    def insert_knot(self, knot: float, times: int = 1):
-        knot = float(knot)
-        times = int(times)
-        spot = self.__U.spot(knot)
-        Unew = list(self.__U)
-        for i in range(times):
-            Unew.insert(spot, knot)
-        self.__U = KnotVector(Unew)
 
     def createEvaluationInstance(self, tup: Tuple[slice, int]) -> EvaluationClass:
-        return self.evaluationClass(self.U, self.p, tup)
+        return self.evaluationClass(self.U, self.p, tup, self.A)
 
     def __getitem__(self, tup: slice) -> EvaluationClass:
         return self.createEvaluationInstance(tup)
 
     def __call__(self, u: np.ndarray) -> np.ndarray:
         return self[:, self.p] (u)
-        
-
-class GeneralBaseFunction(BaseFunction):
-
-    def __init__(self, U: Iterable[float]):
-        super().__init__(U)
-        self.A = np.eye(self.n)
-
-    def createEvaluationInstance(self, tup: Tuple[slice, int]) -> EvaluationClass:
-        return self.evaluationClass(self.U, self.p, tup, self.A)
-
-    @property
-    def A(self) -> np.ndarray:
-        return self._A
-
-    @property
-    def p(self) -> int:
-        return self._p
-
-    @A.setter
-    def A(self, value: np.ndarray) -> None:
-        self._A = value
-
-    @p.setter
-    def p(self, value: int) -> None:
-        if value < 0:
-            raise ValueError("Cannot set p = ", value)
-        self._p = int(value)
 
     def derivate(self):
-        U = list(self.U)
-        newinstance = self.__class__(U)
-        newinstance.p = self.p - 1
-        avals = np.zeros(self.n)
-        for i in range(self.n):
-            diff = self.U[i+self.p] - self.U[i]
+        F = self
+        U = list(F.U)
+        n, p = F.n, F.p
+        A = F.A
+        newinstance = F.__class__(U)
+        newinstance.p = p - 1
+        avals = np.zeros(n)
+        for i in range(n):
+            diff = U[i+p] - U[i]
             if diff != 0:
-                avals[i] = self.p/diff
+                avals[i] = p/diff
         newA = np.diag(avals)
-        for i in range(self.n-1):
+        for i in range(n-1):
             newA[i, i+1] = -avals[i+1]
-        newinstance.A = self.A @ newA
+        newinstance.A = A @ newA
         return newinstance
 
 
-class SplineBaseFunction(GeneralBaseFunction):
+class SplineBaseFunction(BaseFunction):
 
     def __doc__(self):
         """
@@ -318,7 +302,7 @@ class SplineBaseFunction(GeneralBaseFunction):
     def evaluationClass(self) -> type[EvaluationClass]:
         return SplineEvaluationClass
 
-class RationalBaseFunction(GeneralBaseFunction):
+class RationalBaseFunction(BaseFunction):
     def __init__(self, U: Iterable[float]):
         super().__init__(U)
         self.w = np.ones(self.n)

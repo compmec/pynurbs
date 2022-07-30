@@ -88,11 +88,9 @@ def getU_random(n, p):
 
 class KnotVector(list):
 
-    def __new__(cls, U: Iterable[float]):
-        VerifyKnotVector.all(U)
-        return super().__new__(cls, U)
-
     def __init__(self, U: Iterable[float]):
+        VerifyKnotVector.all(U)
+        super().__init__(U)
         self.compute_np()
         
     @property
@@ -156,10 +154,4 @@ class KnotVector(list):
             return self.__find_spot_vector(u)
         else:
             return np.array(self.__find_spot_onevalue(u))
-
-
-    def insert_knot(self, knot: float, times: int = 1):
-        k = self.spot(knot)
-        for i in range(times):
-            self.insert(k+1, knot)
         
