@@ -1,7 +1,8 @@
 import pytest
 import numpy as np
 from compmec.nurbs import KnotVector
-from compmec.nurbs.knotspace import getU_random, getU_uniform
+from compmec.nurbs.knotspace import GeneratorKnotVector
+
 
 @pytest.mark.order(1)
 @pytest.mark.dependency()
@@ -122,7 +123,7 @@ def test_generateUuniform():
     for i in range(ntests):
         p = np.random.randint(1, 6)
         n = np.random.randint(p+1, p+11)
-        U = getU_uniform(n=n, p=p)
+        U = GeneratorKnotVector.uniform(n=n, p=p)
         assert isinstance(U, KnotVector)
         assert U.n == n
         assert U.p == p
@@ -136,7 +137,7 @@ def test_generateUrandom():
     for i in range(ntests):
         p = np.random.randint(0, 6)
         n = np.random.randint(p+1, p+11)
-        U = getU_random(n=n, p=p)
+        U = GeneratorKnotVector.random(n=n, p=p)
         assert isinstance(U, KnotVector)
         assert U.n == n
         assert U.p == p
@@ -149,8 +150,8 @@ def test_comparetwo_knotvectors():
     for i in range(ntests):
         p = np.random.randint(0, 6)
         n = np.random.randint(p+1, p+11)
-        U1 = getU_uniform(n=n, p=p)
-        U2 = getU_uniform(n=n, p=p)
+        U1 = GeneratorKnotVector.uniform(n=n, p=p)
+        U2 = GeneratorKnotVector.uniform(n=n, p=p)
         assert U1 == U2
 
         

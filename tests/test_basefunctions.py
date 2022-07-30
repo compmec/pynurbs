@@ -1,6 +1,6 @@
 import pytest
 from compmec.nurbs import SplineBaseFunction
-from compmec.nurbs.knotspace import getU_uniform, getU_random
+from compmec.nurbs.knotspace import GeneratorKnotVector
 import numpy as np
 
 
@@ -300,7 +300,7 @@ def test_tableUuniform_sum1():
     for i in range(ntests):
         p = np.random.randint(0, 6)
         n = np.random.randint(p+1, p+21)
-        U = getU_uniform(n, p)
+        U = GeneratorKnotVector.uniform(n, p)
         u = np.random.rand(11)
         N = SplineBaseFunction(U)
         for j in range(p+1):
@@ -317,7 +317,7 @@ def test_tableUrandom_sum1():
     for i in range(ntests):
         p = np.random.randint(0, 6)
         n = np.random.randint(p+1, p+21)
-        U = getU_random(n, p)
+        U = GeneratorKnotVector.random(n, p)
         u = np.random.rand(11)
         N = SplineBaseFunction(U)
         for j in range(p+1):
@@ -334,7 +334,7 @@ def test_comparetwo_splinebasefunctions():
     for i in range(ntests):
         p = np.random.randint(0, 6)
         n = np.random.randint(p+1, p+11)
-        U = list(getU_random(n=n, p=p))
+        U = list(GeneratorKnotVector.random(n=n, p=p))
         N1 = SplineBaseFunction(U)
         N2 = SplineBaseFunction(U)
         assert N1 == N2

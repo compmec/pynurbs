@@ -1,9 +1,8 @@
-from xml.etree.ElementTree import PI
 import pytest
 from compmec.nurbs import SplineBaseFunction
 from compmec.nurbs import SplineCurve
 from compmec.nurbs.curves import BaseCurve
-from compmec.nurbs.knotspace import KnotVector, getU_uniform, getU_random
+from compmec.nurbs.knotspace import GeneratorKnotVector
 from geomdl import BSpline
 import numpy as np
 
@@ -40,7 +39,7 @@ def test_with_geomdl():
     for i in range(ntests):
         p = np.random.randint(1, 6)
         n = np.random.randint(p+1, p+11)
-        U = getU_random(n=n, p=p)
+        U = GeneratorKnotVector.random(n=n, p=p)
         N = SplineBaseFunction(U)
         P = np.random.rand(n, dim)
         Pgeomdl = []

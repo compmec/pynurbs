@@ -62,22 +62,30 @@ class VerifyKnotVector(object):
         VerifyKnotVector.Limits(U)
         VerifyKnotVector.SameQuantityBoundary(U)
 
-def getU_uniform(n, p):
-    if n <= p:
-        n = p+1
-    U = np.linspace(0, 1, n - p + 1)
-    U = p*[0] + list(U) + p*[1]
-    return KnotVector(U)
+class GeneratorKnotVector:
 
-def getU_random(n, p):
-    if n <= p:
-        n = p+1
-    hs = np.random.random(n - p + 1)
-    U = np.cumsum(hs)
-    U -= U[0]
-    U /= U[-1]
-    U = p*[0] + list(U) + p*[1]
-    return KnotVector(U) 
+    @staticmethod
+    def bezier(p: int):
+        return KnotVector((p+1)*[0] + (p+1)*[1])
+
+    @staticmethod
+    def uniform(p: int, n: int):
+        if n <= p:
+            n = p+1
+        U = np.linspace(0, 1, n - p + 1)
+        U = p*[0] + list(U) + p*[1]
+        return KnotVector(U)
+
+    def random(p: int, n: int):
+        if n <= p:
+            n = p+1
+        hs = np.random.random(n - p + 1)
+        U = np.cumsum(hs)
+        U -= U[0]
+        U /= U[-1]
+        U = p*[0] + list(U) + p*[1]
+        return KnotVector(U) 
+
 
 class KnotVector(list):
 
