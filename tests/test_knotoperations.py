@@ -2,7 +2,7 @@ import pytest
 from compmec.nurbs import SplineBaseFunction
 from compmec.nurbs import SplineCurve
 from compmec.nurbs.knotspace import KnotVector, getU_random, getU_uniform
-from compmec.nurbs.advanced import insert_knot_basefunction, insert_knot_controlpoints, remove_knot_basefunction, remove_knot_controlpoints
+from compmec.nurbs.knotoperations import insert_knot_basefunction, insert_knot_controlpoints, remove_knot_basefunction, remove_knot_controlpoints
 from geomdl import BSpline
 from geomdl.operations import insert_knot
 import numpy as np
