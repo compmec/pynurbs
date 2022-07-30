@@ -7,11 +7,50 @@
 This repository contains code for inteporlate functions using B-Splines and Nurbs.
 
 
-# How to use it
+#### Features
 
-There are some folders and inside each one, there's a README that explains how use them.
+* Basic Functions
+    * Spline ```N```
+    * Rational ```R```
+    * Derivative
+* Curves
+    * Spline
+    * Rational
+* Knot operations
+    * Insertion
+    * Removal
+* Degree operations
+    * Degree elevation
+    * Degree reduction
 
-# Questions
+## Install
+
+This library is available in [PyPI][pypilink]. To install it
+
+```
+pip install compmec-nurbs
+```
+
+Or install it manually
+
+```
+git clone https://github.com/compmec/nurbs
+cd nurbs
+pip install -e .
+```
+
+To verify if everything works in your machine, type the command in the main folder
+
+```
+pytest
+```
+
+## Documentation
+
+In progress
+
+
+# FAQ
 
 #### Must I learn the theory to use it?
 
@@ -26,6 +65,11 @@ Yes! The easier way is to look up the **python notebook** which contains the the
 No. It's written in python and the functions were made for easy understanding, not for performance.
 That means: It's not very fast, but it works fine.
 
-#### I want use it in my project. How can I do it?
 
-For the moment, download the ```.py``` files to your project.
+## Contribute
+
+Please use the [Issues][issueslink] or refer to the email ```compmecgit@gmail.com```
+
+
+[pypilink]: https://pypi.org/project/compmec-nurbs/
+[issueslink]: https://github.com/compmec/nurbs/issues
