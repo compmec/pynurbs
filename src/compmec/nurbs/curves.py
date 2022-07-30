@@ -48,7 +48,7 @@ class BaseCurve(object):
                 float(v)  # Just to verify if we can convert it into float
         value = np.array(value)
         if self.F.n != value.shape[0]:
-            raise ValueError("The number of control points must be the same of degrees of freedom of BaseFunction")
+            raise ValueError(f"The number of control points must be the same of degrees of freedom of BaseFunction. F.n = {self.F.n} != {len(value)} = len(P)")
         self.__P = value
 
 class SplineCurve(BaseCurve):

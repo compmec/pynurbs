@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from compmec.nurbs import KnotVector
+from compmec.nurbs.knotspace import getU_random, getU_uniform
 
 @pytest.mark.order(1)
 @pytest.mark.dependency()
@@ -114,7 +115,34 @@ def test_findSpots_array():
     np.testing.assert_equal(suposedspots, correctspots)
 
 @pytest.mark.order(1)
-@pytest.mark.dependency(depends=["test_begin", "test_findSpots_array"])
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_CreationClass"])
+def test_generateUuniform():
+    ntests = 100
+    for i in range(ntests):
+        p = np.random.randint(1, 6)
+        n = np.random.randint(p+1, p+11)
+        U = getU_uniform(n=n, p=p)
+        assert isinstance(U, KnotVector)
+        assert U.n == n
+        assert U.p == p
+
+
+@pytest.mark.order(1)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_CreationClass"])
+def test_generateUrandom():
+    ntests = 100
+    for i in range(ntests):
+        p = np.random.randint(1, 6)
+        n = np.random.randint(p+1, p+11)
+        U = getU_random(n=n, p=p)
+        assert isinstance(U, KnotVector)
+        assert U.n == n
+        assert U.p == p
+
+@pytest.mark.order(1)
+@pytest.mark.dependency(depends=["test_begin", "test_findSpots_array", "test_generateUuniform", "test_generateUrandom"])
 def test_end():
     pass
 

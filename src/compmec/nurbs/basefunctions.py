@@ -185,7 +185,13 @@ class EvaluationClass(object):
     def __call__(self, u: Union[float, np.ndarray]) -> np.ndarray:
         self.__validate_evaluation__U(u)
         u = self.__treat_input(u)
-        result = self.A @ self.compute_matrix(u)
+        M = self.compute_matrix(u)
+        try:
+            float(u)
+            M = M.reshape(len(M))
+        except Exception as e:
+            pass
+        result = self.A @ M
         return result[self.i]
 
 

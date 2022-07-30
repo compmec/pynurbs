@@ -63,28 +63,21 @@ class VerifyKnotVector(object):
         VerifyKnotVector.SameQuantityBoundary(U)
 
 def getU_uniform(n, p):
-    if n < p:
-        n = p
+    if n <= p:
+        n = p+1
     U = np.linspace(0, 1, n - p + 1)
-    U = np.concatenate((np.zeros(p), U))
-    U = np.concatenate((U, np.ones(p)))
+    U = p*[0] + list(U) + p*[1]
     return KnotVector(U)
 
 def getU_random(n, p):
-    if n < p:
-        n = p
-    hs = np.random.random(n - p)
-    hs *= 1.2
-    hs[hs> 1] = 0
+    if n <= p:
+        n = p+1
+    hs = np.random.random(n - p + 1)
     U = np.cumsum(hs)
-    if U[0] == 0:
-        U += 0.1*np.random.random(1)
-    
-    U /= U[-1]*(1+0.4*np.random.random(1))
-    
-    U = np.concatenate((np.zeros(p+1), U))
-    U = np.concatenate((U, np.ones(p+1)))
-    return KnotVector(U)
+    U -= U[0]
+    U /= U[-1]
+    U = p*[0] + list(U) + p*[1]
+    return KnotVector(U) 
 
 class KnotVector(list):
 
@@ -100,6 +93,22 @@ class KnotVector(list):
     @property
     def n(self):
         return self.__n
+
+    @p.setter
+    def p(self, value: int):
+        value = int(value)
+        if value < 0:
+            raise ValueError(f"Cannot set p to {value}")
+        self.__p = value
+
+    @n.setter
+    def n(self, value: int):
+        value = int(value)
+        if value < 0:
+            raise ValueError(f"Cannot set n to {value}")
+        if value <= self.p:
+            raise ValueError(f"The value of n ({n}) must be greater than p = {p}")
+        self.__n = value
 
     def compute_np(self):
         """
@@ -117,8 +126,8 @@ class KnotVector(list):
         for i in range(m):
             if self[i] != minU:
                 break
-        self.__p = i-1
-        self.__n = m - self.p
+        self.p = i-1
+        self.n = m - self.p
 
     def __find_spot_onevalue(self, u: float) -> int:
         U = np.array(self)
