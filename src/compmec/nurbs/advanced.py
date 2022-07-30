@@ -1,30 +1,36 @@
 from compmec.nurbs.knotspace import KnotVector
-from compmec.nurbs.basefunctions import BaseFunction, BaseFunction
+from compmec.nurbs.basefunctions import BaseFunction, SplineBaseFunction
 from compmec.nurbs.curves import BaseCurve
 from compmec.nurbs.knotspace import KnotVector
 from typing import List, Optional
 import numpy as np
+from geomdl import BSpline
+from geomdl.operations import remove_knot
 
 
 
-def insert_knot_basefunction(basefunction: BaseFunction, knot: float, times: Optional[int] = 1) -> BaseFunction:
+def insert_knot_basefunction(F: BaseFunction, knot: float, times: Optional[int] = 1) -> BaseFunction:
     """
     Receives a base function (like N) and returns a new basefuncion such that has the 
     """
-    knotvector = basefunction.U
+    if not isinstance(F, BaseFunction):
+        raise TypeError("F must be a BaseFunction instance")
+    knotvector = F.U
     spot = knotvector.spot(knot)
     newU = list(knotvector)
     for i in range(times):
         newU.insert(spot+1, knot)
-    return basefunction.__class__(newU)
+    return F.__class__(newU)
 
 
-def insert_knot_controlpoints(U: KnotVector, P: np.ndarray, knot: float, times: Optional[int]=1) -> np.ndarray:
+def insert_knot_controlpoints(F: BaseFunction, P: np.ndarray, knot: float, times: Optional[int]=1) -> np.ndarray:
     """
     Receives a curve and returns the controlpoints of the new curve
         * the new base function and the control points
     """
-    U = KnotVector(U)
+    if not isinstance(F, BaseFunction):
+        raise TypeError("F must be a BaseFunction instance")
+    U = KnotVector(F.U)
     if not isinstance(U, KnotVector):
         raise TypeError(f"Curve must be a KnotVector instance. Not {type(U)}")
     if times != 1:
@@ -45,8 +51,28 @@ def insert_knot_controlpoints(U: KnotVector, P: np.ndarray, knot: float, times: 
         Q[i] = a[j]*P[i] + (1-a[j])*P[i-1]
     return Q
 
-def remove_knot_basefunction(basefunction: BaseFunction, knot: float, times: Optional[int] = 1) -> BaseFunction:
-    raise NotImplementedError("Stop")
+def remove_knot_basefunction(F: BaseFunction, knot: float, times: Optional[int] = 1) -> BaseFunction:
+    if not isinstance(F, BaseFunction):
+        raise TypeError("F must be a BaseFunction instance")
+    U = list(F.U)
+    if knot not in U:
+        raise ValueError("The knot {knot} is not inside knot vector {U}")
+    if times != 1:
+        raise ValueError("Can only remove one knot at the time")
+    U.remove(knot)
+    newF = F.__class__(U)
+    return newF
 
-def remove_knot_controlpoints(U: KnotVector, P: np.ndarray, knot: float, times: Optional[int]=1) -> np.ndarray:
-    raise NotImplementedError("Stop")
+def remove_knot_controlpoints(F: BaseFunction, P: np.ndarray, knot: float, times: Optional[int]=1) -> np.ndarray:
+    if not isinstance(F, BaseFunction):
+        raise TypeError("F must be a BaseFunction instance")
+    U = list(F.U)
+    curve = BSpline.Curve()
+    curve.degree = F.p
+    Ps = []
+    for i, Pi in enumerate(P):
+        Ps.append(list(Pi))
+    curve.ctrlpts = Ps
+    curve.knotvector = list(U)
+    remove_knot(curve, [knot], [times])
+    return np.array(curve.ctrlpts)
