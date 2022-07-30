@@ -6,9 +6,17 @@ from compmec.nurbs.advanced import insert_knot_basefunction, insert_knot_control
 from matplotlib import pyplot as plt 
 import numpy as np
 
+@pytest.mark.order(4)
+@pytest.mark.dependency(
+	depends=["tests/test_curve.py::test_end"],
+    scope='session')
 def test_begin():
     pass
 
+
+@pytest.mark.order(4)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_begin"])
 def test_basefunction_basic():
     N = SplineBaseFunction([0, 0, 1, 1])
     newN = insert_knot_basefunction(N, 0.5)
@@ -28,10 +36,14 @@ def test_basefunction_basic():
     newN = insert_knot_basefunction(N, 0.5, 2)
     assert newN.U == [0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1]
 
+@pytest.mark.order(4)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_basefunction_basic"])
 def test_basefunction_plot():
     N = SplineBaseFunction([0, 0, 0, 0.1, 0.3, 0.4, 0.6, 0.7, 0.9, 1, 1, 1])
     u = np.linspace(0, 1, 129)
     Nu = N(u)
+    plt.figure()
     for i in range(N.n):
         plt.plot(u, Nu[i], color="r", ls="dotted")
     N = insert_knot_basefunction(N, 0.5)
@@ -39,8 +51,10 @@ def test_basefunction_plot():
     for i in range(N.n):
         plt.plot(u, Nu[i], color="b")
     plt.legend()
-    plt.show()
 
+@pytest.mark.order(4)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_basefunction_basic"])
 def test_curve_basic():
     n, p = 10, 3
     U = getU_uniform(n=n, p=p)
@@ -56,6 +70,9 @@ def test_curve_basic():
     Cutest = newC(utest)
     np.testing.assert_almost_equal(Cugood, Cutest)
 
+@pytest.mark.order(4)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_curve_basic"])
 def test_curve_plot():
     N = SplineBaseFunction([0, 0, 0, 0, 0.1, 0.25, 0.75, 0.9, 1, 1, 1, 1])
     P = [[0, 1],
@@ -80,8 +97,10 @@ def test_curve_plot():
     Cu = newC(u)
     plt.plot(Cu[:, 0], Cu[:, 1], color="b", label="new")
     plt.legend()
-    plt.show()
 
+
+@pytest.mark.order(4)
+@pytest.mark.dependency(depends=["test_begin", "test_curve_basic"])
 def test_end():
     pass
 

@@ -3,6 +3,32 @@ from compmec.nurbs import SplineBaseFunction
 from compmec.nurbs.knotspace import getU_uniform, getU_random
 import numpy as np
 
+
+@pytest.mark.order(2)
+@pytest.mark.dependency(
+	depends=["tests/test_knotspace.py::test_end"],
+    scope='session')
+def test_begin():
+    pass
+
+
+@pytest.mark.order(1)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_begin"])
+def test_CreationClass():
+    N = SplineBaseFunction([0, 0, 1, 1])
+    N = SplineBaseFunction([0, 0, 0.5, 1, 1])
+    N = SplineBaseFunction([0, 0, 0, 1, 1, 1])
+    N = SplineBaseFunction([0, 0, 0, 0.5, 1, 1, 1])
+    assert callable(N)
+
+    
+
+
+
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_CreationClass"])
 def test_getEvaluationFunctions_p1n2():
     U = [0, 0, 1, 1]  # p = 1, n = 2
     N = SplineBaseFunction(U)
@@ -16,6 +42,9 @@ def test_getEvaluationFunctions_p1n2():
     N[:, 1]
     N[:]
 
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_getEvaluationFunctions_p1n2"])
 def test_getEvaluationFunctions_p1n3():
     U = [0, 0, 0.5, 1, 1]  # p = 1, n = 3
     N = SplineBaseFunction(U)
@@ -31,7 +60,9 @@ def test_getEvaluationFunctions_p1n3():
     N[:, 1]
     N[:]
 
-
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_getEvaluationFunctions_p1n2"])
 def test_somesinglevalues_p1n2():
     U = [0, 0, 1, 1]  # p = 1, n = 2
     N = SplineBaseFunction(U)
@@ -48,6 +79,9 @@ def test_somesinglevalues_p1n2():
     assert N[1, 1](0.5) == 0.5
     assert N[1, 1](1.0) == 1
 
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_somesinglevalues_p1n2"])
 def test_somesinglevalues_p2n3():
     U = [0, 0, 0, 1, 1, 1]  # p = 2, n = 3
     N = SplineBaseFunction(U)
@@ -79,6 +113,9 @@ def test_somesinglevalues_p2n3():
     assert N[2, 2](0.5) == 0.25
     assert N[2, 2](1.0) == 1
 
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_somesinglevalues_p1n2"])
 def test_tablevalues_p1n2():
     U = [0, 0, 1, 1]  # p = 1, n = 2
     utest = np.linspace(0, 1, 11)
@@ -92,6 +129,9 @@ def test_tablevalues_p1n2():
     M1good = np.array([np.linspace(1, 0, 11), np.linspace(0, 1, 11)])
     np.testing.assert_allclose(M1test, M1good)
 
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_tablevalues_p1n2"])
 def test_tablevalues_p1n3():
     U = [0, 0, 0.5, 1, 1]  # p = 1, n = 3
     utest = np.linspace(0, 1, 11)
@@ -110,6 +150,9 @@ def test_tablevalues_p1n3():
     np.testing.assert_allclose(M1test, M1good)
 
 
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_tablevalues_p1n2", "test_somesinglevalues_p2n3"])
 def test_tablevalues_p2n3():
     U = [0, 0, 0, 1, 1, 1]  # p = 2, n = 3
     utest = np.linspace(0, 1, 11)
@@ -133,6 +176,9 @@ def test_tablevalues_p2n3():
                        [0.,  0.01, 0.04, 0.09, 0.16, 0.25, 0.36, 0.49, 0.64, 0.81, 1.]])
     np.testing.assert_allclose(M2test, M2good)
 
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_tablevalues_p2n3"])
 def test_tablevalues_p2n4():
     U = [0, 0, 0, 0.5, 1, 1, 1]  # p = 2, n = 4
     utest = np.linspace(0, 1, 11)
@@ -159,6 +205,9 @@ def test_tablevalues_p2n4():
                        [ 0, 0.00, 0.00, 0.00, 0.00, 0.0, 0.04, 0.16, 0.36, 0.64, 1]])
     np.testing.assert_allclose(M2test, M2good)
 
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_tablevalues_p2n3"])
 def test_tablevalues_p3n4():
     U = [0, 0, 0, 0, 1, 1, 1, 1]  # p = 3, n = 4
     utest = np.linspace(0, 1, 11)
@@ -192,6 +241,9 @@ def test_tablevalues_p3n4():
                        [ 0, 0.001, 0.008, 0.027, 0.064, 0.125, 0.216, 0.343, 0.512, 0.729, 1]])
     np.testing.assert_allclose(M3test, M3good)
 
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_tablevalues_p2n3", "test_tablevalues_p3n4"])
 def test_tablevalues_p3n5():
     U = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # p = 3, n = 5
     utest = np.linspace(0, 1, 11)
@@ -229,7 +281,10 @@ def test_tablevalues_p3n5():
                        [ 0, 0.000, 0.000, 0.000, 0.000, 0.000, 0.008, 0.064, 0.216, 0.512, 1]])
     np.testing.assert_allclose(M3test, M3good)
 
-def test_tableUuniform():
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_tablevalues_p3n5"])
+def test_tableUuniform_sum1():
     ntests = 10
     for i in range(ntests):
         p = np.random.randint(0, 6)
@@ -239,12 +294,14 @@ def test_tableUuniform():
         N = SplineBaseFunction(U)
         for j in range(p+1):
             M = N[:, j](u)
-            # assert np.all(M[:j, p-j] == 0)
             assert np.all(M >= 0)
             for k in range(len(u)):
                 np.testing.assert_almost_equal(np.sum(M[:, k]), 1)
 
-def test_tableUrandom():
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_tableUuniform_sum1"])
+def test_tableUrandom_sum1():
     ntests = 10
     for i in range(ntests):
         p = np.random.randint(0, 6)
@@ -254,11 +311,14 @@ def test_tableUrandom():
         N = SplineBaseFunction(U)
         for j in range(p+1):
             M = N[:, j](u)
-            # assert np.all(M[:j, p-j] == 0)
             assert np.all(M >= 0)
             for k in range(len(u)):
                 np.testing.assert_almost_equal(np.sum(M[:, k]), 1)
 
+@pytest.mark.order(2)
+@pytest.mark.dependency(depends=["test_begin", "test_tableUuniform_sum1", "test_tableUrandom_sum1"])
+def test_end():
+    pass
 
 def main():
     test_getEvaluationFunctions_p1n2()
@@ -271,8 +331,8 @@ def main():
     test_tablevalues_p2n4()
     test_tablevalues_p3n4()
     test_tablevalues_p3n5()
-    test_tableUuniform()
-    test_tableUrandom()
+    test_tableUuniform_sum1()
+    test_tableUrandom_sum1()
 
 if __name__ == "__main__":
     main()

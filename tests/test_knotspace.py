@@ -2,7 +2,15 @@ import pytest
 import numpy as np
 from compmec.nurbs import KnotVector
 
+@pytest.mark.order(1)
+@pytest.mark.dependency()
+def test_begin():
+    pass
 
+
+@pytest.mark.order(1)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_begin"])
 def test_CreationClass():
     KnotVector([0, 0, 1, 1])
     KnotVector([0, 0, 0, 1, 1, 1])
@@ -10,6 +18,9 @@ def test_CreationClass():
     KnotVector([0, 0, 0, 0, 0.5, 1, 1, 1, 1])
 
 
+@pytest.mark.order(1)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_CreationClass"])
 def test_FailCreationClass():
     with pytest.raises(TypeError):
         KnotVector(-1)
@@ -24,6 +35,9 @@ def test_FailCreationClass():
         KnotVector([-1, -1, 1, 1])
         KnotVector([0, 0, 2, 2])
 
+@pytest.mark.order(1)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_CreationClass"])
 def test_ValuesOfP():
     V = KnotVector([0, 0, 1, 1])
     assert V.p == 1
@@ -45,6 +59,9 @@ def test_ValuesOfP():
     V = KnotVector([0, 0, 0, 0, 0.2, 0.6, 1, 1, 1, 1])
     assert V.p == 3
 
+@pytest.mark.order(1)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_CreationClass"])
 def test_ValuesOfN():
     V = KnotVector([0, 0, 1, 1])
     assert V.n == 2
@@ -69,8 +86,10 @@ def test_ValuesOfN():
     assert V.n == 6
 
 
-
-def test_findSpots():
+@pytest.mark.order(1)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_ValuesOfP", "test_ValuesOfN"])
+def test_findSpots_single():
     U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1]) # p = 1, n =7
     assert U.spot(0) == 1
     assert U.spot(0.1) == 1
@@ -83,16 +102,31 @@ def test_findSpots():
     assert U.spot(0.8) == 6
     assert U.spot(0.9) == 6
     assert U.spot(1.0) == 7
+
+@pytest.mark.order(1)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_findSpots_single"])
+def test_findSpots_array():
+    U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1]) # p = 1, n =7
     array = np.linspace(0, 1, 11)  # (0, 0.1, 0.2, ..., 0.9, 1.0)
     suposedspots = U.spot(array)
     correctspots = [1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7]
     np.testing.assert_equal(suposedspots, correctspots)
 
+@pytest.mark.order(1)
+@pytest.mark.dependency(depends=["test_begin", "test_findSpots_array"])
+def test_end():
+    pass
+
 def main():
+    test_begin()
     test_CreationClass()
     test_FailCreationClass()
     test_ValuesOfP()
     test_ValuesOfN()
+    test_findSpots_single()
+    test_findSpots_array()
+    test_end()
 
 if __name__ == "__main__":
     main()

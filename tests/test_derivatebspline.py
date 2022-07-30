@@ -4,7 +4,28 @@ from compmec.nurbs.knotspace import getU_uniform
 import numpy as np
 
 
-def test_1():
+@pytest.mark.order(3)
+@pytest.mark.dependency(
+	depends=["tests/test_bspline.py::test_end"],
+    scope='session')
+def test_begin():
+    pass
+
+
+@pytest.mark.order(3)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_begin"])
+def test_Constructor():
+    n, p = 5, 2
+    U = getU_uniform(n, p)
+    N = SplineBaseFunction(U)
+    dN = N.derivate()
+    assert type(dN) == type(N)
+
+@pytest.mark.order(3)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_Constructor"])
+def test_Evaluator():
     n, p = 5, 2
     U = getU_uniform(n, p)
     N = SplineBaseFunction(U)
@@ -12,9 +33,20 @@ def test_1():
     u = np.linspace(0, 1, 129)
     Nu = N(u)
     dNu = dN(u)
+
+
+@pytest.mark.order(3)
+@pytest.mark.dependency(depends=["test_begin", "test_Evaluator"])
+def test_end():
+    pass
     
+
 def main():
-    test_1()
+    test_begin()
+    test_Constructor()
+    test_Evaluator()
+    test_end()
+
 
 if __name__ == "__main__":
     main()
