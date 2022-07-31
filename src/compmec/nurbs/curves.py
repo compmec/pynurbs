@@ -54,7 +54,15 @@ class BaseCurve(object):
     def __eq__(self, __obj: object) -> bool:
         if not isinstance(__obj, self.__class__):
             raise TypeError(f"Cannot compare a {type(__obj)} object with a {self.__class__} object")
-        utest = np.linspace(0, 1, 3*self.F.n+1)
+        knots = []
+        for ui in self.F.U:
+            if ui not in knots:
+                knots.append(ui)
+        utest = []
+        for i in range(len(knots)-1):
+            utest += list(np.linspace(knots[i], knots[i+1], 1+self.F.p, endpoint=False))
+        utest += [knots[-1]]
+        utest = np.array(utest)
         Cusel = self(utest)
         Cuobj = __obj(utest)
         return np.all(np.abs(Cusel - Cuobj) < 1e-9)

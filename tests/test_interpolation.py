@@ -11,10 +11,10 @@ def test_begin():
     pass
 
 @pytest.mark.order(4)
-@pytest.mark.timeout(5)
+@pytest.mark.timeout(20)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_functionspline_smallpolynomials():
-    ntests = 10
+    ntests = 1
     for p in range(1, 5):
         for i in range(ntests):
             a, b = 4*np.random.rand(2)
