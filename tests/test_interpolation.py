@@ -3,7 +3,6 @@ from compmec.nurbs.interpolate import curve_spline, function_spline
 from numpy import linalg as la
 import pytest
 
-@pytest.mark.skip(reason="Takes time to test everytime")
 @pytest.mark.order(4)
 @pytest.mark.dependency(
 	depends=["tests/test_basefunctions.py::test_end"],
