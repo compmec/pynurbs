@@ -1,8 +1,8 @@
 import numpy as np
 from typing import Iterable, Any, Optional, Union, Tuple, Type
-from compmec.nurbs.spaceu import VectorU 
+from compmec.nurbs.knotspace import KnotVector 
 
-def N(i: int, j: int, k: int, u: float, U: VectorU) -> float:
+def N(i: int, j: int, k: int, u: float, U: KnotVector) -> float:
     """
     Returns the value of N_{ij}(u) in the interval [u_{k}, u_{k+1}]
     Remember that N_{i, j}(u) = 0   if  ( u not in [U[i], U[i+j+1]] )
@@ -38,7 +38,7 @@ def N(i: int, j: int, k: int, u: float, U: VectorU) -> float:
     result = factor1 * N(i, j-1, k, u, U) + factor2 * N(i+1, j-1, k, u, U)
     return result
 
-def R(i: int, j: int, k: int, u: float, U: VectorU, w: Iterable[float]) -> float:
+def R(i: int, j: int, k: int, u: float, U: KnotVector, w: Iterable[float]) -> float:
     """
     Returns the value of R_{ij}(u) in the interval [u_{k}, u_{k+1}]
     """
@@ -52,11 +52,10 @@ def R(i: int, j: int, k: int, u: float, U: VectorU, w: Iterable[float]) -> float
     return w[i] * Niju / soma
 
 
-
 class EvaluationClass(object):
 
     def __init__(self, U: Iterable[float], p: int, tup: Union[None, int, slice, Tuple]= None, A: Optional[np.ndarray]=None):
-        self._U = VectorU(U)
+        self.__U = KnotVector(U)
         self._p = p
         self.__initialize_tup(tup)
         self.A = A
@@ -92,7 +91,7 @@ class EvaluationClass(object):
 
     @property
     def U(self):
-        return self._U
+        return self.__U
 
     @property
     def A(self):
@@ -125,14 +124,14 @@ class EvaluationClass(object):
     def j(self, value: int):
         try:
             value = int(value)
-            if value < 0:
-                raise ValueError("The second value (%d) must be >= 0" % value)
-            elif self.p < value:
-                raise ValueError("The second value (%d) must be <= p = %d" % (value, self.p))
-            self._j = value
-            return
         except Exception as e:
             raise TypeError(f"Type {type(value)} is incorrect to set j")
+        if value < 0:
+            raise ValueError("The second value (%d) must be >= 0" % value)
+        elif self.p < value:
+            raise ValueError("The second value (%d) must be <= p = %d" % (value, self.p))
+        self._j = value
+        return
 
     @p.setter
     def p(self, value: int):
@@ -151,8 +150,8 @@ class EvaluationClass(object):
             self._A = np.array(value)
 
 
-    def __validate_evaluation_u(self, u: np.ndarray):
-        U = self._U
+    def __validate_evaluation__U(self, u: np.ndarray):
+        U = self.__U
         minU = np.min(U)
         maxU = np.max(U)
         if not np.all((minU <= u) * (u <= maxU)):
@@ -175,24 +174,30 @@ class EvaluationClass(object):
         u = self.__treat_input(u)
         r = np.zeros((self.n, len(u)))
         for w, uw in enumerate(u):
-            k = self._U.spot(uw)
+            k = self.__U.spot(uw)
             for ind in self.i:
-                r[ind, w] = self.f(ind, self.j, k, uw, self._U)
+                r[ind, w] = self.f(ind, self.j, k, uw, self.__U)
         return r
     
     def compute_all(self, u: np.ndarray) -> np.ndarray:
         return self.A @ self.compute_matrix(u)
 
     def __call__(self, u: Union[float, np.ndarray]) -> np.ndarray:
-        self.__validate_evaluation_u(u)
+        self.__validate_evaluation__U(u)
         u = self.__treat_input(u)
-        result = self.A @ self.compute_matrix(u)
+        M = self.compute_matrix(u)
+        try:
+            float(u)
+            M = M.reshape(len(M))
+        except Exception as e:
+            pass
+        result = self.A @ M
         return result[self.i]
 
 
 class BaseFunction(object):
 
-    def __init__(self, U: Iterable[float]):
+    def __init__(self, U: KnotVector):
         """
         We have that the object can be called like
         N = SplineBaseFunction(U)
@@ -200,87 +205,90 @@ class BaseFunction(object):
         And so, to get the value of N_{i, j}(u) can be express like
         N[i, j](u)
         """
-        if isinstance(U, VectorU):
-            self._U = U
-        else:
-            self._U = VectorU(U)
-        self._p = self._U.p
+        self.U = KnotVector(U)
+        self.p = self.__U.p
+        self.A = np.eye(self.n)
+
 
     @property
     def p(self) -> int:
-        return self._p
+        return self.__p
 
     @property
     def n(self) -> int:
-        return self._U.n
+        return self.__U.n
 
     @property
-    def U(self) -> Tuple[float]:
-        return tuple(self._U)
+    def U(self) -> KnotVector:
+        return KnotVector(self.__U)
+
+    @property
+    def A(self) -> np.ndarray:
+        return self.__A
+
+    @p.setter
+    def p(self, value: int) -> None:
+        if value < 0:
+            raise ValueError("Cannot set p = ", value)
+        self.__p = int(value)
+
+    @U.setter
+    def U(self, value: KnotVector) -> None:
+        self.__U = KnotVector(value)
+
+    @A.setter
+    def A(self, value: np.ndarray) -> None:
+        self.__A = value
+
+    
 
     @property
     def evaluationClass(self) -> type[EvaluationClass]:
         """
         This function must be overwritten.
-        If it's spline, evalfunction = N
-        If it's rational, evalfunction = R
+        * If it's spline, evalfunction = N
+        * If it's rational, evalfunction = R
         """
         raise NotImplementedError("This function must be overwritten")
 
+
     def createEvaluationInstance(self, tup: Tuple[slice, int]) -> EvaluationClass:
-        return self.evaluationClass(self.U, self.p, tup)
+        return self.evaluationClass(self.U, self.p, tup, self.A)
 
     def __getitem__(self, tup: slice) -> EvaluationClass:
         return self.createEvaluationInstance(tup)
 
     def __call__(self, u: np.ndarray) -> np.ndarray:
         return self[:, self.p] (u)
-        
-
-class GeneralBaseFunction(BaseFunction):
-
-    def __init__(self, U: Iterable[float]):
-        super().__init__(U)
-        self.A = np.eye(self.n)
-
-    def createEvaluationInstance(self, tup: Tuple[slice, int]) -> EvaluationClass:
-        return self.evaluationClass(self.U, self.p, tup, self.A)
-
-    @property
-    def A(self) -> np.ndarray:
-        return self._A
-
-    @property
-    def p(self) -> int:
-        return self._p
-
-    @A.setter
-    def A(self, value: np.ndarray) -> None:
-        self._A = value
-
-    @p.setter
-    def p(self, value: int) -> None:
-        if value < 0:
-            raise ValueError("Cannot set p = ", value)
-        self._p = int(value)
 
     def derivate(self):
-        U = list(self.U)
-        newinstance = self.__class__(U)
-        newinstance.p = self.p - 1
-        avals = np.zeros(self.n)
-        for i in range(self.n):
-            diff = self.U[i+self.p] - self.U[i]
+        F = self
+        U = list(F.U)
+        n, p = F.n, F.p
+        A = F.A
+        newinstance = F.__class__(U)
+        newinstance.p = p - 1
+        avals = np.zeros(n)
+        for i in range(n):
+            diff = U[i+p] - U[i]
             if diff != 0:
-                avals[i] = self.p/diff
+                avals[i] = p/diff
         newA = np.diag(avals)
-        for i in range(self.n-1):
+        for i in range(n-1):
             newA[i, i+1] = -avals[i+1]
-        newinstance.A = self.A @ newA
+        newinstance.A = A @ newA
         return newinstance
 
+    def __eq__(self, value):
+        if not isinstance(value, self.__class__):
+            raise TypeError(f"Cannot compare a {self.__class__} instance with a {type(value)}")
+        if self.U != value.U:
+            return False
+        if np.any(self.A != value.A):
+            return False
+        return True
 
-class SplineBaseFunction(GeneralBaseFunction):
+class SplineBaseFunction(BaseFunction):
 
     def __doc__(self):
         """
@@ -309,7 +317,7 @@ class SplineBaseFunction(GeneralBaseFunction):
     def evaluationClass(self) -> type[EvaluationClass]:
         return SplineEvaluationClass
 
-class RationalBaseFunction(GeneralBaseFunction):
+class RationalBaseFunction(BaseFunction):
     def __init__(self, U: Iterable[float]):
         super().__init__(U)
         self.w = np.ones(self.n)
@@ -320,7 +328,7 @@ class RationalBaseFunction(GeneralBaseFunction):
 
     @property
     def w(self):
-        return self._w
+        return self.__w
 
     @w.setter
     def w(self, value: Iterable[float]):
@@ -328,8 +336,14 @@ class RationalBaseFunction(GeneralBaseFunction):
             v = float(v)
             if v < 0:
                 raise ValueError("The weights must be positive")
-        self._w = value
+        self.__w = value
     
+    def __eq__(self, value):
+        if not super().__eq__(value):
+            return False
+        if self.w != value.w:
+            return False
+        return True
 
 
 class SplineEvaluationClass(EvaluationClass):

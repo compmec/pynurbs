@@ -1,8 +1,18 @@
 import numpy as np
 from compmec.nurbs.interpolate import curve_spline, function_spline
 from numpy import linalg as la
+import pytest
 
+@pytest.mark.order(4)
+@pytest.mark.dependency(
+	depends=["tests/test_basefunctions.py::test_end"],
+    scope='session')
+def test_begin():
+    pass
 
+@pytest.mark.order(4)
+@pytest.mark.timeout(5)
+@pytest.mark.dependency(depends=["test_begin"])
 def test_functionspline_smallpolynomials():
     ntests = 10
     for p in range(1, 5):
@@ -29,6 +39,9 @@ def test_functionspline_smallpolynomials():
             L2y = la.norm(ysuposed - yrefine)
             assert L2y < 1e-9
 
+@pytest.mark.order(4)
+@pytest.mark.timeout(5)
+@pytest.mark.dependency(depends=["test_begin"])
 def test_curvespline_pointsinterpolation():
     ntests = 1
     for p in range(1, 5):
@@ -43,6 +56,9 @@ def test_curvespline_pointsinterpolation():
             L2y = la.norm(pointssuposed - pointssample)
             assert L2y < 1e-9
 
+@pytest.mark.order(4)
+@pytest.mark.timeout(5)
+@pytest.mark.dependency(depends=["test_begin"])
 def test_curvespline_derivativeinterpolation():
     ntests = 1
     for p in range(1, 5):
@@ -62,6 +78,9 @@ def test_curvespline_derivativeinterpolation():
             assert L2pos < 1e-9
             assert L2der < 1e-9
 
+@pytest.mark.order(4)
+@pytest.mark.timeout(5)
+@pytest.mark.dependency(depends=["test_begin"])
 def test_functionXYsin():
     a, b = 0, 2*np.pi
     f = np.sin
@@ -80,11 +99,18 @@ def test_functionXYsin():
     L2y = la.norm(ysuposed - yplot)
     assert L2y < 0.2
 
+@pytest.mark.order(4)
+@pytest.mark.dependency(depends=["test_begin"])
+def test_end():
+    pass
+
 def main():
+    test_begin()
     test_functionspline_smallpolynomials()
     test_curvespline_pointsinterpolation()
     test_curvespline_derivativeinterpolation()
     test_functionXYsin()
+    test_end()
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Iterable, Union
 
-class VerifyVectorU(object):
+class VerifyKnotVector(object):
 
     __minU = 0
     __maxU = 1
@@ -30,22 +30,22 @@ class VerifyVectorU(object):
             
     @staticmethod
     def Limits(U: Iterable[float]) -> None:
-        if VerifyVectorU.__minU is not None:
-            VerifyVectorU.InferiorLimit(U)
-        if VerifyVectorU.__maxU is not None:
-            VerifyVectorU.SuperiorLimit(U)
+        if VerifyKnotVector.__minU is not None:
+            VerifyKnotVector.InferiorLimit(U)
+        if VerifyKnotVector.__maxU is not None:
+            VerifyKnotVector.SuperiorLimit(U)
 
     @staticmethod
     def InferiorLimit(U: Iterable[float]) -> None:
         for u in U:
-            if u < VerifyVectorU.__minU:
-                raise ValueError(f"All the values in U must be bigger than {VerifyVectorU.__minU}")
+            if u < VerifyKnotVector.__minU:
+                raise ValueError(f"All the values in U must be bigger than {VerifyKnotVector.__minU}")
 
     @staticmethod
     def SuperiorLimit(U: Iterable[float]) -> None:
         for u in U:
-            if u > VerifyVectorU.__maxU:
-                raise ValueError(f"All the values in U must be less than {VerifyVectorU.__maxU}")
+            if u > VerifyKnotVector.__maxU:
+                raise ValueError(f"All the values in U must be less than {VerifyKnotVector.__maxU}")
         
     @staticmethod
     def SameQuantityBoundary(U: Iterable[float]) -> None:
@@ -53,55 +53,70 @@ class VerifyVectorU(object):
         minU = np.min(U)
         maxU = np.max(U)
         if np.sum(U == minU) != np.sum(U == maxU):
-            raise ValueError("U must contain the same quantity of 0 and 1")
+            raise ValueError("U must contain the same quantity of 0 and 1. U = ", U)
 
     @staticmethod
     def all(U: Iterable[float]) -> None:
-        VerifyVectorU.isIterable(U)
-        VerifyVectorU.eachElementIsFloat(U)
-        VerifyVectorU.Limits(U)
-        VerifyVectorU.SameQuantityBoundary(U)
+        VerifyKnotVector.isIterable(U)
+        VerifyKnotVector.eachElementIsFloat(U)
+        VerifyKnotVector.Limits(U)
+        VerifyKnotVector.SameQuantityBoundary(U)
 
-def getU_uniform(n, p):
-    if n < p:
-        n = p
-    U = np.linspace(0, 1, n - p + 1)
-    U = np.concatenate((np.zeros(p), U))
-    U = np.concatenate((U, np.ones(p)))
-    return VectorU(U)
+class GeneratorKnotVector:
 
-def getU_random(n, p):
-    if n < p:
-        n = p
-    hs = np.random.random(n - p)
-    hs *= 1.2
-    hs[hs> 1] = 0
-    U = np.cumsum(hs)
-    if U[0] == 0:
-        U += 0.1*np.random.random(1)
-    
-    U /= U[-1]*(1+0.4*np.random.random(1))
-    
-    U = np.concatenate((np.zeros(p+1), U))
-    U = np.concatenate((U, np.ones(p+1)))
-    return VectorU(U)
+    @staticmethod
+    def bezier(p: int):
+        return KnotVector((p+1)*[0] + (p+1)*[1])
 
-class VectorU(tuple):
+    @staticmethod
+    def uniform(p: int, n: int):
+        if n <= p:
+            n = p+1
+        U = np.linspace(0, 1, n - p + 1)
+        U = p*[0] + list(U) + p*[1]
+        return KnotVector(U)
 
-    def __new__(cls, U: Iterable[float]):
-        VerifyVectorU.all(U)
-        return super().__new__(cls, U)
+    def random(p: int, n: int):
+        if n <= p:
+            n = p+1
+        hs = np.random.random(n - p + 1)
+        U = np.cumsum(hs)
+        U -= U[0]
+        U /= U[-1]
+        U = p*[0] + list(U) + p*[1]
+        return KnotVector(U) 
+
+
+class KnotVector(list):
 
     def __init__(self, U: Iterable[float]):
+        VerifyKnotVector.all(U)
+        super().__init__(U)
         self.compute_np()
         
     @property
     def p(self):
-        return self._p
+        return self.__p
     
     @property
     def n(self):
-        return self._n
+        return self.__n
+
+    @p.setter
+    def p(self, value: int):
+        value = int(value)
+        if value < 0:
+            raise ValueError(f"Cannot set p to {value}")
+        self.__p = value
+
+    @n.setter
+    def n(self, value: int):
+        value = int(value)
+        if value < 0:
+            raise ValueError(f"Cannot set n to {value}")
+        if value <= self.p:
+            raise ValueError(f"The value of n ({n}) must be greater than p = {p}")
+        self.__n = value
 
     def compute_np(self):
         """
@@ -116,11 +131,11 @@ class VectorU(tuple):
         """
         minU = min(self)
         m = len(self) - 1
-        for i in range(m):
+        for i in range(m+1):
             if self[i] != minU:
                 break
-        self._p = i-1
-        self._n = m - self.p
+        self.p = i-1
+        self.n = m - self.p
 
     def __find_spot_onevalue(self, u: float) -> int:
         U = np.array(self)
@@ -156,4 +171,23 @@ class VectorU(tuple):
             return self.__find_spot_vector(u)
         else:
             return np.array(self.__find_spot_onevalue(u))
+        
 
+    def __eq__(self, __obj: object):
+        if not isinstance(__obj, (list, tuple, self.__class__)):
+            raise TypeError(f"Cannot compare {type(__obj)} with a {self.__class__} instance")
+        try:
+            __obj = self.__class__(__obj)
+        except Exception as e:
+            raise ValueError(f"No sucess trying to convert {type(__obj)} into {self.__class__}. Cause {str(e)}")
+        if self.n != __obj.n:
+            return False
+        if self.p != __obj.p:
+            return False
+        for i, v in enumerate(self):
+            if v != __obj[i]:
+                return False
+        return True
+
+    def __ne__(self, __obj: object) -> bool:
+        return not self.__eq__(__obj)

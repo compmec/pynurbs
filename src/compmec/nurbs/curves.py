@@ -1,29 +1,76 @@
 from compmec.nurbs.basefunctions import BaseFunction, SplineBaseFunction, RationalBaseFunction
 import numpy as np
-from typing import Iterable
+from typing import Iterable, List, Tuple
 
 class BaseCurve(object):
-    def __init__(self, f: BaseFunction, controlpoints: np.ndarray):
-        self.f = f
-        self.P = controlpoints
+    def __init__(self, F: BaseFunction, P: List[Tuple[float]]):
+        self.F = F
+        self.P = P
 
     def __call__(self, u: Iterable[float]) -> np.ndarray:
-        L = self.f(u)
+        L = self.F(u)
         return L.T @ self.P
 
     def derivate(self):
-        df = self.f.derivate()
-        return self.__class__(df, self.P)
+        dF = self.F.derivate()
+        return self.__class__(dF, self.P)
 
+    @property
+    def npts(self):
+        return self.P.shape[0]
+
+    @property
+    def dim(self):
+        return self.P.shape[1]
+
+    @property
+    def F(self):
+        return self.__F
+    
+    @property
+    def P(self):
+        return self.__P
+
+    @property
+    def U(self):
+        return self.F.U
+
+    @F.setter
+    def F(self, value: BaseFunction):
+        if not isinstance(value, BaseFunction):
+            raise TypeError("It must be a BaseFunction instance")
+        self.__F = value
+
+    @P.setter
+    def P(self, value: List[Tuple[float]]):
+        for point in value:
+            for v in point:
+                float(v)  # Just to verify if we can convert it into float
+        value = np.array(value)
+        if self.F.n != value.shape[0]:
+            raise ValueError(f"The number of control points must be the same of degrees of freedom of BaseFunction. F.n = {self.F.n} != {len(value)} = len(P)")
+        self.__P = value
+
+    def __eq__(self, __obj: object) -> bool:
+        if not isinstance(__obj, self.__class__):
+            raise TypeError(f"Cannot compare a {type(__obj)} object with a {self.__class__} object")
+        utest = np.linspace(0, 1, 3*self.F.n+1)
+        Cusel = self(utest)
+        Cuobj = __obj(utest)
+        return np.all(np.abs(Cusel - Cuobj) < 1e-9)
+
+    def __ne__(self, __obj: object):
+        return not self.__eq__(__obj)
 
 class SplineCurve(BaseCurve):
-    def __init__(self, f: SplineBaseFunction, controlpoints: np.ndarray):
-        super().__init__(f, controlpoints)
+    def __init__(self, F: SplineBaseFunction, controlpoints: np.ndarray):
+        super().__init__(F, controlpoints)
 
 
 class RationalCurve(BaseCurve):
     def __init__(self, f: RationalBaseFunction, controlpoints: np.ndarray):
         super().__init__(f, controlpoints)
+
 
 class BaseXYFunction(object):
     def __init__(self, f: BaseFunction, xconpoints: Iterable[float], yconpoints: Iterable[float]):
