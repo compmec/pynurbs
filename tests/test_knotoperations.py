@@ -3,8 +3,6 @@ from compmec.nurbs import SplineBaseFunction
 from compmec.nurbs import SplineCurve
 from compmec.nurbs.knotspace import KnotVector, GeneratorKnotVector
 from compmec.nurbs.knotoperations import insert_knot_basefunction, insert_knot_controlpoints, remove_knot_basefunction, remove_knot_controlpoints
-from geomdl import BSpline
-from geomdl.operations import insert_knot
 import numpy as np
 
 @pytest.mark.order(4)
@@ -97,45 +95,6 @@ def test_insertknot_curve_random():
 @pytest.mark.order(4)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_insertknot_curve_random"])
-def test_insertknot_with_geomdl():
-    """
-    This function uses the library for Nurbs in, if the data are compatible
-        https://github.com/orbingol/NURBS-Python
-    """
-    ntests = 10
-    dim = 3
-    utest = np.linspace(0, 1, 129)
-    for i in range(ntests):
-        p = np.random.randint(1, 6)
-        n = np.random.randint(p+1, p+11)
-        U = GeneratorKnotVector.random(n=n, p=p)
-        knotvector = KnotVector(U)
-        N = SplineBaseFunction(knotvector)
-        P = np.random.rand(n, dim)
-        Pgeomdl = []
-        for i, Pi in enumerate(P):
-            Pgeomdl.append(list(Pi))
-        Cgeomdl = BSpline.Curve()
-        Cgeomdl.degree = p
-        Cgeomdl.ctrlpts = Pgeomdl
-        Cgeomdl.knotvector = U
-
-        knot = 0.01+0.98*np.random.rand()
-        newN = insert_knot_basefunction(N, knot)
-        newP = insert_knot_controlpoints(N, P, knot)
-        newCcustom = SplineCurve(newN, newP)
-
-        insert_knot(obj=Cgeomdl, param=[knot], num=[1])
-        np.testing.assert_allclose(Cgeomdl.ctrlpts, newP)
-        for i, ui in enumerate(utest):
-            Pcustom = newCcustom(ui)
-            Pgeomdl = Cgeomdl.evaluate_single(ui)
-            np.testing.assert_allclose(Pcustom, Pgeomdl)
-
-
-@pytest.mark.order(4)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_insertknot_curve_random"])
 def test_removeinsertedknot_basic():
     p = 2
     n = 7
@@ -201,7 +160,6 @@ def main():
     test_insertknot_basefunction_random()
     test_insertknot_curve_basic()
     test_insertknot_curve_random()
-    test_insertknot_with_geomdl()
     test_removeinsertedknot_basic()
     test_removeinsertedknot_random()
     test_end()
