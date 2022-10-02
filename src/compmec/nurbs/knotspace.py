@@ -71,14 +71,14 @@ class GeneratorKnotVector:
     @staticmethod
     def uniform(p: int, n: int):
         if n <= p:
-            n = p+1
+            raise ValueError("Must n >= p. Received n=%d, p=%d"%(n, p))
         U = np.linspace(0, 1, n - p + 1)
         U = p*[0] + list(U) + p*[1]
         return KnotVector(U)
 
     def random(p: int, n: int):
         if n <= p:
-            n = p+1
+            raise ValueError("Must n >= p. Received n=%d, p=%d"%(n, p))
         hs = np.random.random(n - p + 1)
         U = np.cumsum(hs)
         U -= U[0]

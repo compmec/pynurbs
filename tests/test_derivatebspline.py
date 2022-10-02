@@ -17,7 +17,7 @@ def test_begin():
 @pytest.mark.dependency(depends=["test_begin"])
 def test_Constructor():
     n, p = 5, 2
-    U = GeneratorKnotVector.uniform(n, p)
+    U = GeneratorKnotVector.uniform(p=p, n=n)
     N = SplineBaseFunction(U)
     dN = N.derivate()
     assert type(dN) == type(N)
@@ -27,7 +27,7 @@ def test_Constructor():
 @pytest.mark.dependency(depends=["test_Constructor"])
 def test_Evaluator():
     n, p = 5, 2
-    U = GeneratorKnotVector.uniform(n, p)
+    U = GeneratorKnotVector.uniform(p=p, n=n)
     N = SplineBaseFunction(U)
     dN = N.derivate()
     u = np.linspace(0, 1, 129)

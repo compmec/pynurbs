@@ -300,7 +300,7 @@ def test_tableUuniform_sum1():
     for i in range(ntests):
         p = np.random.randint(0, 6)
         n = np.random.randint(p+1, p+21)
-        U = GeneratorKnotVector.uniform(n, p)
+        U = GeneratorKnotVector.uniform(p=p, n=n)
         u = np.random.rand(11)
         N = SplineBaseFunction(U)
         for j in range(p+1):
@@ -317,7 +317,7 @@ def test_tableUrandom_sum1():
     for i in range(ntests):
         p = np.random.randint(0, 6)
         n = np.random.randint(p+1, p+21)
-        U = GeneratorKnotVector.random(n, p)
+        U = GeneratorKnotVector.random(p=p, n=n)
         u = np.random.rand(11)
         N = SplineBaseFunction(U)
         for j in range(p+1):
