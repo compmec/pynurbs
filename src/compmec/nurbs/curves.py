@@ -21,6 +21,8 @@ class BaseCurve(object):
 
     @property
     def dim(self):
+        if len(self.P.shape) == 1:
+            return 1
         return self.P.shape[1]
 
     @property
@@ -43,10 +45,7 @@ class BaseCurve(object):
 
     @P.setter
     def P(self, value: List[Tuple[float]]):
-        for point in value:
-            for v in point:
-                float(v)  # Just to verify if we can convert it into float
-        value = np.array(value)
+        value = np.array(value, dtype="float64")
         if self.F.n != value.shape[0]:
             raise ValueError(f"The number of control points must be the same of degrees of freedom of BaseFunction. F.n = {self.F.n} != {len(value)} = len(P)")
         self.__P = value
@@ -69,6 +68,7 @@ class BaseCurve(object):
 
     def __ne__(self, __obj: object):
         return not self.__eq__(__obj)
+
 
 class SplineCurve(BaseCurve):
     def __init__(self, F: SplineBaseFunction, controlpoints: np.ndarray):
