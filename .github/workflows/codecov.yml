@@ -14,10 +14,11 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@master
       with:
-        python-version: 3.7
+        python-version: 3.9
     - name: Generate Report
       run: |
         pip install coverage
-        coverage run -m unittest
+        pip install -e .
+        coverage run source=src -m unittest
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v2
