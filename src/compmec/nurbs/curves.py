@@ -69,6 +69,24 @@ class BaseCurve(object):
     def __ne__(self, __obj: object):
         return not self.__eq__(__obj)
 
+    def __neg__(self):
+        return self.__class__(self.F, np.copy(-self.P))
+
+    def __add__(self, __obj: object):
+        if not isinstance(__obj, self.__class__):
+            raise TypeError(f"Cannot sum a {type(__obj)} object with a {self.__class__} object")
+        if self.U != __obj.U:
+            raise ValueError("The vectors of curves are not the same!")
+        if self.P.shape != __obj.P.shape:
+            raise ValueError("The shape of control points are not the same!")
+        newP = np.copy(self.P) + __obj.P
+        return self.__class__(self.F, newP)
+
+    def __sub__(self, __obj: object):
+        if not isinstance(__obj, self.__class__):
+            raise TypeError(f"Cannot sum a {type(__obj)} object with a {self.__class__} object")
+        return self + (-__obj)
+
 
 class SplineCurve(BaseCurve):
     def __init__(self, F: SplineBaseFunction, controlpoints: np.ndarray):
