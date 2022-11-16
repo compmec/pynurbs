@@ -1,3 +1,18 @@
+[tool.poetry]
+name = "extendedjson"
+version = "0.1.0"
+description = ""
+authors = ["Rodrigo Girão Serrão <5621605+RodrigoGiraoSerrao@users.noreply.github.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^2.20.0"
+
 [build-system]
-requires = ["setuptools>=42.0"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
