@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "extendedjson"
-version = "0.1.0"
+name = "compmec-nurbs"
+version = "0.2.1"
 description = ""
-authors = ["Rodrigo Girão Serrão <5621605+RodrigoGiraoSerrao@users.noreply.github.com>"]
+authors = ["Carlos Adir <carlos.adir@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.6"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
