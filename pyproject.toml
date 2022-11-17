@@ -4,6 +4,7 @@ version = "0.2.3"
 description = ""
 authors = ["Carlos Adir <carlos.adir@gmail.com>"]
 packages = [{ include = "compmec/nurbs", from = "src" }]
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.7"
