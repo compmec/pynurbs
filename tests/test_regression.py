@@ -1,12 +1,21 @@
 import numpy as np
-from compmec.nurbs.approx import curve_spline
+import pytest
 from numpy import linalg as la
 
+from compmec.nurbs.approx import curve_spline
 
 
+@pytest.mark.order(4)
+@pytest.mark.dependency(depends=["tests/test_curve.py::test_end"], scope="session")
+def test_begin():
+    pass
 
+
+@pytest.mark.order(4)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_begin"])
 def test_curvecossin():
-    a, b = 0, 2*np.pi
+    a, b = 0, 2 * np.pi
     fx = np.cos
     fy = np.sin
 
@@ -16,13 +25,13 @@ def test_curvecossin():
     theta = np.linspace(a, b, nsample)
     x = fx(theta)
     y = fy(theta)
-    ubar = (theta-min(theta))/(max(theta)-min(theta))
+    ubar = (theta - min(theta)) / (max(theta) - min(theta))
     xplot = np.linspace(a, b, 1025)
     thetaplot = np.linspace(a, b, nplot)
-    uplot = (thetaplot-min(thetaplot))/(max(thetaplot)-min(thetaplot))
+    uplot = (thetaplot - min(thetaplot)) / (max(thetaplot) - min(thetaplot))
     xplot = fx(thetaplot)
     yplot = fy(thetaplot)
-    
+
     F = curve_spline(ubar, (x, y), p, n)
     v = F(uplot)
     xsuposed = v[:, 0]
@@ -39,6 +48,7 @@ def test_curvecossin():
 
 def main():
     test_curvecossin()
+
 
 if __name__ == "__main__":
     main()

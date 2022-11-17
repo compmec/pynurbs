@@ -1,32 +1,40 @@
-import pytest
 import numpy as np
-from compmec.nurbs.degreeoperations import degree_elevation_basefunction, degree_elevation_controlpoints, degree_reduction_basefunction, degree_reduction_controlpoints
+import pytest
+
 from compmec.nurbs.basefunctions import SplineBaseFunction
-from compmec.nurbs.knotspace import GeneratorKnotVector
 from compmec.nurbs.curves import SplineCurve
+from compmec.nurbs.degreeoperations import (
+    degree_elevation_basefunction,
+    degree_elevation_controlpoints,
+    degree_reduction_basefunction,
+    degree_reduction_controlpoints,
+)
+from compmec.nurbs.knotspace import GeneratorKnotVector
+
 
 @pytest.mark.order(5)
 @pytest.mark.dependency(
-	depends=["tests/test_knotoperations.py::test_end"],
-    scope='session')
+    depends=["tests/test_knotoperations.py::test_end"], scope="session"
+)
 def test_begin():
     pass
 
 
 @pytest.mark.order(5)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(10)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_degreeelevation_basefuncion_bezier():
     for p in range(0, 5):
         U = GeneratorKnotVector.bezier(p)
         N = SplineBaseFunction(U)
         Ntest = degree_elevation_basefunction(N)
-        U = GeneratorKnotVector.bezier(p+1)
+        U = GeneratorKnotVector.bezier(p + 1)
         Ngood = SplineBaseFunction(U)
         assert Ntest == Ngood
 
+
 @pytest.mark.order(5)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(10)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_degreeelevation_basefuncion_simple():
     N = SplineBaseFunction([0, 0, 0.5, 1, 1])
@@ -44,6 +52,7 @@ def test_degreeelevation_basefuncion_simple():
     Ngood = SplineBaseFunction([0, 0, 0, 0, 0.2, 0.2, 0.7, 0.7, 1, 1, 1, 1])
     assert Ntest == Ngood
 
+
 @pytest.mark.order(5)
 @pytest.mark.timeout(20)
 @pytest.mark.dependency(depends=["test_degreeelevation_basefuncion_simple"])
@@ -55,7 +64,7 @@ def test_degreeelevation_controlpoints_bezier():
         p = np.random.randint(1, 6)
         U = GeneratorKnotVector.bezier(p=p)
         N = SplineBaseFunction(U)
-        P = np.random.rand(p+1, dim)
+        P = np.random.rand(p + 1, dim)
         C = SplineCurve(N, P)
 
         Ninc = degree_elevation_basefunction(N)
@@ -66,8 +75,9 @@ def test_degreeelevation_controlpoints_bezier():
         Ctest = Cinc(utest)
         np.testing.assert_allclose(Ctest, Cgood)
 
+
 @pytest.mark.order(5)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(10)
 @pytest.mark.dependency(depends=["test_degreeelevation_controlpoints_bezier"])
 def test_degreeelevation_controlpoints_uniform():
     ntests = 5
@@ -75,7 +85,7 @@ def test_degreeelevation_controlpoints_uniform():
     utest = np.linspace(0, 1, 33)
     for i in range(ntests):
         p = np.random.randint(1, 6)
-        n = np.random.randint(p+1, p+11)
+        n = np.random.randint(p + 1, p + 11)
         U = GeneratorKnotVector.uniform(p=p, n=n)
         N = SplineBaseFunction(U)
         P = np.random.rand(n, dim)
@@ -89,8 +99,9 @@ def test_degreeelevation_controlpoints_uniform():
         Ctest = Cinc(utest)
         np.testing.assert_allclose(Ctest, Cgood)
 
+
 @pytest.mark.order(5)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(10)
 @pytest.mark.dependency(depends=["test_degreeelevation_controlpoints_uniform"])
 def test_degreeelevation_controlpoints_random():
     ntests = 5
@@ -98,7 +109,7 @@ def test_degreeelevation_controlpoints_random():
     utest = np.linspace(0, 1, 33)
     for i in range(ntests):
         p = np.random.randint(1, 6)
-        n = np.random.randint(p+1, p+11)
+        n = np.random.randint(p + 1, p + 11)
         U = GeneratorKnotVector.random(p=p, n=n)
         N = SplineBaseFunction(U)
         P = np.random.rand(n, dim)
@@ -114,7 +125,7 @@ def test_degreeelevation_controlpoints_random():
 
 
 @pytest.mark.order(5)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(10)
 @pytest.mark.dependency(depends=["test_degreeelevation_controlpoints_random"])
 def test_degreeelevationreduction_controlpoints_random():
     ntests = 5
@@ -122,7 +133,7 @@ def test_degreeelevationreduction_controlpoints_random():
     utest = np.linspace(0, 1, 33)
     for i in range(ntests):
         p = np.random.randint(1, 6)
-        n = np.random.randint(p+1, p+11)
+        n = np.random.randint(p + 1, p + 11)
         U = GeneratorKnotVector.random(p=p, n=n)
         N = SplineBaseFunction(U)
         P = np.random.rand(n, dim)
@@ -130,7 +141,7 @@ def test_degreeelevationreduction_controlpoints_random():
 
         Ninc = degree_elevation_basefunction(N)
         Pinc = degree_elevation_controlpoints(N, P)
-        
+
         Nred = degree_reduction_basefunction(Ninc)
         Pred = degree_reduction_controlpoints(Ninc, Pinc)
         Cred = SplineCurve(Nred, Pred)
@@ -139,12 +150,18 @@ def test_degreeelevationreduction_controlpoints_random():
         Ctest = Cred(utest)
         np.testing.assert_allclose(Ctest, Cgood)
 
+
 @pytest.mark.order(5)
-@pytest.mark.dependency(depends=["test_begin",
-    "test_degreeelevation_controlpoints_random", 
-    "test_degreeelevationreduction_controlpoints_random"])
+@pytest.mark.dependency(
+    depends=[
+        "test_begin",
+        "test_degreeelevation_controlpoints_random",
+        "test_degreeelevationreduction_controlpoints_random",
+    ]
+)
 def test_end():
     pass
+
 
 def main():
     test_begin()
@@ -152,6 +169,7 @@ def main():
     test_degreeelevation_basefuncion_simple()
     test_degreeelevation_controlpoints_bezier()
     test_end()
+
 
 if __name__ == "__main__":
     main()
