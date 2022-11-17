@@ -1,6 +1,7 @@
-[![PyPi Version](https://img.shields.io/pypi/v/compmec-nurbs.svg?style=flat-square)](https://pypi.org/project/compmec-nurbs/)
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/compmec-nurbs.svg?style=flat-square)](https://pypi.org/project/compmec-nurbs/)
-![Tests](https://github.com/compmec/nurbs/actions/workflows/tests.yml/badge.svg)
+[![PyPI Version][pypi-image]][pypi-url]
+[![Build Status][build-image]][build-url]
+[![Code Coverage][coverage-image]][coverage-url]
+[![][versions-image]][versions-url]
 
 # Nurbs
 
@@ -70,6 +71,15 @@ That means: It's not very fast, but it works fine.
 
 Please use the [Issues][issueslink] or refer to the email ```compmecgit@gmail.com```
 
+<!-- Badges: -->
 
+[pypi-image]: https://img.shields.io/pypi/v/compmec-nurbs
+[pypi-url]: https://pypi.org/project/compmec-nurbs/
+[build-image]: https://github.com/compmec/nurbs/actions/workflows/build.yaml/badge.svg
+[build-url]: https://github.com/compmec/nurbs/actions/workflows/build.yaml
+[coverage-image]: https://codecov.io/gh/compmec/nurbs/branch/main/graph/badge.svg
+[coverage-url]: https://codecov.io/gh/compmec/nurbs/
+[versions-image]: https://img.shields.io/pypi/v/compmec-nurbs.svg
+[versions-url]: https://pypi.org/project/compmec-nurbs/
 [pypilink]: https://pypi.org/project/compmec-nurbs/
 [issueslink]: https://github.com/compmec/nurbs/issues
