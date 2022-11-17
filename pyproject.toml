@@ -3,6 +3,7 @@ name = "compmec-nurbs"
 version = "0.2.1"
 description = ""
 authors = ["Carlos Adir <carlos.adir@gmail.com>"]
+packages = [{ include = "nurbs", from = "src/compmec" }]
 
 [tool.poetry.dependencies]
 python = "^3.6"
