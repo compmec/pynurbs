@@ -79,7 +79,7 @@ Please use the [Issues][issueslink] or refer to the email ```compmecgit@gmail.co
 [build-url]: https://github.com/compmec/nurbs/actions/workflows/build.yaml
 [coverage-image]: https://codecov.io/gh/compmec/nurbs/branch/main/graph/badge.svg
 [coverage-url]: https://codecov.io/gh/compmec/nurbs/
-[versions-image]: https://img.shields.io/pypi/v/compmec-nurbs.svg
+[versions-image]: https://img.shields.io/pypi/pyversions/compmec-nurbs.svg?style=flat-square
 [versions-url]: https://pypi.org/project/compmec-nurbs/
 [pypilink]: https://pypi.org/project/compmec-nurbs/
 [issueslink]: https://github.com/compmec/nurbs/issues
