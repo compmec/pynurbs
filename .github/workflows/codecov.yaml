@@ -1,4 +1,4 @@
-name: Codecov
+name: Coverage
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-publish:
+  coverage:
     runs-on: ubuntu-latest
 
     steps:
