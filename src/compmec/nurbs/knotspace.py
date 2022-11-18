@@ -1,54 +1,62 @@
+from typing import Iterable, Tuple, Union
+
 import numpy as np
-from typing import Iterable, Union
+
 
 class VerifyKnotVector(object):
 
-    __minU = 0
-    __maxU = 1
+    minU = 0
+    maxU = 1
 
     @staticmethod
-    def isIterable(U: Iterable) -> None:
+    def isFloatArray1D(U: Tuple[float]) -> None:
         try:
-            iter(U)
+            Ud = np.array(U, dtype="float16")
         except TypeError as e:
-            raise TypeError(f"The given U ({type(U)}) is not iterable")
-        
+            raise TypeError(
+                f"Cannot convert U (type={type(U)}) into a numpy float array"
+            )
+        except ValueError as e:
+            raise TypeError(f"All the elements inside U must be floats!")
+        if Ud.ndim == 0:
+            raise TypeError(
+                f"Received U is type {type(U)}, but it's required a Tuple[float]"
+            )
+        if Ud.ndim != 1:
+            raise ValueError(f"U is not a 1D array")
+
     @staticmethod
-    def eachElementIsFloat(U: Iterable[float]) -> None:
-        try:
-            for u in U:
-                float(u)
-        except Exception as e:
-            raise TypeError(f"Each element inside U must be a float, cannot transform {type(u)} on float")
-        
-    @staticmethod
-    def isOrdenedVector(U: Iterable[float]) -> None:
+    def isOrdenedVector(U: Tuple[float]) -> None:
         n = len(U)
-        for i in range(n-1):
-            if U[i] > U[i+1]:
+        for i in range(n - 1):
+            if U[i] > U[i + 1]:
                 raise ValueError("The given U must be ordened")
-            
+
     @staticmethod
-    def Limits(U: Iterable[float]) -> None:
-        if VerifyKnotVector.__minU is not None:
+    def Limits(U: Tuple[float]) -> None:
+        if VerifyKnotVector.minU is not None:
             VerifyKnotVector.InferiorLimit(U)
-        if VerifyKnotVector.__maxU is not None:
+        if VerifyKnotVector.maxU is not None:
             VerifyKnotVector.SuperiorLimit(U)
 
     @staticmethod
-    def InferiorLimit(U: Iterable[float]) -> None:
+    def InferiorLimit(U: Tuple[float]) -> None:
         for u in U:
-            if u < VerifyKnotVector.__minU:
-                raise ValueError(f"All the values in U must be bigger than {VerifyKnotVector.__minU}")
+            if u < VerifyKnotVector.minU:
+                raise ValueError(
+                    f"All the values in U must be bigger than {VerifyKnotVector.minU}"
+                )
 
     @staticmethod
-    def SuperiorLimit(U: Iterable[float]) -> None:
+    def SuperiorLimit(U: Tuple[float]) -> None:
         for u in U:
-            if u > VerifyKnotVector.__maxU:
-                raise ValueError(f"All the values in U must be less than {VerifyKnotVector.__maxU}")
-        
+            if u > VerifyKnotVector.maxU:
+                raise ValueError(
+                    f"All the values in U must be less than {VerifyKnotVector.maxU}"
+                )
+
     @staticmethod
-    def SameQuantityBoundary(U: Iterable[float]) -> None:
+    def SameQuantityBoundary(U: Tuple[float]) -> None:
         U = np.array(U)
         minU = np.min(U)
         maxU = np.max(U)
@@ -56,67 +64,62 @@ class VerifyKnotVector(object):
             raise ValueError("U must contain the same quantity of 0 and 1. U = ", U)
 
     @staticmethod
-    def all(U: Iterable[float]) -> None:
-        VerifyKnotVector.isIterable(U)
-        VerifyKnotVector.eachElementIsFloat(U)
+    def isInteger(val: int):
+        if not isinstance(val, int):
+            try:
+                int(val)
+            except Exception as e:
+                raise TypeError(f"The value must be an integer. Received {type(val)}")
+
+    @staticmethod
+    def isNonNegative(val: int):
+        if val < 0:
+            raise ValueError(f"The value must be > 0. Received {val}")
+
+    @staticmethod
+    def isIntegerNonNegative(value: int):
+        VerifyKnotVector.isInteger(value)
+        VerifyKnotVector.isNonNegative(value)
+
+    @staticmethod
+    def PN(p: int, n: int):
+        VerifyKnotVector.isIntegerNonNegative(p)
+        VerifyKnotVector.isIntegerNonNegative(n)
+        if n <= p:
+            raise ValueError("Must n > p. Received n=%d, p=%d" % (n, p))
+
+    @staticmethod
+    def all(U: Tuple[float]) -> None:
+        VerifyKnotVector.isFloatArray1D(U)
+        VerifyKnotVector.isOrdenedVector(U)
         VerifyKnotVector.Limits(U)
         VerifyKnotVector.SameQuantityBoundary(U)
 
-class GeneratorKnotVector:
-
-    @staticmethod
-    def bezier(p: int):
-        return KnotVector((p+1)*[0] + (p+1)*[1])
-
-    @staticmethod
-    def uniform(p: int, n: int):
-        if n <= p:
-            raise ValueError("Must n >= p. Received n=%d, p=%d"%(n, p))
-        U = np.linspace(0, 1, n - p + 1)
-        U = p*[0] + list(U) + p*[1]
-        return KnotVector(U)
-
-    def random(p: int, n: int):
-        if n <= p:
-            raise ValueError("Must n >= p. Received n=%d, p=%d"%(n, p))
-        hs = np.random.random(n - p + 1)
-        U = np.cumsum(hs)
-        U -= U[0]
-        U /= U[-1]
-        U = p*[0] + list(U) + p*[1]
-        return KnotVector(U) 
-
 
 class KnotVector(list):
-
     def __init__(self, U: Iterable[float]):
         VerifyKnotVector.all(U)
         super().__init__(U)
         self.compute_np()
-        
+
     @property
     def p(self):
         return self.__p
-    
+
     @property
     def n(self):
         return self.__n
 
     @p.setter
     def p(self, value: int):
-        value = int(value)
-        if value < 0:
-            raise ValueError(f"Cannot set p to {value}")
-        self.__p = value
+        VerifyKnotVector.isIntegerNonNegative(value)
+        self.__p = int(value)
 
     @n.setter
     def n(self, value: int):
-        value = int(value)
-        if value < 0:
-            raise ValueError(f"Cannot set n to {value}")
-        if value <= self.p:
-            raise ValueError(f"The value of n ({n}) must be greater than p = {p}")
-        self.__n = value
+        VerifyKnotVector.isIntegerNonNegative(value)
+        VerifyKnotVector.PN(self.p, value)
+        self.__n = int(value)
 
     def compute_np(self):
         """
@@ -126,16 +129,15 @@ class KnotVector(list):
 
         Using that, we know that
             len(U) = m + 1 = n + p + 1
-        That means that 
+        That means that
             m = n + p
         """
         minU = min(self)
-        m = len(self) - 1
-        for i in range(m+1):
-            if self[i] != minU:
-                break
-        self.p = i-1
-        self.n = m - self.p
+        p = 0
+        while self[p + 1] == minU:
+            p += 1
+        self.p = p
+        self.n = len(self) - p - 1
 
     def __find_spot_onevalue(self, u: float) -> int:
         U = np.array(self)
@@ -171,15 +173,18 @@ class KnotVector(list):
             return self.__find_spot_vector(u)
         else:
             return np.array(self.__find_spot_onevalue(u))
-        
 
     def __eq__(self, __obj: object):
         if not isinstance(__obj, (list, tuple, self.__class__)):
-            raise TypeError(f"Cannot compare {type(__obj)} with a {self.__class__} instance")
+            raise TypeError(
+                f"Cannot compare {type(__obj)} with a {self.__class__} instance"
+            )
         try:
             __obj = self.__class__(__obj)
         except Exception as e:
-            raise ValueError(f"No sucess trying to convert {type(__obj)} into {self.__class__}. Cause {str(e)}")
+            raise ValueError(
+                f"No sucess trying to convert {type(__obj)} into {self.__class__}. Cause {str(e)}"
+            )
         if self.n != __obj.n:
             return False
         if self.p != __obj.p:
@@ -191,3 +196,34 @@ class KnotVector(list):
 
     def __ne__(self, __obj: object) -> bool:
         return not self.__eq__(__obj)
+
+
+class GeneratorKnotVector:
+    @staticmethod
+    def bezier(p: int) -> KnotVector:
+        VerifyKnotVector.isIntegerNonNegative(p)
+        return GeneratorKnotVector.uniform(p=p, n=p + 1)
+
+    @staticmethod
+    def weight(p: int, ws: Tuple[float]) -> KnotVector:
+        VerifyKnotVector.isFloatArray1D(ws)
+        VerifyKnotVector.isIntegerNonNegative(p)
+        U = np.cumsum(ws)
+        U -= U[0]
+        U /= U[-1]
+        U *= VerifyKnotVector.maxU - VerifyKnotVector.minU
+        U += VerifyKnotVector.minU
+        U = p * [0] + list(U) + p * [1]
+        return KnotVector(U)
+
+    @staticmethod
+    def uniform(p: int, n: int) -> KnotVector:
+        VerifyKnotVector.PN(p, n)
+        ws = np.ones(n - p + 1)
+        return GeneratorKnotVector.weight(p=p, ws=ws)
+
+    @staticmethod
+    def random(p: int, n: int) -> KnotVector:
+        VerifyKnotVector.PN(p, n)
+        ws = np.random.random(n - p + 1)
+        return GeneratorKnotVector.weight(p, ws)

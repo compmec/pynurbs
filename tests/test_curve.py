@@ -33,7 +33,7 @@ def test_CreationSplineCurve():
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_CreationSplineCurve"])
 def test_SplineScalarCurve():
-    npts = 129
+    npts = 17
     for p in range(1, 4):
         for n in range(p + 1, p + 7):
             U = GeneratorKnotVector.random(p=p, n=n)
@@ -49,7 +49,7 @@ def test_SplineScalarCurve():
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_CreationSplineCurve"])
 def test_SplineVectorialCurve():
-    npts = 129
+    npts = 17
     for dim in range(1, 6):
         for p in range(1, 4):
             for n in range(p + 1, p + 7):
@@ -63,10 +63,10 @@ def test_SplineVectorialCurve():
 
 
 @pytest.mark.order(3)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(10)
 @pytest.mark.dependency(depends=["test_CreationSplineCurve"])
 def test_EqualDiffCurves():
-    npts = 129
+    npts = 17
     dim = np.random.randint(1, 5)
     for p in range(1, 4):
         for n in range(p + 1, p + 7):
