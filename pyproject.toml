@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "compmec-nurbs"
-version = "0.2.2"
+version = "0.2.3"
 description = ""
 readme = "README.md"
 authors = ["Carlos Adir <carlos.adir@gmail.com>"]

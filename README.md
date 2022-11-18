@@ -32,20 +32,6 @@ This library is available in [PyPI][pypilink]. To install it
 pip install compmec-nurbs
 ```
 
-Or install it manually
-
-```
-git clone https://github.com/compmec/nurbs
-cd nurbs
-pip install -e .
-```
-
-To verify if everything works in your machine, type the command in the main folder
-
-```
-pytest
-```
-
 ## Documentation
 
 In progress
