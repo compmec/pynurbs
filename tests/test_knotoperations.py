@@ -12,7 +12,7 @@ from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
 
 
 @pytest.mark.order(4)
-@pytest.mark.dependency(depends=["tests/test_curve.py::test_end"], scope="session")
+@pytest.mark.dependency(depends=["tests/test_curves.py::test_end"], scope="session")
 def test_begin():
     pass
 
@@ -160,18 +160,3 @@ def test_removeinsertedknot_random():
 )
 def test_end():
     pass
-
-
-def main():
-    test_begin()
-    test_insertknot_basefunction_basic()
-    test_insertknot_basefunction_random()
-    test_insertknot_curve_basic()
-    test_insertknot_curve_random()
-    test_removeinsertedknot_basic()
-    test_removeinsertedknot_random()
-    test_end()
-
-
-if __name__ == "__main__":
-    main()

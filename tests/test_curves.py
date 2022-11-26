@@ -119,15 +119,3 @@ def test_SumDiffTwoCurves():
 )
 def test_end():
     pass
-
-
-def main():
-    test_begin()
-    test_CreationSplineCurve()
-    test_SplineScalarCurve()
-    test_SplineVectorialCurve()
-    test_end()
-
-
-if __name__ == "__main__":
-    main()

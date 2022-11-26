@@ -270,21 +270,3 @@ def test_compare_knotvectors_fail():
 )
 def test_end():
     pass
-
-
-def main():
-    test_begin()
-    test_CreationClass()
-    test_FailCreationClass()
-    test_ValuesOfP()
-    test_ValuesOfN()
-    test_findSpots_single()
-    test_findSpots_array()
-    test_generateUuniform()
-    test_generateUrandom()
-    test_comparetwo_knotvectors()
-    test_end()
-
-
-if __name__ == "__main__":
-    main()

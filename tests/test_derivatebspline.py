@@ -1,13 +1,14 @@
+import numpy as np
 import pytest
+
 from compmec.nurbs import SplineBaseFunction
 from compmec.nurbs.knotspace import GeneratorKnotVector
-import numpy as np
 
 
 @pytest.mark.order(3)
 @pytest.mark.dependency(
-	depends=["tests/test_basefunctions.py::test_end"],
-    scope='session')
+    depends=["tests/test_basefunctions.py::test_end"], scope="session"
+)
 def test_begin():
     pass
 
@@ -21,6 +22,7 @@ def test_Constructor():
     N = SplineBaseFunction(U)
     dN = N.derivate()
     assert type(dN) == type(N)
+
 
 @pytest.mark.order(3)
 @pytest.mark.timeout(2)
@@ -39,14 +41,3 @@ def test_Evaluator():
 @pytest.mark.dependency(depends=["test_begin", "test_Evaluator"])
 def test_end():
     pass
-    
-
-def main():
-    test_begin()
-    test_Constructor()
-    test_Evaluator()
-    test_end()
-
-
-if __name__ == "__main__":
-    main()

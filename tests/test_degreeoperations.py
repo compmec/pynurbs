@@ -161,15 +161,3 @@ def test_degreeelevationreduction_controlpoints_random():
 )
 def test_end():
     pass
-
-
-def main():
-    test_begin()
-    test_degreeelevation_basefuncion_bezier()
-    test_degreeelevation_basefuncion_simple()
-    test_degreeelevation_controlpoints_bezier()
-    test_end()
-
-
-if __name__ == "__main__":
-    main()
