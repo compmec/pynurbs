@@ -1,6 +1,13 @@
-from compmec.nurbs.basefunctions import BaseFunction, SplineBaseFunction, RationalBaseFunction
-import numpy as np
 from typing import Iterable, List, Tuple
+
+import numpy as np
+
+from compmec.nurbs.basefunctions import (
+    BaseFunction,
+    RationalBaseFunction,
+    SplineBaseFunction,
+)
+
 
 class BaseCurve(object):
     def __init__(self, F: BaseFunction, P: List[Tuple[float]]):
@@ -28,7 +35,7 @@ class BaseCurve(object):
     @property
     def F(self):
         return self.__F
-    
+
     @property
     def P(self):
         return self.__P
@@ -47,19 +54,25 @@ class BaseCurve(object):
     def P(self, value: List[Tuple[float]]):
         value = np.array(value, dtype="float64")
         if self.F.n != value.shape[0]:
-            raise ValueError(f"The number of control points must be the same of degrees of freedom of BaseFunction. F.n = {self.F.n} != {len(value)} = len(P)")
+            raise ValueError(
+                f"The number of control points must be the same of degrees of freedom of BaseFunction. F.n = {self.F.n} != {len(value)} = len(P)"
+            )
         self.__P = value
 
     def __eq__(self, __obj: object) -> bool:
         if not isinstance(__obj, self.__class__):
-            raise TypeError(f"Cannot compare a {type(__obj)} object with a {self.__class__} object")
+            raise TypeError(
+                f"Cannot compare a {type(__obj)} object with a {self.__class__} object"
+            )
         knots = []
         for ui in self.F.U:
             if ui not in knots:
                 knots.append(ui)
         utest = []
-        for i in range(len(knots)-1):
-            utest += list(np.linspace(knots[i], knots[i+1], 1+self.F.p, endpoint=False))
+        for i in range(len(knots) - 1):
+            utest += list(
+                np.linspace(knots[i], knots[i + 1], 1 + self.F.p, endpoint=False)
+            )
         utest += [knots[-1]]
         utest = np.array(utest)
         Cusel = self(utest)
@@ -74,7 +87,9 @@ class BaseCurve(object):
 
     def __add__(self, __obj: object):
         if not isinstance(__obj, self.__class__):
-            raise TypeError(f"Cannot sum a {type(__obj)} object with a {self.__class__} object")
+            raise TypeError(
+                f"Cannot sum a {type(__obj)} object with a {self.__class__} object"
+            )
         if self.U != __obj.U:
             raise ValueError("The vectors of curves are not the same!")
         if self.P.shape != __obj.P.shape:
@@ -84,7 +99,9 @@ class BaseCurve(object):
 
     def __sub__(self, __obj: object):
         if not isinstance(__obj, self.__class__):
-            raise TypeError(f"Cannot sum a {type(__obj)} object with a {self.__class__} object")
+            raise TypeError(
+                f"Cannot sum a {type(__obj)} object with a {self.__class__} object"
+            )
         return self + (-__obj)
 
 
@@ -99,36 +116,38 @@ class RationalCurve(BaseCurve):
 
 
 class BaseXYFunction(object):
-    def __init__(self, f: BaseFunction, xconpoints: Iterable[float], yconpoints: Iterable[float]):
+    def __init__(
+        self, f: BaseFunction, xconpoints: Iterable[float], yconpoints: Iterable[float]
+    ):
         self.f = f
         self.Y = np.array(yconpoints)
-        
+
         nsample = 129
         self.usample = np.linspace(0, 1, nsample)
         L = self.f(self.usample)
         self.xsample = L.T @ np.array(xconpoints)
-        if self.xsample[0] < self.xsample[-1]: # Always increase
-            for i in range(nsample-1):
-                if not self.xsample[i] < self.xsample[i+1]:
+        if self.xsample[0] < self.xsample[-1]:  # Always increase
+            for i in range(nsample - 1):
+                if not self.xsample[i] < self.xsample[i + 1]:
                     print("self.xsample[%d] = " % i, self.xsample[i])
-                    print("self.xsample[%d] = " % (i+1), self.xsample[i+1])
+                    print("self.xsample[%d] = " % (i + 1), self.xsample[i + 1])
                     print("self.usample[%d] = " % i, self.usample[i])
-                    print("self.usample[%d] = " % (i+1), self.usample[i+1])
+                    print("self.usample[%d] = " % (i + 1), self.usample[i + 1])
                     raise ValueError("1: The x values must be increasing or decreasing")
-        else: # Always decrease
-            for i in range(nsample-1):
-                if not self.xsample[i] > self.xsample[i+1]:
+        else:  # Always decrease
+            for i in range(nsample - 1):
+                if not self.xsample[i] > self.xsample[i + 1]:
                     print("self.xsample[%d] = " % i, self.xsample[i])
-                    print("self.xsample[%d] = " % (i+1), self.xsample[i+1])
+                    print("self.xsample[%d] = " % (i + 1), self.xsample[i + 1])
                     print("self.usample[%d] = " % i, self.usample[i])
-                    print("self.usample[%d] = " % (i+1), self.usample[i+1])
+                    print("self.usample[%d] = " % (i + 1), self.usample[i + 1])
                     raise ValueError("2: The x values must be increasing or decreasing")
 
     def find_indexs(self, x: Iterable[float]) -> np.ndarray:
         ind = np.zeros(len(x), dtype="int32")
         maxxsample = np.max(self.xsample)
         for i, xi in enumerate(x):
-            value = np.where((xi < self.xsample[1:])*(self.xsample[:-1] <= xi))[0]
+            value = np.where((xi < self.xsample[1:]) * (self.xsample[:-1] <= xi))[0]
             if len(value) != 0:
                 ind[i] = value[0]
             elif xi == maxxsample:
@@ -139,24 +158,16 @@ class BaseXYFunction(object):
         u = np.zeros(len(x))
         ind = self.find_indexs(x)
         for i, xi in enumerate(x):
-            if ind[i] == len(self.xsample)-1:
+            if ind[i] == len(self.xsample) - 1:
                 u[i] = self.usample[ind[i]]
                 continue
-            ua, ub = self.usample[ind[i]], self.usample[ind[i]+1]
-            xa, xb = self.xsample[ind[i]], self.xsample[ind[i]+1]
-            u[i] += ub*(xi - xa)/(xb - xa)
-            u[i] += ua*(xb - xi)/(xb - xa)
+            ua, ub = self.usample[ind[i]], self.usample[ind[i] + 1]
+            xa, xb = self.xsample[ind[i]], self.xsample[ind[i] + 1]
+            u[i] += ub * (xi - xa) / (xb - xa)
+            u[i] += ua * (xb - xi) / (xb - xa)
         return u
 
     def __call__(self, x: Iterable[float]) -> np.ndarray:
         u = self.inverse(x)
         L = self.f(u)
         return L.T @ self.Y
-    
-class SplineXYFunction(BaseXYFunction):
-    def __init__(self, f: SplineBaseFunction, xconpoints: Iterable[float], yconpoints: Iterable[float]):
-        super().__init__(f, xconpoints, yconpoints)
-
-class RationalXYFunction(BaseXYFunction):
-    def __init__(self, f: RationalBaseFunction, xconpoints: Iterable[float], yconpoints: Iterable[float]):
-        super().__init__(f, xconpoints, yconpoints)
