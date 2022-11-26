@@ -243,7 +243,7 @@ def test_compare_knotvectors_fail():
     with pytest.raises(Exception):
         assert U1 == [[0, 0, 0, 0.5, 1, 1, 1]]
     U2 = GeneratorKnotVector.uniform(p=p + 1, n=n + 1)
-    U3 = GeneratorKnotVector.uniform(p=p + 1, n=n)
+    U3 = GeneratorKnotVector.uniform(p=p + 1, n=n + 2)
     U4 = GeneratorKnotVector.uniform(p=p, n=n + 1)
     U5 = GeneratorKnotVector.random(p=p, n=n)
     assert U1 != U2

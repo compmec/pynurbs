@@ -1,15 +1,19 @@
+import abc
+from typing import Any, Iterable, Optional, Tuple, Type, Union
+
 import numpy as np
-from typing import Iterable, Any, Optional, Union, Tuple, Type
-from compmec.nurbs.knotspace import KnotVector 
+
+from compmec.nurbs.knotspace import KnotVector
+
 
 def N(i: int, j: int, k: int, u: float, U: KnotVector) -> float:
     """
     Returns the value of N_{ij}(u) in the interval [u_{k}, u_{k+1}]
     Remember that N_{i, j}(u) = 0   if  ( u not in [U[i], U[i+j+1]] )
     """
-    
+
     n, p = U.n, U.p
-    
+
     if k < i:
         return 0
     if j == 0:
@@ -21,22 +25,19 @@ def N(i: int, j: int, k: int, u: float, U: KnotVector) -> float:
     if i + j < k:
         return 0
 
-    if i+j > n+p:
-        factor1 = 0
-    elif U[i] == U[i+j]:
+    if U[i] == U[i + j]:
         factor1 = 0
     else:
-        factor1 = (u-U[i])/(U[i+j]-U[i])
+        factor1 = (u - U[i]) / (U[i + j] - U[i])
 
-    if i+j+1 > n+p:
-        factor2 = 0
-    elif U[i+j+1] == U[i+1]:
+    if U[i + j + 1] == U[i + 1]:
         factor2 = 0
     else:
-        factor2 = (U[i+j+1]-u)/(U[i+j+1]-U[i+1])
+        factor2 = (U[i + j + 1] - u) / (U[i + j + 1] - U[i + 1])
 
-    result = factor1 * N(i, j-1, k, u, U) + factor2 * N(i+1, j-1, k, u, U)
+    result = factor1 * N(i, j - 1, k, u, U) + factor2 * N(i + 1, j - 1, k, u, U)
     return result
+
 
 def R(i: int, j: int, k: int, u: float, U: KnotVector, w: Iterable[float]) -> float:
     """
@@ -52,31 +53,18 @@ def R(i: int, j: int, k: int, u: float, U: KnotVector, w: Iterable[float]) -> fl
     return w[i] * Niju / soma
 
 
-class EvaluationClass(object):
-
-    def __init__(self, U: Iterable[float], p: int, tup: Union[None, int, slice, Tuple]= None, A: Optional[np.ndarray]=None):
+class EvaluationClass(abc.ABC):
+    def __init__(self, U: Iterable[float]):
         self.__U = KnotVector(U)
-        self._p = p
-        self.__initialize_tup(tup)
-        self.A = A
-
-    def __initialize_tup(self, tup):
-        if tup is None:
-            self.i = None
-            self.j = self.p
-        elif isinstance(tup, tuple):
-            if len(tup) > 2:
-                raise IndexError("The dimension of N is maximum 2")
-            self.i = tup[0]
-            self.j = tup[1]
-        else:
-            self.i = tup
-            self.j = self.p
+        self.p = self.U.p
+        self.i = slice(None, None, None)
+        self.j = self.p
+        self.A = np.eye(self.n)
 
     @property
     def i(self):
         return self._i
-    
+
     @property
     def j(self):
         return self._j
@@ -98,67 +86,69 @@ class EvaluationClass(object):
         return self._A
 
     @i.setter
-    def i(self, value: Union[None, int, slice]):
-        if value is None:
-            self._i = range(0, self.n, 1)
-            return
-        if isinstance(value, slice):
+    def i(self, value: Union[int, slice]):
+        if isinstance(value, int):
+            value = range(value, value + 1, 1)
+        elif isinstance(value, slice):
             start = 0 if value.start is None else value.start
-            stop = self.U.n if value.stop is None else value.stop
+            stop = self.n if value.stop is None else value.stop
             step = 1 if value.step is None else value.step
-            self._i = range(start, stop, step)
-            return
-        if isinstance(value, range):
-            self._i = value
-            return
-        try:
-            value = int(value)
-            if value > self.U.n:
-                raise ValueError("The frist value must be <= n = %d" % self.U.n)
-            self._i = range(value, value+1, 1)
-            return
-        except Exception as e:
-            raise TypeError(f"Type {type(value)} is incorrect to set i")
-        
+            value = range(start, stop, step)
+        else:
+            raise Type(f"Received index {value} of type {type(value)} is not valid")
+        for kk in value:
+            if kk > self.n:
+                raise ValueError
+            if kk < -(self.n - 1):
+                raise ValueError
+        self._i = value
+
     @j.setter
     def j(self, value: int):
         try:
             value = int(value)
         except Exception as e:
-            raise TypeError(f"Type {type(value)} is incorrect to set j")
+            raise TypeError(f"Type {type(value)} is incorrect to set as j")
         if value < 0:
             raise ValueError("The second value (%d) must be >= 0" % value)
         elif self.p < value:
-            raise ValueError("The second value (%d) must be <= p = %d" % (value, self.p))
+            raise ValueError(
+                "The second value (%d) must be <= p = %d" % (value, self.p)
+            )
         self._j = value
-        return
 
     @p.setter
     def p(self, value: int):
+        if not isinstance(value, int):
+            raise TypeError
         if value < 0:
             raise ValueError("p must be >= 0")
         self._p = int(value)
 
     @A.setter
     def A(self, value: np.ndarray):
-        if value is None:
-            self._A = np.eye(self.U.n)
-        else:
-            value = np.array(value)
-            if value.ndim != 2 or value.shape[0] != self.U.n:
-                raise ValueError("The given numpy array must be a square matrix")
-            self._A = np.array(value)
-
+        value = np.array(value, dtype="float64")
+        if value.ndim != 2:
+            print(value)
+            raise ValueError(
+                f"The given numpy array must be a square matrix. value.ndim = {value.ndim}"
+            )
+        if value.shape[0] != self.U.n:
+            raise ValueError(
+                f"Shape of matrix A is not compatible with the number of points"
+            )
+        self._A = np.array(value)
 
     def __validate_evaluation__U(self, u: np.ndarray):
         U = self.__U
         minU = np.min(U)
         maxU = np.max(U)
         if not np.all((minU <= u) * (u <= maxU)):
-            raise Exception(f"All values of u must be inside the interval [{minU}, {maxU}]")
+            raise Exception(
+                f"All values of u must be inside the interval [{minU}, {maxU}]"
+            )
         if np.array(u).ndim > 1:
             raise ValueError("For the moment we can only evaluate scalars or 1D array")
-        
 
     def __treat_input(self, u: Union[float, np.ndarray]) -> np.ndarray:
         try:
@@ -176,9 +166,9 @@ class EvaluationClass(object):
         for w, uw in enumerate(u):
             k = self.__U.spot(uw)
             for ind in self.i:
-                r[ind, w] = self.f(ind, self.j, k, uw, self.__U)
+                r[ind, w] = self.f(ind, self.j, k, uw)
         return r
-    
+
     def compute_all(self, u: np.ndarray) -> np.ndarray:
         return self.A @ self.compute_matrix(u)
 
@@ -196,7 +186,6 @@ class EvaluationClass(object):
 
 
 class BaseFunction(object):
-
     def __init__(self, U: KnotVector):
         """
         We have that the object can be called like
@@ -206,9 +195,9 @@ class BaseFunction(object):
         N[i, j](u)
         """
         self.U = KnotVector(U)
-        self.p = self.__U.p
+        self.p = self.U.p
         self.A = np.eye(self.n)
-
+        self.__evaluator = None
 
     @property
     def p(self) -> int:
@@ -240,26 +229,41 @@ class BaseFunction(object):
     def A(self, value: np.ndarray) -> None:
         self.__A = value
 
-    
+    @abc.abstractmethod
+    def EvaluatorClass(self) -> EvaluationClass:
+        raise NotImplementedError
 
-    @property
-    def evaluationClass(self) -> type[EvaluationClass]:
-        """
-        This function must be overwritten.
-        * If it's spline, evalfunction = N
-        * If it's rational, evalfunction = R
-        """
-        raise NotImplementedError("This function must be overwritten")
+    def createEvaluationInstance(
+        self, i: Union[int, slice, None] = None, j: Optional[int] = None
+    ) -> EvaluationClass:
+        evalclass = self.EvaluatorClass()
+        evaluator = evalclass(self.U)
+        evaluator.p = self.p
+        if i is not None:
+            evaluator.i = i
+        if j is not None:
+            evaluator.j = j
+        evaluator.A = self.A
+        return evaluator
 
-
-    def createEvaluationInstance(self, tup: Tuple[slice, int]) -> EvaluationClass:
-        return self.evaluationClass(self.U, self.p, tup, self.A)
-
-    def __getitem__(self, tup: slice) -> EvaluationClass:
-        return self.createEvaluationInstance(tup)
+    def __getitem__(
+        self, tup: Union[int, slice, Tuple[slice, int], Tuple[int, int]]
+    ) -> EvaluationClass:
+        if isinstance(tup, Tuple):
+            if len(tup) > 2:
+                raise ValueError
+            i, j = tup
+            if not isinstance(j, int):
+                raise TypeError
+        else:
+            i = tup
+            j = self.p
+        return self.createEvaluationInstance(i, j)
 
     def __call__(self, u: np.ndarray) -> np.ndarray:
-        return self[:, self.p] (u)
+        if self.__evaluator is None:
+            self.__evaluator = self.createEvaluationInstance()
+        return self.__evaluator(u)
 
     def derivate(self):
         F = self
@@ -270,26 +274,28 @@ class BaseFunction(object):
         newinstance.p = p - 1
         avals = np.zeros(n)
         for i in range(n):
-            diff = U[i+p] - U[i]
+            diff = U[i + p] - U[i]
             if diff != 0:
-                avals[i] = p/diff
+                avals[i] = p / diff
         newA = np.diag(avals)
-        for i in range(n-1):
-            newA[i, i+1] = -avals[i+1]
+        for i in range(n - 1):
+            newA[i, i + 1] = -avals[i + 1]
         newinstance.A = A @ newA
         return newinstance
 
     def __eq__(self, value):
         if not isinstance(value, self.__class__):
-            raise TypeError(f"Cannot compare a {self.__class__} instance with a {type(value)}")
+            raise TypeError(
+                f"Cannot compare a {self.__class__} instance with a {type(value)}"
+            )
         if self.U != value.U:
             return False
         if np.any(self.A != value.A):
             return False
         return True
 
-class SplineBaseFunction(BaseFunction):
 
+class SplineBaseFunction(BaseFunction):
     def __doc__(self):
         """
         This function is recursively determined like
@@ -309,22 +315,28 @@ class SplineBaseFunction(BaseFunction):
         N_{i, j}(u) = 0   if  ( u not in [U[i], U[i+j+1]] )
 
         """
-    
+
     def __init__(self, U: Iterable[float]):
         super().__init__(U)
 
-    @property
-    def evaluationClass(self) -> type[EvaluationClass]:
+    def EvaluatorClass(self) -> Type[EvaluationClass]:
         return SplineEvaluationClass
+
 
 class RationalBaseFunction(BaseFunction):
     def __init__(self, U: Iterable[float]):
         super().__init__(U)
         self.w = np.ones(self.n)
 
-    @property
-    def evaluationClass(self) -> type[EvaluationClass]:
+    def EvaluatorClass(self) -> Type[EvaluationClass]:
         return RationalEvaluationClass
+
+    def createEvaluationInstance(
+        self, i: Union[int, slice, None] = None, j: Optional[int] = None
+    ):
+        evaluator = super().createEvaluationInstance(i, j)
+        evaluator.w = self.w
+        return evaluator
 
     @property
     def w(self):
@@ -337,34 +349,32 @@ class RationalBaseFunction(BaseFunction):
             if v < 0:
                 raise ValueError("The weights must be positive")
         self.__w = value
-    
+
     def __eq__(self, value):
         if not super().__eq__(value):
             return False
-        if self.w != value.w:
+        if np.any(self.w != value.w):
             return False
         return True
 
 
 class SplineEvaluationClass(EvaluationClass):
+    def __init__(self, U: Iterable[float]):
+        super().__init__(U)
 
-    def __init__(self, U: Iterable[float], p: int, tup: Any, A: Optional[np.ndarray]=None):
-        super().__init__(U, p, tup, A)
-        
     @property
     def f(self):
-        return N
+        return lambda i, j, k, u: N(i, j, k, u, self.U)
 
 
 class RationalEvaluationClass(EvaluationClass):
-    def __init__(self, U: Iterable[float], w: Iterable[float], p: int, tup: Any, A: Optional[np.ndarray]=None):
-        super().__init__(U, p, tup, A)
-        self.w = w
-        
+    def __init__(self, U: Iterable[float]):
+        super().__init__(U)
+        self.w = np.ones(self.n)
+
     @property
     def f(self):
-        raise NotImplementedError("TO DO")
-        return R
+        return lambda i, j, k, u: R(i, j, k, u, self.U, self.w)
 
     @property
     def w(self):
@@ -376,7 +386,7 @@ class RationalEvaluationClass(EvaluationClass):
         if value.ndim != 1:
             raise ValueError("to set the weights, it must be a vector")
         if len(value) != self.U.n:
-            raise ValueError("The size of weights must be the same as number of functions")
+            raise ValueError(
+                "The size of weights must be the same as number of functions"
+            )
         self._w = value
-
-    

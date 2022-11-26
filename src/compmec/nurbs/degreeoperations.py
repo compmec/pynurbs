@@ -1,12 +1,19 @@
-from compmec.nurbs.basefunctions import BaseFunction
-from compmec.nurbs.knotoperations import insert_knot_basefunction, remove_knot_controlpoints
 from typing import Optional
+
 import numpy as np
 
+from compmec.nurbs.basefunctions import BaseFunction
+from compmec.nurbs.knotoperations import (
+    insert_knot_basefunction,
+    remove_knot_controlpoints,
+)
 
-def degree_elevation_basefunction(F: BaseFunction, times: Optional[int]=1):
+
+def degree_elevation_basefunction(F: BaseFunction, times: Optional[int] = 1):
     if times != 1:
-        raise ValueError("Canont do degree elevation many times at once. Call it many times")
+        raise ValueError(
+            "Canont do degree elevation many times at once. Call it many times"
+        )
     U = list(F.U)
     knotvalues = []
     for ui in U:
@@ -18,14 +25,19 @@ def degree_elevation_basefunction(F: BaseFunction, times: Optional[int]=1):
     newF = F.__class__(U)
     return newF
 
-def degree_elevation_controlpoints(F: BaseFunction, P: np.ndarray, times: Optional[int]=1):
+
+def degree_elevation_controlpoints(
+    F: BaseFunction, P: np.ndarray, times: Optional[int] = 1
+):
     """
     Once we have F (the current base function) and P (the current control points)
     we can get the new base function newF using the function above
-    And then we use the least equares method to find Q such best fits the curve 
+    And then we use the least equares method to find Q such best fits the curve
     """
     if times != 1:
-        raise ValueError("Canont do degree elevation many times at once. Call it many times")
+        raise ValueError(
+            "Canont do degree elevation many times at once. Call it many times"
+        )
     newF = degree_elevation_basefunction(F)
     m = newF.n
     knots = []
@@ -33,11 +45,11 @@ def degree_elevation_controlpoints(F: BaseFunction, P: np.ndarray, times: Option
         if ui not in knots:
             knots.append(ui)
     utest = []
-    ndiv = max(3, int(2*m/(len(knots)-1)))
+    ndiv = max(3, int(2 * m / (len(knots) - 1)))
     for a, b in zip(knots[:-1], knots[1:]):
         utest += list(np.linspace(a, b, ndiv, endpoint=False))
     utest += [1]
-    utest = np.array(utest) 
+    utest = np.array(utest)
     L = newF(utest)
     M = L @ L.T
     Cu = F(utest).T @ P
@@ -47,9 +59,26 @@ def degree_elevation_controlpoints(F: BaseFunction, P: np.ndarray, times: Option
         Q[:, i] = np.linalg.solve(M, L @ Cu[:, i])
     return Q
 
-def degree_reduction_basefunction(F: BaseFunction, times: Optional[int]=1):
+
+def degree_increase(F: BaseFunction, P: np.ndarray, times: int = 1):
+    if not isinstance(F, BaseFunction):
+        raise TypeError
+    if not isinstance(P, np.ndarray):
+        P = np.array(P, dtype="float64")
+    if not isinstance(times, int):
+        raise TypeError
     if times != 1:
-        raise ValueError("Canont do degree elevation many times at once. Call it many times")
+        raise ValueError("Can only increase degree once per time")
+    newP = degree_elevation_controlpoints(F, P, times)
+    newF = degree_elevation_basefunction(F, times)
+    return newF, newF
+
+
+def degree_reduction_basefunction(F: BaseFunction, times: Optional[int] = 1):
+    if times != 1:
+        raise ValueError(
+            "Canont do degree elevation many times at once. Call it many times"
+        )
     U = list(F.U)
     knotvalues = []
     for ui in U:
@@ -60,14 +89,19 @@ def degree_reduction_basefunction(F: BaseFunction, times: Optional[int]=1):
     newF = F.__class__(U)
     return newF
 
-def degree_reduction_controlpoints(F: BaseFunction, P: np.ndarray, times: Optional[int]=1):
+
+def degree_reduction_controlpoints(
+    F: BaseFunction, P: np.ndarray, times: Optional[int] = 1
+):
     """
     Once we have F (the current base function) and P (the current control points)
     we can get the new base function newF using the function above
-    And then we use the least equares method to find Q such best fits the curve 
+    And then we use the least equares method to find Q such best fits the curve
     """
     if times != 1:
-        raise ValueError("Canont do degree elevation many times at once. Call it many times")
+        raise ValueError(
+            "Canont do degree elevation many times at once. Call it many times"
+        )
     newF = degree_reduction_basefunction(F)
     m = newF.n
     knots = []
@@ -75,11 +109,11 @@ def degree_reduction_controlpoints(F: BaseFunction, P: np.ndarray, times: Option
         if ui not in knots:
             knots.append(ui)
     utest = []
-    ndiv = max(3, int(2*m/(len(knots)-1)))
+    ndiv = max(3, int(2 * m / (len(knots) - 1)))
     for a, b in zip(knots[:-1], knots[1:]):
         utest += list(np.linspace(a, b, ndiv, endpoint=False))
     utest += [1]
-    utest = np.array(utest) 
+    utest = np.array(utest)
     L = newF(utest)
     M = L @ L.T
     Cu = F(utest).T @ P
@@ -88,3 +122,17 @@ def degree_reduction_controlpoints(F: BaseFunction, P: np.ndarray, times: Option
     for i in range(dim):
         Q[:, i] = np.linalg.solve(M, L @ Cu[:, i])
     return Q
+
+
+def degree_decrease(F: BaseFunction, P: np.ndarray, times: int = 1):
+    if not isinstance(F, BaseFunction):
+        raise TypeError
+    if not isinstance(P, np.ndarray):
+        P = np.array(P, dtype="float64")
+    if not isinstance(times, int):
+        raise TypeError
+    if times != 1:
+        raise ValueError("Can only increase degree once per time")
+    newP = degree_reduction_controlpoints(F, P, times)
+    newF = degree_reduction_basefunction(F, times)
+    return newF, newF

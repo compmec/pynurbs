@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from compmec.nurbs import SplineBaseFunction
+from compmec.nurbs import RationalBaseFunction, SplineBaseFunction
 from compmec.nurbs.knotspace import GeneratorKnotVector
 
 
@@ -384,12 +384,109 @@ def test_comparetwo_splinebasefunctions():
 
 
 @pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_begin"])
+def test_CreationRationalBaseFunction():
+    R = RationalBaseFunction([0, 0, 1, 1])
+    assert callable(R)
+    assert R.p == 1
+    assert R.n == 2
+    R = RationalBaseFunction([0, 0, 0.5, 1, 1])
+    assert callable(R)
+    assert R.p == 1
+    assert R.n == 3
+    R = RationalBaseFunction([0, 0, 0, 1, 1, 1])
+    assert callable(R)
+    assert R.p == 2
+    assert R.n == 3
+    R = SplineBaseFunction([0, 0, 0, 0.5, 1, 1, 1])
+    assert callable(R)
+    assert R.p == 2
+    assert R.n == 4
+
+
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_CreationRationalBaseFunction"])
+def test_comparetwo_rationalbasefunctions():
+    ntests = 10
+    for i in range(ntests):
+        p = np.random.randint(0, 6)
+        n = np.random.randint(p + 1, p + 11)
+        U = GeneratorKnotVector.random(n=n, p=p)
+        R1 = RationalBaseFunction(U)
+        R2 = RationalBaseFunction(U)
+        assert R1 == R2
+
+
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_CreationRationalBaseFunction"])
+def test_RationalEvaluationFunctions_p1n2():
+    U = [0, 0, 1, 1]  # p = 1, n = 2
+    R = RationalBaseFunction(U)
+    R[0, 0]
+    R[1, 0]
+    R[2, 0]
+    R[0, 1]
+    R[1, 1]
+    R[2, 1]
+    R[:, 0]
+    R[:, 1]
+    R[:]
+
+
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_RationalEvaluationFunctions_p1n2"])
+def test_rational_somesinglevalues_p1n2():
+    U = [0, 0, 1, 1]  # p = 1, n = 2
+    R = RationalBaseFunction(U)
+    assert R[0, 0](0.0) == 0
+    assert R[0, 0](0.5) == 0
+    assert R[0, 0](1.0) == 0
+    assert R[1, 0](0.0) == 1
+    assert R[1, 0](0.5) == 1
+    assert R[1, 0](1.0) == 1
+    assert R[0, 1](0.0) == 1
+    assert R[0, 1](0.5) == 0.5
+    assert R[0, 1](1.0) == 0
+    assert R[1, 1](0.0) == 0
+    assert R[1, 1](0.5) == 0.5
+    assert R[1, 1](1.0) == 1
+
+
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_rational_somesinglevalues_p1n2"])
+def test_rational_tableUuniform_sum1():
+    ntests = 10
+    for i in range(ntests):
+        p = np.random.randint(0, 6)
+        n = np.random.randint(p + 1, p + 21)
+        U = GeneratorKnotVector.uniform(p=p, n=n)
+        u = np.random.rand(11)
+        R = RationalBaseFunction(U)
+        for j in range(p + 1):
+            M = R[:, j](u)
+            assert np.all(M >= 0)
+            for k in range(len(u)):
+                np.testing.assert_almost_equal(np.sum(M[:, k]), 1)
+
+
+@pytest.mark.order(2)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
         "test_tableUuniform_sum1",
         "test_tableUrandom_sum1",
         "test_comparetwo_splinebasefunctions",
+        "test_comparetwo_rationalbasefunctions",
+        "test_CreationRationalBaseFunction",
+        "test_comparetwo_rationalbasefunctions",
+        "test_RationalEvaluationFunctions_p1n2",
+        "test_rational_somesinglevalues_p1n2",
+        "test_rational_tableUuniform_sum1",
     ]
 )
 def test_end():
