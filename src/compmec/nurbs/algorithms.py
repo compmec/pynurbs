@@ -7,11 +7,11 @@ class Point:
     pass
 
 
-class Array1D:
+class Array1D(Tuple):
     pass
 
 
-class Array2D:
+class Array2D(Tuple):
     pass
 
 
@@ -622,5 +622,290 @@ class Chapter4:
         """
         #### Algorithm A4.4 - NURBs book - pag 137
             Compute S(u, v) derivatives from Sw(u, v) derivatives
+        """
+        pass
+
+
+class Chapter5:
+    @staticmethod
+    def CurveKnotIns(
+        np: int,
+        p: int,
+        UP: Array1D[float],
+        Pw: Array1D[Point],
+        u: float,
+        k: int,
+        s: int,
+        r: int,
+    ) -> Tuple:
+        """
+        #### Algorithm A5.1
+            Compute new curve from knot insertion
+        #### Input:
+            ``np``: int -- number of points before insertion
+            ``p``: int -- curver degree order
+            ``UP``: Array1D[float] -- knot vector after knot insertion
+            ``Pw``: Array1D[Point] -- Control points before knot insertion
+            ``u``: float -- knot to be inserted
+            ``k``: int -- spot where U_k <= u < U_{k+1}
+            ``s``: int -- multiplicity of knot 'u'
+            ``r``: int -- number of insertions of u
+        #### Output:
+            ``nq``: int -- number of points after insertion
+            ``UQ``: Array1D[float] -- knot vector after knot insertion
+            ``Qw``: Array1D[Point] -- Control points after knot insertion
+        """
+        if r + s > p:
+            raise ValueError(f"r + s > p : {r} + {s} > {p}")
+        mp = np + p + 1
+        nq = np + r
+        mq = nq + p + 1
+
+        UQ = [0] * (mq + 1)
+        Qw = [0] * (nq + 1)
+        Rw = [0] * (p + 1)
+        # Load new knot vector
+        UQ[: k + 1] = UP[: k + 1]
+        UQ[k + 1 : k + r + 1] = [u] * r
+        UQ[r + k + 1 :] = UP[k + 1 :]
+        # Save unaltered control points
+        Qw[: k - p + 1] = Pw[: k - p + 1]  # begin points
+        Qw[r + k - s :] = Pw[k - s :]  # end points
+        Rw[:] = Pw[k - p : k - s]
+        for j in range(1, r + 1):  # Insert the knot r times
+            L = k - p + j
+            for i in range(p - j - s + 1):
+                alpha = (u - UP[L + i]) / (UP[i + k + 1] - UP[L + i])
+                Rw[i] = alpha * Rw[i + 1] + (1 - alpha) * Rw[i]
+            Qw[L] = Rw[0]
+            Rw[k + r - j - s] = Rw[p - j - s]
+        for i in range(L + 1, k - s):
+            Qw[i] = Rw[i - L]
+        return nq, UQ, Qw
+
+    @staticmethod
+    def CurvePntByCornerCut(
+        n: int, p: int, U: Array1D[float], Pw: Array1D[Point], u: float
+    ) -> Point:
+        """
+        #### Algorithm A5.2
+            Compute point on rational B-spline curve
+        #### Input:
+            ``n``: int -- number of points
+            ``p``: int -- curver degree order
+            ``U``: Array1D[float] -- knot vector
+            ``Pw``: Array1D[Point] -- Control points
+            ``u``: float -- evaluation knot
+        #### Output:
+            ``C``: Point -- Evaluated point
+        """
+        if u == U[0]:
+            return Pw[0] / w
+        if u == U[n + p + 1]:
+            return Pw[n] / w
+        k, s = FindSpanMult(n, p, u, U)  # General case
+        r = p - s
+        for i in range(r + 1):
+            Rw[i] = Pw[k - p + i]
+        for j in range(1, r + 1):
+            for i in range(r - j + 1):
+                alfa = (u - U[k - p + j + i]) / (U[i + k + 1] - U[k - p + j + i])
+                Rw[i] = alfa * Rw[i + 1] + (1 - alfa) * Rw[i]
+        return Rw[0] / w
+
+    @staticmethod
+    def SurfaceKnotIns():
+        """
+        #### Algorith A5.3 - NURBs book - pag 155
+        """
+        pass
+
+    @staticmethod
+    def RefineKnotVectCurve(
+        n: int, p: int, U: Array1D[float], Pw: Array1D[Point], X, r
+    ) -> Tuple:
+        """
+        #### Algorith A5.4 - NURBs book - pag 155
+            Refine curve knot vector
+        #### Input:
+            ``n``: int -- number of points
+            ``p``: int -- curver degree order
+            ``U``: Array1D[float] -- knot vector
+            ``Pw``: Array1D[Point] -- Control points
+            ``X``: float -- evaluation knot
+            ``r``: float -- evaluation knot
+        #### Output:
+            ``Ubar``: Array1D[float] -- New knot vector
+            ``Qw``: Array1D[Point] -- New control points
+        """
+        m = n + p + 1
+        a = Chapter2.FindSpan(n, p, X[0], U)
+        b = Chapter2.FindSpan(n, p, X[r], U)
+        b = b + 1
+        Qw = [0] * ()
+        for j in range(a - p + 1):
+            Qw[j] = Pw[j]
+        for j in range(b - 1, n + 1):
+            Qw[j + r + 1] = Pw[j]
+        for j in range(a + 1):
+            Ubar[j] = U[j]
+        for j in range(b + p, m + 1):
+            Ubar[j + r + 1] = U[j]
+        i = b + p - 1
+        k = b + p + r
+        for j in range(r, -1, -1):
+            while (X[j] <= U[i]) and (i > a):
+                Qw[k - p - 1] = Pw[i - p - 1]
+                Ubar[k] = U[i]
+                k = k - 1
+                i = i - 1
+            Qw[k - p - 1] = Qw[k - p]
+            for l in range(1, p + 1):
+                ind = k - p + l
+                alfa = Ubar[k + l] - X[j]
+                if abs(alfa) == 0:
+                    Qw[ind - 1] = Qw[ind]
+                else:
+                    alfa = alfa / (Ubar[k + l] - U[i - p + l])
+                    Qw[ind - 1] = alfa * Qw[ind - 1] + (1 - alfa) * Qw[ind]
+            Ubar[k] = X[j]
+            k = k - 1
+
+    @staticmethod
+    def RefineKnotVectSurface():
+        """
+        #### Algorith A5.5 - NURBs book - pag 167
+            Refine surface knot vector
+        """
+        pass
+
+    @staticmethod
+    def DecomposeCurve():
+        """
+        #### Algorith A5.6 - NURBs book - pag 173
+            Decompose curve into bezier segments
+        """
+        pass
+
+    @staticmethod
+    def DecomposeSurface():
+        """
+        #### Algorith A5.7 - NURBs book - pag 173
+            Decompose surface into bezier patches
+        """
+        pass
+
+    @staticmethod
+    def RemoveCurveKnot(
+        n: int,
+        p: int,
+        U: Array1D[float],
+        Pw: Array1D[Point],
+        u: float,
+        r: int,
+        s: int,
+        num: int,
+    ):
+        """
+        #### Algorith A5.8 - NURBs book - pag 185
+            Remove knot u (index r) num times.
+        #### Input:
+            ``n``: int -- Number of control points = n+1
+            ``p``: int -- curver degree order
+            ``U``: Array1D[float] -- knot vector
+            ``Pw``: Array1D[Point] -- Control points
+            ``u``: float -- The knot to remove
+            ``r``: int -- Spot of knot to remove
+            ``s``: int -- Multiplicity of the knot
+            ``num``: int -- Number of times to remove the knot
+        #### Output:
+            ``t``: int -- indicator how many points took out: 0 <= t <= num
+            ``Un``: Array1D[float] -- New knot vector
+            ``Pw``: Array1D[Point] -- New control points
+        """
+        TOLERANCE = 1e-7
+        m = n + p + 1
+        ord = p + 1
+        fout = (2 * r - s - p) / 2
+        last = r - s
+        first = r - p
+        temp = np.zeros(Pw.shape)
+        for t in range(num):  # This loop is Eq. (5.28)
+            off = first - 1  # Diff in index between temp and P
+            temp[0] = Pw[off]
+            temp[last + 1 - off] = Pw[last + 1]
+            i = first
+            j = last
+            ii = 1
+            jj = last - off
+            remflag = 0
+            while j - i > t:  # Compute new control points for one removal step
+                alfi = (u - U[i]) / (U[i + ord + t] - U[i])
+                alfj = (u - U[j - t]) / (U[j + ord] - U[j - t])
+                temp[ii] = (Pw[i] - (1 - alfi) * temp[ii - 1]) / alfi
+                temp[jj] = (Pw[j] - alfj * temp[jj + 1]) / (1 - alfj)
+                i += 1
+                ii += 1
+                j -= 1
+                jj -= 1
+            if j - i < t:  # Check if knot removable
+                distance = Distance4D(temp[ii - 1], temp[jj + 1])
+                if distance < TOLERANCE:
+                    remflag = 1
+            else:
+                alfi = (u - U[i]) / (U[i + ord + t] - U[i])
+                second_point = alfi * temp[ii + t + 1] + (1 - alfi) * temp[ii - 1]
+                distance = Distance4D(Pw[i], second_point)
+                if distance < TOLERANCE:
+                    remflag = 1
+            if remflag == 0:  # Cannot remove any more knots
+                break
+            else:  # Successful removal. Save new cont. pts.
+                i = first
+                j = last
+                while j - i > t:
+                    Pw[i] = temp[i - off]
+                    Pw[j] = temp[j - off]
+                    i += 1
+                    j -= 1
+            first -= 1
+            last += 1
+        if t == 0:
+            return t, U, Pw
+        for k in range(r + 1, m + 1):
+            U[k - t] = U[k]  # Shift knots
+        j = fout
+        i = j  # Pj thru Pi will be overwritten
+        for k in range(1, t):
+            if k % 2 == 1:  # k modulo 2
+                i += 1
+            else:
+                j -= 1
+        for k in range(i + 1, n + 1):  # Shift
+            Pw[j] = Pw[k]
+            j += 1
+        return t, U, Pw
+
+    @staticmethod
+    def DegreeElevateCurve():
+        """
+        #### Algorith A5.9 - NURBs book - pag 206
+            Degree elevate a curve t times
+        """
+        pass
+
+    @staticmethod
+    def DegreeElevateSurface():
+        """
+        #### Algorith A5.10 - NURBs book - pag 206
+            Degree elevate a surface t times
+        """
+        pass
+
+    @staticmethod
+    def DegreeReduceCurve():
+        """
+        #### Algorith A5.11 - NURBs book - pag 223
+            Degree reduce a curve from p to p-1
         """
         pass
