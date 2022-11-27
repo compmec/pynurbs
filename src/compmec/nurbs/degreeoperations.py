@@ -2,14 +2,14 @@ from typing import Optional
 
 import numpy as np
 
-from compmec.nurbs.basefunctions import BaseFunction
+from compmec.nurbs.__classes__ import Interface_BaseFunction
 from compmec.nurbs.knotoperations import (
     insert_knot_basefunction,
     remove_knot_controlpoints,
 )
 
 
-def degree_elevation_basefunction(F: BaseFunction, times: Optional[int] = 1):
+def degree_elevation_basefunction(F: Interface_BaseFunction, times: Optional[int] = 1):
     if times != 1:
         raise ValueError(
             "Canont do degree elevation many times at once. Call it many times"
@@ -27,7 +27,7 @@ def degree_elevation_basefunction(F: BaseFunction, times: Optional[int] = 1):
 
 
 def degree_elevation_controlpoints(
-    F: BaseFunction, P: np.ndarray, times: Optional[int] = 1
+    F: Interface_BaseFunction, P: np.ndarray, times: Optional[int] = 1
 ):
     """
     Once we have F (the current base function) and P (the current control points)
@@ -60,8 +60,8 @@ def degree_elevation_controlpoints(
     return Q
 
 
-def degree_increase(F: BaseFunction, P: np.ndarray, times: int = 1):
-    if not isinstance(F, BaseFunction):
+def degree_increase(F: Interface_BaseFunction, P: np.ndarray, times: int = 1):
+    if not isinstance(F, Interface_BaseFunction):
         raise TypeError
     if not isinstance(P, np.ndarray):
         P = np.array(P, dtype="float64")
@@ -74,7 +74,7 @@ def degree_increase(F: BaseFunction, P: np.ndarray, times: int = 1):
     return newF, newF
 
 
-def degree_reduction_basefunction(F: BaseFunction, times: Optional[int] = 1):
+def degree_reduction_basefunction(F: Interface_BaseFunction, times: Optional[int] = 1):
     if times != 1:
         raise ValueError(
             "Canont do degree elevation many times at once. Call it many times"
@@ -91,7 +91,7 @@ def degree_reduction_basefunction(F: BaseFunction, times: Optional[int] = 1):
 
 
 def degree_reduction_controlpoints(
-    F: BaseFunction, P: np.ndarray, times: Optional[int] = 1
+    F: Interface_BaseFunction, P: np.ndarray, times: Optional[int] = 1
 ):
     """
     Once we have F (the current base function) and P (the current control points)
@@ -124,8 +124,8 @@ def degree_reduction_controlpoints(
     return Q
 
 
-def degree_decrease(F: BaseFunction, P: np.ndarray, times: int = 1):
-    if not isinstance(F, BaseFunction):
+def degree_decrease(F: Interface_BaseFunction, P: np.ndarray, times: int = 1):
+    if not isinstance(F, Interface_BaseFunction):
         raise TypeError
     if not isinstance(P, np.ndarray):
         P = np.array(P, dtype="float64")

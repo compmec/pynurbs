@@ -2,7 +2,7 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
-from compmec.nurbs.basefunctions import BaseFunction
+from compmec.nurbs.__classes__ import Interface_BaseFunction
 from compmec.nurbs.knotspace import KnotVector
 
 
@@ -16,13 +16,13 @@ def getMultiplicities(U: KnotVector) -> Dict:
 
 
 def insert_knot_basefunction(
-    F: BaseFunction, knot: float, times: Optional[int] = 1
-) -> BaseFunction:
+    F: Interface_BaseFunction, knot: float, times: Optional[int] = 1
+) -> Interface_BaseFunction:
     """
     Receives a base function (like N) and returns a new basefuncion such that has the
     """
-    if not isinstance(F, BaseFunction):
-        raise TypeError("F must be a BaseFunction instance")
+    if not isinstance(F, Interface_BaseFunction):
+        raise TypeError("F must be a Interface_BaseFunction instance")
     knotvector = F.U
     spot = knotvector.compute_spot(knot)
     newU = list(knotvector)
@@ -32,14 +32,14 @@ def insert_knot_basefunction(
 
 
 def insert_knot_controlpoints(
-    F: BaseFunction, P: np.ndarray, knot: float, times: Optional[int] = 1
+    F: Interface_BaseFunction, P: np.ndarray, knot: float, times: Optional[int] = 1
 ) -> np.ndarray:
     """
     Receives a curve and returns the controlpoints of the new curve
         * the new base function and the control points
     """
-    if not isinstance(F, BaseFunction):
-        raise TypeError("F must be a BaseFunction instance")
+    if not isinstance(F, Interface_BaseFunction):
+        raise TypeError("F must be a Interface_BaseFunction instance")
     U = KnotVector(F.U)
     if not isinstance(U, KnotVector):
         raise TypeError(f"Curve must be a KnotVector instance. Not {type(U)}")
@@ -62,8 +62,8 @@ def insert_knot_controlpoints(
     return Q
 
 
-def insert_knot(F: BaseFunction, P: np.ndarray, knot: float, times: int = 1):
-    if not isinstance(F, BaseFunction):
+def insert_knot(F: Interface_BaseFunction, P: np.ndarray, knot: float, times: int = 1):
+    if not isinstance(F, Interface_BaseFunction):
         raise TypeError
     if not isinstance(P, np.ndarray):
         P = np.array(P, dtype="float64")
@@ -79,10 +79,10 @@ def insert_knot(F: BaseFunction, P: np.ndarray, knot: float, times: int = 1):
 
 
 def remove_knot_basefunction(
-    F: BaseFunction, knot: float, times: int = 1
-) -> BaseFunction:
-    if not isinstance(F, BaseFunction):
-        raise TypeError("F must be a BaseFunction instance")
+    F: Interface_BaseFunction, knot: float, times: int = 1
+) -> Interface_BaseFunction:
+    if not isinstance(F, Interface_BaseFunction):
+        raise TypeError("F must be a Interface_BaseFunction instance")
     U = list(F.U)
     if knot not in U:
         raise ValueError("The knot {knot} is not inside knot vector {U}")
@@ -94,10 +94,10 @@ def remove_knot_basefunction(
 
 
 def remove_knot_controlpoints(
-    F: BaseFunction, P: np.ndarray, knot: float, times: int = 1
+    F: Interface_BaseFunction, P: np.ndarray, knot: float, times: int = 1
 ) -> np.ndarray:
-    if not isinstance(F, BaseFunction):
-        raise TypeError("F must be a BaseFunction instance")
+    if not isinstance(F, Interface_BaseFunction):
+        raise TypeError("F must be a Interface_BaseFunction instance")
     if times != 1:
         raise ValueError("Can remove knot only once per time")
     U = list(F.U)
@@ -117,8 +117,8 @@ def remove_knot_controlpoints(
     return np.array(newP)
 
 
-def remove_knot(F: BaseFunction, P: np.ndarray, knot: float, times: int = 1):
-    if not isinstance(F, BaseFunction):
+def remove_knot(F: Interface_BaseFunction, P: np.ndarray, knot: float, times: int = 1):
+    if not isinstance(F, Interface_BaseFunction):
         raise TypeError
     if not isinstance(P, np.ndarray):
         P = np.array(P, dtype="float64")

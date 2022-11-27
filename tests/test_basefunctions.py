@@ -13,7 +13,7 @@ def test_begin():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_CreationSplineBaseFunction():
     N = SplineBaseFunction([0, 0, 1, 1])
@@ -35,7 +35,7 @@ def test_CreationSplineBaseFunction():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_CreationSplineBaseFunction"])
 def test_SplineEvaluationFunctions_p1n2():
     U = [0, 0, 1, 1]  # p = 1, n = 2
@@ -50,7 +50,7 @@ def test_SplineEvaluationFunctions_p1n2():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_SplineEvaluationFunctions_p1n2"])
 def test_SplineEvaluationFunctions_p1n3():
     U = [0, 0, 0.5, 1, 1]  # p = 1, n = 3
@@ -67,7 +67,7 @@ def test_SplineEvaluationFunctions_p1n3():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_SplineEvaluationFunctions_p1n2"])
 def test_somesinglevalues_p1n2():
     U = [0, 0, 1, 1]  # p = 1, n = 2
@@ -87,7 +87,7 @@ def test_somesinglevalues_p1n2():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_somesinglevalues_p1n2"])
 def test_somesinglevalues_p2n3():
     U = [0, 0, 0, 1, 1, 1]  # p = 2, n = 3
@@ -122,7 +122,7 @@ def test_somesinglevalues_p2n3():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_somesinglevalues_p1n2"])
 def test_tablevalues_p1n2():
     U = [0, 0, 1, 1]  # p = 1, n = 2
@@ -139,7 +139,7 @@ def test_tablevalues_p1n2():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p1n2"])
 def test_tablevalues_p1n3():
     U = [0, 0, 0.5, 1, 1]  # p = 1, n = 3
@@ -164,7 +164,7 @@ def test_tablevalues_p1n3():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p1n2", "test_somesinglevalues_p2n3"])
 def test_tablevalues_p2n3():
     U = [0, 0, 0, 1, 1, 1]  # p = 2, n = 3
@@ -191,7 +191,7 @@ def test_tablevalues_p2n3():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p2n3"])
 def test_tablevalues_p2n4():
     U = [0, 0, 0, 0.5, 1, 1, 1]  # p = 2, n = 4
@@ -233,7 +233,7 @@ def test_tablevalues_p2n4():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p2n3"])
 def test_tablevalues_p3n4():
     U = [0, 0, 0, 0, 1, 1, 1, 1]  # p = 3, n = 4
@@ -274,7 +274,7 @@ def test_tablevalues_p3n4():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p2n3", "test_tablevalues_p3n4"])
 def test_tablevalues_p3n5():
     U = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # p = 3, n = 5
@@ -331,7 +331,7 @@ def test_tablevalues_p3n5():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p3n5"])
 def test_tableUuniform_sum1():
     ntests = 10
@@ -349,7 +349,7 @@ def test_tableUuniform_sum1():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tableUuniform_sum1"])
 def test_tableUrandom_sum1():
     ntests = 10
@@ -367,21 +367,7 @@ def test_tableUrandom_sum1():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
-@pytest.mark.dependency(depends=["test_CreationSplineBaseFunction"])
-def test_comparetwo_splinebasefunctions():
-    ntests = 10
-    for i in range(ntests):
-        p = np.random.randint(0, 6)
-        n = np.random.randint(p + 1, p + 11)
-        U = list(GeneratorKnotVector.random(n=n, p=p))
-        N1 = SplineBaseFunction(U)
-        N2 = SplineBaseFunction(U)
-        assert N1 == N2
-
-
-@pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_CreationRationalBaseFunction():
     R = RationalBaseFunction([0, 0, 1, 1])
@@ -403,21 +389,7 @@ def test_CreationRationalBaseFunction():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
-@pytest.mark.dependency(depends=["test_CreationRationalBaseFunction"])
-def test_comparetwo_rationalbasefunctions():
-    ntests = 10
-    for i in range(ntests):
-        p = np.random.randint(0, 6)
-        n = np.random.randint(p + 1, p + 11)
-        U = GeneratorKnotVector.random(n=n, p=p)
-        R1 = RationalBaseFunction(U)
-        R2 = RationalBaseFunction(U)
-        assert R1 == R2
-
-
-@pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_CreationRationalBaseFunction"])
 def test_RationalEvaluationFunctions_p1n2():
     U = [0, 0, 1, 1]  # p = 1, n = 2
@@ -432,7 +404,7 @@ def test_RationalEvaluationFunctions_p1n2():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_RationalEvaluationFunctions_p1n2"])
 def test_rational_somesinglevalues_p1n2():
     U = [0, 0, 1, 1]  # p = 1, n = 2
@@ -452,7 +424,7 @@ def test_rational_somesinglevalues_p1n2():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_rational_somesinglevalues_p1n2"])
 def test_rational_tableUuniform_sum1():
     ntests = 10
@@ -470,7 +442,7 @@ def test_rational_tableUuniform_sum1():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(
     depends=["test_CreationSplineBaseFunction", "test_CreationRationalBaseFunction"]
 )
@@ -512,9 +484,6 @@ def test_basefunction_fails():
     with pytest.raises(IndexError):
         N[0, p, 0]
 
-    with pytest.raises(TypeError):
-        N == 1
-
     R = RationalBaseFunction(U)
     with pytest.raises(ValueError):
         w = np.linspace(-1, 1, n)
@@ -525,11 +494,6 @@ def test_basefunction_fails():
     R2 = RationalBaseFunction(U)
     R2.w = np.random.uniform(0.5, 1.5, n)
     U = GeneratorKnotVector.random(p=p, n=n)
-    R3 = RationalBaseFunction(U)
-    assert R1 != R2
-    assert R1 != R3
-    with pytest.raises(AssertionError):
-        assert R1 == R2
     with pytest.raises(TypeError):
         R1.w = "asd"
     with pytest.raises(ValueError):
@@ -541,37 +505,99 @@ def test_basefunction_fails():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(5)
 @pytest.mark.dependency(
     depends=["test_CreationSplineBaseFunction", "test_CreationRationalBaseFunction"]
 )
-def test_derivatives():
-    p, n = 4, 6
-    U = GeneratorKnotVector.uniform(p=p, n=n)
-    N1 = SplineBaseFunction(U)
-    N2 = SplineBaseFunction(U)
+def test_comparation():
+    Uorg = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # p = 3, n = 5
+    Udif = [0, 0, 0, 0, 0.3, 1, 1, 1, 1]  # p = 3, n = 5
+    worg = np.random.uniform(1, 2, 5)
+    wdif = np.random.uniform(1, 2, 5)
+    N1 = SplineBaseFunction(Uorg)
+    N2 = SplineBaseFunction(Uorg)
+    N3 = SplineBaseFunction(Udif)
+    R1 = RationalBaseFunction(Uorg)
+    R1.w = worg
+    R2 = RationalBaseFunction(Uorg)
+    R2.w = worg
+    R3 = RationalBaseFunction(Uorg)
+    R3.w = wdif
+    R4 = RationalBaseFunction(Udif)
+    R4.w = wdif
+    R5 = RationalBaseFunction(Udif)
+    R5.w = worg
+
     assert N1 == N2
+    assert R1 == R2
+    assert N1 != N3
+    assert R1 != R3
+    assert R3 != R4
+    assert R2 != R5
+    assert R4 != R5
 
     N1.derivate()
     assert N1 != N2
 
+    with pytest.raises(TypeError):
+        assert N1 == "asd"
+    with pytest.raises(TypeError):
+        assert N1 == 1
+
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(1)
+@pytest.mark.timeout(5)
+@pytest.mark.dependency(depends=["test_comparation"])
+def test_insert_remove_knot():
+    Uorg = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # p = 3, n = 5
+    w = np.random.uniform(1, 2, 5)
+    N1 = SplineBaseFunction(Uorg)
+    N2 = SplineBaseFunction(Uorg)
+    R1 = RationalBaseFunction(Uorg)
+    R1.w = w
+    R2 = RationalBaseFunction(Uorg)
+    R2.w = w
+
+    assert N1 == N2
+    assert R1 == R2
+    N1.knot_insert(0.5)
+    R1.knot_insert(0.5)
+    assert N1 != N2
+    assert R1 != R2
+    N1.knot_remove(0.5)
+    R1.knot_remove(0.5)
+    assert N1 == N2
+    assert R1 == R2
+
+
+@pytest.mark.order(2)
+@pytest.mark.timeout(5)
+@pytest.mark.dependency(
+    depends=["test_CreationSplineBaseFunction", "test_CreationRationalBaseFunction"]
+)
+def test_derivate_functions():
+    U = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # p = 3, n = 5
+    w = np.random.uniform(1, 2, 5)
+    N = SplineBaseFunction(U)
+    R = RationalBaseFunction(U)
+    R.w = w
+
+    N.derivate()
+    R.derivate()
+
+
+@pytest.mark.order(2)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
         "test_tableUuniform_sum1",
         "test_tableUrandom_sum1",
-        "test_comparetwo_splinebasefunctions",
-        "test_comparetwo_rationalbasefunctions",
         "test_CreationRationalBaseFunction",
-        "test_comparetwo_rationalbasefunctions",
         "test_RationalEvaluationFunctions_p1n2",
         "test_rational_somesinglevalues_p1n2",
         "test_rational_tableUuniform_sum1",
         "test_basefunction_fails",
-        "test_derivatives",
+        "test_insert_remove_knot",
     ]
 )
 def test_end():

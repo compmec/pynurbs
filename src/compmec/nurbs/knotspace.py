@@ -117,11 +117,11 @@ class KnotVector(list):
         self.compute_np()
 
     @property
-    def p(self):
+    def p(self) -> int:
         return self.__p
 
     @property
-    def n(self):
+    def n(self) -> int:
         return self.__n
 
     def compute_np(self):
@@ -192,7 +192,7 @@ class KnotVector(list):
         if not (min(self) <= knot <= max(self)):
             raise ValueError
 
-    def __insert_knot(self, knot: float, times: int):
+    def __knot_insert(self, knot: float, times: int):
         if times == 1:
             spot = self.compute_spot_onevalue(knot)
             copylist = list(self)
@@ -202,26 +202,26 @@ class KnotVector(list):
             self.compute_np()
             return
         for i in range(times):
-            self.__insert_knot(knot, 1)
+            self.__knot_insert(knot, 1)
 
-    def insert_knot(self, knot: float, times: Optional[int] = 1):
+    def knot_insert(self, knot: float, times: Optional[int] = 1):
         self.verify_insert_remove_knot(knot, times)
-        self.__insert_knot(knot, times)
+        self.__knot_insert(knot, times)
 
-    def __remove_knot(self, knot: float, times: int):
+    def __knot_remove(self, knot: float, times: int):
         if times == 1:
             spot = self.compute_spot_onevalue(knot)
             self.remove(knot)
             self.compute_np()
             return
         for i in range(times):
-            self.__remove_knot(knot, 1)
+            self.__knot_remove(knot, 1)
 
-    def remove_knot(self, knot: float, times: Optional[int] = 1):
+    def knot_remove(self, knot: float, times: Optional[int] = 1):
         self.verify_insert_remove_knot(knot, times)
         if knot not in self:
             raise ValueError(f"Cannot remove knot {knot} cause it's not in {self}")
-        self.__remove_knot(knot, times)
+        self.__knot_remove(knot, times)
 
     def __eq__(self, obj: object):
         if not isinstance(obj, (list, tuple, self.__class__)):

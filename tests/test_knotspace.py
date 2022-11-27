@@ -270,7 +270,7 @@ def test_compare_knotvectors_fail():
 @pytest.mark.order(1)
 @pytest.mark.timeout(4)
 @pytest.mark.dependency()
-def test_insert_remove_knot():
+def test_insert_knot_remove():
     Uorg = [0, 0, 0, 0, 1, 1, 1, 1]
     Uinc0 = [0, 0, 0, 0, 1, 1, 1, 1]
     Uinc1 = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]
@@ -289,62 +289,62 @@ def test_insert_remove_knot():
 
     Uo = KnotVector(Uorg)
     assert Uo == U0
-    Uo.insert_knot(0.5)
+    Uo.knot_insert(0.5)
     assert Uo == U1
-    Uo.insert_knot(0.5)
+    Uo.knot_insert(0.5)
     assert Uo == U2
-    Uo.insert_knot(0.5)
+    Uo.knot_insert(0.5)
     assert Uo == U3
-    Uo.insert_knot(0.5)
+    Uo.knot_insert(0.5)
     assert Uo == U4
 
     Uo = KnotVector(Uorg)
-    Uo.insert_knot(0.5, 2)
+    Uo.knot_insert(0.5, 2)
     assert Uo == U2
 
     Uo = KnotVector(Uorg)
-    Uo.insert_knot(0.5, 3)
+    Uo.knot_insert(0.5, 3)
     assert Uo == U3
 
     Uo = KnotVector(Uorg)
-    Uo.insert_knot(0.5, 4)
+    Uo.knot_insert(0.5, 4)
     assert Uo == U4
 
     Uo = KnotVector(Uinc4)
-    Uo.remove_knot(0.5)
+    Uo.knot_remove(0.5)
     assert Uo == U3
-    Uo.remove_knot(0.5)
+    Uo.knot_remove(0.5)
     assert Uo == U2
-    Uo.remove_knot(0.5)
+    Uo.knot_remove(0.5)
     assert Uo == U1
-    Uo.remove_knot(0.5)
+    Uo.knot_remove(0.5)
     assert Uo == U0
     with pytest.raises(ValueError):
-        Uo.remove_knot(0.5)
+        Uo.knot_remove(0.5)
 
     Uo = KnotVector(Uinc4)
-    Uo.remove_knot(0.5, 2)
+    Uo.knot_remove(0.5, 2)
     assert Uo == U2
 
     Uo = KnotVector(Uinc4)
-    Uo.remove_knot(0.5, 3)
+    Uo.knot_remove(0.5, 3)
     assert Uo == U1
 
     Uo = KnotVector(Uinc4)
-    Uo.remove_knot(0.5, 4)
+    Uo.knot_remove(0.5, 4)
     assert Uo == U0
 
     Uo = KnotVector(Uinc4)
     with pytest.raises(TypeError):
-        U0.remove_knot("asd")
+        U0.knot_remove("asd")
     with pytest.raises(TypeError):
-        U0.remove_knot(0.5, "ads")
+        U0.knot_remove(0.5, "ads")
     with pytest.raises(ValueError):
-        U0.remove_knot(0.5, 0)
+        U0.knot_remove(0.5, 0)
     with pytest.raises(ValueError):
-        U0.remove_knot(0.5, -1)
+        U0.knot_remove(0.5, -1)
     with pytest.raises(ValueError):
-        U0.remove_knot(-0.5)
+        U0.knot_remove(-0.5)
 
 
 @pytest.mark.order(1)
@@ -358,7 +358,7 @@ def test_insert_remove_knot():
         "test_generatorUfails",
         "test_comparetwo_knotvectors",
         "test_compare_knotvectors_fail",
-        "test_insert_remove_knot",
+        "test_insert_knot_remove",
     ]
 )
 def test_end():

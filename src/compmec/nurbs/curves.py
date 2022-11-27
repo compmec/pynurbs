@@ -2,6 +2,7 @@ from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
+from compmec.nurbs.__classes__ import Interface_BaseCurve
 from compmec.nurbs.basefunctions import (
     BaseFunction,
     RationalBaseFunction,
@@ -9,41 +10,35 @@ from compmec.nurbs.basefunctions import (
 )
 from compmec.nurbs.degreeoperations import degree_decrease, degree_increase
 from compmec.nurbs.knotoperations import insert_knot, remove_knot
+from compmec.nurbs.knotspace import KnotVector
 
 
-class BaseCurve(object):
-    def __init__(self, F: BaseFunction, P: np.ndarray):
-        self.__set_FP(F, P)
+class BaseCurve(Interface_BaseCurve):
+    def __init__(self, U: KnotVector, P: np.ndarray):
+        self.__set_FP(U, P)
 
-    def __call__(self, u: Iterable[float]) -> np.ndarray:
+    def __call__(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         L = self.F(u)
         return L.T @ self.P
 
     def derivate(self):
-        dF = self.F.derivate()
-        return self.__class__(dF, self.P)
+        self.F.derivate()
 
     @property
-    def npts(self):
-        return self.P.shape[0]
+    def p(self):
+        return self.U.p
 
     @property
-    def dim(self):
-        if len(self.P.shape) == 1:
-            return 0
-        return self.P.shape[1]
+    def n(self):
+        return self.U.n
 
     @property
-    def F(self):
-        return self.__F
+    def U(self):
+        return self.__U
 
     @property
     def P(self):
         return self.__P
-
-    @property
-    def U(self):
-        return self.F.U
 
     def __set_FP(self, F: BaseFunction, P: np.ndarray):
         if not isinstance(F, BaseFunction):
@@ -102,28 +97,28 @@ class BaseCurve(object):
             )
         return self + (-__obj)
 
-    def insert_knot(self, knots: Tuple[float]):
+    def knot_insert(self, knots: Tuple[float]):
         newP = np.copy(self.P)
         newF = self.F
         for knot in knots:
             newF, newP = insert_knot(self.F, self.P, knot)
         self.__set_FP(newF, newP)
 
-    def remove_knot(self, knots: Tuple[float]):
+    def knot_remove(self, knots: Tuple[float]):
         newP = np.copy(self.P)
         newF = self.F
         for knot in knots:
             newF, newP = remove_knot(self.F, self.P, knot)
         self.__set_FP(newF, newP)
 
-    def increase_degree(self, times: Optional[int] = 1):
+    def degree_increase(self, times: Optional[int] = 1):
         newP = np.copy(self.P)
         newF = self.F
         for i in range(times):
             newF, newP = degree_increase(self.F, self.P)
         self.__set_FP(newF, newP)
 
-    def decrease_degree(self, times: Optional[int] = 1):
+    def degree_decrease(self, times: Optional[int] = 1):
         newP = np.copy(self.P)
         newF = self.F
         for i in range(times):

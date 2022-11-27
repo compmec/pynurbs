@@ -3,6 +3,9 @@ from typing import Any, Iterable, Optional, Tuple, Type, Union
 
 import numpy as np
 
+from compmec.nurbs.__classes__ import Interface_BaseFunction, Interface_Evaluator
+from compmec.nurbs.degreeoperations import degree_decrease, degree_increase
+from compmec.nurbs.knotoperations import insert_knot, remove_knot
 from compmec.nurbs.knotspace import KnotVector
 
 
@@ -53,7 +56,7 @@ def R(i: int, j: int, k: int, u: float, U: KnotVector, w: Tuple[float]) -> float
     return w[i] * Niju / soma
 
 
-class BaseFunction(object):
+class BaseFunction(Interface_BaseFunction):
     def __init__(self, U: KnotVector):
         self.__U = KnotVector(U)
 
@@ -67,28 +70,25 @@ class BaseFunction(object):
 
     @property
     def U(self) -> KnotVector:
-        return KnotVector(self.__U)
+        return self.__U
 
-    def __eq__(self, obj):
-        if type(self) != type(obj):
-            error_msg = (
-                f"Cannot compare a {type(obj)} object with a {self.__class__} object"
-            )
-            raise TypeError(error_msg)
-        if self.U != obj.U:
-            return False
-        return True
+    def knot_insert(self, knot: float, times: Optional[int] = 1):
+        self.U.knot_insert(knot, times)
 
-    def __ne__(self, obj):
-        return not self.__eq__(obj)
+    def knot_remove(self, knot: float, times: Optional[int] = 1):
+        self.U.knot_remove(knot, times)
 
 
-class BaseEvaluator(BaseFunction, abc.ABC):
+class BaseEvaluator(Interface_Evaluator):
     def __init__(self, F: BaseFunction, i: Union[int, slice], j: int):
-        super().__init__(F.U)
+        self.__U = F.U
         self.__first_index = i
         self.__second_index = j
         self.__A = F.A
+
+    @property
+    def U(self) -> KnotVector:
+        return self.__U
 
     @property
     def first_index(self) -> Union[int, range]:
@@ -97,10 +97,6 @@ class BaseEvaluator(BaseFunction, abc.ABC):
     @property
     def second_index(self) -> int:
         return self.__second_index
-
-    @property
-    def A(self) -> np.ndarray:
-        return self.__A
 
     @abc.abstractmethod
     def compute_one_value(self, i: int, u: float, spot: int) -> float:
@@ -111,9 +107,9 @@ class BaseEvaluator(BaseFunction, abc.ABC):
         Given a 'u' float, it returns the vector with all BasicFunctions:
         compute_vector(u, spot) = [F_{0j}(u), F_{1j}(u), ..., F_{n-1,j}(u)]
         """
-        result = np.zeros(self.n, dtype="float64")
+        result = np.zeros(self.__U.n, dtype="float64")
         # for i in range(spot, spot+self.second_index):
-        for i in range(self.n):
+        for i in range(self.__U.n):
             result[i] = self.compute_one_value(i, u, spot)
         return result
 
@@ -123,7 +119,7 @@ class BaseEvaluator(BaseFunction, abc.ABC):
         u = np.array(u, dtype="float64")
         if spot.ndim == 0:
             return self.compute_vector(float(u), int(spot))
-        result = np.zeros([self.n] + list(u.shape))
+        result = np.zeros([self.__U.n] + list(u.shape))
         for k, (uk, sk) in enumerate(zip(u, spot)):
             result[:, k] = self.compute_all(uk, sk)
         return result
@@ -136,13 +132,13 @@ class BaseEvaluator(BaseFunction, abc.ABC):
         if i is slice, u is np.ndarray, ndim = k -> np.ndarray, ndim = k+1
         """
         u = np.array(u, dtype="float64")
-        spot = self.U.compute_spot(u)
+        spot = self.__U.compute_spot(u)
         spot = np.array(spot, dtype="int16")
         return self.compute_all(u, spot)
 
     def __call__(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         result = self.evalf(u)
-        result = self.A @ result
+        result = self.__A @ result
         return result[self.first_index]
 
 
@@ -189,13 +185,6 @@ class BaseFunctionDerivable(BaseFunction):
         self.__A = self.__A @ newA
         self.__q -= 1
 
-    def __eq__(self, obj):
-        if not super().__eq__(obj):
-            return False
-        if self.q != obj.q:
-            return False
-        return True
-
 
 class BaseFunctionGetItem(BaseFunctionDerivable):
     def __init__(self, U: KnotVector):
@@ -234,6 +223,15 @@ class BaseFunctionGetItem(BaseFunctionDerivable):
         i, j = slice(None, None, None), self.p
         evaluator = self.create_evaluator_instance(i, j)
         return evaluator(u)
+
+    def __eq__(self, obj: object) -> bool:
+        if type(self) != type(obj):
+            raise TypeError
+        if self.U != obj.U:
+            return False
+        if self.q != obj.q:
+            return False
+        return True
 
 
 class SplineBaseFunction(BaseFunctionGetItem):
