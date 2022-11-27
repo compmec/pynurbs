@@ -1,4 +1,4 @@
-from typing import Iterable, Tuple, Union
+from typing import Iterable, Optional, Tuple, Union
 
 import numpy as np
 
@@ -64,6 +64,19 @@ class VerifyKnotVector(object):
             raise ValueError("U must contain the same quantity of 0 and 1. U = ", U)
 
     @staticmethod
+    def CountInternalValues(U: Tuple[float]) -> None:
+        setU = list(set(U))
+        U = np.array(U)
+        minU = np.min(U)
+        maxU = np.max(U)
+        setU.remove(minU)
+        setU.remove(maxU)
+        qttmin = np.sum(U == minU)
+        for u in setU:
+            if np.sum(U == u) > qttmin:
+                raise ValueError
+
+    @staticmethod
     def isInteger(val: int):
         if not isinstance(val, int):
             try:
@@ -94,10 +107,11 @@ class VerifyKnotVector(object):
         VerifyKnotVector.isOrdenedVector(U)
         VerifyKnotVector.Limits(U)
         VerifyKnotVector.SameQuantityBoundary(U)
+        VerifyKnotVector.CountInternalValues(U)
 
 
 class KnotVector(list):
-    def __init__(self, U: Iterable[float]):
+    def __init__(self, U: Tuple[float]):
         VerifyKnotVector.all(U)
         super().__init__(U)
         self.compute_np()
@@ -109,17 +123,6 @@ class KnotVector(list):
     @property
     def n(self):
         return self.__n
-
-    @p.setter
-    def p(self, value: int):
-        VerifyKnotVector.isIntegerNonNegative(value)
-        self.__p = int(value)
-
-    @n.setter
-    def n(self, value: int):
-        VerifyKnotVector.isIntegerNonNegative(value)
-        VerifyKnotVector.PN(self.p, value)
-        self.__n = int(value)
 
     def compute_np(self):
         """
@@ -136,8 +139,10 @@ class KnotVector(list):
         p = 0
         while self[p + 1] == minU:
             p += 1
-        self.p = p
-        self.n = len(self) - p - 1
+        n = len(self) - p - 1
+        VerifyKnotVector.PN(p, n)
+        self.__p = p
+        self.__n = n
 
     def compute_spot_onevalue(self, u: float) -> int:
         try:
@@ -166,11 +171,6 @@ class KnotVector(list):
             else:
                 return mid
             mid = (lower + upper) // 2
-            print("minU, maxU = ", minU, maxU)
-            print("u = ", u)
-            print("lower = ", lower)
-            print("mid = ", mid)
-            print("uppwer = ", upper)
 
     def compute_spot(self, u: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
         u = np.array(u)
@@ -182,23 +182,64 @@ class KnotVector(list):
             result[i] = self.compute_spot(u[i])
         return result
 
-    def __eq__(self, __obj: object):
-        if not isinstance(__obj, (list, tuple, self.__class__)):
+    def verify_insert_remove_knot(self, knot: float, times: Optional[int] = 1):
+        if not isinstance(times, int):
+            raise TypeError
+        if times < 1:
+            raise ValueError
+        if not isinstance(knot, float):
+            raise TypeError
+        if not (min(self) <= knot <= max(self)):
+            raise ValueError
+
+    def __insert_knot(self, knot: float, times: int):
+        if times == 1:
+            spot = self.compute_spot_onevalue(knot)
+            copylist = list(self)
+            copylist.insert(spot + 1, knot)
+            VerifyKnotVector.all(copylist)
+            self.insert(spot + 1, knot)
+            self.compute_np()
+            return
+        for i in range(times):
+            self.__insert_knot(knot, 1)
+
+    def insert_knot(self, knot: float, times: Optional[int] = 1):
+        self.verify_insert_remove_knot(knot, times)
+        self.__insert_knot(knot, times)
+
+    def __remove_knot(self, knot: float, times: int):
+        if times == 1:
+            spot = self.compute_spot_onevalue(knot)
+            self.remove(knot)
+            self.compute_np()
+            return
+        for i in range(times):
+            self.__remove_knot(knot, 1)
+
+    def remove_knot(self, knot: float, times: Optional[int] = 1):
+        self.verify_insert_remove_knot(knot, times)
+        if knot not in self:
+            raise ValueError(f"Cannot remove knot {knot} cause it's not in {self}")
+        self.__remove_knot(knot, times)
+
+    def __eq__(self, obj: object):
+        if not isinstance(obj, (list, tuple, self.__class__)):
             raise TypeError(
-                f"Cannot compare {type(__obj)} with a {self.__class__} instance"
+                f"Cannot compare {type(obj)} with a {self.__class__} instance"
             )
         try:
-            __obj = self.__class__(__obj)
+            obj = self.__class__(obj)
         except Exception as e:
             raise ValueError(
-                f"No sucess trying to convert {type(__obj)} into {self.__class__}. Cause {str(e)}"
+                f"No sucess trying to convert {type(obj)} into {self.__class__}. Cause {str(e)}"
             )
-        if self.n != __obj.n:
+        if self.n != obj.n:
             return False
-        if self.p != __obj.p:
+        if self.p != obj.p:
             return False
         for i, v in enumerate(self):
-            if v != __obj[i]:
+            if v != obj[i]:
                 return False
         return True
 
@@ -233,5 +274,5 @@ class GeneratorKnotVector:
     @staticmethod
     def random(p: int, n: int) -> KnotVector:
         VerifyKnotVector.PN(p, n)
-        ws = np.random.random(n - p + 1)
+        ws = np.random.rand(n - p + 1)
         return GeneratorKnotVector.weight(p, ws)

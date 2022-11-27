@@ -35,15 +35,8 @@ def test_FailCreationClass():
     with pytest.raises(ValueError):
         KnotVector([0, 0, 0, 1, 1])
     with pytest.raises(ValueError):
-        KnotVector(
-            [
-                0,
-                0,
-                1,
-                1,
-                1,
-            ]
-        )
+        U = [0, 0, 1, 1, 1]
+        KnotVector(U)
     with pytest.raises(ValueError):
         KnotVector([0, 0, 0, 0, 1, 1, 1])
     with pytest.raises(ValueError):
@@ -58,6 +51,15 @@ def test_FailCreationClass():
         KnotVector([[0, 0, 0.7, 0.2, 1, 1], [0, 0, 0.7, 0.2, 1, 1]])
     with pytest.raises(ValueError):
         KnotVector([[0, 0, 0.7, 0.2, 1, 1], [0, 0, 0.7, 0.2, 1, 1]])
+
+    KnotVector([0, 0, 0, 0.5, 0.5, 1, 1, 1])
+    KnotVector([0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1])
+    with pytest.raises(ValueError):
+        U = [0, 0, 0, 0.5, 0.5, 0.5, 0.5, 1, 1, 1]
+        KnotVector(U)
+    with pytest.raises(ValueError):
+        U = [0, 0, 0, 0, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1]
+        KnotVector(U)
 
 
 @pytest.mark.order(1)
@@ -128,6 +130,13 @@ def test_findSpots_single():
     assert U.compute_spot(0.8) == 6
     assert U.compute_spot(0.9) == 6
     assert U.compute_spot(1.0) == 7
+
+    with pytest.raises(ValueError):
+        U.compute_spot(-0.1)
+    with pytest.raises(ValueError):
+        U.compute_spot(1.1)
+    with pytest.raises(TypeError):
+        U.compute_spot("asd")
 
 
 @pytest.mark.order(1)
@@ -260,14 +269,96 @@ def test_compare_knotvectors_fail():
 
 @pytest.mark.order(1)
 @pytest.mark.timeout(4)
+@pytest.mark.dependency()
+def test_insert_remove_knot():
+    Uorg = [0, 0, 0, 0, 1, 1, 1, 1]
+    Uinc0 = [0, 0, 0, 0, 1, 1, 1, 1]
+    Uinc1 = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]
+    Uinc2 = [0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1]
+    Uinc3 = [0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1]
+    Uinc4 = [0, 0, 0, 0, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1]
+    Uinc5 = [0, 0, 0, 0, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1]
+
+    U0 = KnotVector(Uinc0)
+    U1 = KnotVector(Uinc1)
+    U2 = KnotVector(Uinc2)
+    U3 = KnotVector(Uinc3)
+    U4 = KnotVector(Uinc4)
+    with pytest.raises(ValueError):
+        KnotVector(Uinc5)
+
+    Uo = KnotVector(Uorg)
+    assert Uo == U0
+    Uo.insert_knot(0.5)
+    assert Uo == U1
+    Uo.insert_knot(0.5)
+    assert Uo == U2
+    Uo.insert_knot(0.5)
+    assert Uo == U3
+    Uo.insert_knot(0.5)
+    assert Uo == U4
+
+    Uo = KnotVector(Uorg)
+    Uo.insert_knot(0.5, 2)
+    assert Uo == U2
+
+    Uo = KnotVector(Uorg)
+    Uo.insert_knot(0.5, 3)
+    assert Uo == U3
+
+    Uo = KnotVector(Uorg)
+    Uo.insert_knot(0.5, 4)
+    assert Uo == U4
+
+    Uo = KnotVector(Uinc4)
+    Uo.remove_knot(0.5)
+    assert Uo == U3
+    Uo.remove_knot(0.5)
+    assert Uo == U2
+    Uo.remove_knot(0.5)
+    assert Uo == U1
+    Uo.remove_knot(0.5)
+    assert Uo == U0
+    with pytest.raises(ValueError):
+        Uo.remove_knot(0.5)
+
+    Uo = KnotVector(Uinc4)
+    Uo.remove_knot(0.5, 2)
+    assert Uo == U2
+
+    Uo = KnotVector(Uinc4)
+    Uo.remove_knot(0.5, 3)
+    assert Uo == U1
+
+    Uo = KnotVector(Uinc4)
+    Uo.remove_knot(0.5, 4)
+    assert Uo == U0
+
+    Uo = KnotVector(Uinc4)
+    with pytest.raises(TypeError):
+        U0.remove_knot("asd")
+    with pytest.raises(TypeError):
+        U0.remove_knot(0.5, "ads")
+    with pytest.raises(ValueError):
+        U0.remove_knot(0.5, 0)
+    with pytest.raises(ValueError):
+        U0.remove_knot(0.5, -1)
+    with pytest.raises(ValueError):
+        U0.remove_knot(-0.5)
+
+
+@pytest.mark.order(1)
+@pytest.mark.timeout(4)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
         "test_findSpots_array",
         "test_generateUuniform",
         "test_generateUrandom",
+        "test_generatorUfails",
         "test_comparetwo_knotvectors",
         "test_compare_knotvectors_fail",
+        "test_insert_remove_knot",
     ]
 )
 def test_end():
