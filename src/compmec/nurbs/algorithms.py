@@ -577,3 +577,50 @@ class Chapter3:
         #### Algorithm A3.8 - NURBs book - pag 115
         """
         pass
+
+
+class Chapter4:
+    @staticmethod
+    def CurvePoint(
+        n: int, p: int, U: Array1D[float], Pw: Array1D[Point], u: float
+    ) -> Point:
+        """
+        #### Algorithm A4.1 - NURBs book - pag 124
+        """
+        pass
+
+    @staticmethod
+    def RatCurveDerivs(
+        Aders: Array1D[float], wders: Array1D[float], d: int
+    ) -> Array1D[Point]:
+        """
+        #### Algorithm A4.2 - NURBs book - pag 127
+        Compute C(u) derivatives from Cw(u) derivatives
+        """
+        pass
+
+    @staticmethod
+    def SurfacePoint(
+        n: int,
+        p: int,
+        U: Array1D[float],
+        m: int,
+        q: int,
+        V: Array1D[float],
+        Pw: Array2D[Point],
+        u: float,
+        v: float,
+    ) -> Point:
+        """
+        #### Algorithm A4.3 - NURBs book - pag 134
+            Compute point on rational B-spline surface
+        """
+        pass
+
+    @staticmethod
+    def RatSurfaceDerivs(Aders: Array2D[float], wders: Array2D[float], d: int):
+        """
+        #### Algorithm A4.4 - NURBs book - pag 137
+            Compute S(u, v) derivatives from Sw(u, v) derivatives
+        """
+        pass
