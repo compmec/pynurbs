@@ -188,7 +188,7 @@ class Chapter2:
                 return mid
 
     @staticmethod
-    def BasisFuns(i: int, u: float, p: int, U: Array1D[float]) -> Array1D:
+    def BasisFuns(i: int, u: float, p: int, U: Array1D[float]) -> Array1D[float]:
         """
         #### Algorithm A2.2 - NURBs book - pag 68
         Compute the nonvanishing basis function
@@ -393,3 +393,187 @@ class Chapter2:
                         saved = temp
             ders[k] = ND[0]
         return ders
+
+
+class Chapter3:
+    @staticmethod
+    def CurvePoint(
+        n: int, p: int, U: Array1D[float], P: Array1D[Point], u: float
+    ) -> Point:
+        """
+        #### Algorithm A3.1 - NURBs book - pag 82
+            Compute curve point
+        #### Input:
+            ``n``: int -- number of dofs
+            ``p``: int -- degree
+            ``U``: Array1D[float] -- knot vector
+            ``P``: Array1D[Point] -- control points
+            ``u``: float -- knot to evaluate
+        #### Output:
+            ``C``: Point -- evaluated point
+        """
+        span = Chapter2.FindSpan(n, p, u, U)
+        N = Chapter2.BasisFuns(span, u, p, U)
+        C = 0
+        for i in range(p + 1):
+            C = C + N[i] * P[span - p + i]
+        return C
+
+    @staticmethod
+    def CurveDerivsAlg1(
+        n: int, p: int, U: Array1D[float], P: Array1D[Point], u: float, d: int
+    ) -> Point:
+        """
+        #### Algorithm A3.2 - NURBs book - pag 93
+            Compute curve derivatives
+        #### Input:
+            ``n``: int -- number of control points + 1
+            ``p``: int -- degree
+            ``U``: Array1D[float] -- knot vector
+            ``P``: Array1D[Point] -- control points
+            ``u``: float -- knot to evaluate
+        #### Output:
+            ``CC``: Array1D[Points] -- Derivatives of the curve
+        """
+        CK = [0] * (d + 1)
+        du = min(d, p)
+        span = Chapter2.FindSpan(n, p, u, U)
+        nders = Chapter2.DersBasisFuns(span, u, p, du, U)
+        for k in range(du + 1):
+            for j in range(p + 1):
+                CK[k] = CK[k] + nders[k][j] * P[span - p + j]
+        return CK
+
+    @staticmethod
+    def CurveDerivCpts(
+        n: int, p: int, U: Array1D[float], P: Array1D[Point], d: int, r1: int, r2: int
+    ) -> Array2D[Point]:
+        """
+        #### Algorithm A3.3 - NURBs book - pag 98
+            Compute contorl points of curve derivatives
+        #### Input:
+            ``n``: int -- number of control points + 1
+            ``p``: int -- degree
+            ``U``: Array1D[float] -- knot vector
+            ``P``: Array1D[Point] -- control points
+            ``d``: int -- The maximum number of derivatives, 0 <= k <= d
+            ``r1``: int -- The lower bound of derivative: r1 <= i <= r2 - k
+            ``r2``: int -- The upper bound of derivative: r1 <= i <= r2 - k
+        #### Output:
+            ``PK``: Array2D[Point] -- PK[k][i] is the i-th control point of the k-th derivative
+        """
+        PK = [[0] * (d + 1)] * (r + 1)
+        r = r2 - r1
+        for i in range(r + 1):
+            PK[0][i] = P[r1 + i]
+        for k in range(1, d + 1):
+            temp = p - k + 1
+            for i in range(r - k + 1):
+                PK[k][i] = (
+                    temp
+                    * (PK[k - 1][i + 1] - PK[k - 1][i])
+                    / (U[r1 + i + p + 1] - U[r1 + i + k])
+                )
+        return PK
+
+    @staticmethod
+    def CurveDerivsAlg2(
+        n: int, p: int, U: Array1D[float], P: Array1D[Point], u: float, d: int
+    ) -> Array2D[Point]:
+        """
+        #### Algorithm A3.4 - NURBs book - pag 99
+            Compute curve derivatives
+        #### Input:
+            ``n``: int -- number of control points + 1
+            ``p``: int -- degree
+            ``U``: Array1D[float] -- knot vector
+            ``P``: Array1D[Point] -- control points
+            ``u``: float -- knot to evaluate
+            ``d``: int -- The maximum number of derivatives, 0 <= k <= d
+        #### Output:
+            ``CK``:
+        """
+        du = min(d, p)
+        CK = [0] * (d + 1)
+        span = Chapter2.FindSpan(n, p, u, U)
+        N = Chapter2.AllBasisFuns(span, u, p, U, N)
+        PK = Chapter3.CurveDerivCpts(n, p, U, P, du, span - p, span)
+        for k in range(du + 1):
+            for j in range(p - k + 1):
+                CK[k] = CK[k] + N[j][p - k] * PK[k][j]
+        return CK
+
+    @staticmethod
+    def SurfacePoint(
+        n: int,
+        p: int,
+        U: Array1D[float],
+        m: int,
+        q: int,
+        V: Array1D[float],
+        P: Array2D[float],
+        u: float,
+        v: float,
+    ) -> Point:
+        """
+        #### Algorithm A3.5 - NURBs book - pag 103
+            Compute surface point
+        #### Input:
+            ``n``: int -- Number of control points in first coordinate
+            ``p``: int -- Degree of curve in first coordinate
+            ``U``: Array1D[float] -- knot vector of first coordinate
+            ``m``: int -- Number of control points in first coordinate
+            ``q``: int -- Degree of curve in second coordinate
+            ``V``: Array1D[float] -- knot vector of second coordinate
+            ``P``: Array2D[Point] -- control points
+            ``u``: float -- knot to evaluate at first coordinate
+            ``v``: float -- knot to evaluate at second coordinate
+        #### Output:
+            ``S``: Point -- Evaluated point
+        """
+        pass
+
+    @staticmethod
+    def SurfaceDerivsAlg1(
+        n: int,
+        p: int,
+        U: Array1D[float],
+        m: int,
+        q: int,
+        V: Array1D[float],
+        P: Array2D[float],
+        u: float,
+        v: float,
+        d: int,
+    ) -> Point:
+        """
+        #### Algorithm A3.6 - NURBs book - pag 111
+            Compute surface point
+        #### Input:
+            ``n``: int -- Number of control points in first coordinate
+            ``p``: int -- Degree of curve in first coordinate
+            ``U``: Array1D[float] -- knot vector of first coordinate
+            ``m``: int -- Number of control points in first coordinate
+            ``q``: int -- Degree of curve in second coordinate
+            ``V``: Array1D[float] -- knot vector of second coordinate
+            ``P``: Array2D[Point] -- control points
+            ``u``: float -- knot to evaluate at first coordinate
+            ``v``: float -- knot to evaluate at second coordinate
+        #### Output:
+            ``SKL``: Array2D[float] -- SKL[k][l] is the derivative of S(u, v) with respect to u k times and v l times
+        """
+        pass
+
+    @staticmethod
+    def SurfaceDerivCpts():
+        """
+        #### Algorithm A3.7 - NURBs book - pag 114
+        """
+        pass
+
+    @staticmethod
+    def SurfaceDerivsAlg2():
+        """
+        #### Algorithm A3.8 - NURBs book - pag 115
+        """
+        pass
