@@ -2,6 +2,8 @@ from typing import Iterable, Optional, Tuple, Union
 
 import numpy as np
 
+from compmec.nurbs.__classes__ import Interface_KnotVector
+
 
 class VerifyKnotVector(object):
 
@@ -10,14 +12,16 @@ class VerifyKnotVector(object):
 
     @staticmethod
     def isFloatArray1D(U: Tuple[float]) -> None:
+        if not isinstance(U, (tuple, list, np.ndarray)):
+            error_msg = f"Cannot convert U (type={type(U)}) into a numpy float array"
+            raise TypeError(error_msg)
         try:
             Ud = np.array(U, dtype="float16")
         except TypeError as e:
-            raise TypeError(
-                f"Cannot convert U (type={type(U)}) into a numpy float array"
-            )
+            error_msg = f"Cannot convert U (type={type(U)}) into a numpy float array"
+            raise TypeError(error_msg)
         except ValueError as e:
-            raise TypeError(f"All the elements inside U must be floats!")
+            raise TypeError(f"All the elements inside U must be floats! Received {U}")
         if Ud.ndim == 0:
             raise TypeError(
                 f"Received U is type {type(U)}, but it's required a Tuple[float]"
@@ -103,6 +107,8 @@ class VerifyKnotVector(object):
 
     @staticmethod
     def all(U: Tuple[float]) -> None:
+        if isinstance(U, Interface_KnotVector):
+            return
         VerifyKnotVector.isFloatArray1D(U)
         VerifyKnotVector.isOrdenedVector(U)
         VerifyKnotVector.Limits(U)

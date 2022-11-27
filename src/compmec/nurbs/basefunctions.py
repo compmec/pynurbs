@@ -56,6 +56,28 @@ def R(i: int, j: int, k: int, u: float, U: KnotVector, w: Tuple[float]) -> float
     return w[i] * Niju / soma
 
 
+class RationalWeightsVector(object):
+    @property
+    def w(self):
+        return self.__w
+
+    @w.setter
+    def w(self, value: Tuple[float]):
+        try:
+            value = np.array(value, dtype="float64")
+        except Exception as e:
+            raise TypeError(f"Input is not valid. Type = {type(value)}, not np.ndarray")
+        if value.ndim != 1:
+            raise ValueError(f"Input must be 1D array")
+        if len(value) != self.n:
+            raise ValueError(f"Input must have same number of points as U.n")
+        for v in value:
+            v = float(v)
+            if v < 0:
+                raise ValueError("The weights must be positive")
+        self.__w = value
+
+
 class BaseFunction(Interface_BaseFunction):
     def __init__(self, U: KnotVector):
         self.__U = KnotVector(U)
@@ -262,37 +284,17 @@ class SplineBaseFunction(BaseFunctionGetItem):
         return SplineEvaluatorClass(self, i, j)
 
 
-class RationalBaseFunction(BaseFunctionGetItem):
+class RationalBaseFunction(BaseFunctionGetItem, RationalWeightsVector):
     def __init__(self, U: KnotVector):
         super().__init__(U)
-        self.__w = np.ones(self.n)
+        self.w = np.ones(self.n, dtype="float64")
 
     def create_evaluator_instance(self, i: Union[int, slice], j: int):
         return RationalEvaluatorClass(self, i, j)
 
-    @property
-    def w(self):
-        return self.__w
-
-    @w.setter
-    def w(self, value: Tuple[float]):
-        try:
-            value = np.array(value, dtype="float64")
-        except Exception as e:
-            raise TypeError(f"Input is not valid. Type = {type(value)}, not np.ndarray")
-        if value.ndim != 1:
-            raise ValueError(f"Input must be 1D array")
-        if len(value) != self.n:
-            raise ValueError(f"Input must have same number of points as U.n")
-        for v in value:
-            v = float(v)
-            if v < 0:
-                raise ValueError("The weights must be positive")
-        self.__w = value
-
-    def __eq__(self, value):
-        if not super().__eq__(value):
+    def __eq__(self, obj):
+        if not super().__eq__(obj):
             return False
-        if np.any(self.w != value.w):
+        if np.any(self.w != obj.w):
             return False
         return True

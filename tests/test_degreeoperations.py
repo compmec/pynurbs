@@ -65,11 +65,11 @@ def test_degreeelevation_controlpoints_bezier():
         U = GeneratorKnotVector.bezier(p=p)
         N = SplineBaseFunction(U)
         P = np.random.rand(p + 1, dim)
-        C = SplineCurve(N, P)
+        C = SplineCurve(U, P)
 
         Ninc = degree_elevation_basefunction(N)
         Pinc = degree_elevation_controlpoints(N, P)
-        Cinc = SplineCurve(Ninc, Pinc)
+        Cinc = SplineCurve(Ninc.U, Pinc)
 
         Cgood = C(utest)
         Ctest = Cinc(utest)
@@ -89,11 +89,11 @@ def test_degreeelevation_controlpoints_uniform():
         U = GeneratorKnotVector.uniform(p=p, n=n)
         N = SplineBaseFunction(U)
         P = np.random.rand(n, dim)
-        C = SplineCurve(N, P)
+        C = SplineCurve(U, P)
 
         Ninc = degree_elevation_basefunction(N)
         Pinc = degree_elevation_controlpoints(N, P)
-        Cinc = SplineCurve(Ninc, Pinc)
+        Cinc = SplineCurve(Ninc.U, Pinc)
 
         Cgood = C(utest)
         Ctest = Cinc(utest)
@@ -113,11 +113,11 @@ def test_degreeelevation_controlpoints_random():
         U = GeneratorKnotVector.random(p=p, n=n)
         N = SplineBaseFunction(U)
         P = np.random.rand(n, dim)
-        C = SplineCurve(N, P)
+        C = SplineCurve(U, P)
 
         Ninc = degree_elevation_basefunction(N)
         Pinc = degree_elevation_controlpoints(N, P)
-        Cinc = SplineCurve(Ninc, Pinc)
+        Cinc = SplineCurve(Ninc.U, Pinc)
 
         Cgood = C(utest)
         Ctest = Cinc(utest)
@@ -137,14 +137,14 @@ def test_degreeelevationreduction_controlpoints_random():
         U = GeneratorKnotVector.random(p=p, n=n)
         N = SplineBaseFunction(U)
         P = np.random.rand(n, dim)
-        C = SplineCurve(N, P)
+        C = SplineCurve(U, P)
 
         Ninc = degree_elevation_basefunction(N)
         Pinc = degree_elevation_controlpoints(N, P)
 
         Nred = degree_reduction_basefunction(Ninc)
         Pred = degree_reduction_controlpoints(Ninc, Pinc)
-        Cred = SplineCurve(Nred, Pred)
+        Cred = SplineCurve(Nred.U, Pred)
 
         Cgood = C(utest)
         Ctest = Cred(utest)

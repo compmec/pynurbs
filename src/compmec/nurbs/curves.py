@@ -6,6 +6,7 @@ from compmec.nurbs.__classes__ import Interface_BaseCurve
 from compmec.nurbs.basefunctions import (
     BaseFunction,
     RationalBaseFunction,
+    RationalWeightsVector,
     SplineBaseFunction,
 )
 from compmec.nurbs.degreeoperations import degree_decrease, degree_increase
@@ -15,7 +16,7 @@ from compmec.nurbs.knotspace import KnotVector
 
 class BaseCurve(Interface_BaseCurve):
     def __init__(self, U: KnotVector, P: np.ndarray):
-        self.__set_FP(U, P)
+        self.__set_UFP(U, P)
 
     def __call__(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         L = self.F(u)
@@ -34,23 +35,29 @@ class BaseCurve(Interface_BaseCurve):
 
     @property
     def U(self):
-        return self.__U
+        return self.F.U
+
+    @property
+    def F(self):
+        return self.__F
 
     @property
     def P(self):
         return self.__P
 
-    def __set_FP(self, F: BaseFunction, P: np.ndarray):
-        if not isinstance(F, BaseFunction):
-            raise TypeError(f"F must be a BaseFunction instance, not {type(F)}")
-        P = np.array(P, dtype="float64")
-        if F.n != P.shape[0]:
-            error_msg = f"The number of control points must be the same of degrees of freedom of {type(F)}."
-            error_msg += f"F.n = {self.F.n} != {len(P)} = len(P)"
+    @P.setter
+    def P(self, value: np.ndarray):
+        value = np.array(value, dtype="float64")
+        if value.shape[0] != self.n:
+            error_msg = f"The number of control points must be the same of degrees of freedom of KnotVector.\n"
+            error_msg += f"    U.n = {self.n} != {len(value)} = len(P)"
             raise ValueError(error_msg)
+        self.__P = value
 
-        self.__F = F
-        self.__P = P
+    def __set_UFP(self, U: KnotVector, P: np.ndarray):
+        U = KnotVector(U)
+        self.__F = self._create_base_function_instance(U)
+        self.P = P
 
     def __eq__(self, obj: object) -> bool:
         if type(self) != type(obj):
@@ -76,61 +83,86 @@ class BaseCurve(Interface_BaseCurve):
         return not self.__eq__(__obj)
 
     def __neg__(self):
-        return self.__class__(self.F, np.copy(-self.P))
+        return self.__class__(self.U, np.copy(-self.P))
 
     def __add__(self, __obj: object):
-        if not isinstance(__obj, self.__class__):
-            raise TypeError(
+        if type(self) != type(__obj):
+            error_msg = (
                 f"Cannot sum a {type(__obj)} object with a {self.__class__} object"
             )
+            raise TypeError(error_msg)
         if self.U != __obj.U:
             raise ValueError("The vectors of curves are not the same!")
         if self.P.shape != __obj.P.shape:
             raise ValueError("The shape of control points are not the same!")
         newP = np.copy(self.P) + __obj.P
-        return self.__class__(self.F, newP)
+        return self.__class__(self.U, newP)
 
     def __sub__(self, __obj: object):
-        if not isinstance(__obj, self.__class__):
-            raise TypeError(
-                f"Cannot sum a {type(__obj)} object with a {self.__class__} object"
-            )
         return self + (-__obj)
 
-    def knot_insert(self, knots: Tuple[float]):
+    def knot_insert(self, knots: Union[float, Tuple[float]]):
         newP = np.copy(self.P)
         newF = self.F
-        for knot in knots:
-            newF, newP = insert_knot(self.F, self.P, knot)
-        self.__set_FP(newF, newP)
+        knots = np.array(knots, dtype="float64")
+        if knots.ndim == 0:
+            newF, newP = insert_knot(newF, newP, float(knots))
+        elif knots.ndim == 1:
+            for knot in knots:
+                newF, newP = insert_knot(newF, newP, knot)
+        else:
+            raise ValueError
+        self.__set_UFP(newF.U, newP)
 
-    def knot_remove(self, knots: Tuple[float]):
+    def knot_remove(self, knots: Union[float, Tuple[float]]):
         newP = np.copy(self.P)
         newF = self.F
-        for knot in knots:
-            newF, newP = remove_knot(self.F, self.P, knot)
-        self.__set_FP(newF, newP)
+        knots = np.array(knots, dtype="float64")
+        if knots.ndim == 0:
+            newF, newP = remove_knot(newF, newP, float(knots))
+        elif knots.ndim == 1:
+            for knot in knots:
+                newF, newP = remove_knot(newF, newP, float(knot))
+        else:
+            raise ValueError
+        self.__set_UFP(newF.U, newP)
 
     def degree_increase(self, times: Optional[int] = 1):
         newP = np.copy(self.P)
         newF = self.F
         for i in range(times):
-            newF, newP = degree_increase(self.F, self.P)
-        self.__set_FP(newF, newP)
+            newF, newP = degree_increase(newF, newP)
+            print("newF = ", newF)
+            print("newP = ", newP)
+        self.__set_UFP(newF.U, newP)
 
     def degree_decrease(self, times: Optional[int] = 1):
         newP = np.copy(self.P)
         newF = self.F
         for i in range(times):
-            newF, newP = degree_decrease(self.F, self.P)
-        self.__set_FP(newF, newP)
+            newF, newP = degree_decrease(newF, newP)
+        self.__set_UFP(newF.U, newP)
 
 
 class SplineCurve(BaseCurve):
-    def __init__(self, F: SplineBaseFunction, controlpoints: np.ndarray):
-        super().__init__(F, controlpoints)
+    def __init__(self, U: KnotVector, controlpoints: np.ndarray):
+        super().__init__(U, controlpoints)
+
+    def _create_base_function_instance(self, U: KnotVector):
+        return SplineBaseFunction(U)
 
 
-class RationalCurve(BaseCurve):
-    def __init__(self, f: RationalBaseFunction, controlpoints: np.ndarray):
-        super().__init__(f, controlpoints)
+class RationalCurve(BaseCurve, RationalWeightsVector):
+    def __init__(self, U: KnotVector, controlpoints: np.ndarray):
+        super().__init__(U, controlpoints)
+        self.w = np.ones(self.n, dtype="float64")
+
+    def _create_base_function_instance(self, U: KnotVector):
+        return RationalBaseFunction(U)
+
+    def __eq__(self, obj):
+        if not super().__eq__(obj):
+            return False
+        if np.any(self.w != obj.w):
+            return False
+        return True

@@ -65,12 +65,12 @@ def test_insertknot_curve_basic():
     U = GeneratorKnotVector.uniform(n=n, p=p)
     N = SplineBaseFunction(U)
     P = np.array([[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6]])
-    C = SplineCurve(N, P)
+    C = SplineCurve(U, P)
     knot = 0.5
     newN = insert_knot_basefunction(N, knot)
     assert N != newN
     newP = insert_knot_controlpoints(N, P, knot)
-    newC = SplineCurve(newN, newP)
+    newC = SplineCurve(newN.U, newP)
     assert C == newC
 
 
@@ -86,12 +86,12 @@ def test_insertknot_curve_random():
         U = GeneratorKnotVector.uniform(n=n, p=p)
         N = SplineBaseFunction(U)
         P = np.random.rand(n, dim)
-        C = SplineCurve(N, P)
+        C = SplineCurve(U, P)
         knot = 0.01 + 0.98 * np.random.rand()
         newN = insert_knot_basefunction(N, knot)
         assert N != newN
         newP = insert_knot_controlpoints(N, P, knot)
-        newC = SplineCurve(newN, newP)
+        newC = SplineCurve(newN.U, newP)
         assert C == newC
 
 
@@ -105,15 +105,15 @@ def test_removeinsertedknot_basic():
     knotvector = KnotVector(U)
     N = SplineBaseFunction(knotvector)
     P = np.array([[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6]])
-    C = SplineCurve(N, P)
+    C = SplineCurve(U, P)
     knot = 0.5
     Ntemp = insert_knot_basefunction(N, knot)
     Ptemp = insert_knot_controlpoints(N, P, knot)
-    Ctemp = SplineCurve(Ntemp, Ptemp)
+    Ctemp = SplineCurve(Ntemp.U, Ptemp)
     assert C == Ctemp
     Nnew = remove_knot_basefunction(Ntemp, knot)
     Pnew = remove_knot_controlpoints(Ntemp, Ptemp, knot)
-    Cnew = SplineCurve(Nnew, Pnew)
+    Cnew = SplineCurve(Nnew.U, Pnew)
     assert N == Nnew
     np.testing.assert_allclose(P, Pnew)
     assert C == Cnew
@@ -132,7 +132,7 @@ def test_removeinsertedknot_random():
         knotvector = KnotVector(U)
         N = SplineBaseFunction(knotvector)
         P = np.random.rand(n, dim)
-        C = SplineCurve(N, P)
+        C = SplineCurve(U, P)
 
         while True:
             knot = 0.01 + 0.98 * np.random.rand()
@@ -140,11 +140,11 @@ def test_removeinsertedknot_random():
                 break
         Ntemp = insert_knot_basefunction(N, knot)
         Ptemp = insert_knot_controlpoints(N, P, knot)
-        Ctemp = SplineCurve(Ntemp, Ptemp)
+        Ctemp = SplineCurve(Ntemp.U, Ptemp)
         assert C == Ctemp
         Nnew = remove_knot_basefunction(Ntemp, knot)
         Pnew = remove_knot_controlpoints(Ntemp, Ptemp, knot)
-        Cnew = SplineCurve(Nnew, Pnew)
+        Cnew = SplineCurve(Nnew.U, Pnew)
         assert N == Nnew
         np.testing.assert_allclose(P, Pnew)
         assert C == Cnew

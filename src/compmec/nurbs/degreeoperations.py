@@ -71,7 +71,7 @@ def degree_increase(F: Interface_BaseFunction, P: np.ndarray, times: int = 1):
         raise ValueError("Can only increase degree once per time")
     newP = degree_elevation_controlpoints(F, P, times)
     newF = degree_elevation_basefunction(F, times)
-    return newF, newF
+    return newF, newP
 
 
 def degree_reduction_basefunction(F: Interface_BaseFunction, times: Optional[int] = 1):
@@ -135,4 +135,4 @@ def degree_decrease(F: Interface_BaseFunction, P: np.ndarray, times: int = 1):
         raise ValueError("Can only increase degree once per time")
     newP = degree_reduction_controlpoints(F, P, times)
     newF = degree_reduction_basefunction(F, times)
-    return newF, newF
+    return newF, newP
