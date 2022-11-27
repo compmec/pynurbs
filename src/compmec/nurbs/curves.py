@@ -30,7 +30,7 @@ class BaseCurve(object):
     @property
     def dim(self):
         if len(self.P.shape) == 1:
-            return 1
+            return 0
         return self.P.shape[1]
 
     @property
@@ -57,10 +57,10 @@ class BaseCurve(object):
         self.__F = F
         self.__P = P
 
-    def __eq__(self, __obj: object) -> bool:
-        if not isinstance(__obj, self.__class__):
+    def __eq__(self, obj: object) -> bool:
+        if type(self) != type(obj):
             raise TypeError(
-                f"Cannot compare a {type(__obj)} object with a {self.__class__} object"
+                f"Cannot compare a {type(obj)} object with a {self.__class__} object"
             )
         knots = []
         for ui in self.F.U:
@@ -74,7 +74,7 @@ class BaseCurve(object):
         utest += [knots[-1]]
         utest = np.array(utest)
         Cusel = self(utest)
-        Cuobj = __obj(utest)
+        Cuobj = obj(utest)
         return np.all(np.abs(Cusel - Cuobj) < 1e-9)
 
     def __ne__(self, __obj: object):

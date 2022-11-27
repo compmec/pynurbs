@@ -117,17 +117,17 @@ def test_ValuesOfN():
 @pytest.mark.dependency(depends=["test_ValuesOfP", "test_ValuesOfN"])
 def test_findSpots_single():
     U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])  # p = 1, n =7
-    assert U.spot(0) == 1
-    assert U.spot(0.1) == 1
-    assert U.spot(0.2) == 2
-    assert U.spot(0.3) == 2
-    assert U.spot(0.4) == 3
-    assert U.spot(0.5) == 4
-    assert U.spot(0.6) == 5
-    assert U.spot(0.7) == 5
-    assert U.spot(0.8) == 6
-    assert U.spot(0.9) == 6
-    assert U.spot(1.0) == 7
+    assert U.compute_spot(0) == 1
+    assert U.compute_spot(0.1) == 1
+    assert U.compute_spot(0.2) == 2
+    assert U.compute_spot(0.3) == 2
+    assert U.compute_spot(0.4) == 3
+    assert U.compute_spot(0.5) == 4
+    assert U.compute_spot(0.6) == 5
+    assert U.compute_spot(0.7) == 5
+    assert U.compute_spot(0.8) == 6
+    assert U.compute_spot(0.9) == 6
+    assert U.compute_spot(1.0) == 7
 
 
 @pytest.mark.order(1)
@@ -136,7 +136,7 @@ def test_findSpots_single():
 def test_findSpots_array():
     U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])  # p = 1, n =7
     array = np.linspace(0, 1, 11)  # (0, 0.1, 0.2, ..., 0.9, 1.0)
-    suposedspots = U.spot(array)
+    suposedspots = U.compute_spot(array)
     correctspots = [1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7]
     np.testing.assert_equal(suposedspots, correctspots)
 
@@ -234,7 +234,7 @@ def test_comparetwo_knotvectors():
 @pytest.mark.dependency(depends=["test_generateUuniform"])
 def test_compare_knotvectors_fail():
     p = np.random.randint(0, 6)
-    n = np.random.randint(p + 1, p + 11)
+    n = np.random.randint(p + 3, p + 11)
     U1 = GeneratorKnotVector.uniform(p=p, n=n)
     with pytest.raises(TypeError):
         assert U1 == 1
@@ -259,6 +259,7 @@ def test_compare_knotvectors_fail():
 
 
 @pytest.mark.order(1)
+@pytest.mark.timeout(4)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
@@ -266,6 +267,7 @@ def test_compare_knotvectors_fail():
         "test_generateUuniform",
         "test_generateUrandom",
         "test_comparetwo_knotvectors",
+        "test_compare_knotvectors_fail",
     ]
 )
 def test_end():

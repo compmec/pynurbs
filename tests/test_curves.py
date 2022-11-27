@@ -7,6 +7,7 @@ from compmec.nurbs.knotspace import GeneratorKnotVector
 
 
 @pytest.mark.order(3)
+@pytest.mark.timeout(2)
 @pytest.mark.dependency(
     depends=["tests/test_basefunctions.py::test_end"], scope="session"
 )

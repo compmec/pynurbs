@@ -139,10 +139,18 @@ class KnotVector(list):
         self.p = p
         self.n = len(self) - p - 1
 
-    def __find_spot_onevalue(self, u: float) -> int:
+    def compute_spot_onevalue(self, u: float) -> int:
+        try:
+            u = float(u)
+        except Exception as e:
+            raise TypeError
         U = np.array(self)
         minU = np.min(self)
         maxU = np.max(self)
+        if u < minU:
+            raise ValueError(f"Received u = {u} < minU = {minU}")
+        if maxU < u:
+            raise ValueError(f"Received u = {u} > maxU = {maxU}")
         lower = int(np.max(np.where(U == minU)))
         upper = int(np.min(np.where(U == maxU)))
         if u == minU:
@@ -158,21 +166,21 @@ class KnotVector(list):
             else:
                 return mid
             mid = (lower + upper) // 2
+            print("minU, maxU = ", minU, maxU)
+            print("u = ", u)
+            print("lower = ", lower)
+            print("mid = ", mid)
+            print("uppwer = ", upper)
 
-    def __find_spot_vector(self, u: Iterable[float]) -> np.ndarray:
-        """
-        find the spots of an vector. It's not very efficient, but ok for the moment
-        """
-        spots = np.zeros(len(u), dtype="int64")
-        for i, ui in enumerate(u):
-            spots[i] = self.__find_spot_onevalue(ui)
-        return spots
-
-    def spot(self, u: Union[float, Iterable[float]]) -> Union[int, np.ndarray]:
-        if isinstance(u, np.ndarray):
-            return self.__find_spot_vector(u)
-        else:
-            return np.array(self.__find_spot_onevalue(u))
+    def compute_spot(self, u: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
+        u = np.array(u)
+        if u.ndim == 0:
+            return self.compute_spot_onevalue(u)
+        npts = u.shape[0]
+        result = np.zeros([npts] + list(u.shape[1:]), dtype="int16")
+        for i in range(npts):
+            result[i] = self.compute_spot(u[i])
+        return result
 
     def __eq__(self, __obj: object):
         if not isinstance(__obj, (list, tuple, self.__class__)):

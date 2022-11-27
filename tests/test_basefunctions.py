@@ -6,6 +6,7 @@ from compmec.nurbs.knotspace import GeneratorKnotVector
 
 
 @pytest.mark.order(2)
+@pytest.mark.timeout(1)
 @pytest.mark.dependency(depends=["tests/test_knotspace.py::test_end"], scope="session")
 def test_begin():
     pass
@@ -41,10 +42,8 @@ def test_SplineEvaluationFunctions_p1n2():
     N = SplineBaseFunction(U)
     N[0, 0]
     N[1, 0]
-    N[2, 0]
     N[0, 1]
     N[1, 1]
-    N[2, 1]
     N[:, 0]
     N[:, 1]
     N[:]
@@ -59,11 +58,9 @@ def test_SplineEvaluationFunctions_p1n3():
     N[0, 0]
     N[1, 0]
     N[2, 0]
-    N[3, 0]
     N[0, 1]
     N[1, 1]
     N[2, 1]
-    N[3, 1]
     N[:, 0]
     N[:, 1]
     N[:]
@@ -427,10 +424,8 @@ def test_RationalEvaluationFunctions_p1n2():
     R = RationalBaseFunction(U)
     R[0, 0]
     R[1, 0]
-    R[2, 0]
     R[0, 1]
     R[1, 1]
-    R[2, 1]
     R[:, 0]
     R[:, 1]
     R[:]
@@ -475,6 +470,94 @@ def test_rational_tableUuniform_sum1():
 
 
 @pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(
+    depends=["test_CreationSplineBaseFunction", "test_CreationRationalBaseFunction"]
+)
+def test_basefunction_fails():
+    p, n = 4, 6
+    U = GeneratorKnotVector.uniform(p=p, n=n)
+    N = SplineBaseFunction(U)
+    with pytest.raises(ValueError):
+        N(1.1)
+    with pytest.raises(TypeError):
+        N["asd"]
+    with pytest.raises(TypeError):
+        N["1"]
+    with pytest.raises(TypeError):
+        N[{1: 1}]
+    with pytest.raises(IndexError):
+        N[n]
+    with pytest.raises(IndexError):
+        N[n + 1]
+    with pytest.raises(IndexError):
+        N[3, p + 1]
+    with pytest.raises(IndexError):
+        N[:, p + 1]
+    N[-1, p]
+    N[-n, p]
+    with pytest.raises(IndexError):
+        N[-n - 1, p]
+    with pytest.raises(IndexError):
+        N[-n - 1, p]
+    with pytest.raises(TypeError):
+        N[0, "1"]
+    with pytest.raises(TypeError):
+        N[0, "asd"]
+    with pytest.raises(TypeError):
+        N[0, {1: 1}]
+    N[0, 0]
+    with pytest.raises(IndexError):
+        N[0, -1]
+    with pytest.raises(IndexError):
+        N[0, p, 0]
+
+    with pytest.raises(TypeError):
+        N == 1
+
+    R = RationalBaseFunction(U)
+    with pytest.raises(ValueError):
+        w = np.linspace(-1, 1, n)
+        R.w = w
+
+    R1 = RationalBaseFunction(U)
+    R1.w = np.random.uniform(0.5, 1.5, n)
+    R2 = RationalBaseFunction(U)
+    R2.w = np.random.uniform(0.5, 1.5, n)
+    U = GeneratorKnotVector.random(p=p, n=n)
+    R3 = RationalBaseFunction(U)
+    assert R1 != R2
+    assert R1 != R3
+    with pytest.raises(AssertionError):
+        assert R1 == R2
+    with pytest.raises(TypeError):
+        R1.w = "asd"
+    with pytest.raises(ValueError):
+        R1.w = np.random.uniform(1, 2, n - 1)
+    with pytest.raises(ValueError):
+        R1.w = np.random.uniform(1, 2, n + 1)
+    with pytest.raises(ValueError):
+        R1.w = np.random.uniform(1, 2, size=(n, 2))
+
+
+@pytest.mark.order(2)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(
+    depends=["test_CreationSplineBaseFunction", "test_CreationRationalBaseFunction"]
+)
+def test_derivatives():
+    p, n = 4, 6
+    U = GeneratorKnotVector.uniform(p=p, n=n)
+    N1 = SplineBaseFunction(U)
+    N2 = SplineBaseFunction(U)
+    assert N1 == N2
+
+    N1.derivate()
+    assert N1 != N2
+
+
+@pytest.mark.order(2)
+@pytest.mark.timeout(1)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
@@ -487,6 +570,8 @@ def test_rational_tableUuniform_sum1():
         "test_RationalEvaluationFunctions_p1n2",
         "test_rational_somesinglevalues_p1n2",
         "test_rational_tableUuniform_sum1",
+        "test_basefunction_fails",
+        "test_derivatives",
     ]
 )
 def test_end():

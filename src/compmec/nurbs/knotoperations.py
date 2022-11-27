@@ -24,7 +24,7 @@ def insert_knot_basefunction(
     if not isinstance(F, BaseFunction):
         raise TypeError("F must be a BaseFunction instance")
     knotvector = F.U
-    spot = knotvector.spot(knot)
+    spot = knotvector.compute_spot(knot)
     newU = list(knotvector)
     for i in range(times):
         newU.insert(spot + 1, knot)
@@ -46,7 +46,7 @@ def insert_knot_controlpoints(
     if times != 1:
         raise ValueError("For the moment, can insert knot only once at the time")
     n, p = U.n, U.p
-    k = U.spot(knot)
+    k = U.compute_spot(knot)
     a = np.zeros(p)
     for j in range(p):
         i = k - p + 1 + j
