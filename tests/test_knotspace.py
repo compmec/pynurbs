@@ -269,7 +269,7 @@ def test_compare_knotvectors_fail():
 
 @pytest.mark.order(1)
 @pytest.mark.timeout(4)
-@pytest.mark.dependency()
+@pytest.mark.dependency(depends=["test_generateUuniform"])
 def test_insert_knot_remove():
     Uorg = [0, 0, 0, 0, 1, 1, 1, 1]
     Uinc0 = [0, 0, 0, 0, 1, 1, 1, 1]

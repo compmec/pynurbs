@@ -61,20 +61,14 @@ class BaseCurve(Interface_BaseCurve):
 
     def __eq__(self, obj: object) -> bool:
         if type(self) != type(obj):
-            raise TypeError(
+            error_msg = (
                 f"Cannot compare a {type(obj)} object with a {self.__class__} object"
             )
-        knots = []
-        for ui in self.F.U:
-            if ui not in knots:
-                knots.append(ui)
-        utest = []
-        for i in range(len(knots) - 1):
-            utest += list(
-                np.linspace(knots[i], knots[i + 1], 1 + self.F.p, endpoint=False)
-            )
-        utest += [knots[-1]]
-        utest = np.array(utest)
+            raise TypeError(error_msg)
+        knots = list(set(self.U))
+        knots.sort()
+        utest = [np.linspace(a, b, 2 + self.p) for a, b in zip(knots[:-1], knots[1:])]
+        utest = list(set(np.array(utest).reshape(-1)))
         Cusel = self(utest)
         Cuobj = obj(utest)
         return np.all(np.abs(Cusel - Cuobj) < 1e-9)
@@ -132,8 +126,6 @@ class BaseCurve(Interface_BaseCurve):
         newF = self.F
         for i in range(times):
             newF, newP = degree_increase(newF, newP)
-            print("newF = ", newF)
-            print("newP = ", newP)
         self.__set_UFP(newF.U, newP)
 
     def degree_decrease(self, times: Optional[int] = 1):
@@ -161,8 +153,10 @@ class RationalCurve(BaseCurve, RationalWeightsVector):
         return RationalBaseFunction(U)
 
     def __eq__(self, obj):
-        if not super().__eq__(obj):
-            return False
+        if type(self) != type(obj):
+            raise TypeError
         if np.any(self.w != obj.w):
+            return False
+        if not super().__eq__(obj):
             return False
         return True

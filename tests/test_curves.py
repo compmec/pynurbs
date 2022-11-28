@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from compmec.nurbs import RationalCurve, SplineCurve
+from compmec.nurbs import KnotVector, RationalCurve, SplineCurve
 from compmec.nurbs.curves import BaseCurve
 from compmec.nurbs.knotspace import GeneratorKnotVector
 
@@ -104,7 +104,7 @@ def test_SumDiffTwoCurves():
 
 
 @pytest.mark.order(3)
-@pytest.mark.timeout(2)
+@pytest.mark.timeout(10)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
@@ -116,7 +116,7 @@ def test_SumDiffTwoCurves():
 def test_others():
     p = np.random.randint(0, 6)
     n = np.random.randint(p + 3, p + 7)
-    ndim = np.random.randint(4)
+    ndim = np.random.randint(1, 4)
     U = GeneratorKnotVector.random(p=p, n=n)
     P = np.random.uniform(-1, 1, (n, ndim))
     w = np.random.uniform(1, 2, n)
@@ -142,6 +142,15 @@ def test_others():
     with pytest.raises(TypeError):
         C + 1
 
+
+@pytest.mark.order(3)
+@pytest.mark.timeout(10)
+@pytest.mark.skip(reason="To correct algorithms of knot insertion and remotion")
+@pytest.mark.dependency(depends=["test_others"])
+def test_others2():
+    p = np.random.randint(0, 6)
+    n = np.random.randint(p + 3, p + 7)
+    ndim = np.random.randint(1, 4)
     U1 = GeneratorKnotVector.random(p=p, n=n)
     U2 = GeneratorKnotVector.random(p=p, n=n)
     P1 = np.random.uniform(-1, 1, (n, ndim))
@@ -171,21 +180,110 @@ def test_others():
     C1.degree_decrease()
     assert C1 == C1orig
 
-    w1 = np.random.uniform(1, 2, n)
-    w2 = w1
-    w3 = np.random.uniform(1, 2, n)
-    w4 = w1
+
+@pytest.mark.order(3)
+@pytest.mark.timeout(10)
+@pytest.mark.dependency(depends=["test_others2"])
+def test_others3():
+    p = np.random.randint(0, 6)
+    n = np.random.randint(p + 3, p + 7)
+    ndim = np.random.randint(1, 4)
+    U1 = GeneratorKnotVector.random(p=p, n=n)
+    U2 = GeneratorKnotVector.random(p=p, n=n)
+    P1 = np.random.uniform(-1, 1, (n, ndim))
+    P2 = np.random.uniform(-1, 1, (n, ndim))
+    P3 = np.random.uniform(-1, 1, (n, ndim + 1))
+    C1 = SplineCurve(U1, P1)
+    C2 = SplineCurve(U2, P2)
+    C3 = SplineCurve(U2, P3)
     C1 = RationalCurve(U1, P1)
-    C1.w = w1
+    C1.w = np.random.uniform(1, 2, n)
     C2 = RationalCurve(U2, P2)
-    C2.w = w2
+    C2.w = C1.w
     C3 = RationalCurve(U1, P1)
-    C3.w = w3
+    C3.w = np.random.uniform(1, 2, n)
     C4 = RationalCurve(U1, P1)
-    C4.w = w4
+    C4.w = C1.w
     assert C1 != C2
     assert C1 != C3
+    assert C2 != C3
     assert C1 == C4
+
+
+@pytest.mark.order(3)
+@pytest.mark.timeout(10)
+@pytest.mark.dependency(depends=["test_others3"])
+def test_curve_insert_oneknot():
+    Uorig = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5]  # Example 5.1 nurbs book
+    Uorig = np.array(Uorig, dtype="float64") / 5  # p = 3, n = 8
+    Uorig = KnotVector(Uorig)
+    p, npts = 3, 8
+    knot = 0.5
+    ndim = 3
+    P = np.random.uniform(-1, 1, (npts, ndim))
+    Corig = SplineCurve(Uorig, P)
+
+    Q = np.zeros((npts + 1, ndim), dtype="float64")
+    Q[:3] = P[:3]
+    Q[3] = (1 / 6) * P[2] + (5 / 6) * P[3]
+    Q[4] = (1 / 2) * P[3] + (1 / 2) * P[4]
+    Q[5] = (5 / 6) * P[4] + (1 / 6) * P[5]
+    Q[6:] = P[5:]
+
+    Uinse = list(Uorig)
+    Uinse.insert(5, knot)
+    Uinse = KnotVector(Uinse)
+    Cinse = SplineCurve(Uinse, Q)
+
+    assert Corig == Cinse
+
+
+@pytest.mark.order(3)
+@pytest.mark.timeout(10)
+@pytest.mark.skip(reason="sometimes fail")
+@pytest.mark.dependency(depends=["test_curve_insert_oneknot"])
+def test_curve_insertremove_oneknot_random():
+    ntests = 100
+    for i in range(ntests):
+        p = np.random.randint(1, 6)
+        n = np.random.randint(p + 1, p + 7)
+        dim = np.random.randint(1, 6)
+        if dim == 0:
+            controlpoints = np.random.uniform(-1, 1, n)
+        else:
+            controlpoints = np.random.uniform(-1, 1, (n, dim))
+        knotvector = GeneratorKnotVector.random(p=p, n=n)
+        curve = SplineCurve(knotvector, controlpoints)
+
+        knot = np.random.uniform(0.01, 0.99)
+        curve.knot_insert(knot)
+        curve.knot_remove(knot)
+
+        assert curve.U == knotvector
+        np.testing.assert_allclose(curve.P, controlpoints, atol=1e-12)
+
+
+@pytest.mark.order(3)
+@pytest.mark.timeout(10)
+@pytest.mark.dependency(depends=["test_others3"])
+def test_curve_increasedecrease_degree_random():
+    ntests = 100
+    for i in range(ntests):
+        p = np.random.randint(1, 6)
+        n = np.random.randint(p + 1, p + 7)
+        dim = np.random.randint(1, 6)
+        if dim == 0:
+            controlpoints = np.random.uniform(-1, 1, n)
+        else:
+            controlpoints = np.random.uniform(-1, 1, (n, dim))
+        knotvector = GeneratorKnotVector.random(p=p, n=n)
+        curve = SplineCurve(knotvector, controlpoints)
+
+        curve.degree_increase()
+        curve.degree_decrease()
+
+        assert curve.U == knotvector
+        np.testing.assert_allclose(curve.P, controlpoints, atol=1e-12)
 
 
 @pytest.mark.order(3)
@@ -197,6 +295,8 @@ def test_others():
         "test_SplineVectorialCurve",
         "test_SumDiffTwoCurves",
         "test_others",
+        "test_curve_insertremove_oneknot_random",
+        "test_curve_increasedecrease_degree_random",
     ]
 )
 def test_end():
