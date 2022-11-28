@@ -119,8 +119,11 @@ class VerifyKnotVector(object):
 class KnotVector(list):
     def __init__(self, U: Tuple[float]):
         VerifyKnotVector.all(U)
+        p, n = self.compute_pn(U)
+        VerifyKnotVector.PN(p, n)
+        self.__p = p
+        self.__n = n
         super().__init__(U)
-        self.compute_np()
 
     @property
     def p(self) -> int:
@@ -130,7 +133,8 @@ class KnotVector(list):
     def n(self) -> int:
         return self.__n
 
-    def compute_np(self):
+    @staticmethod
+    def compute_pn(U: Tuple[float]):
         """
         We have that U = [0, ..., 0, ?, ..., ?, 1, ..., 1]
         And that U[p] = 0, but U[p+1] != 0
@@ -141,16 +145,14 @@ class KnotVector(list):
         That means that
             m = n + p
         """
-        minU = min(self)
+        minU = min(U)
         p = 0
-        while self[p + 1] == minU:
+        while U[p + 1] == minU:
             p += 1
-        n = len(self) - p - 1
-        VerifyKnotVector.PN(p, n)
-        self.__p = p
-        self.__n = n
+        n = len(U) - p - 1
+        return p, n
 
-    def compute_spot_onevalue(self, u: float) -> int:
+    def span_onevalue(self, u: float) -> int:
         try:
             u = float(u)
         except Exception as e:
@@ -178,14 +180,29 @@ class KnotVector(list):
                 return mid
             mid = (lower + upper) // 2
 
-    def compute_spot(self, u: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
+    def span(self, u: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
         u = np.array(u)
         if u.ndim == 0:
-            return self.compute_spot_onevalue(u)
+            return self.span_onevalue(u)
         npts = u.shape[0]
         result = np.zeros([npts] + list(u.shape[1:]), dtype="int16")
         for i in range(npts):
-            result[i] = self.compute_spot(u[i])
+            result[i] = self.span(u[i])
+        return result
+
+    def mult_onevalue(self, u: float) -> int:
+        if not (min(self) <= u <= max(self)):
+            raise ValueError
+        return np.sum(np.abs(np.array(self) - u) < 1e-12)
+
+    def mult(self, u: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
+        u = np.array(u)
+        if u.ndim == 0:
+            return self.mult_onevalue(u)
+        npts = u.shape[0]
+        result = np.zeros([npts] + list(u.shape[1:]), dtype="int16")
+        for i in range(npts):
+            result[i] = self.mult(u[i])
         return result
 
     def verify_insert_remove_knot(self, knot: float, times: Optional[int] = 1):
@@ -200,12 +217,15 @@ class KnotVector(list):
 
     def __knot_insert(self, knot: float, times: int):
         if times == 1:
-            spot = self.compute_spot_onevalue(knot)
+            span = self.span_onevalue(knot)
             copylist = list(self)
-            copylist.insert(spot + 1, knot)
+            copylist.insert(span + 1, knot)
             VerifyKnotVector.all(copylist)
-            self.insert(spot + 1, knot)
-            self.compute_np()
+            self.insert(span + 1, knot)
+            p, n = self.compute_pn(list(self))
+            VerifyKnotVector.PN(p, n)
+            self.__p = p
+            self.__n = n
             return
         for i in range(times):
             self.__knot_insert(knot, 1)
@@ -216,9 +236,12 @@ class KnotVector(list):
 
     def __knot_remove(self, knot: float, times: int):
         if times == 1:
-            spot = self.compute_spot_onevalue(knot)
+            span = self.span_onevalue(knot)
             self.remove(knot)
-            self.compute_np()
+            p, n = self.compute_pn(list(self))
+            VerifyKnotVector.PN(p, n)
+            self.__p = p
+            self.__n = n
             return
         for i in range(times):
             self.__knot_remove(knot, 1)

@@ -1,7 +1,5 @@
 from typing import Any, List, Tuple
 
-import numpy as np
-
 
 class Point:
     pass
@@ -650,7 +648,16 @@ class Chapter4:
 class Chapter5:
     @staticmethod
     def Distance4D(P1, P2):
-        return np.linalg.norm(np.array(P1) - np.array(P2))
+        TOLERANCE = 1e-12
+        value = 0
+        for p1, p2 in zip(P1, P2):
+            value += (p1 - p2) ** 2
+        x0 = value
+        while True:  # Newton's iteration to compute root of value
+            x = (x0 + value / x0) / 2
+            if abs(x - x0) < TOLERANCE:
+                return x
+            x0 = x
 
     @staticmethod
     def CurveKnotIns(
@@ -672,7 +679,7 @@ class Chapter5:
             ``UP``: Array1D[float] -- knot vector after knot insertion
             ``Pw``: Array1D[Point] -- Control points before knot insertion
             ``u``: float -- knot to be inserted
-            ``k``: int -- spot where U_k <= u < U_{k+1}
+            ``k``: int -- span where U_k <= u < U_{k+1}
             ``s``: int -- multiplicity of knot 'u'
             ``r``: int -- number of insertions of u
         #### Output:
@@ -841,7 +848,7 @@ class Chapter5:
             ``U``: Array1D[float] -- knot vector
             ``Pw``: Array1D[Point] -- Control points
             ``u``: float -- The knot to remove
-            ``r``: int -- Spot of knot to remove
+            ``r``: int -- span of knot to remove
             ``s``: int -- Multiplicity of the knot
             ``num``: int -- Number of times to remove the knot
         #### Output:

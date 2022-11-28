@@ -117,37 +117,73 @@ def test_ValuesOfN():
 @pytest.mark.order(1)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_ValuesOfP", "test_ValuesOfN"])
-def test_findSpots_single():
+def test_findspans_single():
     U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])  # p = 1, n =7
-    assert U.compute_spot(0) == 1
-    assert U.compute_spot(0.1) == 1
-    assert U.compute_spot(0.2) == 2
-    assert U.compute_spot(0.3) == 2
-    assert U.compute_spot(0.4) == 3
-    assert U.compute_spot(0.5) == 4
-    assert U.compute_spot(0.6) == 5
-    assert U.compute_spot(0.7) == 5
-    assert U.compute_spot(0.8) == 6
-    assert U.compute_spot(0.9) == 6
-    assert U.compute_spot(1.0) == 7
+    assert U.span(0) == 1
+    assert U.span(0.1) == 1
+    assert U.span(0.2) == 2
+    assert U.span(0.3) == 2
+    assert U.span(0.4) == 3
+    assert U.span(0.5) == 4
+    assert U.span(0.6) == 5
+    assert U.span(0.7) == 5
+    assert U.span(0.8) == 6
+    assert U.span(0.9) == 6
+    assert U.span(1.0) == 7
 
     with pytest.raises(ValueError):
-        U.compute_spot(-0.1)
+        U.span(-0.1)
     with pytest.raises(ValueError):
-        U.compute_spot(1.1)
+        U.span(1.1)
     with pytest.raises(TypeError):
-        U.compute_spot("asd")
+        U.span("asd")
 
 
 @pytest.mark.order(1)
 @pytest.mark.timeout(2)
-@pytest.mark.dependency(depends=["test_findSpots_single"])
-def test_findSpots_array():
+@pytest.mark.dependency(depends=["test_ValuesOfP", "test_ValuesOfN"])
+def test_findmult_single():
+    U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])  # p = 1, n =7
+    assert U.mult(0) == 2
+    assert U.mult(0.1) == 0
+    assert U.mult(0.2) == 1
+    assert U.mult(0.3) == 0
+    assert U.mult(0.4) == 1
+    assert U.mult(0.5) == 1
+    assert U.mult(0.6) == 1
+    assert U.mult(0.7) == 0
+    assert U.mult(0.8) == 1
+    assert U.mult(0.9) == 0
+    assert U.mult(1.0) == 2
+
+    with pytest.raises(ValueError):
+        U.mult(-0.1)
+    with pytest.raises(ValueError):
+        U.mult(1.1)
+    with pytest.raises(TypeError):
+        U.mult("asd")
+
+
+@pytest.mark.order(1)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_findspans_single"])
+def test_findspans_array():
     U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])  # p = 1, n =7
     array = np.linspace(0, 1, 11)  # (0, 0.1, 0.2, ..., 0.9, 1.0)
-    suposedspots = U.compute_spot(array)
-    correctspots = [1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7]
-    np.testing.assert_equal(suposedspots, correctspots)
+    suposedspans = U.span(array)
+    correctspans = [1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7]
+    np.testing.assert_equal(suposedspans, correctspans)
+
+
+@pytest.mark.order(1)
+@pytest.mark.timeout(2)
+@pytest.mark.dependency(depends=["test_findmult_single"])
+def test_findmults_array():
+    U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])  # p = 1, n =7
+    array = np.linspace(0, 1, 11)  # (0, 0.1, 0.2, ..., 0.9, 1.0)
+    suposedmults = U.mult(array)
+    correctmults = [2, 0, 1, 0, 1, 1, 1, 0, 1, 0, 2]
+    np.testing.assert_equal(suposedmults, correctmults)
 
 
 @pytest.mark.order(1)
@@ -352,7 +388,8 @@ def test_insert_knot_remove():
 @pytest.mark.dependency(
     depends=[
         "test_begin",
-        "test_findSpots_array",
+        "test_findspans_array",
+        "test_findmults_array",
         "test_generateUuniform",
         "test_generateUrandom",
         "test_generatorUfails",
