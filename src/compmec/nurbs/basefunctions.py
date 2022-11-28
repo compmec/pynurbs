@@ -121,28 +121,28 @@ class BaseEvaluator(Interface_Evaluator):
         return self.__second_index
 
     @abc.abstractmethod
-    def compute_one_value(self, i: int, u: float, spot: int) -> float:
+    def compute_one_value(self, i: int, u: float, span: int) -> float:
         raise NotImplementedError
 
-    def compute_vector(self, u: float, spot: int) -> np.ndarray:
+    def compute_vector(self, u: float, span: int) -> np.ndarray:
         """
         Given a 'u' float, it returns the vector with all BasicFunctions:
-        compute_vector(u, spot) = [F_{0j}(u), F_{1j}(u), ..., F_{n-1,j}(u)]
+        compute_vector(u, span) = [F_{0j}(u), F_{1j}(u), ..., F_{n-1,j}(u)]
         """
         result = np.zeros(self.__U.n, dtype="float64")
-        # for i in range(spot, spot+self.second_index):
+        # for i in range(span, span+self.second_index):
         for i in range(self.__U.n):
-            result[i] = self.compute_one_value(i, u, spot)
+            result[i] = self.compute_one_value(i, u, span)
         return result
 
     def compute_all(
-        self, u: Union[float, np.ndarray], spot: Union[int, np.ndarray]
+        self, u: Union[float, np.ndarray], span: Union[int, np.ndarray]
     ) -> np.ndarray:
         u = np.array(u, dtype="float64")
-        if spot.ndim == 0:
-            return self.compute_vector(float(u), int(spot))
+        if span.ndim == 0:
+            return self.compute_vector(float(u), int(span))
         result = np.zeros([self.__U.n] + list(u.shape))
-        for k, (uk, sk) in enumerate(zip(u, spot)):
+        for k, (uk, sk) in enumerate(zip(u, span)):
             result[:, k] = self.compute_all(uk, sk)
         return result
 
@@ -154,9 +154,9 @@ class BaseEvaluator(Interface_Evaluator):
         if i is slice, u is np.ndarray, ndim = k -> np.ndarray, ndim = k+1
         """
         u = np.array(u, dtype="float64")
-        spot = self.__U.compute_spot(u)
-        spot = np.array(spot, dtype="int16")
-        return self.compute_all(u, spot)
+        span = self.__U.span(u)
+        span = np.array(span, dtype="int16")
+        return self.compute_all(u, span)
 
     def __call__(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         result = self.evalf(u)
@@ -168,8 +168,8 @@ class SplineEvaluatorClass(BaseEvaluator):
     def __init__(self, F: BaseFunction, i: Union[int, slice], j: int):
         super().__init__(F, i, j)
 
-    def compute_one_value(self, i: int, u: float, spot: int) -> float:
-        return N(i, self.second_index, spot, u, self.U)
+    def compute_one_value(self, i: int, u: float, span: int) -> float:
+        return N(i, self.second_index, span, u, self.U)
 
 
 class RationalEvaluatorClass(BaseEvaluator):
@@ -177,8 +177,8 @@ class RationalEvaluatorClass(BaseEvaluator):
         super().__init__(F, i, j)
         self.__w = F.w
 
-    def compute_one_value(self, i: int, u: float, spot: int) -> float:
-        return R(i, self.second_index, spot, u, self.U, self.__w)
+    def compute_one_value(self, i: int, u: float, span: int) -> float:
+        return R(i, self.second_index, span, u, self.U, self.__w)
 
 
 class BaseFunctionDerivable(BaseFunction):

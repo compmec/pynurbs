@@ -24,10 +24,10 @@ def insert_knot_basefunction(
     if not isinstance(F, Interface_BaseFunction):
         raise TypeError("F must be a Interface_BaseFunction instance")
     knotvector = F.U
-    spot = knotvector.compute_spot(knot)
+    span = knotvector.span(knot)
     newU = list(knotvector)
     for i in range(times):
-        newU.insert(spot + 1, knot)
+        newU.insert(span + 1, knot)
     return F.__class__(newU)
 
 
@@ -46,7 +46,7 @@ def insert_knot_controlpoints(
     if times != 1:
         raise ValueError("For the moment, can insert knot only once at the time")
     n, p = U.n, U.p
-    k = U.compute_spot(knot)
+    k = U.span(knot)
     a = np.zeros(p)
     for j in range(p):
         i = k - p + 1 + j

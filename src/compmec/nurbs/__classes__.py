@@ -18,11 +18,11 @@ class Interface_KnotVector(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def verify_valid_spot(self, u: Tuple[float]):
+    def verify_valid_span(self, u: Tuple[float]):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def compute_spot(self, u: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
+    def span(self, u: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
         raise NotImplementedError
 
     @abc.abstractmethod
