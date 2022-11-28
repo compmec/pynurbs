@@ -188,6 +188,27 @@ class Chapter2:
                 return mid
 
     @staticmethod
+    def FindSpanMult(n: int, p: int, u: float, U: Array1D[float]) -> int:
+        """
+        #### Algorithm A2.1
+        Determine the knot span index
+        #### Input:
+            ``n``: int -- number of DOFs
+            ``p``: int -- degree
+            ``u``: float -- knot value
+            ``U``: Array1D[float] -- knot vector
+        #### Output:
+            ``k``: int -- The span index
+            ``s``: int -- Multiplicity of the knot
+        """
+        k = Chapter2.FindSpan(n, p, u, U)
+        s = 0
+        for i, ui in enumerate(U):
+            if ui == u:
+                s += 1
+        return k, s
+
+    @staticmethod
     def BasisFuns(i: int, u: float, p: int, U: Array1D[float]) -> Array1D[float]:
         """
         #### Algorithm A2.2 - NURBs book - pag 68
@@ -628,6 +649,10 @@ class Chapter4:
 
 class Chapter5:
     @staticmethod
+    def Distance4D(P1, P2):
+        return np.linalg.norm(np.array(P1) - np.array(P2))
+
+    @staticmethod
     def CurveKnotIns(
         np: int,
         p: int,
@@ -639,7 +664,7 @@ class Chapter5:
         r: int,
     ) -> Tuple:
         """
-        #### Algorithm A5.1
+        #### Algorithm A5.1 - NURBs book - pag 151
             Compute new curve from knot insertion
         #### Input:
             ``np``: int -- number of points before insertion
@@ -671,14 +696,15 @@ class Chapter5:
         # Save unaltered control points
         Qw[: k - p + 1] = Pw[: k - p + 1]  # begin points
         Qw[r + k - s :] = Pw[k - s :]  # end points
-        Rw[:] = Pw[k - p : k - s]
+        for i in range(p - s + 1):
+            Rw[i] = Pw[k - p + i]
         for j in range(1, r + 1):  # Insert the knot r times
             L = k - p + j
             for i in range(p - j - s + 1):
                 alpha = (u - UP[L + i]) / (UP[i + k + 1] - UP[L + i])
                 Rw[i] = alpha * Rw[i + 1] + (1 - alpha) * Rw[i]
             Qw[L] = Rw[0]
-            Rw[k + r - j - s] = Rw[p - j - s]
+            Qw[k + r - j - s] = Rw[p - j - s]
         for i in range(L + 1, k - s):
             Qw[i] = Rw[i - L]
         return nq, UQ, Qw
@@ -688,7 +714,7 @@ class Chapter5:
         n: int, p: int, U: Array1D[float], Pw: Array1D[Point], u: float
     ) -> Point:
         """
-        #### Algorithm A5.2
+        #### Algorithm A5.2 - NURBs book - pag 153
             Compute point on rational B-spline curve
         #### Input:
             ``n``: int -- number of points
@@ -703,7 +729,7 @@ class Chapter5:
             return Pw[0] / w
         if u == U[n + p + 1]:
             return Pw[n] / w
-        k, s = FindSpanMult(n, p, u, U)  # General case
+        k, s = Chapter2.FindSpanMult(n, p, u, U)  # General case
         r = p - s
         for i in range(r + 1):
             Rw[i] = Pw[k - p + i]
@@ -824,13 +850,14 @@ class Chapter5:
             ``Pw``: Array1D[Point] -- New control points
         """
         TOLERANCE = 1e-7
-        m = n + p + 1
+        m = n + p  # Careful. In original algorithm there's an +1 that shouldn't be
         ord = p + 1
-        fout = (2 * r - s - p) / 2
+        fout = (2 * r - s - p) // 2
         last = r - s
         first = r - p
-        temp = np.zeros(Pw.shape)
-        for t in range(num):  # This loop is Eq. (5.28)
+        temp = [0] * len(Pw)
+        t = 0
+        while t < num:  # This loop is Eq. (5.28)
             off = first - 1  # Diff in index between temp and P
             temp[0] = Pw[off]
             temp[last + 1 - off] = Pw[last + 1]
@@ -849,13 +876,13 @@ class Chapter5:
                 j -= 1
                 jj -= 1
             if j - i < t:  # Check if knot removable
-                distance = Distance4D(temp[ii - 1], temp[jj + 1])
+                distance = Chapter5.Distance4D(temp[ii - 1], temp[jj + 1])
                 if distance < TOLERANCE:
                     remflag = 1
             else:
                 alfi = (u - U[i]) / (U[i + ord + t] - U[i])
                 second_point = alfi * temp[ii + t + 1] + (1 - alfi) * temp[ii - 1]
-                distance = Distance4D(Pw[i], second_point)
+                distance = Chapter5.Distance4D(Pw[i], second_point)
                 if distance < TOLERANCE:
                     remflag = 1
             if remflag == 0:  # Cannot remove any more knots
@@ -870,10 +897,16 @@ class Chapter5:
                     j -= 1
             first -= 1
             last += 1
+            t += 1
         if t == 0:
             return t, U, Pw
+
+        Uq = [0] * (len(U) - t)
+        Qw = [0] * (len(Pw) - t)
+        for k in range(r + 1):
+            Uq[k] = U[k]
         for k in range(r + 1, m + 1):
-            U[k - t] = U[k]  # Shift knots
+            Uq[k - t] = U[k]  # Shift knots
         j = fout
         i = j  # Pj thru Pi will be overwritten
         for k in range(1, t):
@@ -881,10 +914,12 @@ class Chapter5:
                 i += 1
             else:
                 j -= 1
-        for k in range(i + 1, n + 1):  # Shift
-            Pw[j] = Pw[k]
+        for k in range(i + 1):
+            Qw[k] = Pw[k]
+        for k in range(i + 1, n):  # Shift  # In the algorithm there's a n+1
+            Qw[j] = Pw[k]
             j += 1
-        return t, U, Pw
+        return t, Uq, Qw
 
     @staticmethod
     def DegreeElevateCurve():
