@@ -34,7 +34,7 @@ class VerifyKnotVector(object):
         n = len(U)
         for i in range(n - 1):
             if U[i] > U[i + 1]:
-                raise ValueError("The given U must be ordened")
+                raise ValueError("The given KnotVector must be ordened")
 
     @staticmethod
     def Limits(U: Tuple[float]) -> None:

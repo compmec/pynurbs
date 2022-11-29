@@ -1,3 +1,4 @@
+import math
 from typing import Any, List, Tuple
 
 
@@ -648,16 +649,10 @@ class Chapter4:
 class Chapter5:
     @staticmethod
     def Distance4D(P1, P2):
-        TOLERANCE = 1e-12
         value = 0
         for p1, p2 in zip(P1, P2):
             value += (p1 - p2) ** 2
-        x0 = value
-        while True:  # Newton's iteration to compute root of value
-            x = (x0 + value / x0) / 2
-            if abs(x - x0) < TOLERANCE:
-                return x
-            x0 = x
+        return math.sqrt(value)
 
     @staticmethod
     def CurveKnotIns(
@@ -736,6 +731,7 @@ class Chapter5:
             return Pw[0] / w
         if u == U[n + p + 1]:
             return Pw[n] / w
+        Rw = [None] * (11 * (n + p + 1))
         k, s = Chapter2.FindSpanMult(n, p, u, U)  # General case
         r = p - s
         for i in range(r + 1):
@@ -771,7 +767,10 @@ class Chapter5:
             ``Ubar``: Array1D[float] -- New knot vector
             ``Qw``: Array1D[Point] -- New control points
         """
+
         m = n + p + 1
+        Ubar = [None] * (11 * m)
+
         a = Chapter2.FindSpan(n, p, X[0], U)
         b = Chapter2.FindSpan(n, p, X[r], U)
         b = b + 1
@@ -912,8 +911,9 @@ class Chapter5:
         Qw = [0] * (len(Pw) - t)
         for k in range(r + 1):
             Uq[k] = U[k]
-        for k in range(r + 1, m + 1):
-            Uq[k - t] = U[k]  # Shift knots
+        for k in range(r, len(Uq)):
+            Uq[k] = U[k + t]  # Shift knots
+
         j = fout
         i = j  # Pj thru Pi will be overwritten
         for k in range(1, t):
@@ -923,18 +923,142 @@ class Chapter5:
                 j -= 1
         for k in range(i + 1):
             Qw[k] = Pw[k]
-        for k in range(i + 1, n):  # Shift  # In the algorithm there's a n+1
+        for k in range(i + 1, len(Pw)):  # Shift  # In the algorithm there's a n+1
             Qw[j] = Pw[k]
             j += 1
         return t, Uq, Qw
 
     @staticmethod
-    def DegreeElevateCurve():
+    def DegreeElevateCurve(
+        n: int, p: int, U: Array1D[float], Pw: Array1D[Point], t: int
+    ):
         """
         #### Algorith A5.9 - NURBs book - pag 206
             Degree elevate a curve t times
+        #### Input:
+            ``n``: int -- Number of control points = n+1
+            ``p``: int -- curver degree order
+            ``U``: Array1D[float] -- knot vector
+            ``Pw``: Array1D[Point] -- Control points
+            ``t``: int -- Number of times to increase degree
+        #### Output:
+            ``nh``: int --
+            ``Uh``: Array1D[float] -- New knot vector
+            ``Qw``: Array1D[Point] -- New control points
         """
-        pass
+        m = n + p + 1
+        ph = p + t
+        ph2 = ph // 2
+        # Compute Bezier degree elevation coefficients
+        bezalfs = [[None] * (ph + 1)] * (ph + 1)
+        Qw = [None] * (11 * m)
+        Uh = [None] * (11 * m)
+        Nextbpts = [None] * (11 * m)
+        bpts = [None] * (11 * m)
+        ebpts = [None] * (11 * m)
+        alfs = [None] * (11 * m)
+
+        bezalfs[0][0] = 1
+        bezalfs[ph][0] = 1
+        for i in range(1, ph2 + 1):
+            inv = 1 / math.comb(ph, i)
+            mpi = min(p, i)
+            for j in range(max(0, i - t), mpi + 1):
+                bezalfs[i][j] = inv * math.comb(p, j) * math.comb(t, i - j)
+        for i in range(ph2 + 1, ph):
+            mpi = min(p, i)
+            for j in range(max(0, i - t), mpi + 1):
+                bezalfs[i][j] = bezalfs[ph - i][p - j]
+        mh = ph
+        kind = ph + 1
+        r = -1
+        a = p
+        b = p + 1
+        cind = 1
+        ua = U[0]
+        Qw[0] = Pw[0]
+        for i in range(ph + 1):
+            Uh[i] = ua
+        for i in range(p + 1):
+            bpts[i] = Pw[i]
+        while b < m:  # big loop thru knot vector
+            i = b
+            while True:
+                b += 1
+                if b == m:
+                    break
+                if U[b] != U[b + 1]:
+                    break
+            mul = b - i + 1
+            mh = mh + mul + t
+            ub = U[b]
+            oldr = r
+            r = p - mul
+
+            # Insert knot u(b) r times
+            lbz = 1 if oldr <= 0 else (oldr // 2) + 1
+            rbz = ph if r <= 0 else ph - (r + 1) // 2
+            if r > 0:  # Insert knot to get bezier segment
+                numer = ub - ua
+                for k in range(p, mul, -1):
+                    alfs[k - mul - 1] = numer / (U[a + k] - ua)
+                for j in range(1, r + 1):
+                    save = r - j
+                    s = mul + j
+                    for k in range(p, s - 1, -1):
+                        bpts[k] = (
+                            alfs[k - s] * bpts[k] + (1 - alfs[k - s]) * bpts[k - 1]
+                        )
+                    Nextbpts[save] = bpts[p]
+            for i in range(lbz, ph + 1):  # Degree elevate bezier
+                ebpts[i] = 0
+                mpi = min(p, i)
+                for j in range(max(0, i - t), mpi + 1):
+                    ebpts[i] = ebpts[i] + bezalfs[i][j] * bpts[j]
+            if oldr > 1:  # Must remove knot u = U[a] oldr times
+                first = kind - 2
+                last = kind
+                den = ub - ua
+                bet = (ub - Uh[kind - 1]) / den
+                for tr in range(1, oldr):
+                    i = first
+                    j = last
+                    kj = j - kind + 1
+                    while j - i > tr:  # Loop and compute the new
+                        if i < cind:
+                            alf = (ub - Uh[i]) / (ua - Uh[i])
+                            Qw[i] = alf * Qw[i] + (1 - alf) * Qw[i - 1]
+                        if j >= lbz:
+                            if j - tr <= kind - ph + oldr:
+                                gam = (ub - Uh[j - tr]) / den
+                                ebpts[kj] = gam * ebpts[kj] + (1 - gam) * ebpts[kj + 1]
+                            else:
+                                ebpts[kj] = bet * ebpts[kj] + (1 - bet) * ebpts[kj + 1]
+                        i += 1
+                        j -= 1
+                        kj -= 1
+                    first -= 1
+                    last += 1
+            if a != p:  # Load the knot ua
+                for i in range(ph - oldr):
+                    Uh[kind] = ua
+                    kind += 1
+            for j in range(lbz, rbz + 1):  # Load ctrl pts into Qw
+                Qw[cind] = ebpts[j]
+                cind += 1
+            if b < m:  # Set up for next pass thru loop
+                for j in range(r):
+                    bpts[j] = Nextbpts[j]
+                for j in range(r, p + 1):
+                    bpts[j] = Pw[b - p + j]
+                a = b
+                b += 1
+                ua = ub
+            else:
+                for i in range(ph + 1):
+                    Uh[kind + i] = ub
+        nh = mh - ph - 1
+        return nh, Uh, Qw
 
     @staticmethod
     def DegreeElevateSurface():

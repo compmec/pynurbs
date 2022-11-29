@@ -9,10 +9,201 @@ from compmec.nurbs.knotspace import GeneratorKnotVector
 @pytest.mark.order(3)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(
-    depends=["tests/test_basefunctions.py::test_end"], scope="session"
+    depends=[
+        "tests/test_knotspace.py::test_end",
+        "tests/test_basefunctions.py::test_end",
+    ],
+    scope="session",
 )
 def test_begin():
     pass
+
+
+class TestSplineCurve:
+    @pytest.mark.order(3)
+    @pytest.mark.dependency(depends=["test_begin"])
+    def test_begin(self):
+        pass
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestSplineCurve::test_begin"])
+    def test_creation_scalar_curve(self, ntests=100):
+        for i in range(ntests):
+            degree = np.random.randint(0, 5)
+            npts = np.random.randint(degree + 1, degree + 11)
+            U = [0] * degree + list(np.linspace(0, 1, npts - degree + 1)) + [1] * degree
+            P = np.random.uniform(-1, 1, npts)
+            SplineCurve(U, P)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestSplineCurve::test_begin"])
+    def test_creation_vectorial_curve(self, ntests=100):
+        for i in range(ntests):
+            degree = np.random.randint(0, 5)
+            npts = np.random.randint(degree + 1, degree + 11)
+            ndim = np.random.randint(1, 4)
+            U = [0] * degree + list(np.linspace(0, 1, npts - degree + 1)) + [1] * degree
+            P = np.random.uniform(-1, 1, (npts, ndim))
+            SplineCurve(U, P)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplineCurve::test_begin",
+            "TestSplineCurve::test_creation_scalar_curve",
+            "TestSplineCurve::test_creation_vectorial_curve",
+        ]
+    )
+    def test_curve_is_callable(self):
+        degree = np.random.randint(0, 5)
+        npts = np.random.randint(degree + 1, degree + 11)
+        U = [0] * degree + list(np.linspace(0, 1, npts - degree + 1)) + [1] * degree
+        P = np.random.uniform(-1, 1, npts)
+        C = SplineCurve(U, P)
+        assert callable(C)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplineCurve::test_begin",
+            "TestSplineCurve::test_curve_is_callable",
+        ]
+    )
+    def test_shapetype_callscalar_scalarpoints(self, ntests=100):
+        degree = np.random.randint(0, 5)
+        npts = np.random.randint(degree + 1, degree + 11)
+        U = [0] * degree + list(np.linspace(0, 1, npts - degree + 1)) + [1] * degree
+        P = np.random.uniform(-1, 1, npts)
+        C = SplineCurve(U, P)
+
+        t = np.random.uniform(0, 1)
+        Cval = C(t)
+        assert type(Cval) == type(P[0])
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplineCurve::test_begin",
+            "TestSplineCurve::test_curve_is_callable",
+        ]
+    )
+    def test_shapetype_callscalar_vectorialpoints(self, ntests=100):
+        for i in range(ntests):
+            degree = np.random.randint(0, 5)
+            npts = np.random.randint(degree + 1, degree + 11)
+            U = [0] * degree + list(np.linspace(0, 1, npts - degree + 1)) + [1] * degree
+            ndim = np.random.randint(1, 4)
+            P = np.random.uniform(-1, 1, (npts, ndim))
+            C = SplineCurve(U, P)
+
+            t = np.random.uniform(0, 1)
+            Cval = C(t)
+            assert len(Cval) == ndim
+            assert type(Cval) == type(P[0])
+            assert type(Cval[0]) == type(P[0][0])
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplineCurve::test_begin",
+            "TestSplineCurve::test_curve_is_callable",
+        ]
+    )
+    def test_shapetype_callvectorial_scalarpoints(self, ntests=100):
+        for i in range(ntests):
+            degree = np.random.randint(0, 5)
+            npts = np.random.randint(degree + 1, degree + 11)
+            U = [0] * degree + list(np.linspace(0, 1, npts - degree + 1)) + [1] * degree
+            P = np.random.uniform(-1, 1, npts)
+            C = SplineCurve(U, P)
+
+            nsample = np.random.randint(10, 129)
+            t = np.linspace(0, 1, nsample)
+            Cval = C(t)
+            assert len(Cval) == nsample
+            assert type(Cval[0]) == type(P[0])
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplineCurve::test_begin",
+            "TestSplineCurve::test_curve_is_callable",
+        ]
+    )
+    def test_shapetype_callvectorial_vectorialpoints(self, ntests=100):
+        for i in range(ntests):
+            degree = np.random.randint(0, 5)
+            npts = np.random.randint(degree + 1, degree + 11)
+            U = [0] * degree + list(np.linspace(0, 1, npts - degree + 1)) + [1] * degree
+            ndim = np.random.randint(1, 4)
+            P = np.random.uniform(-1, 1, (npts, ndim))
+            C = SplineCurve(U, P)
+
+            nsample = np.random.randint(10, 129)
+            t = np.linspace(0, 1, nsample)
+            Cval = C(t)
+            assert len(Cval) == nsample
+            assert type(Cval[0]) == type(P[0])
+            assert np.array(Cval).shape == (nsample, ndim)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplineCurve::test_begin",
+            "TestSplineCurve::test_curve_is_callable",
+        ]
+    )
+    def test_bezier_curve_values(self, ntests=100):
+        for i in range(ntests):
+            degree = np.random.randint(0, 5)
+            npts = degree + 1
+            U = [0] * (degree + 1) + [1] * (degree + 1)
+            print("U = ", U)
+            U = GeneratorKnotVector.bezier(degree)
+            print("U = ", U)
+            print("U.p = ", U.p)
+            print("U.n = ", U.n)
+            ndim = np.random.randint(0, 4)
+            if ndim == 0:
+                P = np.random.uniform(-1, 1, npts)
+            else:
+                P = np.random.uniform(-1, 1, (npts, ndim))
+            C = SplineCurve(U, P)
+
+            nsample = np.random.randint(10, 129)
+            t = np.linspace(0, 1, nsample)
+            Cval = C(t)
+            assert len(Cval) == nsample
+            assert type(Cval[0]) == type(P[0])
+            if ndim == 0:
+                assert np.array(Cval).shape == (nsample,)
+            else:
+                assert np.array(Cval).shape == (nsample, ndim)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplineCurve::test_begin",
+            "TestSplineCurve::test_creation_scalar",
+            "TestSplineCurve::test_creation_vectorial",
+            "test_curve_is_callable",
+            "TestSplineCurve::test_shapetype_callscalar_scalarpoints",
+            "TestSplineCurve::test_shapetype_callscalar_vectorialpoints",
+            "TestSplineCurve::test_shapetype_callvectorial_scalarpoints",
+            "TestSplineCurve::test_shapetype_callvectorial_vectorialpoints",
+        ]
+    )
+    def test_end(self):
+        pass
 
 
 @pytest.mark.order(3)
@@ -145,10 +336,10 @@ def test_others():
 
 @pytest.mark.order(3)
 @pytest.mark.timeout(10)
-@pytest.mark.skip(reason="To correct algorithms of knot insertion and remotion")
+# @pytest.mark.skip(reason="To correct algorithms of knot insertion and remotion")
 @pytest.mark.dependency(depends=["test_others"])
 def test_others2():
-    p = np.random.randint(0, 6)
+    p = np.random.randint(1, 6)
     n = np.random.randint(p + 3, p + 7)
     ndim = np.random.randint(1, 4)
     U1 = GeneratorKnotVector.random(p=p, n=n)
@@ -174,8 +365,28 @@ def test_others2():
     with pytest.raises(ValueError):
         C1.knot_remove([[0.5]])
 
+
+@pytest.mark.order(3)
+@pytest.mark.timeout(10)
+@pytest.mark.skip(reason="To correct algorithms of knot degree increase and decrease")
+@pytest.mark.dependency(depends=["test_others"])
+def test_others4():
+    p = np.random.randint(1, 6)
+    n = np.random.randint(p + 3, p + 7)
+    ndim = np.random.randint(1, 4)
+    U1 = GeneratorKnotVector.random(p=p, n=n)
+    P1 = np.random.uniform(-1, 1, (n, ndim))
     C1orig = SplineCurve(U1, P1)
     C1 = SplineCurve(U1, P1)
+    C1.degree_increase()
+    C1.degree_decrease()
+    assert C1 == C1orig
+
+    P1 = np.random.uniform(-1, 1, (n, ndim))
+    C1orig = RationalCurve(U1, P1)
+    C1orig.w = np.random.uniform(-1, 1, n)
+    C1 = RationalCurve(U1, P1)
+    C1.w = C1orig.w
     C1.degree_increase()
     C1.degree_decrease()
     assert C1 == C1orig
@@ -231,7 +442,7 @@ def test_curve_insert_oneknot():
     Q[6:] = P[5:]
 
     Uinse = list(Uorig)
-    Uinse.insert(5, knot)
+    Uinse.insert(6, knot)
     Uinse = KnotVector(Uinse)
     Cinse = SplineCurve(Uinse, Q)
 
@@ -240,7 +451,6 @@ def test_curve_insert_oneknot():
 
 @pytest.mark.order(3)
 @pytest.mark.timeout(10)
-@pytest.mark.skip(reason="sometimes fail")
 @pytest.mark.dependency(depends=["test_curve_insert_oneknot"])
 def test_curve_insertremove_oneknot_random():
     ntests = 100
@@ -265,7 +475,7 @@ def test_curve_insertremove_oneknot_random():
 
 @pytest.mark.order(3)
 @pytest.mark.timeout(10)
-@pytest.mark.dependency(depends=["test_others3"])
+@pytest.mark.dependency(depends=["test_others4"])
 def test_curve_increasedecrease_degree_random():
     ntests = 100
     for i in range(ntests):

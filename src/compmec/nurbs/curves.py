@@ -3,14 +3,13 @@ from typing import Dict, Iterable, List, Optional, Tuple, Union
 import numpy as np
 
 from compmec.nurbs.__classes__ import Interface_BaseCurve
+from compmec.nurbs.algorithms import Chapter5
 from compmec.nurbs.basefunctions import (
     BaseFunction,
     RationalBaseFunction,
     RationalWeightsVector,
     SplineBaseFunction,
 )
-from compmec.nurbs.degreeoperations import degree_decrease, degree_increase
-from compmec.nurbs.knotoperations import insert_knot, remove_knot
 from compmec.nurbs.knotspace import KnotVector
 
 
@@ -95,38 +94,61 @@ class BaseCurve(Interface_BaseCurve):
     def __sub__(self, __obj: object):
         return self + (-__obj)
 
+    def __transform_knots_to_table(self, knots: Union[float, Tuple[float]]):
+        try:
+            knots = float(knots)
+            return {knots: 1}
+        except Exception as e:
+            pass
+        try:
+            iter(knots)
+            knots = np.array(knots, dtype="float64")
+        except Exception as e:
+            raise TypeError
+        if knots.ndim != 1:
+            raise ValueError("Argument must be 'float' or a 'Array1D[float]'")
+        table = {}
+        for knot in list(set(knots)):
+            table[knot] = np.sum(knots == knot)
+        return table
+
     def knot_insert(self, knots: Union[float, Tuple[float]]):
-        newP = np.copy(self.P)
-        newF = self.F
-        knots = np.array(knots, dtype="float64")
-        if knots.ndim == 0:
-            newF, newP = insert_knot(newF, newP, float(knots))
-        elif knots.ndim == 1:
-            for knot in knots:
-                newF, newP = insert_knot(newF, newP, knot)
-        else:
-            raise ValueError
-        self.__set_UFP(newF.U, newP)
+        table = self.__transform_knots_to_table(knots)
+        n, p = self.n, self.p
+        U = np.array(self.U).tolist()
+        P = list(self.P)
+        for knot, times in table.items():
+            U = KnotVector(U)
+            span = U.span(knot)
+            mult = U.mult(knot)
+            n, U, P = Chapter5.CurveKnotIns(n, p, U, P, knot, span, mult, times)
+        self.__set_UFP(U, P)
 
     def knot_remove(self, knots: Union[float, Tuple[float]]):
-        newP = np.copy(self.P)
-        newF = self.F
-        knots = np.array(knots, dtype="float64")
-        if knots.ndim == 0:
-            newF, newP = remove_knot(newF, newP, float(knots))
-        elif knots.ndim == 1:
-            for knot in knots:
-                newF, newP = remove_knot(newF, newP, float(knot))
-        else:
-            raise ValueError
-        self.__set_UFP(newF.U, newP)
+        table = self.__transform_knots_to_table(knots)
+        n, p = self.n, self.p
+        U = np.array(self.U).tolist()
+        P = list(self.P)
+        for knot, times in table.items():
+            U = KnotVector(U)
+            span = U.span(knot)
+            mult = U.mult(knot)
+            t, U, P = Chapter5.RemoveCurveKnot(n, p, U, P, knot, span, mult, times)
+            if t != times:
+                if t == 0:
+                    error_msg = f"Cannot remove the knot {knot}"
+                else:
+                    error_msg = (
+                        f"Can remove knot {knot} only {t} times (requested {times})"
+                    )
+                raise ValueError(error_msg)
+        self.__set_UFP(U, P)
 
     def degree_increase(self, times: Optional[int] = 1):
-        newP = np.copy(self.P)
-        newF = self.F
-        for i in range(times):
-            newF, newP = degree_increase(newF, newP)
-        self.__set_UFP(newF.U, newP)
+        U = list(self.U)
+        P = list(self.P)
+        nq, Uq, Qw = Chapter5.DegreeElevateCurve(self.n, self.p, U, P, times)
+        self.__set_UFP(Uq, Qw)
 
     def degree_decrease(self, times: Optional[int] = 1):
         newP = np.copy(self.P)
