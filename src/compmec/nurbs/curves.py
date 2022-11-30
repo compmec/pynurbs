@@ -46,7 +46,14 @@ class BaseCurve(Interface_BaseCurve):
 
     @P.setter
     def P(self, value: np.ndarray):
-        value = np.array(value, dtype="float64")
+        try:
+            value = np.array(value, dtype="float64")
+        except Exception as e:
+            error_msg = f"Received Control Points is type {type(value)}, but it must be an float-array"
+            raise TypeError(error_msg)
+        if value.ndim == 0:
+            error_msg = f"The Control Points must be a array, not a single value"
+            raise TypeError(error_msg)
         if value.shape[0] != self.n:
             error_msg = f"The number of control points must be the same of degrees of freedom of KnotVector.\n"
             error_msg += f"    U.n = {self.n} != {len(value)} = len(P)"

@@ -650,6 +650,9 @@ class Chapter5:
     @staticmethod
     def Distance4D(P1, P2):
         value = 0
+        if isinstance(P1, float):
+            P1 = [P1]
+            P2 = [P2]
         for p1, p2 in zip(P1, P2):
             value += (p1 - p2) ** 2
         return math.sqrt(value)
