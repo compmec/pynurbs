@@ -16,34 +16,36 @@ class Array2D(Tuple):
 
 class Chapter1:
     @staticmethod
-    def Horner1(a: Array1D[Point], n: int, u0: float) -> Point:
+    def Horner1(a: Array1D[Point], npts: int, u0: float) -> Point:
         """
         #### Algorithm A1.1
         Compute point on power basis curve
         #### Input:
             ``a``: Array1D[Point] -- coefficients to power
-            ``n``: int -- Degree max, len(a) = n+1
+            ``npts``: int -- Degree max, len(a) = n+1
             ``u0``: float -- Evaluation knot
         #### Output:
             ``C``: Point -- Evaluated point
         """
+        n = npts - 1
         C = a[n]
         for i in range(n - 1, -1, -1):
             C = C * u0 + a[i]
         return C
 
     @staticmethod
-    def Bernstein(i: int, n: int, u: float) -> float:
+    def Bernstein(i: int, npts: int, u: float) -> float:
         """
         #### Algorithm A1.2
         Compute the value of a Bernstein polynomial
         ##### Input:
             ``i``: int --
-            ``n``: int --
+            ``npts``: int --
             ``u``: float --
         ##### Output:
             ``B``: float --
         """
+        n = npts - 1
         Chapter1.Bernstein()
         temp = [0] * (n + 1)
         temp[n - i] = 1
@@ -54,16 +56,17 @@ class Chapter1:
         return temp[n]
 
     @staticmethod
-    def AllBernstein(n: int, u: float) -> Array1D[float]:
+    def AllBernstein(npts: int, u: float) -> Array1D[float]:
         """
         #### Algorithm A1.3
         Compute all nth-degree Bernstein polynomials
         #### Input:
-            ``n``: int --
+            ``npts``: int --
             ``u``: float --
         #### Output:
             ``B``: Array1D[float] --
         """
+        n = npts - 1
         B = [0] * (n + 1)
         B[0] = 1
         u1 = 1 - u
@@ -77,13 +80,13 @@ class Chapter1:
         return B
 
     @staticmethod
-    def PointOnBezierCurve(P: Array1D[Point], n: int, u: float) -> Point:
+    def PointOnBezierCurve(P: Array1D[Point], npts: int, u: float) -> Point:
         """
         #### Algorithm A1.4
         Compute point on Bezier curve
         #### Input:
             ``P``: Array1D[Point] --
-            ``n``: int --
+            ``npts``: int --
             ``u``: float --
         #### Output:
             ``C``: Point --
@@ -95,17 +98,18 @@ class Chapter1:
         return C
 
     @staticmethod
-    def deCasteljau1(P: Array1D[Point], n: int, u: float) -> Point:
+    def deCasteljau1(P: Array1D[Point], npts: int, u: float) -> Point:
         """
         #### Algorithm A1.5
         Compute point on a Bezier curve using deCasteljau
         #### Input:
             ``P``: Array1D[Point] --
-            ``n``: int --
+            ``npts``: int --
             ``u``: float --
         #### Output:
             ``C``: Point --
         """
+        n = npts - 1
         Q = [0] * len(P)
         for i in range(n + 1):  # Use local array so we do not destroy control points
             Q[i] = P[i]
@@ -115,38 +119,42 @@ class Chapter1:
         return Q[0]
 
     @staticmethod
-    def Horner2(a: Array2D[Point], n: int, m: int, u0: float, v0: float) -> Point:
+    def Horner2(a: Array2D[Point], npts: int, m: int, u0: float, v0: float) -> Point:
         """
         #### Algorithm A1.6
         Compute point on a power basis surface
         #### Input:
             ``a``: Array2D[Point]
-            ``n``: int
+            ``npts``: int
             ``m``: int
             ``u0``: float
             ``v0``: float
         #### Output:
             ``S``: Point
         """
+        n = npts - 1
         b = [0] * (n + 1)
         for i in range(n + 1):
             b[i] = Chapter1.Horner1(a[i], m, v0)
         return Chapter1.Horner1(b, n, u0)
 
     @staticmethod
-    def deCasteljau2(a: Array2D[Point], n: int, m: int, u0: float, v0: float) -> Point:
+    def deCasteljau2(
+        a: Array2D[Point], npts: int, m: int, u0: float, v0: float
+    ) -> Point:
         """
         #### Algorithm A1.7
             Description
         #### Input:
             ``a``: Array2D[Point]
-            ``n``: int
+            ``npts``: int
             ``m``: int
             ``u0``: float
             ``v0``: float
         #### Output:
             ``S``: Point
         """
+        n = npts - 1
         if n <= m:
             Q = [0] * (m + 1)
             for j in range(m + 1):
@@ -161,20 +169,22 @@ class Chapter1:
 
 class Chapter2:
     @staticmethod
-    def FindSpan(n: int, p: int, u: float, U: Array1D[float]) -> int:
+    def FindSpan(npts: int, degree: int, u: float, U: Array1D[float]) -> int:
         """
         #### Algorithm A2.1
         Determine the knot span index
         #### Input:
-            ``n``: int -- number of DOFs
-            ``p``: int -- degree
+            ``npts``: int -- number of DOFs
+            ``degree``: int -- degree
             ``u``: float -- knot value
             ``U``: Array1D[float] -- knot vector
         #### Output:
             ``index``: int -- The span index
         """
+        n = npts - 1
+        p = degree
         if u == U[n + 1]:  # Special case
-            return n
+            return n + 1
         low, high = p, n + 1  # Do binary search
         mid = (low + high) // 2
         while True:
@@ -187,20 +197,20 @@ class Chapter2:
                 return mid
 
     @staticmethod
-    def FindSpanMult(n: int, p: int, u: float, U: Array1D[float]) -> int:
+    def FindSpanMult(npts: int, degree: int, u: float, U: Array1D[float]) -> int:
         """
         #### Algorithm A2.1
         Determine the knot span index
         #### Input:
-            ``n``: int -- number of DOFs
-            ``p``: int -- degree
+            ``npts``: int -- number of DOFs
+            ``degree``: int -- degree
             ``u``: float -- knot value
             ``U``: Array1D[float] -- knot vector
         #### Output:
             ``k``: int -- The span index
             ``s``: int -- Multiplicity of the knot
         """
-        k = Chapter2.FindSpan(n, p, u, U)
+        k = Chapter2.FindSpan(npts, degree, u, U)
         s = 0
         for i, ui in enumerate(U):
             if ui == u:
@@ -208,14 +218,14 @@ class Chapter2:
         return k, s
 
     @staticmethod
-    def BasisFuns(i: int, u: float, p: int, U: Array1D[float]) -> Array1D[float]:
+    def BasisFuns(i: int, u: float, degree: int, U: Array1D[float]) -> Array1D[float]:
         """
         #### Algorithm A2.2 - NURBs book - pag 68
         Compute the nonvanishing basis function
         #### Input:
             ``i``: int -- index of function
             ``u``: float -- knot value
-            ``p``: int -- degree
+            ``degree``: int -- degree
             ``U``: Array1D[float] -- knot vector
         #### Output:
             ``N``: Array1D[float] --
@@ -237,7 +247,7 @@ class Chapter2:
 
     @staticmethod
     def DersBasisFuns(
-        i: int, u: float, p: int, n: int, U: Array1D[float]
+        i: int, u: float, degree: int, npts: int, U: Array1D[float]
     ) -> Array2D[float]:
         """
         #### Algorithm A2.3 - NURBs book - pag 72
@@ -246,8 +256,8 @@ class Chapter2:
         #### Input:
             ``i``: int -- index of function
             ``u``: float -- knot value
-            ``p``: int -- degree
-            ``n``: int -- number of dofs
+            ``degree``: int -- degree
+            ``npts``: int -- number of dofs
             ``U``: Array1D[float] -- knot vector
         #### Output:
             ``ders``: Array1D[float] --
@@ -304,12 +314,12 @@ class Chapter2:
         return ders
 
     @staticmethod
-    def OneBasisFun(p: int, m: int, U: Array1D[float], i: int, u: float) -> float:
+    def OneBasisFun(degree: int, m: int, U: Array1D[float], i: int, u: float) -> float:
         """
         #### Algorithm A2.4 - NURBs book - pag 74
         Compute the basis function Nip
         #### Input:
-            ``p``: int -- degree
+            ``degree``: int -- degree
             ``m``: int -- size of knot vector: len(U) = m+1
             ``U``: Array1D[float] -- knot vector
             ``i``: int -- index of which function desired
@@ -350,18 +360,18 @@ class Chapter2:
 
     @staticmethod
     def DersOneBasisFun(
-        p: int, m: int, U: Array1D[float], i: int, u: float, n: int
+        degree: int, m: int, U: Array1D[float], i: int, u: float, npts: int
     ) -> Array1D[float]:
         """
         #### Algorithm A2.5 - NURBs book - pag 76
         Compute derivatives of basis function Nip
         #### Input:
-            ``p``: int -- degree
+            ``degree``: int -- degree
             ``m``: int -- size of knot vector: len(U) = m+1
             ``U``: Array1D[float] -- knot vector
             ``i``: int -- index of which function desired
             ``u``: float -- knot to evaluate
-            ``n``: int -- the maximum value for derivative, <= p
+            ``npts``: int -- the maximum value for derivative, <= p
         #### Output:
             ``ders``: Array1D[float] -- The result of N_{ip}^{(k)}(u), k=0, 1, ..., n
         """
@@ -418,46 +428,48 @@ class Chapter2:
 class Chapter3:
     @staticmethod
     def CurvePoint(
-        n: int, p: int, U: Array1D[float], P: Array1D[Point], u: float
+        npts: int, degree: int, U: Array1D[float], P: Array1D[Point], u: float
     ) -> Point:
         """
         #### Algorithm A3.1 - NURBs book - pag 82
             Compute curve point
         #### Input:
-            ``n``: int -- number of dofs
-            ``p``: int -- degree
+            ``npts``: int -- number of dofs
+            ``degree``: int -- degree
             ``U``: Array1D[float] -- knot vector
             ``P``: Array1D[Point] -- control points
             ``u``: float -- knot to evaluate
         #### Output:
             ``C``: Point -- evaluated point
         """
-        span = Chapter2.FindSpan(n, p, u, U)
-        N = Chapter2.BasisFuns(span, u, p, U)
+        span = Chapter2.FindSpan(npts, degree, u, U)
+        N = Chapter2.BasisFuns(span, u, degree, U)
         C = 0
         for i in range(p + 1):
-            C = C + N[i] * P[span - p + i]
+            C = C + N[i] * P[span - degree + i]
         return C
 
     @staticmethod
     def CurveDerivsAlg1(
-        n: int, p: int, U: Array1D[float], P: Array1D[Point], u: float, d: int
+        npts: int, degree: int, U: Array1D[float], P: Array1D[Point], u: float, d: int
     ) -> Point:
         """
         #### Algorithm A3.2 - NURBs book - pag 93
             Compute curve derivatives
         #### Input:
-            ``n``: int -- number of control points + 1
-            ``p``: int -- degree
+            ``npts``: int -- number of control points + 1
+            ``degree``: int -- degree
             ``U``: Array1D[float] -- knot vector
             ``P``: Array1D[Point] -- control points
             ``u``: float -- knot to evaluate
         #### Output:
             ``CC``: Array1D[Points] -- Derivatives of the curve
         """
+        n = npts - 1
+        p = degree
         CK = [0] * (d + 1)
         du = min(d, p)
-        span = Chapter2.FindSpan(n, p, u, U)
+        span = Chapter2.FindSpan(npts, degree, u, U)
         nders = Chapter2.DersBasisFuns(span, u, p, du, U)
         for k in range(du + 1):
             for j in range(p + 1):
@@ -466,14 +478,20 @@ class Chapter3:
 
     @staticmethod
     def CurveDerivCpts(
-        n: int, p: int, U: Array1D[float], P: Array1D[Point], d: int, r1: int, r2: int
+        npts: int,
+        degree: int,
+        U: Array1D[float],
+        P: Array1D[Point],
+        d: int,
+        r1: int,
+        r2: int,
     ) -> Array2D[Point]:
         """
         #### Algorithm A3.3 - NURBs book - pag 98
             Compute contorl points of curve derivatives
         #### Input:
-            ``n``: int -- number of control points + 1
-            ``p``: int -- degree
+            ``npts``: int -- number of control points + 1
+            ``degree``: int -- degree
             ``U``: Array1D[float] -- knot vector
             ``P``: Array1D[Point] -- control points
             ``d``: int -- The maximum number of derivatives, 0 <= k <= d
@@ -498,14 +516,14 @@ class Chapter3:
 
     @staticmethod
     def CurveDerivsAlg2(
-        n: int, p: int, U: Array1D[float], P: Array1D[Point], u: float, d: int
+        npts: int, degree: int, U: Array1D[float], P: Array1D[Point], u: float, d: int
     ) -> Array2D[Point]:
         """
         #### Algorithm A3.4 - NURBs book - pag 99
             Compute curve derivatives
         #### Input:
-            ``n``: int -- number of control points + 1
-            ``p``: int -- degree
+            ``npts``: int -- number of control points + 1
+            ``degree``: int -- degree
             ``U``: Array1D[float] -- knot vector
             ``P``: Array1D[Point] -- control points
             ``u``: float -- knot to evaluate
@@ -513,11 +531,13 @@ class Chapter3:
         #### Output:
             ``CK``:
         """
+        n = npts - 1
+        p = degree
         du = min(d, p)
         CK = [0] * (d + 1)
-        span = Chapter2.FindSpan(n, p, u, U)
-        N = Chapter2.AllBasisFuns(span, u, p, U, N)
-        PK = Chapter3.CurveDerivCpts(n, p, U, P, du, span - p, span)
+        span = Chapter2.FindSpan(npts, degree, u, U)
+        N = Chapter2.AllBasisFuns(span, u, degree, U, N)
+        PK = Chapter3.CurveDerivCpts(npts, degree, U, P, du, span - p, span)
         for k in range(du + 1):
             for j in range(p - k + 1):
                 CK[k] = CK[k] + N[j][p - k] * PK[k][j]
@@ -525,8 +545,8 @@ class Chapter3:
 
     @staticmethod
     def SurfacePoint(
-        n: int,
-        p: int,
+        npts: int,
+        degree: int,
         U: Array1D[float],
         m: int,
         q: int,
@@ -539,8 +559,8 @@ class Chapter3:
         #### Algorithm A3.5 - NURBs book - pag 103
             Compute surface point
         #### Input:
-            ``n``: int -- Number of control points in first coordinate
-            ``p``: int -- Degree of curve in first coordinate
+            ``npts``: int -- Number of control points in first coordinate
+            ``degree``: int -- Degree of curve in first coordinate
             ``U``: Array1D[float] -- knot vector of first coordinate
             ``m``: int -- Number of control points in first coordinate
             ``q``: int -- Degree of curve in second coordinate
@@ -555,8 +575,8 @@ class Chapter3:
 
     @staticmethod
     def SurfaceDerivsAlg1(
-        n: int,
-        p: int,
+        npts: int,
+        degree: int,
         U: Array1D[float],
         m: int,
         q: int,
@@ -570,8 +590,8 @@ class Chapter3:
         #### Algorithm A3.6 - NURBs book - pag 111
             Compute surface point
         #### Input:
-            ``n``: int -- Number of control points in first coordinate
-            ``p``: int -- Degree of curve in first coordinate
+            ``npts``: int -- Number of control points in first coordinate
+            ``degree``: int -- Degree of curve in first coordinate
             ``U``: Array1D[float] -- knot vector of first coordinate
             ``m``: int -- Number of control points in first coordinate
             ``q``: int -- Degree of curve in second coordinate
@@ -602,7 +622,7 @@ class Chapter3:
 class Chapter4:
     @staticmethod
     def CurvePoint(
-        n: int, p: int, U: Array1D[float], Pw: Array1D[Point], u: float
+        npts: int, degree: int, U: Array1D[float], Pw: Array1D[Point], u: float
     ) -> Point:
         """
         #### Algorithm A4.1 - NURBs book - pag 124
@@ -621,8 +641,8 @@ class Chapter4:
 
     @staticmethod
     def SurfacePoint(
-        n: int,
-        p: int,
+        npts: int,
+        degree: int,
         U: Array1D[float],
         m: int,
         q: int,
@@ -659,8 +679,8 @@ class Chapter5:
 
     @staticmethod
     def CurveKnotIns(
-        np: int,
-        p: int,
+        npts: int,
+        degree: int,
         UP: Array1D[float],
         Pw: Array1D[Point],
         u: float,
@@ -672,8 +692,8 @@ class Chapter5:
         #### Algorithm A5.1 - NURBs book - pag 151
             Compute new curve from knot insertion
         #### Input:
-            ``np``: int -- number of points before insertion
-            ``p``: int -- curver degree order
+            ``npts``: int -- number of points before insertion
+            ``degree``: int -- curver degree order
             ``UP``: Array1D[float] -- knot vector after knot insertion
             ``Pw``: Array1D[Point] -- Control points before knot insertion
             ``u``: float -- knot to be inserted
@@ -685,6 +705,8 @@ class Chapter5:
             ``UQ``: Array1D[float] -- knot vector after knot insertion
             ``Qw``: Array1D[Point] -- Control points after knot insertion
         """
+        np = npts - 1
+        p = degree
         if r + s > p:
             raise ValueError(f"r + s > p : {r} + {s} > {p}")
         mp = np + p + 1
@@ -712,24 +734,26 @@ class Chapter5:
             Qw[k + r - j - s] = Rw[p - j - s]
         for i in range(L + 1, k - s):
             Qw[i] = Rw[i - L]
-        return nq, UQ, Qw
+        return nq + 1, UQ, Qw
 
     @staticmethod
     def CurvePntByCornerCut(
-        n: int, p: int, U: Array1D[float], Pw: Array1D[Point], u: float
+        npts: int, degree: int, U: Array1D[float], Pw: Array1D[Point], u: float
     ) -> Point:
         """
         #### Algorithm A5.2 - NURBs book - pag 153
             Compute point on rational B-spline curve
         #### Input:
-            ``n``: int -- number of points
-            ``p``: int -- curver degree order
+            ``npts``: int -- number of points
+            ``degree``: int -- curver degree order
             ``U``: Array1D[float] -- knot vector
             ``Pw``: Array1D[Point] -- Control points
             ``u``: float -- evaluation knot
         #### Output:
             ``C``: Point -- Evaluated point
         """
+        n = npts - 1
+        p = degree
         if u == U[0]:
             return Pw[0] / w
         if u == U[n + p + 1]:
@@ -754,14 +778,14 @@ class Chapter5:
 
     @staticmethod
     def RefineKnotVectCurve(
-        n: int, p: int, U: Array1D[float], Pw: Array1D[Point], X, r
+        npts: int, degree: int, U: Array1D[float], Pw: Array1D[Point], X, r
     ) -> Tuple:
         """
         #### Algorith A5.4 - NURBs book - pag 155
             Refine curve knot vector
         #### Input:
-            ``n``: int -- number of points
-            ``p``: int -- curver degree order
+            ``npts``: int -- number of points
+            ``degree``: int -- curver degree order
             ``U``: Array1D[float] -- knot vector
             ``Pw``: Array1D[Point] -- Control points
             ``X``: float -- evaluation knot
@@ -770,12 +794,13 @@ class Chapter5:
             ``Ubar``: Array1D[float] -- New knot vector
             ``Qw``: Array1D[Point] -- New control points
         """
-
+        n = npts - 1
+        p = degree
         m = n + p + 1
         Ubar = [None] * (11 * m)
 
-        a = Chapter2.FindSpan(n, p, X[0], U)
-        b = Chapter2.FindSpan(n, p, X[r], U)
+        a = Chapter2.FindSpan(npts, degree, X[0], U)
+        b = Chapter2.FindSpan(npts, degree, X[r], U)
         b = b + 1
         Qw = [0] * ()
         for j in range(a - p + 1):
@@ -832,8 +857,8 @@ class Chapter5:
 
     @staticmethod
     def RemoveCurveKnot(
-        n: int,
-        p: int,
+        npts: int,
+        degree: int,
         U: Array1D[float],
         Pw: Array1D[Point],
         u: float,
@@ -845,8 +870,8 @@ class Chapter5:
         #### Algorith A5.8 - NURBs book - pag 185
             Remove knot u (index r) num times.
         #### Input:
-            ``n``: int -- Number of control points = n+1
-            ``p``: int -- curver degree order
+            ``npts``: int -- Number of control points = n+1
+            ``degree``: int -- curver degree order
             ``U``: Array1D[float] -- knot vector
             ``Pw``: Array1D[Point] -- Control points
             ``u``: float -- The knot to remove
@@ -859,7 +884,9 @@ class Chapter5:
             ``Pw``: Array1D[Point] -- New control points
         """
         TOLERANCE = 1e-7
-        m = n + p  # Careful. In original algorithm there's an +1 that shouldn't be
+        n = npts - 1
+        p = degree
+        m = n + p + 1  # Careful. In original algorithm there's an +1 that shouldn't be
         ord = p + 1
         fout = (2 * r - s - p) // 2
         last = r - s
@@ -926,21 +953,21 @@ class Chapter5:
                 j -= 1
         for k in range(i + 1):
             Qw[k] = Pw[k]
-        for k in range(i + 1, len(Pw)):  # Shift  # In the algorithm there's a n+1
+        for k in range(i + 1, len(Pw)):  # Shift
             Qw[j] = Pw[k]
             j += 1
         return t, Uq, Qw
 
     @staticmethod
     def DegreeElevateCurve(
-        n: int, p: int, U: Array1D[float], Pw: Array1D[Point], t: int
+        npts: int, degree: int, U: Array1D[float], Pw: Array1D[Point], t: int
     ):
         """
         #### Algorith A5.9 - NURBs book - pag 206
             Degree elevate a curve t times
         #### Input:
-            ``n``: int -- Number of control points = n+1
-            ``p``: int -- curver degree order
+            ``npts``: int -- Number of control points = n+1
+            ``degree``: int -- curver degree order
             ``U``: Array1D[float] -- knot vector
             ``Pw``: Array1D[Point] -- Control points
             ``t``: int -- Number of times to increase degree
@@ -949,6 +976,8 @@ class Chapter5:
             ``Uh``: Array1D[float] -- New knot vector
             ``Qw``: Array1D[Point] -- New control points
         """
+        p = degree
+        n = npts - 1
         m = n + p + 1
         ph = p + t
         ph2 = ph // 2

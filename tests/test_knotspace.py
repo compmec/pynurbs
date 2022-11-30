@@ -307,7 +307,6 @@ def test_compare_knotvectors_fail():
 @pytest.mark.timeout(4)
 @pytest.mark.dependency(depends=["test_generateUuniform"])
 def test_insert_knot_remove():
-    Uorg = [0, 0, 0, 0, 1, 1, 1, 1]
     Uinc0 = [0, 0, 0, 0, 1, 1, 1, 1]
     Uinc1 = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]
     Uinc2 = [0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1]
@@ -323,7 +322,7 @@ def test_insert_knot_remove():
     with pytest.raises(ValueError):
         KnotVector(Uinc5)
 
-    Uo = KnotVector(Uorg)
+    Uo = KnotVector(Uinc0)
     assert Uo == U0
     Uo.knot_insert(0.5)
     assert Uo == U1
@@ -334,15 +333,15 @@ def test_insert_knot_remove():
     Uo.knot_insert(0.5)
     assert Uo == U4
 
-    Uo = KnotVector(Uorg)
+    Uo = KnotVector(Uinc0)
     Uo.knot_insert(0.5, 2)
     assert Uo == U2
 
-    Uo = KnotVector(Uorg)
+    Uo = KnotVector(Uinc0)
     Uo.knot_insert(0.5, 3)
     assert Uo == U3
 
-    Uo = KnotVector(Uorg)
+    Uo = KnotVector(Uinc0)
     Uo.knot_insert(0.5, 4)
     assert Uo == U4
 

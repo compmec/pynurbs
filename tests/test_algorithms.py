@@ -5,7 +5,6 @@ from compmec.nurbs.algorithms import *
 
 
 @pytest.mark.order(1)
-@pytest.mark.skip()
 @pytest.mark.dependency()
 def test_begin():
     pass
@@ -33,21 +32,21 @@ class TestChapter2Algorithms:
     @pytest.mark.timeout(2)
     @pytest.mark.dependency(depends=["TestChapter2Algorithms::test_begin"])
     def test_FindSpan(self):
-        degree, n = 2, 3
+        degree, npts = 2, 3
         U = [0, 0, 0, 1, 1, 1]
-        assert Chapter2.FindSpan(n, degree, 0, U) == degree
-        assert Chapter2.FindSpan(n, degree, 0.2, U) == 2
-        assert Chapter2.FindSpan(n, degree, 0.5, U) == 2
-        assert Chapter2.FindSpan(n, degree, 0.8, U) == 2
-        assert Chapter2.FindSpan(n, degree, 1, U) == n
+        assert Chapter2.FindSpan(npts, degree, 0, U) == degree
+        assert Chapter2.FindSpan(npts, degree, 0.2, U) == 2
+        assert Chapter2.FindSpan(npts, degree, 0.5, U) == 2
+        assert Chapter2.FindSpan(npts, degree, 0.8, U) == 2
+        assert Chapter2.FindSpan(npts, degree, 1, U) == npts
 
-        degree, n = 2, 4
+        degree, npts = 2, 4
         U = [0, 0, 0, 0.5, 1, 1, 1]
-        assert Chapter2.FindSpan(n, degree, 0, U) == degree
-        assert Chapter2.FindSpan(n, degree, 0.2, U) == 2
-        assert Chapter2.FindSpan(n, degree, 0.5, U) == 3
-        assert Chapter2.FindSpan(n, degree, 0.7, U) == 3
-        assert Chapter2.FindSpan(n, degree, 1, U) == n
+        assert Chapter2.FindSpan(npts, degree, 0, U) == degree
+        assert Chapter2.FindSpan(npts, degree, 0.2, U) == 2
+        assert Chapter2.FindSpan(npts, degree, 0.5, U) == 3
+        assert Chapter2.FindSpan(npts, degree, 0.7, U) == 3
+        assert Chapter2.FindSpan(npts, degree, 1, U) == npts
 
     @pytest.mark.order(1)
     @pytest.mark.timeout(2)
@@ -137,24 +136,24 @@ class TestChapter5Algorithms:
     @pytest.mark.timeout(2)
     @pytest.mark.dependency(depends=["TestChapter5Algorithms::test_begin"])
     def test_CurveKnotIns(self):
-        degree, n = 3, 6
+        degree, npts = 3, 6
         U = [0, 0, 0, 0, 0.25, 0.5, 0.75, 1, 1, 1, 1]
         u, k, s, r = 0.3, 4, 0, 1
         P = [1, 1, 1, 1, 1, 1]
-        nq, Uq, Qw = Chapter5.CurveKnotIns(n, degree, U, P, u, k, s, r)
-        assert nq == n + r
+        nq, Uq, Qw = Chapter5.CurveKnotIns(npts, degree, U, P, u, k, s, r)
+        assert nq == npts + r
         assert len(U) + r == len(Uq)
         assert np.all(np.array(Qw) == 1)
         assert u in Uq
         for u in U:
             assert u in Uq
 
-        degree, n = 1, 4
+        degree, npts = 1, 4
         U = [0, 0, 1 / 3, 2 / 3, 1, 1]
         u, k, s, r = 0.5, 2, 0, 1
         P = [1, 2, 3, 4]
-        nq, Uq, Qw = Chapter5.CurveKnotIns(n, degree, U, P, u, k, s, r)
-        assert nq == n + r
+        nq, Uq, Qw = Chapter5.CurveKnotIns(npts, degree, U, P, u, k, s, r)
+        assert nq == npts + r
         assert Uq == [0, 0, 1 / 3, 0.5, 2 / 3, 1, 1]
         assert Qw == [1, 2, 2.5, 3, 4]
 
@@ -202,17 +201,17 @@ class TestChapter5Algorithms:
         ]
     )
     def test_InsertAndRemoveCurveKnot_known(self):
-        degree, n = 1, 4
+        degree, npts = 1, 4
         U = [0, 0, 1 / 3, 2 / 3, 1, 1]
         u, k, s, r = 0.5, 2, 0, 1
         Pw = [1, 2, 3, 4]
-        nq, Uq, Qw = Chapter5.CurveKnotIns(n, degree, U, Pw, u, k, s, r)
-        assert nq == n + r
+        nq, Uq, Qw = Chapter5.CurveKnotIns(npts, degree, U, Pw, u, k, s, r)
+        assert nq == npts + r
         assert Uq == [0, 0, 1 / 3, 0.5, 2 / 3, 1, 1]
         assert Qw == [1, 2, 2.5, 3, 4]
 
         k, s = 3, 1
-        t, Uo, Ow = Chapter5.RemoveCurveKnot(nq, p, Uq, Qw, u, k, s, r)
+        t, Uo, Ow = Chapter5.RemoveCurveKnot(nq, degree, Uq, Qw, u, k, s, r)
         assert Uo == U
         assert Ow == Pw
 
@@ -228,8 +227,8 @@ class TestChapter5Algorithms:
         ntests = 100
         for i in range(ntests):
             degree = np.random.randint(1, 5)
-            n = np.random.randint(degree + 1, degree + 11)
-            U = [0] * p + list(np.linspace(0, 1, n - p + 1)) + [1] * p
+            npts = np.random.randint(degree + 1, degree + 11)
+            U = [0] * degree + list(np.linspace(0, 1, npts - degree + 1)) + [1] * degree
 
     @pytest.mark.order(1)
     @pytest.mark.dependency(

@@ -123,17 +123,17 @@ class KnotVector(list):
         VerifyKnotVector.all(U)
         degree, npts = self.compute_pn(U)
         VerifyKnotVector.PN(degree, npts)
-        self.__p = degree
-        self.__n = npts
+        self.__degree = degree
+        self.__npts = npts
         super().__init__(U)
 
     @property
     def degree(self) -> int:
-        return self.__p
+        return self.__degree
 
     @property
     def npts(self) -> int:
-        return self.__n
+        return self.__npts
 
     @staticmethod
     def compute_pn(U: Tuple[float]):
@@ -187,10 +187,10 @@ class KnotVector(list):
         if u.ndim == 0:
             return self.span_onevalue(u)
         npts = u.shape[0]
-        result = np.zeros([npts] + list(u.shape[1:]), dtype="int16")
+        result = [0] * (npts)
         for i in range(npts):
             result[i] = self.span(u[i])
-        return result
+        return np.array(result, dtype="int16")
 
     def mult_onevalue(self, u: float) -> int:
         if not (min(self) <= u <= max(self)):
@@ -226,8 +226,8 @@ class KnotVector(list):
             self.insert(span + 1, knot)
             degree, npts = self.compute_pn(list(self))
             VerifyKnotVector.PN(degree, npts)
-            self.__p = degree
-            self.__n = npts
+            self.__degree = degree
+            self.__npts = npts
             return
         for i in range(times):
             self.__knot_insert(knot, 1)
@@ -242,8 +242,8 @@ class KnotVector(list):
             self.remove(knot)
             degree, npts = self.compute_pn(list(self))
             VerifyKnotVector.PN(degree, npts)
-            self.__p = degree
-            self.__n = npts
+            self.__degree = degree
+            self.__npts = npts
             return
         for i in range(times):
             self.__knot_remove(knot, 1)
@@ -265,6 +265,12 @@ class KnotVector(list):
             raise ValueError(
                 f"No sucess trying to convert {type(obj)} into {self.__class__}. Cause {str(e)}"
             )
+        print("Comparing!")
+        print("    self.npts = ", self.npts)
+        print("  self.degree = ", self.degree)
+        print(" ---")
+        print("     obj.npts = ", obj.npts)
+        print("   obj.degree = ", obj.degree)
         if self.npts != obj.npts:
             return False
         if self.degree != obj.degree:
