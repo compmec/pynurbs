@@ -13,14 +13,14 @@ def N(i: int, j: int, k: int, u: float, U: KnotVector) -> float:
     Remember that N_{i, j}(u) = 0   if  ( u not in [U[i], U[i+j+1]] )
     """
 
-    n, degree = U.n, U.degree
+    npts, degree = U.npts, U.degree
 
     if k < i:
         return 0
     if j == 0:
         if i == k:
             return 1
-        if i + 1 == n and k == n:
+        if i + 1 == npts and k == npts:
             return 1
         return 0
     if i + j < k:
@@ -47,9 +47,9 @@ def R(i: int, j: int, k: int, u: float, U: KnotVector, w: Tuple[float]) -> float
     Niju = N(i, j, k, u, U)
     if Niju == 0:
         return 0
-    n = len(w)
+    npts = len(w)
     soma = 0
-    for z in range(n):
+    for z in range(npts):
         soma += w[z] * N(z, j, k, u, U)
     return w[i] * Niju / soma
 
@@ -67,8 +67,8 @@ class RationalWeightsVector(object):
             raise TypeError(f"Input is not valid. Type = {type(value)}, not np.ndarray")
         if value.ndim != 1:
             raise ValueError(f"Input must be 1D array")
-        if len(value) != self.n:
-            raise ValueError(f"Input must have same number of points as U.n")
+        if len(value) != self.npts:
+            raise ValueError(f"Input must have same number of points as U.npts")
         for v in value:
             v = float(v)
             if v < 0:
@@ -85,8 +85,8 @@ class BaseFunction(Interface_BaseFunction):
         return self.__U.degree
 
     @property
-    def n(self) -> int:
-        return self.__U.n
+    def npts(self) -> int:
+        return self.__U.npts
 
     @property
     def U(self) -> KnotVector:
@@ -125,11 +125,11 @@ class BaseEvaluator(Interface_Evaluator):
     def compute_vector(self, u: float, span: int) -> np.ndarray:
         """
         Given a 'u' float, it returns the vector with all BasicFunctions:
-        compute_vector(u, span) = [F_{0j}(u), F_{1j}(u), ..., F_{n-1,j}(u)]
+        compute_vector(u, span) = [F_{0j}(u), F_{1j}(u), ..., F_{npts-1,j}(u)]
         """
-        result = np.zeros(self.__U.n, dtype="float64")
+        result = np.zeros(self.__U.npts, dtype="float64")
         # for i in range(span, span+self.second_index):
-        for i in range(self.__U.n):
+        for i in range(self.__U.npts):
             result[i] = self.compute_one_value(i, u, span)
         return result
 
@@ -139,7 +139,7 @@ class BaseEvaluator(Interface_Evaluator):
         u = np.array(u, dtype="float64")
         if span.ndim == 0:
             return self.compute_vector(float(u), int(span))
-        result = np.zeros([self.__U.n] + list(u.shape))
+        result = np.zeros([self.__U.npts] + list(u.shape))
         for k, (uk, sk) in enumerate(zip(u, span)):
             result[:, k] = self.compute_all(uk, sk)
         return result
@@ -183,7 +183,7 @@ class BaseFunctionDerivable(BaseFunction):
     def __init__(self, U: KnotVector):
         super().__init__(U)
         self.__q = self.degree
-        self.__A = np.eye(self.n, dtype="float64")
+        self.__A = np.eye(self.npts, dtype="float64")
 
     @property
     def q(self) -> int:
@@ -194,13 +194,13 @@ class BaseFunctionDerivable(BaseFunction):
         return np.copy(self.__A)
 
     def derivate(self):
-        avals = np.zeros(self.n)
-        for i in range(self.n):
+        avals = np.zeros(self.npts)
+        for i in range(self.npts):
             diff = self.U[i + self.degree] - self.U[i]  # Maybe it's wrong
             if diff != 0:
                 avals[i] = self.degree / diff
         newA = np.diag(avals)
-        for i in range(self.n - 1):
+        for i in range(self.npts - 1):
             newA[i, i + 1] = -avals[i + 1]
         self.__A = self.__A @ newA
         self.__q -= 1
@@ -214,7 +214,7 @@ class BaseFunctionGetItem(BaseFunctionDerivable):
         if not isinstance(index, (int, slice)):
             raise TypeError
         if isinstance(index, int):
-            if not (-self.n <= index < self.n):
+            if not (-self.npts <= index < self.npts):
                 raise IndexError
 
     def __valid_second_index(self, index: int):
@@ -285,7 +285,7 @@ class SplineBaseFunction(BaseFunctionGetItem):
 class RationalBaseFunction(BaseFunctionGetItem, RationalWeightsVector):
     def __init__(self, U: KnotVector):
         super().__init__(U)
-        self.w = np.ones(self.n, dtype="float64")
+        self.w = np.ones(self.npts, dtype="float64")
 
     def create_evaluator_instance(self, i: Union[int, slice], j: int):
         return RationalEvaluatorClass(self, i, j)

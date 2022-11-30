@@ -29,8 +29,8 @@ class BaseCurve(Interface_BaseCurve):
         return self.U.degree
 
     @property
-    def n(self):
-        return self.U.n
+    def npts(self):
+        return self.U.npts
 
     @property
     def U(self):
@@ -54,9 +54,9 @@ class BaseCurve(Interface_BaseCurve):
         if value.ndim == 0:
             error_msg = f"The Control Points must be a array, not a single value"
             raise TypeError(error_msg)
-        if value.shape[0] != self.n:
-            error_msg = f"The number of control points must be the same of degrees of freedom of KnotVector.\n"
-            error_msg += f"    U.n = {self.n} != {len(value)} = len(P)"
+        if value.shape[0] != self.npts:
+            error_msg = f"The number of control points must be the same of degrees of freedom of KnotVector.\npts"
+            error_msg += f"    U.npts = {self.npts} != {len(value)} = len(P)"
             raise ValueError(error_msg)
         self.__P = value
 
@@ -123,26 +123,30 @@ class BaseCurve(Interface_BaseCurve):
 
     def knot_insert(self, knots: Union[float, Tuple[float]]):
         table = self.__transform_knots_to_table(knots)
-        n, degree = self.n, self.degree
+        npts, degree = self.npts, self.degree
         U = np.array(self.U).tolist()
         P = list(self.P)
         for knot, times in table.items():
             U = KnotVector(U)
             span = U.span(knot)
             mult = U.mult(knot)
-            n, U, P = Chapter5.CurveKnotIns(n, degree, U, P, knot, span, mult, times)
+            npts, U, P = Chapter5.CurveKnotIns(
+                npts, degree, U, P, knot, span, mult, times
+            )
         self.__set_UFP(U, P)
 
     def knot_remove(self, knots: Union[float, Tuple[float]]):
         table = self.__transform_knots_to_table(knots)
-        n, degree = self.n, self.degree
+        npts, degree = self.npts, self.degree
         U = np.array(self.U).tolist()
         P = list(self.P)
         for knot, times in table.items():
             U = KnotVector(U)
             span = U.span(knot)
             mult = U.mult(knot)
-            t, U, P = Chapter5.RemoveCurveKnot(n, degree, U, P, knot, span, mult, times)
+            t, U, P = Chapter5.RemoveCurveKnot(
+                npts, degree, U, P, knot, span, mult, times
+            )
             if t != times:
                 if t == 0:
                     error_msg = f"Cannot remove the knot {knot}"
@@ -156,7 +160,7 @@ class BaseCurve(Interface_BaseCurve):
     def degree_increase(self, times: Optional[int] = 1):
         U = list(self.U)
         P = list(self.P)
-        nq, Uq, Qw = Chapter5.DegreeElevateCurve(self.n, self.degree, U, P, times)
+        nq, Uq, Qw = Chapter5.DegreeElevateCurve(self.npts, self.degree, U, P, times)
         self.__set_UFP(Uq, Qw)
 
     def degree_decrease(self, times: Optional[int] = 1):
@@ -178,7 +182,7 @@ class SplineCurve(BaseCurve):
 class RationalCurve(BaseCurve, RationalWeightsVector):
     def __init__(self, U: KnotVector, controlpoints: np.ndarray):
         super().__init__(U, controlpoints)
-        self.w = np.ones(self.n, dtype="float64")
+        self.w = np.ones(self.npts, dtype="float64")
 
     def _create_base_function_instance(self, U: KnotVector):
         return RationalBaseFunction(U)

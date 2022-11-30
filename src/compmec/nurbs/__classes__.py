@@ -10,7 +10,7 @@ class Interface_KnotVector(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractproperty
-    def n(self) -> int:
+    def npts(self) -> int:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -67,7 +67,7 @@ class Interface_BaseFunction_BaseCurve(Interface_BaseFunction_Evaluator_BaseCurv
         raise NotImplementedError
 
     @abc.abstractproperty
-    def n(self) -> int:
+    def npts(self) -> int:
         raise NotImplementedError
 
     @abc.abstractmethod

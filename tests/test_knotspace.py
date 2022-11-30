@@ -92,33 +92,33 @@ def test_ValuesOfP():
 @pytest.mark.dependency(depends=["test_CreationClass"])
 def test_ValuesOfN():
     V = KnotVector([0, 0, 1, 1])
-    assert V.n == 2
+    assert V.npts == 2
     V = KnotVector([0, 0, 0, 1, 1, 1])
-    assert V.n == 3
+    assert V.npts == 3
     V = KnotVector([0, 0, 0, 0, 1, 1, 1, 1])
-    assert V.n == 4
+    assert V.npts == 4
     V = KnotVector([0, 0, 0, 0, 0, 1, 1, 1, 1, 1])
-    assert V.n == 5
+    assert V.npts == 5
 
     V = KnotVector([0, 0, 0.5, 1, 1])
-    assert V.n == 3
+    assert V.npts == 3
     V = KnotVector([0, 0, 0.2, 0.6, 1, 1])
-    assert V.n == 4
+    assert V.npts == 4
     V = KnotVector([0, 0, 0, 0.5, 1, 1, 1])
-    assert V.n == 4
+    assert V.npts == 4
     V = KnotVector([0, 0, 0, 0.2, 0.6, 1, 1, 1])
-    assert V.n == 5
+    assert V.npts == 5
     V = KnotVector([0, 0, 0, 0, 0.5, 1, 1, 1, 1])
-    assert V.n == 5
+    assert V.npts == 5
     V = KnotVector([0, 0, 0, 0, 0.2, 0.6, 1, 1, 1, 1])
-    assert V.n == 6
+    assert V.npts == 6
 
 
 @pytest.mark.order(1)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_ValuesOfP", "test_ValuesOfN"])
 def test_findspans_single():
-    U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])  # degree = 1, n =7
+    U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])  # degree = 1, npts =7
     assert U.span(0) == 1
     assert U.span(0.1) == 1
     assert U.span(0.2) == 2
@@ -143,7 +143,7 @@ def test_findspans_single():
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_ValuesOfP", "test_ValuesOfN"])
 def test_findmult_single():
-    U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])  # degree = 1, n =7
+    U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])  # degree = 1, npts =7
     assert U.mult(0) == 2
     assert U.mult(0.1) == 0
     assert U.mult(0.2) == 1
@@ -168,7 +168,7 @@ def test_findmult_single():
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_findspans_single"])
 def test_findspans_array():
-    U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])  # degree = 1, n =7
+    U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])  # degree = 1, npts =7
     array = np.linspace(0, 1, 11)  # (0, 0.1, 0.2, ..., 0.9, 1.0)
     suposedspans = U.span(array)
     correctspans = [1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7]
@@ -179,7 +179,7 @@ def test_findspans_array():
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_findmult_single"])
 def test_findmults_array():
-    U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])  # degree = 1, n =7
+    U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])  # degree = 1, npts =7
     array = np.linspace(0, 1, 11)  # (0, 0.1, 0.2, ..., 0.9, 1.0)
     suposedmults = U.mult(array)
     correctmults = [2, 0, 1, 0, 1, 1, 1, 0, 1, 0, 2]
@@ -193,7 +193,7 @@ def test_generateUbezier():
     for degree in range(0, 9):
         U = GeneratorKnotVector.bezier(degree)
         assert isinstance(U, KnotVector)
-        assert U.n == degree + 1
+        assert U.npts == degree + 1
         assert U.degree == degree
 
 
@@ -204,10 +204,10 @@ def test_generateUuniform():
     ntests = 100
     for i in range(ntests):
         degree = np.random.randint(1, 6)
-        n = np.random.randint(degree + 1, degree + 11)
-        U = GeneratorKnotVector.uniform(degree, n)
+        npts = np.random.randint(degree + 1, degree + 11)
+        U = GeneratorKnotVector.uniform(degree, npts)
         assert isinstance(U, KnotVector)
-        assert U.n == n
+        assert U.npts == npts
         assert U.degree == degree
 
 
@@ -218,10 +218,10 @@ def test_generateUrandom():
     ntests = 1000
     for i in range(ntests):
         degree = np.random.randint(0, 6)
-        n = np.random.randint(degree + 1, degree + 11)
-        U = GeneratorKnotVector.random(degree, n)
+        npts = np.random.randint(degree + 1, degree + 11)
+        U = GeneratorKnotVector.random(degree, npts)
         assert isinstance(U, KnotVector)
-        assert U.n == n
+        assert U.npts == npts
         assert U.degree == degree
 
 
@@ -235,30 +235,30 @@ def test_generatorUfails():
         GeneratorKnotVector.bezier(degree=-1)
     for degree in range(1, 6):
         with pytest.raises(ValueError):
-            GeneratorKnotVector.uniform(degree, n=degree)
+            GeneratorKnotVector.uniform(degree, npts=degree)
         with pytest.raises(ValueError):
-            GeneratorKnotVector.uniform(degree, n=degree - 1)
+            GeneratorKnotVector.uniform(degree, npts=degree - 1)
         with pytest.raises(ValueError):
-            GeneratorKnotVector.random(degree, n=degree)
+            GeneratorKnotVector.random(degree, npts=degree)
         with pytest.raises(ValueError):
-            GeneratorKnotVector.random(degree, n=degree - 1)
+            GeneratorKnotVector.random(degree, npts=degree - 1)
 
     with pytest.raises(TypeError):
         GeneratorKnotVector.bezier(degree="asd")
     with pytest.raises(TypeError):
         GeneratorKnotVector.bezier(degree={1: 1})
     with pytest.raises(TypeError):
-        GeneratorKnotVector.uniform(degree=2, n=3.0)
+        GeneratorKnotVector.uniform(degree=2, npts=3.0)
     with pytest.raises(TypeError):
-        GeneratorKnotVector.uniform(degree=2.0, n=3)
+        GeneratorKnotVector.uniform(degree=2.0, npts=3)
     with pytest.raises(TypeError):
-        GeneratorKnotVector.uniform(degree=2, n="3")
+        GeneratorKnotVector.uniform(degree=2, npts="3")
     with pytest.raises(TypeError):
-        GeneratorKnotVector.uniform(degree="2", n=3)
+        GeneratorKnotVector.uniform(degree="2", npts=3)
     with pytest.raises(TypeError):
-        GeneratorKnotVector.random(degree=2, n=3.0)
+        GeneratorKnotVector.random(degree=2, npts=3.0)
     with pytest.raises(TypeError):
-        GeneratorKnotVector.random(degree=2.0, n=3)
+        GeneratorKnotVector.random(degree=2.0, npts=3)
 
 
 @pytest.mark.order(1)
@@ -268,9 +268,9 @@ def test_comparetwo_knotvectors():
     ntests = 10
     for i in range(ntests):
         degree = np.random.randint(0, 6)
-        n = np.random.randint(degree + 1, degree + 11)
-        U1 = GeneratorKnotVector.uniform(degree, n)
-        U2 = GeneratorKnotVector.uniform(degree, n)
+        npts = np.random.randint(degree + 1, degree + 11)
+        U1 = GeneratorKnotVector.uniform(degree, npts)
+        U2 = GeneratorKnotVector.uniform(degree, npts)
         assert U1 == U2
 
 
@@ -279,18 +279,18 @@ def test_comparetwo_knotvectors():
 @pytest.mark.dependency(depends=["test_generateUuniform"])
 def test_compare_knotvectors_fail():
     degree = np.random.randint(0, 6)
-    n = np.random.randint(degree + 3, degree + 11)
-    U1 = GeneratorKnotVector.uniform(degree, n)
+    npts = np.random.randint(degree + 3, degree + 11)
+    U1 = GeneratorKnotVector.uniform(degree, npts)
     with pytest.raises(TypeError):
         assert U1 == 1
     with pytest.raises(TypeError):
         assert U1 == "asd"
     with pytest.raises(Exception):
         assert U1 == [[0, 0, 0, 0.5, 1, 1, 1]]
-    U2 = GeneratorKnotVector.uniform(degree + 1, n + 1)
-    U3 = GeneratorKnotVector.uniform(degree + 1, n + 2)
-    U4 = GeneratorKnotVector.uniform(degree, n + 1)
-    U5 = GeneratorKnotVector.random(degree, n)
+    U2 = GeneratorKnotVector.uniform(degree + 1, npts + 1)
+    U3 = GeneratorKnotVector.uniform(degree + 1, npts + 2)
+    U4 = GeneratorKnotVector.uniform(degree, npts + 1)
+    U5 = GeneratorKnotVector.random(degree, npts)
     assert U1 != U2
     assert U1 != U3
     assert U1 != U4

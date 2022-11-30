@@ -31,8 +31,8 @@ class VerifyKnotVector(object):
 
     @staticmethod
     def isOrdenedVector(U: Tuple[float]) -> None:
-        n = len(U)
-        for i in range(n - 1):
+        npts = len(U)
+        for i in range(npts - 1):
             if U[i] > U[i + 1]:
                 raise ValueError("The given KnotVector must be ordened")
 
@@ -99,11 +99,13 @@ class VerifyKnotVector(object):
         VerifyKnotVector.isNonNegative(value)
 
     @staticmethod
-    def PN(degree: int, n: int):
+    def PN(degree: int, npts: int):
         VerifyKnotVector.isIntegerNonNegative(degree)
-        VerifyKnotVector.isIntegerNonNegative(n)
-        if n <= degree:
-            raise ValueError("Must n > degree. Received n=%d, degree=%d" % (n, degree))
+        VerifyKnotVector.isIntegerNonNegative(npts)
+        if npts <= degree:
+            raise ValueError(
+                "Must npts > degree. Received npts=%d, degree=%d" % (npts, degree)
+            )
 
     @staticmethod
     def all(U: Tuple[float]) -> None:
@@ -119,10 +121,10 @@ class VerifyKnotVector(object):
 class KnotVector(list):
     def __init__(self, U: Tuple[float]):
         VerifyKnotVector.all(U)
-        degree, n = self.compute_pn(U)
-        VerifyKnotVector.PN(degree, n)
+        degree, npts = self.compute_pn(U)
+        VerifyKnotVector.PN(degree, npts)
         self.__p = degree
-        self.__n = n
+        self.__n = npts
         super().__init__(U)
 
     @property
@@ -130,7 +132,7 @@ class KnotVector(list):
         return self.__p
 
     @property
-    def n(self) -> int:
+    def npts(self) -> int:
         return self.__n
 
     @staticmethod
@@ -138,19 +140,19 @@ class KnotVector(list):
         """
         We have that U = [0, ..., 0, ?, ..., ?, 1, ..., 1]
         And that U[degree] = 0, but U[degree+1] != 0
-        The same way, U[n] = 1, but U[n-1] != 0
+        The same way, U[npts] = 1, but U[npts-1] != 0
 
         Using that, we know that
-            len(U) = m + 1 = n + degree + 1
+            len(U) = m + 1 = npts + degree + 1
         That means that
-            m = n + degree
+            m = npts + degree
         """
         minU = min(U)
         degree = 0
         while U[degree + 1] == minU:
             degree += 1
-        n = len(U) - degree - 1
-        return degree, n
+        npts = len(U) - degree - 1
+        return degree, npts
 
     def span_onevalue(self, u: float) -> int:
         try:
@@ -222,10 +224,10 @@ class KnotVector(list):
             copylist.insert(span + 1, knot)
             VerifyKnotVector.all(copylist)
             self.insert(span + 1, knot)
-            degree, n = self.compute_pn(list(self))
-            VerifyKnotVector.PN(degree, n)
+            degree, npts = self.compute_pn(list(self))
+            VerifyKnotVector.PN(degree, npts)
             self.__p = degree
-            self.__n = n
+            self.__n = npts
             return
         for i in range(times):
             self.__knot_insert(knot, 1)
@@ -238,10 +240,10 @@ class KnotVector(list):
         if times == 1:
             span = self.span_onevalue(knot)
             self.remove(knot)
-            degree, n = self.compute_pn(list(self))
-            VerifyKnotVector.PN(degree, n)
+            degree, npts = self.compute_pn(list(self))
+            VerifyKnotVector.PN(degree, npts)
             self.__p = degree
-            self.__n = n
+            self.__n = npts
             return
         for i in range(times):
             self.__knot_remove(knot, 1)
@@ -263,7 +265,7 @@ class KnotVector(list):
             raise ValueError(
                 f"No sucess trying to convert {type(obj)} into {self.__class__}. Cause {str(e)}"
             )
-        if self.n != obj.n:
+        if self.npts != obj.npts:
             return False
         if self.degree != obj.degree:
             return False
@@ -295,13 +297,13 @@ class GeneratorKnotVector:
         return KnotVector(U)
 
     @staticmethod
-    def uniform(degree: int, n: int) -> KnotVector:
-        VerifyKnotVector.PN(degree, n)
-        ws = np.ones(n - degree + 1)
+    def uniform(degree: int, npts: int) -> KnotVector:
+        VerifyKnotVector.PN(degree, npts)
+        ws = np.ones(npts - degree + 1)
         return GeneratorKnotVector.weight(degree, ws)
 
     @staticmethod
-    def random(degree: int, n: int) -> KnotVector:
-        VerifyKnotVector.PN(degree, n)
-        ws = np.random.rand(n - degree + 1)
+    def random(degree: int, npts: int) -> KnotVector:
+        VerifyKnotVector.PN(degree, npts)
+        ws = np.random.rand(npts - degree + 1)
         return GeneratorKnotVector.weight(degree, ws)

@@ -99,7 +99,7 @@ class TestSplineCurve:
             degree = np.random.randint(0, 5)
             npts = np.random.randint(degree + 1, degree + 11)
             ndim = np.random.randint(0, 4)
-            U = GeneratorKnotVector.random(degree, n=npts)
+            U = GeneratorKnotVector.random(degree, npts=npts)
             if ndim == 0:
                 P = np.random.uniform(-1, 1, npts)
                 P3 = np.random.uniform(-1, 1, npts)
@@ -125,7 +125,7 @@ class TestSplineCurve:
     def test_curve_is_callable(self):
         degree = np.random.randint(0, 5)
         npts = np.random.randint(degree + 1, degree + 11)
-        U = GeneratorKnotVector.random(degree, n=npts)
+        U = GeneratorKnotVector.random(degree, npts=npts)
         P = np.random.uniform(-1, 1, npts)
         C = SplineCurve(U, P)
         assert callable(C)
@@ -331,7 +331,7 @@ class TestSplineCurve:
     )
     def test_knot_insert_known_case(self):
         Uorig = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5]  # Example 5.1 nurbs book
-        Uorig = np.array(Uorig, dtype="float64") / 5  # degree = 3, n = 8
+        Uorig = np.array(Uorig, dtype="float64") / 5  # degree = 3, npts = 8
         Uorig = KnotVector(Uorig)
         degree, npts = 3, 8
         knot = 0.5
@@ -465,7 +465,7 @@ class TestSplineCurve:
     def test_somefails(self):
         degree = np.random.randint(1, 5)
         npts = np.random.randint(degree + 1, degree + 11)
-        U = GeneratorKnotVector.random(degree, n=npts)
+        U = GeneratorKnotVector.random(degree, npts=npts)
         P = np.random.uniform(-1, 1, npts)
         C = SplineCurve(U, P)
         with pytest.raises(TypeError):
