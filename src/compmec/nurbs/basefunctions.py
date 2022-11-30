@@ -13,7 +13,7 @@ def N(i: int, j: int, k: int, u: float, U: KnotVector) -> float:
     Remember that N_{i, j}(u) = 0   if  ( u not in [U[i], U[i+j+1]] )
     """
 
-    n, p = U.n, U.p
+    n, degree = U.n, U.degree
 
     if k < i:
         return 0
@@ -81,8 +81,8 @@ class BaseFunction(Interface_BaseFunction):
         self.__U = KnotVector(U)
 
     @property
-    def p(self) -> int:
-        return self.__U.p
+    def degree(self) -> int:
+        return self.__U.degree
 
     @property
     def n(self) -> int:
@@ -182,7 +182,7 @@ class RationalEvaluatorClass(BaseEvaluator):
 class BaseFunctionDerivable(BaseFunction):
     def __init__(self, U: KnotVector):
         super().__init__(U)
-        self.__q = self.p
+        self.__q = self.degree
         self.__A = np.eye(self.n, dtype="float64")
 
     @property
@@ -196,9 +196,9 @@ class BaseFunctionDerivable(BaseFunction):
     def derivate(self):
         avals = np.zeros(self.n)
         for i in range(self.n):
-            diff = self.U[i + self.p] - self.U[i]  # Maybe it's wrong
+            diff = self.U[i + self.degree] - self.U[i]  # Maybe it's wrong
             if diff != 0:
-                avals[i] = self.p / diff
+                avals[i] = self.degree / diff
         newA = np.diag(avals)
         for i in range(self.n - 1):
             newA[i, i + 1] = -avals[i + 1]
@@ -220,8 +220,8 @@ class BaseFunctionGetItem(BaseFunctionDerivable):
     def __valid_second_index(self, index: int):
         if not isinstance(index, int):
             raise TypeError
-        if not (0 <= index <= self.p):
-            error_msg = f"Second index (={index}) must be in [0, {self.p}]"
+        if not (0 <= index <= self.degree):
+            error_msg = f"Second index (={index}) must be in [0, {self.degree}]"
             raise IndexError(error_msg)
 
     @abc.abstractmethod
@@ -240,7 +240,7 @@ class BaseFunctionGetItem(BaseFunctionDerivable):
         return self.create_evaluator_instance(i, j)
 
     def __call__(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
-        i, j = slice(None, None, None), self.p
+        i, j = slice(None, None, None), self.degree
         evaluator = self.create_evaluator_instance(i, j)
         return evaluator(u)
 

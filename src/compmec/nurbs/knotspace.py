@@ -99,11 +99,11 @@ class VerifyKnotVector(object):
         VerifyKnotVector.isNonNegative(value)
 
     @staticmethod
-    def PN(p: int, n: int):
-        VerifyKnotVector.isIntegerNonNegative(p)
+    def PN(degree: int, n: int):
+        VerifyKnotVector.isIntegerNonNegative(degree)
         VerifyKnotVector.isIntegerNonNegative(n)
-        if n <= p:
-            raise ValueError("Must n > p. Received n=%d, p=%d" % (n, p))
+        if n <= degree:
+            raise ValueError("Must n > degree. Received n=%d, degree=%d" % (n, degree))
 
     @staticmethod
     def all(U: Tuple[float]) -> None:
@@ -119,14 +119,14 @@ class VerifyKnotVector(object):
 class KnotVector(list):
     def __init__(self, U: Tuple[float]):
         VerifyKnotVector.all(U)
-        p, n = self.compute_pn(U)
-        VerifyKnotVector.PN(p, n)
-        self.__p = p
+        degree, n = self.compute_pn(U)
+        VerifyKnotVector.PN(degree, n)
+        self.__p = degree
         self.__n = n
         super().__init__(U)
 
     @property
-    def p(self) -> int:
+    def degree(self) -> int:
         return self.__p
 
     @property
@@ -137,20 +137,20 @@ class KnotVector(list):
     def compute_pn(U: Tuple[float]):
         """
         We have that U = [0, ..., 0, ?, ..., ?, 1, ..., 1]
-        And that U[p] = 0, but U[p+1] != 0
+        And that U[degree] = 0, but U[degree+1] != 0
         The same way, U[n] = 1, but U[n-1] != 0
 
         Using that, we know that
-            len(U) = m + 1 = n + p + 1
+            len(U) = m + 1 = n + degree + 1
         That means that
-            m = n + p
+            m = n + degree
         """
         minU = min(U)
-        p = 0
-        while U[p + 1] == minU:
-            p += 1
-        n = len(U) - p - 1
-        return p, n
+        degree = 0
+        while U[degree + 1] == minU:
+            degree += 1
+        n = len(U) - degree - 1
+        return degree, n
 
     def span_onevalue(self, u: float) -> int:
         try:
@@ -222,9 +222,9 @@ class KnotVector(list):
             copylist.insert(span + 1, knot)
             VerifyKnotVector.all(copylist)
             self.insert(span + 1, knot)
-            p, n = self.compute_pn(list(self))
-            VerifyKnotVector.PN(p, n)
-            self.__p = p
+            degree, n = self.compute_pn(list(self))
+            VerifyKnotVector.PN(degree, n)
+            self.__p = degree
             self.__n = n
             return
         for i in range(times):
@@ -238,9 +238,9 @@ class KnotVector(list):
         if times == 1:
             span = self.span_onevalue(knot)
             self.remove(knot)
-            p, n = self.compute_pn(list(self))
-            VerifyKnotVector.PN(p, n)
-            self.__p = p
+            degree, n = self.compute_pn(list(self))
+            VerifyKnotVector.PN(degree, n)
+            self.__p = degree
             self.__n = n
             return
         for i in range(times):
@@ -265,7 +265,7 @@ class KnotVector(list):
             )
         if self.n != obj.n:
             return False
-        if self.p != obj.p:
+        if self.degree != obj.degree:
             return False
         for i, v in enumerate(self):
             if v != obj[i]:
@@ -278,30 +278,30 @@ class KnotVector(list):
 
 class GeneratorKnotVector:
     @staticmethod
-    def bezier(p: int) -> KnotVector:
-        VerifyKnotVector.isIntegerNonNegative(p)
-        return GeneratorKnotVector.uniform(p=p, n=p + 1)
+    def bezier(degree: int) -> KnotVector:
+        VerifyKnotVector.isIntegerNonNegative(degree)
+        return GeneratorKnotVector.uniform(degree, degree + 1)
 
     @staticmethod
-    def weight(p: int, ws: Tuple[float]) -> KnotVector:
+    def weight(degree: int, ws: Tuple[float]) -> KnotVector:
         VerifyKnotVector.isFloatArray1D(ws)
-        VerifyKnotVector.isIntegerNonNegative(p)
+        VerifyKnotVector.isIntegerNonNegative(degree)
         U = np.cumsum(ws)
         U -= U[0]
         U /= U[-1]
         U *= VerifyKnotVector.maxU - VerifyKnotVector.minU
         U += VerifyKnotVector.minU
-        U = p * [0] + list(U) + p * [1]
+        U = degree * [0] + list(U) + degree * [1]
         return KnotVector(U)
 
     @staticmethod
-    def uniform(p: int, n: int) -> KnotVector:
-        VerifyKnotVector.PN(p, n)
-        ws = np.ones(n - p + 1)
-        return GeneratorKnotVector.weight(p=p, ws=ws)
+    def uniform(degree: int, n: int) -> KnotVector:
+        VerifyKnotVector.PN(degree, n)
+        ws = np.ones(n - degree + 1)
+        return GeneratorKnotVector.weight(degree, ws)
 
     @staticmethod
-    def random(p: int, n: int) -> KnotVector:
-        VerifyKnotVector.PN(p, n)
-        ws = np.random.rand(n - p + 1)
-        return GeneratorKnotVector.weight(p, ws)
+    def random(degree: int, n: int) -> KnotVector:
+        VerifyKnotVector.PN(degree, n)
+        ws = np.random.rand(n - degree + 1)
+        return GeneratorKnotVector.weight(degree, ws)

@@ -33,21 +33,21 @@ class TestChapter2Algorithms:
     @pytest.mark.timeout(2)
     @pytest.mark.dependency(depends=["TestChapter2Algorithms::test_begin"])
     def test_FindSpan(self):
-        p, n = 2, 3
+        degree, n = 2, 3
         U = [0, 0, 0, 1, 1, 1]
-        assert Chapter2.FindSpan(n, p, 0, U) == p
-        assert Chapter2.FindSpan(n, p, 0.2, U) == 2
-        assert Chapter2.FindSpan(n, p, 0.5, U) == 2
-        assert Chapter2.FindSpan(n, p, 0.8, U) == 2
-        assert Chapter2.FindSpan(n, p, 1, U) == n
+        assert Chapter2.FindSpan(n, degree, 0, U) == degree
+        assert Chapter2.FindSpan(n, degree, 0.2, U) == 2
+        assert Chapter2.FindSpan(n, degree, 0.5, U) == 2
+        assert Chapter2.FindSpan(n, degree, 0.8, U) == 2
+        assert Chapter2.FindSpan(n, degree, 1, U) == n
 
-        p, n = 2, 4
+        degree, n = 2, 4
         U = [0, 0, 0, 0.5, 1, 1, 1]
-        assert Chapter2.FindSpan(n, p, 0, U) == p
-        assert Chapter2.FindSpan(n, p, 0.2, U) == 2
-        assert Chapter2.FindSpan(n, p, 0.5, U) == 3
-        assert Chapter2.FindSpan(n, p, 0.7, U) == 3
-        assert Chapter2.FindSpan(n, p, 1, U) == n
+        assert Chapter2.FindSpan(n, degree, 0, U) == degree
+        assert Chapter2.FindSpan(n, degree, 0.2, U) == 2
+        assert Chapter2.FindSpan(n, degree, 0.5, U) == 3
+        assert Chapter2.FindSpan(n, degree, 0.7, U) == 3
+        assert Chapter2.FindSpan(n, degree, 1, U) == n
 
     @pytest.mark.order(1)
     @pytest.mark.timeout(2)
@@ -58,30 +58,30 @@ class TestChapter2Algorithms:
         ]
     )
     def test_FindSpanMult(self):
-        p, n = 2, 3
+        degree, n = 2, 3
         U = [0, 0, 0, 1, 1, 1]
-        assert Chapter2.FindSpanMult(n, p, 0, U) == (p, 3)
-        assert Chapter2.FindSpanMult(n, p, 0.2, U) == (2, 0)
-        assert Chapter2.FindSpanMult(n, p, 0.5, U) == (2, 0)
-        assert Chapter2.FindSpanMult(n, p, 0.8, U) == (2, 0)
-        assert Chapter2.FindSpanMult(n, p, 1, U) == (n, 3)
+        assert Chapter2.FindSpanMult(n, degree, 0, U) == (degree, 3)
+        assert Chapter2.FindSpanMult(n, degree, 0.2, U) == (2, 0)
+        assert Chapter2.FindSpanMult(n, degree, 0.5, U) == (2, 0)
+        assert Chapter2.FindSpanMult(n, degree, 0.8, U) == (2, 0)
+        assert Chapter2.FindSpanMult(n, degree, 1, U) == (n, 3)
 
-        p, n = 2, 4
+        degree, n = 2, 4
         U = [0, 0, 0, 0.5, 1, 1, 1]
-        assert Chapter2.FindSpanMult(n, p, 0, U) == (p, 3)
-        assert Chapter2.FindSpanMult(n, p, 0.2, U) == (2, 0)
-        assert Chapter2.FindSpanMult(n, p, 0.5, U) == (3, 1)
-        assert Chapter2.FindSpanMult(n, p, 0.7, U) == (3, 0)
-        assert Chapter2.FindSpanMult(n, p, 1, U) == (n, 3)
+        assert Chapter2.FindSpanMult(n, degree, 0, U) == (degree, 3)
+        assert Chapter2.FindSpanMult(n, degree, 0.2, U) == (2, 0)
+        assert Chapter2.FindSpanMult(n, degree, 0.5, U) == (3, 1)
+        assert Chapter2.FindSpanMult(n, degree, 0.7, U) == (3, 0)
+        assert Chapter2.FindSpanMult(n, degree, 1, U) == (n, 3)
 
-        p, n = 1, 5
+        degree, n = 1, 5
         U = [0, 0, 1 / 3, 0.5, 2 / 3, 1, 1]
-        assert Chapter2.FindSpanMult(n, p, 0, U) == (p, 2)
-        assert Chapter2.FindSpanMult(n, p, 0.2, U) == (1, 0)
-        assert Chapter2.FindSpanMult(n, p, 0.4, U) == (2, 0)
-        assert Chapter2.FindSpanMult(n, p, 0.5, U) == (3, 1)
-        assert Chapter2.FindSpanMult(n, p, 0.7, U) == (4, 0)
-        assert Chapter2.FindSpanMult(n, p, 1, U) == (n, 2)
+        assert Chapter2.FindSpanMult(n, degree, 0, U) == (degree, 2)
+        assert Chapter2.FindSpanMult(n, degree, 0.2, U) == (1, 0)
+        assert Chapter2.FindSpanMult(n, degree, 0.4, U) == (2, 0)
+        assert Chapter2.FindSpanMult(n, degree, 0.5, U) == (3, 1)
+        assert Chapter2.FindSpanMult(n, degree, 0.7, U) == (4, 0)
+        assert Chapter2.FindSpanMult(n, degree, 1, U) == (n, 2)
 
     @pytest.mark.order(1)
     @pytest.mark.dependency(
@@ -137,11 +137,11 @@ class TestChapter5Algorithms:
     @pytest.mark.timeout(2)
     @pytest.mark.dependency(depends=["TestChapter5Algorithms::test_begin"])
     def test_CurveKnotIns(self):
-        p, n = 3, 6
+        degree, n = 3, 6
         U = [0, 0, 0, 0, 0.25, 0.5, 0.75, 1, 1, 1, 1]
         u, k, s, r = 0.3, 4, 0, 1
         P = [1, 1, 1, 1, 1, 1]
-        nq, Uq, Qw = Chapter5.CurveKnotIns(n, p, U, P, u, k, s, r)
+        nq, Uq, Qw = Chapter5.CurveKnotIns(n, degree, U, P, u, k, s, r)
         assert nq == n + r
         assert len(U) + r == len(Uq)
         assert np.all(np.array(Qw) == 1)
@@ -149,11 +149,11 @@ class TestChapter5Algorithms:
         for u in U:
             assert u in Uq
 
-        p, n = 1, 4
+        degree, n = 1, 4
         U = [0, 0, 1 / 3, 2 / 3, 1, 1]
         u, k, s, r = 0.5, 2, 0, 1
         P = [1, 2, 3, 4]
-        nq, Uq, Qw = Chapter5.CurveKnotIns(n, p, U, P, u, k, s, r)
+        nq, Uq, Qw = Chapter5.CurveKnotIns(n, degree, U, P, u, k, s, r)
         assert nq == n + r
         assert Uq == [0, 0, 1 / 3, 0.5, 2 / 3, 1, 1]
         assert Qw == [1, 2, 2.5, 3, 4]
@@ -202,11 +202,11 @@ class TestChapter5Algorithms:
         ]
     )
     def test_InsertAndRemoveCurveKnot_known(self):
-        p, n = 1, 4
+        degree, n = 1, 4
         U = [0, 0, 1 / 3, 2 / 3, 1, 1]
         u, k, s, r = 0.5, 2, 0, 1
         Pw = [1, 2, 3, 4]
-        nq, Uq, Qw = Chapter5.CurveKnotIns(n, p, U, Pw, u, k, s, r)
+        nq, Uq, Qw = Chapter5.CurveKnotIns(n, degree, U, Pw, u, k, s, r)
         assert nq == n + r
         assert Uq == [0, 0, 1 / 3, 0.5, 2 / 3, 1, 1]
         assert Qw == [1, 2, 2.5, 3, 4]
@@ -227,8 +227,8 @@ class TestChapter5Algorithms:
     def test_InsertAndRemoveCurveKnot_random(self):
         ntests = 100
         for i in range(ntests):
-            p = np.random.randint(1, 5)
-            n = np.random.randint(p + 1, p + 11)
+            degree = np.random.randint(1, 5)
+            n = np.random.randint(degree + 1, degree + 11)
             U = [0] * p + list(np.linspace(0, 1, n - p + 1)) + [1] * p
 
     @pytest.mark.order(1)

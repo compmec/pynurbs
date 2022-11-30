@@ -6,7 +6,7 @@ import numpy as np
 
 class Interface_KnotVector(abc.ABC):
     @abc.abstractproperty
-    def p(self) -> int:
+    def degree(self) -> int:
         raise NotImplementedError
 
     @abc.abstractproperty
@@ -63,7 +63,7 @@ class Interface_Evaluator(Interface_BaseFunction_Evaluator_BaseCurve):
 
 class Interface_BaseFunction_BaseCurve(Interface_BaseFunction_Evaluator_BaseCurve):
     @abc.abstractproperty
-    def p(self) -> int:
+    def degree(self) -> int:
         raise NotImplementedError
 
     @abc.abstractproperty

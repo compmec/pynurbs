@@ -25,8 +25,8 @@ class BaseCurve(Interface_BaseCurve):
         self.F.derivate()
 
     @property
-    def p(self):
-        return self.U.p
+    def degree(self):
+        return self.U.degree
 
     @property
     def n(self):
@@ -73,7 +73,9 @@ class BaseCurve(Interface_BaseCurve):
             raise TypeError(error_msg)
         knots = list(set(self.U))
         knots.sort()
-        utest = [np.linspace(a, b, 2 + self.p) for a, b in zip(knots[:-1], knots[1:])]
+        utest = [
+            np.linspace(a, b, 2 + self.degree) for a, b in zip(knots[:-1], knots[1:])
+        ]
         utest = list(set(np.array(utest).reshape(-1)))
         Cusel = self(utest)
         Cuobj = obj(utest)
@@ -121,26 +123,26 @@ class BaseCurve(Interface_BaseCurve):
 
     def knot_insert(self, knots: Union[float, Tuple[float]]):
         table = self.__transform_knots_to_table(knots)
-        n, p = self.n, self.p
+        n, degree = self.n, self.degree
         U = np.array(self.U).tolist()
         P = list(self.P)
         for knot, times in table.items():
             U = KnotVector(U)
             span = U.span(knot)
             mult = U.mult(knot)
-            n, U, P = Chapter5.CurveKnotIns(n, p, U, P, knot, span, mult, times)
+            n, U, P = Chapter5.CurveKnotIns(n, degree, U, P, knot, span, mult, times)
         self.__set_UFP(U, P)
 
     def knot_remove(self, knots: Union[float, Tuple[float]]):
         table = self.__transform_knots_to_table(knots)
-        n, p = self.n, self.p
+        n, degree = self.n, self.degree
         U = np.array(self.U).tolist()
         P = list(self.P)
         for knot, times in table.items():
             U = KnotVector(U)
             span = U.span(knot)
             mult = U.mult(knot)
-            t, U, P = Chapter5.RemoveCurveKnot(n, p, U, P, knot, span, mult, times)
+            t, U, P = Chapter5.RemoveCurveKnot(n, degree, U, P, knot, span, mult, times)
             if t != times:
                 if t == 0:
                     error_msg = f"Cannot remove the knot {knot}"
@@ -154,7 +156,7 @@ class BaseCurve(Interface_BaseCurve):
     def degree_increase(self, times: Optional[int] = 1):
         U = list(self.U)
         P = list(self.P)
-        nq, Uq, Qw = Chapter5.DegreeElevateCurve(self.n, self.p, U, P, times)
+        nq, Uq, Qw = Chapter5.DegreeElevateCurve(self.n, self.degree, U, P, times)
         self.__set_UFP(Uq, Qw)
 
     def degree_decrease(self, times: Optional[int] = 1):
