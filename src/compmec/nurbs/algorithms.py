@@ -1002,6 +1002,8 @@ class Chapter5:
         for k in range(i + 1, len(Pw)):  # Shift
             Qw[j] = Pw[k]
             j += 1
+        Uq = np.array(Uq, dtype="float64").tolist()
+        Qw = list(np.array(Qw, dtype="float64"))
         return t, Uq, Qw
 
     @staticmethod
@@ -1019,6 +1021,8 @@ class Chapter5:
             ``Uh``: Array1D[float] -- New knot vector
             ``Qw``: Array1D[Point] -- New control points
         """
+        ctrlpoints = list(np.array(ctrlpoints, dtype="float64"))
+        knotvector = list(knotvector)
         npts = len(ctrlpoints)
         degree = len(knotvector) - npts - 1
         p = degree
@@ -1144,6 +1148,15 @@ class Chapter5:
         Uh = Uh[: mh + 1]
         nh = mh - ph - 1
         Qw = Qw[: nh + 1]
+        try:
+            Uh = np.array(Uh, dtype="float64")
+            Qw = np.array(Qw, dtype="float64")
+        except Exception as e:
+            print("Uh = ")
+            print(Uh)
+            print("Qw = ")
+            print(Qw)
+            raise e
         return Uh, Qw
 
     @staticmethod
@@ -1153,6 +1166,41 @@ class Chapter5:
             Degree elevate a surface t times
         """
         pass
+
+    @staticmethod
+    def BezDegreeReduce(ctrlpoints: Array1D[Point]):
+        """
+        #### Algorithm to reduce degree of bezier curve
+            It's used in Alggorithm A5.11
+            It uses Equations 5.41, 5.42, 5.45 and 5.46
+        #### Input:
+            ``ctrlpoints``: Array1D[Point] -- Control points
+        #### Output:
+            ``ctrlpoints``: Array1D[Point] -- New control points
+            ``MaxErr``: float -- Maximum error of bezier reduction
+        """
+        ctrlpoints = np.array(ctrlpoints)
+        npts = len(ctrlpoints)
+        degree = npts - 1
+        nsample = 3 * npts
+        newctrlpoints = np.zeros([npts - 1] + list(ctrlpoints.shape[1:]))
+
+        M = np.zeros((nsample, degree))
+        G = np.zeros((nsample, npts))
+        tvals = [i / (nsample - 1) for i in range(nsample)]
+        for i, ti in enumerate(tvals):
+            ti1 = 1 - ti
+            for j in range(degree):  # Compute evaluation of old bezier
+                M[i, j] = math.comb(npts - 2, j) * ti1 ** (npts - 2 - j) * ti**j
+            for j in range(npts):  # Compute evaluation of new bezier
+                G[i, j] = math.comb(npts - 1, j) * ti1 ** (npts - 1 - j) * ti**j
+        A = M.T @ M
+        B = M.T @ G
+        Matrix = np.linalg.solve(A, B)
+        for i in range(npts - 1):
+            for j in range(npts):
+                newctrlpoints[i] += Matrix[i, j] * ctrlpoints[j]
+        return newctrlpoints, 0
 
     @staticmethod
     def DegreeReduceCurve(knotvector: Array1D[float], ctrlpoints: Array1D[Point]):
@@ -1166,6 +1214,8 @@ class Chapter5:
             ``Uh``: Array1D[float] -- New knot vector
             ``Qw``: Array1D[Point] -- New control points
         """
+        ctrlpoints = list(np.array(ctrlpoints, dtype="float64"))
+        knotvector = list(knotvector)
         npts = len(ctrlpoints)
         degree = len(knotvector) - npts - 1
         TOLERANCE = 1e-9
@@ -1204,10 +1254,9 @@ class Chapter5:
             e[i] = 0.0
         # Loop through the knot vector
         while b < m:
+            print("b, m = ", b, m)
             i = b
-            while True:
-                if b >= m:
-                    break
+            while b < m:
                 if U[b] != U[b + 1]:
                     break
                 b += 1
@@ -1215,7 +1264,11 @@ class Chapter5:
             mh = mh + mult - 1
             oldr = r
             r = p - mult
-            lbz = 1 + (oldr // 2) if oldr > 0 else 1
+            # lbz = 1 + ((oldr // 2) if (oldr > 0) else 0)
+            if oldr > 0:
+                lbz = (oldr + 2) // 2
+            else:
+                lbz = 1
             # Insert knot U[b] r times
             if r > 0:
                 numer = U[b] - U[a]
@@ -1225,28 +1278,34 @@ class Chapter5:
                     save = r - j
                     s = mult + j
                     for k in range(p, s - 1, -1):
-                        bpts[k] = (
-                            alphas[k] * bpts[k] + (1 - alphas[k - s]) * bpts[k - 1]
-                        )
+                        bpts[k] = alphas[k - s] * bpts[k]
+                        bpts[k] += (1 - alphas[k - s]) * bpts[k - 1]
                     Nextbpts[save] = bpts[p]
             # Degree reduce bezier segment
-            # MaxErr = BezDegreeReduce(bpts, rbpts)
+            rbpts, MaxErr = Chapter5.BezDegreeReduce(bpts)
             MaxErr = 0
             e[a] += MaxErr
             if e[a] > TOLERANCE:
                 raise ValueError("Curve not degree reducible")
             # Remove knot U[a] oldr times
+            print("oldr = ", oldr)
             if oldr > 0:
+                print("oldr = ", oldr)
                 first = kind
                 last = kind
                 for k in range(oldr):
                     i = first
                     j = last
                     kj = j - kind
+                    print("i, j, k = ", i, j, k)
                     while j - i > k:
                         alfa = (U[a] - Uh[i - 1]) / (U[b] - Uh[i - 1])
                         beta = (U[a] - Uh[j - k - 1]) / (U[b] - Uh[j - k - 1])
-                        Pw[i - 1] = (Pw[i - 1] - (1 - alfa) * Pw[i - 2]) / alfa
+                        val = (Pw[i - 1] - (1 - alfa) * Pw[i - 2]) / alfa
+                        print(f"Pw[i-1] = Pw[{i-1}] = {Pw[i-1]}")
+                        print(f"Pw[i-2] = Pw[{i-2}] = {Pw[i-2]}")
+                        print(f"Setting # Pw[{i-1}] = {val}")
+                        Pw[i - 1] = val
                         rbpts[kj] = (rbpts[kj] - beta * rbpts[kj + 1]) / (1 - beta)
                         i += 1
                         j -= 1
@@ -1275,6 +1334,7 @@ class Chapter5:
                     Uh[kind] = U[a]
                     kind += 1
             for i in range(lbz, ph + 1):
+                print(f"Setting : Pw[{cind}] = {rbpts[i]}")
                 Pw[cind] = rbpts[i]
                 cind += 1
             # Set up for next pass through
@@ -1288,9 +1348,26 @@ class Chapter5:
             else:
                 for i in range(ph + 1):
                     Uh[kind + i] = U[b]
+
         Uh = Uh[: mh + 1]
         nh = mh - ph - 1
+        print("Before")
+        print(Pw)
         Pw = Pw[: nh + 1]
+        try:
+            Uh = np.array(Uh, dtype="float64")
+            Pw = np.array(Pw, dtype="float64")
+        except Exception as e:
+            print("On error: ")
+            print("Original knot vector = ")
+            print(U)
+            print("Original points = ")
+            print(np.array(Qw))
+            print("Modified knot vector = ")
+            print(Uh)
+            print("Modified control points = ")
+            print(Pw)
+            raise e
         return Uh, Pw
 
 

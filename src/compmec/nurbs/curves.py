@@ -46,10 +46,18 @@ class BaseCurve(Interface_BaseCurve):
 
     @ctrlpoints.setter
     def ctrlpoints(self, value: np.ndarray):
+        if not isinstance(value, (list, tuple, np.ndarray)):
+            error_msg = f"Received Control Points is type {type(value)}."
+            error_msg += f" But it must be an array of floats"
+            raise TypeError(error_msg)
         try:
             value = np.array(value, dtype="float64")
         except Exception as e:
-            error_msg = f"Received Control Points is type {type(value)}, but it must be an float-array"
+            error_msg = (
+                f"Could not convert type {type(value)} into numpy array of floats."
+            )
+            error_msg += f" Cause {e}"
+            error_msg += f" Received {str(value)[:400]}"
             raise TypeError(error_msg)
         if value.ndim == 0:
             error_msg = f"The Control Points must be a array, not a single value"
@@ -138,16 +146,10 @@ class BaseCurve(Interface_BaseCurve):
         knotvector = list(self.knotvector)
         ctrlpoints = list(self.ctrlpoints)
         for knot, times in table.items():
-            t, knotvector, ctrlpoints = Chapter5.RemoveCurveKnot(
-                knotvector, ctrlpoints, knot, times
-            )
+            result = Chapter5.RemoveCurveKnot(knotvector, ctrlpoints, knot, times)
+            t, knotvector, ctrlpoints = result
             if t != times:
-                if t == 0:
-                    error_msg = f"Cannot remove the knot {knot}"
-                else:
-                    error_msg = (
-                        f"Can remove knot {knot} only {t} times (requested {times})"
-                    )
+                error_msg = f"Cannot remove knot {times} x {knot} (only {t} times)"
                 raise ValueError(error_msg)
         self.__set_UFP(knotvector, ctrlpoints)
 
