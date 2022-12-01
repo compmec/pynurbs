@@ -136,8 +136,7 @@ class TestChapter5Algorithms:
     @pytest.mark.timeout(2)
     @pytest.mark.dependency(depends=["TestChapter5Algorithms::test_begin"])
     def test_CurveKnotIns(self):
-        degree, npts = 3, 6
-        U = [0, 0, 0, 0, 0.25, 0.5, 0.75, 1, 1, 1, 1]
+        U = [0, 0, 0, 0, 0.25, 0.5, 0.75, 1, 1, 1, 1]  # degree = 3, npts = 6
         knot, times = 0.3, 1
         P = [1, 1, 1, 1, 1, 1]
         Uq, Qw = Chapter5.CurveKnotIns(U, P, knot, times)
@@ -147,8 +146,7 @@ class TestChapter5Algorithms:
         for knot in U:
             assert knot in Uq
 
-        degree, npts = 1, 4
-        U = [0, 0, 1 / 3, 2 / 3, 1, 1]
+        U = [0, 0, 1 / 3, 2 / 3, 1, 1]  # degree = 1, npts = 4
         knot, times = 0.5, 1
         P = [1, 2, 3, 4]
         Uq, Qw = Chapter5.CurveKnotIns(U, P, knot, times)
