@@ -241,6 +241,53 @@ class TestChapter5Algorithms:
         pass
 
 
+class TestCustom:
+    @pytest.mark.order(1)
+    @pytest.mark.dependency()
+    def test_increase_bezier_degree(self):
+        degree, npts = 1, 2
+        ndim = 3
+        U = [0] * npts + [1] * npts
+        P = np.random.uniform(-1, 1, (npts, ndim))
+
+        newU, newP = Custom.increase_bezier_degree(U, P)
+        assert newU == [0] * (npts + 1) + [1] * (npts + 1)
+        assert np.all(newP[0] == P[0])
+        assert np.all(newP[1] == 0.5 * (P[0] + P[1]))
+        assert np.all(newP[2] == P[1])
+
+    @pytest.mark.order(1)
+    @pytest.mark.dependency()
+    def test_increase_bezier_degree_random(self, ntests=100):
+        for degree in range(1, 5):
+            npts = degree + 1
+            U = [0] * npts + [1] * npts
+            for kk in range(ntests):
+                ndim = np.random.randint(1, 5)
+                P = np.random.uniform(-1, 1, (npts, ndim))
+
+                newU, newP = Custom.increase_bezier_degree(U, P)
+                assert newU == [0] * (npts + 1) + [1] * (npts + 1)
+
+                tvals = [i / npts for i in range(npts + 1)]
+                for ti in tvals:
+                    Coriginal = np.zeros(P[0].shape)
+                    Ccomputed = np.zeros(P[0].shape)
+                    ti1 = 1 - ti
+                    for j in range(npts):
+                        Coriginal += (
+                            math.comb(npts - 1, j)
+                            * ti1 ** (npts - 1 - j)
+                            * ti**j
+                            * P[j]
+                        )
+                    for j in range(npts + 1):
+                        Ccomputed += (
+                            math.comb(npts, j) * ti1 ** (npts - j) * ti**j * newP[j]
+                        )
+                    np.testing.assert_allclose(Coriginal, Ccomputed)
+
+
 @pytest.mark.order(1)
 @pytest.mark.dependency(
     depends=[

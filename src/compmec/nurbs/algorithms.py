@@ -1,6 +1,8 @@
 import math
 from typing import Any, List, Tuple
 
+import numpy as np
+
 
 class Point:
     pass
@@ -1107,3 +1109,35 @@ class Chapter5:
             Degree reduce a curve from p to p-1
         """
         pass
+
+
+class Custom:
+    @staticmethod
+    def increase_bezier_degree(knotvector: Tuple[float], ctrlpoints: Array1D[Point]):
+        npts = len(ctrlpoints)
+        degree = len(knotvector) - npts
+        p, n = degree, npts - 1
+        knotvector = list(knotvector)
+        knotvector.append(1)
+        knotvector.insert(0, 0)
+        newctrlpoints = [0] * (1 + npts)
+        tvals = [float(i) / (n + 1) for i in range(n + 2)]
+        print("tvals = ", tvals)
+
+        M = [[0] * (n + 2)] * (n + 2)
+        A = [[0] * (n + 1)] * (n + 2)
+        M = np.array(M, dtype="float64")
+        A = np.array(A, dtype="float64")
+        for j, tj in enumerate(tvals):
+            tj1 = 1 - tj
+            for i in range(n + 2):
+                M[j, i] = math.comb(n + 1, i) * tj1 ** (n + 1 - i) * tj**i
+            for i in range(n + 1):
+                A[j, i] = math.comb(n, i) * tj1 ** (n - i) * tj**i
+        F = np.linalg.solve(M, A)  # F is such Q = F @ P
+
+        for i in range(n + 2):
+            for j in range(n + 1):
+                newctrlpoints[i] += F[i][j] * ctrlpoints[j]
+
+        return (knotvector, newctrlpoints)
