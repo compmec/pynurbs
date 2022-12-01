@@ -68,7 +68,9 @@ class RationalWeightsVector(object):
         if value.ndim != 1:
             raise ValueError(f"Input must be 1D array")
         if len(value) != self.npts:
-            raise ValueError(f"Input must have same number of points as U.npts")
+            raise ValueError(
+                f"Input must have same number of points as knotvector.npts"
+            )
         for v in value:
             v = float(v)
             if v < 0:
@@ -77,8 +79,8 @@ class RationalWeightsVector(object):
 
 
 class BaseFunction(Interface_BaseFunction):
-    def __init__(self, U: KnotVector):
-        self.__U = KnotVector(U)
+    def __init__(self, knotvector: KnotVector):
+        self.__U = KnotVector(knotvector)
 
     @property
     def degree(self) -> int:
@@ -89,25 +91,25 @@ class BaseFunction(Interface_BaseFunction):
         return self.__U.npts
 
     @property
-    def U(self) -> KnotVector:
+    def knotvector(self) -> KnotVector:
         return self.__U
 
     def knot_insert(self, knot: float, times: Optional[int] = 1):
-        self.U.knot_insert(knot, times)
+        self.knotvector.knot_insert(knot, times)
 
     def knot_remove(self, knot: float, times: Optional[int] = 1):
-        self.U.knot_remove(knot, times)
+        self.knotvector.knot_remove(knot, times)
 
 
 class BaseEvaluator(Interface_Evaluator):
     def __init__(self, F: BaseFunction, i: Union[int, slice], j: int):
-        self.__U = F.U
+        self.__U = F.knotvector
         self.__first_index = i
         self.__second_index = j
         self.__A = F.A
 
     @property
-    def U(self) -> KnotVector:
+    def knotvector(self) -> KnotVector:
         return self.__U
 
     @property
@@ -167,7 +169,7 @@ class SplineEvaluatorClass(BaseEvaluator):
         super().__init__(F, i, j)
 
     def compute_one_value(self, i: int, u: float, span: int) -> float:
-        return N(i, self.second_index, span, u, self.U)
+        return N(i, self.second_index, span, u, self.knotvector)
 
 
 class RationalEvaluatorClass(BaseEvaluator):
@@ -176,12 +178,12 @@ class RationalEvaluatorClass(BaseEvaluator):
         self.__w = F.w
 
     def compute_one_value(self, i: int, u: float, span: int) -> float:
-        return R(i, self.second_index, span, u, self.U, self.__w)
+        return R(i, self.second_index, span, u, self.knotvector, self.__w)
 
 
 class BaseFunctionDerivable(BaseFunction):
-    def __init__(self, U: KnotVector):
-        super().__init__(U)
+    def __init__(self, knotvector: KnotVector):
+        super().__init__(knotvector)
         self.__q = self.degree
         self.__A = np.eye(self.npts, dtype="float64")
 
@@ -196,7 +198,9 @@ class BaseFunctionDerivable(BaseFunction):
     def derivate(self):
         avals = np.zeros(self.npts)
         for i in range(self.npts):
-            diff = self.U[i + self.degree] - self.U[i]  # Maybe it's wrong
+            diff = (
+                self.knotvector[i + self.degree] - self.knotvector[i]
+            )  # Maybe it's wrong
             if diff != 0:
                 avals[i] = self.degree / diff
         newA = np.diag(avals)
@@ -207,8 +211,8 @@ class BaseFunctionDerivable(BaseFunction):
 
 
 class BaseFunctionGetItem(BaseFunctionDerivable):
-    def __init__(self, U: KnotVector):
-        super().__init__(U)
+    def __init__(self, knotvector: KnotVector):
+        super().__init__(knotvector)
 
     def __valid_first_index(self, index: Union[int, slice]):
         if not isinstance(index, (int, slice)):
@@ -247,7 +251,7 @@ class BaseFunctionGetItem(BaseFunctionDerivable):
     def __eq__(self, obj: object) -> bool:
         if type(self) != type(obj):
             raise TypeError
-        if self.U != obj.U:
+        if self.knotvector != obj.knotvector:
             return False
         if self.q != obj.q:
             return False
@@ -259,32 +263,32 @@ class SplineBaseFunction(BaseFunctionGetItem):
         """
         This function is recursively determined like
 
-        N_{i, 0}(u) = { 1   if  U[i] <= u < U[i+1]
+        N_{i, 0}(u) = { 1   if  knotvector[i] <= u < knotvector[i+1]
                       { 0   else
 
-                          u - U[i]
+                          u - knotvector[i]
         N_{i, j}(u) = --------------- * N_{i, j-1}(u)
-                       U[i+j] - U[i]
-                            U[i+j+1] - u
+                       knotvector[i+j] - knotvector[i]
+                            knotvector[i+j+1] - u
                       + ------------------- * N_{i+1, j-1}(u)
-                         U[i+j+1] - U[i+1]
+                         knotvector[i+j+1] - knotvector[i+1]
 
         As consequence, we have that
 
-        N_{i, j}(u) = 0   if  ( u not in [U[i], U[i+j+1]] )
+        N_{i, j}(u) = 0   if  ( u not in [knotvector[i], knotvector[i+j+1]] )
 
         """
 
-    def __init__(self, U: KnotVector):
-        super().__init__(U)
+    def __init__(self, knotvector: KnotVector):
+        super().__init__(knotvector)
 
     def create_evaluator_instance(self, i: Union[int, slice], j: int):
         return SplineEvaluatorClass(self, i, j)
 
 
 class RationalBaseFunction(BaseFunctionGetItem, RationalWeightsVector):
-    def __init__(self, U: KnotVector):
-        super().__init__(U)
+    def __init__(self, knotvector: KnotVector):
+        super().__init__(knotvector)
         self.w = np.ones(self.npts, dtype="float64")
 
     def create_evaluator_instance(self, i: Union[int, slice], j: int):

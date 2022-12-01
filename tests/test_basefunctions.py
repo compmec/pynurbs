@@ -38,8 +38,8 @@ def test_CreationSplineBaseFunction():
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_CreationSplineBaseFunction"])
 def test_SplineEvaluationFunctions_p1n2():
-    U = [0, 0, 1, 1]  # degree = 1, npts = 2
-    N = SplineBaseFunction(U)
+    knotvector = [0, 0, 1, 1]  # degree = 1, npts = 2
+    N = SplineBaseFunction(knotvector)
     N[0, 0]
     N[1, 0]
     N[0, 1]
@@ -53,8 +53,8 @@ def test_SplineEvaluationFunctions_p1n2():
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_SplineEvaluationFunctions_p1n2"])
 def test_SplineEvaluationFunctions_p1n3():
-    U = [0, 0, 0.5, 1, 1]  # degree = 1, npts = 3
-    N = SplineBaseFunction(U)
+    knotvector = [0, 0, 0.5, 1, 1]  # degree = 1, npts = 3
+    N = SplineBaseFunction(knotvector)
     N[0, 0]
     N[1, 0]
     N[2, 0]
@@ -70,8 +70,8 @@ def test_SplineEvaluationFunctions_p1n3():
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_SplineEvaluationFunctions_p1n2"])
 def test_somesinglevalues_p1n2():
-    U = [0, 0, 1, 1]  # degree = 1, npts = 2
-    N = SplineBaseFunction(U)
+    knotvector = [0, 0, 1, 1]  # degree = 1, npts = 2
+    N = SplineBaseFunction(knotvector)
     assert N[0, 0](0.0) == 0
     assert N[0, 0](0.5) == 0
     assert N[0, 0](1.0) == 0
@@ -90,8 +90,8 @@ def test_somesinglevalues_p1n2():
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_somesinglevalues_p1n2"])
 def test_somesinglevalues_p2n3():
-    U = [0, 0, 0, 1, 1, 1]  # degree = 2, npts = 3
-    N = SplineBaseFunction(U)
+    knotvector = [0, 0, 0, 1, 1, 1]  # degree = 2, npts = 3
+    N = SplineBaseFunction(knotvector)
     assert N[0, 0](0.0) == 0
     assert N[0, 0](0.5) == 0
     assert N[0, 0](1.0) == 0
@@ -125,9 +125,9 @@ def test_somesinglevalues_p2n3():
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_somesinglevalues_p1n2"])
 def test_tablevalues_p1n2():
-    U = [0, 0, 1, 1]  # degree = 1, npts = 2
+    knotvector = [0, 0, 1, 1]  # degree = 1, npts = 2
     utest = np.linspace(0, 1, 11)
-    N = SplineBaseFunction(U)
+    N = SplineBaseFunction(knotvector)
     N0 = N[:, 0]
     N1 = N[:, 1]
     M0test = N0(utest)
@@ -142,9 +142,9 @@ def test_tablevalues_p1n2():
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p1n2"])
 def test_tablevalues_p1n3():
-    U = [0, 0, 0.5, 1, 1]  # degree = 1, npts = 3
+    knotvector = [0, 0, 0.5, 1, 1]  # degree = 1, npts = 3
     utest = np.linspace(0, 1, 11)
-    N = SplineBaseFunction(U)
+    N = SplineBaseFunction(knotvector)
     N0 = N[:, 0]
     N1 = N[:, 1]
     M0test = N0(utest)
@@ -167,9 +167,9 @@ def test_tablevalues_p1n3():
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p1n2", "test_somesinglevalues_p2n3"])
 def test_tablevalues_p2n3():
-    U = [0, 0, 0, 1, 1, 1]  # degree = 2, npts = 3
+    knotvector = [0, 0, 0, 1, 1, 1]  # degree = 2, npts = 3
     utest = np.linspace(0, 1, 11)
-    N = SplineBaseFunction(U)
+    N = SplineBaseFunction(knotvector)
     N0 = N[:, 0]
     N1 = N[:, 1]
     N2 = N[:, 2]
@@ -194,9 +194,9 @@ def test_tablevalues_p2n3():
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p2n3"])
 def test_tablevalues_p2n4():
-    U = [0, 0, 0, 0.5, 1, 1, 1]  # degree = 2, npts = 4
+    knotvector = [0, 0, 0, 0.5, 1, 1, 1]  # degree = 2, npts = 4
     utest = np.linspace(0, 1, 11)
-    N = SplineBaseFunction(U)
+    N = SplineBaseFunction(knotvector)
     N0 = N[:, 0]
     N1 = N[:, 1]
     N2 = N[:, 2]
@@ -236,9 +236,9 @@ def test_tablevalues_p2n4():
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p2n3"])
 def test_tablevalues_p3n4():
-    U = [0, 0, 0, 0, 1, 1, 1, 1]  # degree = 3, npts = 4
+    knotvector = [0, 0, 0, 0, 1, 1, 1, 1]  # degree = 3, npts = 4
     utest = np.linspace(0, 1, 11)
-    N = SplineBaseFunction(U)
+    N = SplineBaseFunction(knotvector)
     N0 = N[:, 0]
     N1 = N[:, 1]
     N2 = N[:, 2]
@@ -277,9 +277,9 @@ def test_tablevalues_p3n4():
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p2n3", "test_tablevalues_p3n4"])
 def test_tablevalues_p3n5():
-    U = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # degree = 3, npts = 5
+    knotvector = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # degree = 3, npts = 5
     utest = np.linspace(0, 1, 11)
-    N = SplineBaseFunction(U)
+    N = SplineBaseFunction(knotvector)
     N0 = N[:, 0]
     N1 = N[:, 1]
     N2 = N[:, 2]
@@ -338,9 +338,9 @@ def test_tableUuniform_sum1():
     for i in range(ntests):
         degree = np.random.randint(0, 6)
         npts = np.random.randint(degree + 1, degree + 21)
-        U = GeneratorKnotVector.uniform(degree, npts)
+        knotvector = GeneratorKnotVector.uniform(degree, npts)
         u = np.random.rand(11)
-        N = SplineBaseFunction(U)
+        N = SplineBaseFunction(knotvector)
         for j in range(degree + 1):
             M = N[:, j](u)
             assert np.all(M >= 0)
@@ -356,9 +356,9 @@ def test_tableUrandom_sum1():
     for i in range(ntests):
         degree = np.random.randint(0, 6)
         npts = np.random.randint(degree + 1, degree + 21)
-        U = GeneratorKnotVector.random(degree, npts)
+        knotvector = GeneratorKnotVector.random(degree, npts)
         u = np.random.rand(11)
-        N = SplineBaseFunction(U)
+        N = SplineBaseFunction(knotvector)
         for j in range(degree + 1):
             M = N[:, j](u)
             assert np.all(M >= 0)
@@ -392,8 +392,8 @@ def test_CreationRationalBaseFunction():
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_CreationRationalBaseFunction"])
 def test_RationalEvaluationFunctions_p1n2():
-    U = [0, 0, 1, 1]  # degree = 1, npts = 2
-    R = RationalBaseFunction(U)
+    knotvector = [0, 0, 1, 1]  # degree = 1, npts = 2
+    R = RationalBaseFunction(knotvector)
     R[0, 0]
     R[1, 0]
     R[0, 1]
@@ -407,8 +407,8 @@ def test_RationalEvaluationFunctions_p1n2():
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_RationalEvaluationFunctions_p1n2"])
 def test_rational_somesinglevalues_p1n2():
-    U = [0, 0, 1, 1]  # degree = 1, npts = 2
-    R = RationalBaseFunction(U)
+    knotvector = [0, 0, 1, 1]  # degree = 1, npts = 2
+    R = RationalBaseFunction(knotvector)
     assert R[0, 0](0.0) == 0
     assert R[0, 0](0.5) == 0
     assert R[0, 0](1.0) == 0
@@ -431,9 +431,9 @@ def test_rational_tableUuniform_sum1():
     for i in range(ntests):
         degree = np.random.randint(0, 6)
         npts = np.random.randint(degree + 1, degree + 21)
-        U = GeneratorKnotVector.uniform(degree, npts)
+        knotvector = GeneratorKnotVector.uniform(degree, npts)
         u = np.random.rand(11)
-        R = RationalBaseFunction(U)
+        R = RationalBaseFunction(knotvector)
         for j in range(degree + 1):
             M = R[:, j](u)
             assert np.all(M >= 0)
@@ -448,8 +448,8 @@ def test_rational_tableUuniform_sum1():
 )
 def test_basefunction_fails():
     degree, npts = 4, 6
-    U = GeneratorKnotVector.uniform(degree, npts)
-    N = SplineBaseFunction(U)
+    knotvector = GeneratorKnotVector.uniform(degree, npts)
+    N = SplineBaseFunction(knotvector)
     with pytest.raises(ValueError):
         N(1.1)
     with pytest.raises(TypeError):
@@ -484,16 +484,16 @@ def test_basefunction_fails():
     with pytest.raises(IndexError):
         N[0, degree, 0]
 
-    R = RationalBaseFunction(U)
+    R = RationalBaseFunction(knotvector)
     with pytest.raises(ValueError):
         w = np.linspace(-1, 1, npts)
         R.w = w
 
-    R1 = RationalBaseFunction(U)
+    R1 = RationalBaseFunction(knotvector)
     R1.w = np.random.uniform(0.5, 1.5, npts)
-    R2 = RationalBaseFunction(U)
+    R2 = RationalBaseFunction(knotvector)
     R2.w = np.random.uniform(0.5, 1.5, npts)
-    U = GeneratorKnotVector.random(degree, npts)
+    knotvector = GeneratorKnotVector.random(degree, npts)
     with pytest.raises(TypeError):
         R1.w = "asd"
     with pytest.raises(ValueError):
@@ -576,10 +576,10 @@ def test_insert_remove_knot():
     depends=["test_CreationSplineBaseFunction", "test_CreationRationalBaseFunction"]
 )
 def test_derivate_functions():
-    U = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # degree = 3, npts = 5
+    knotvector = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # degree = 3, npts = 5
     w = np.random.uniform(1, 2, 5)
-    N = SplineBaseFunction(U)
-    R = RationalBaseFunction(U)
+    N = SplineBaseFunction(knotvector)
+    R = RationalBaseFunction(knotvector)
     R.w = w
 
     N.derivate()

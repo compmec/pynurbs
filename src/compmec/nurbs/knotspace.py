@@ -11,73 +11,78 @@ class VerifyKnotVector(object):
     maxU = 1
 
     @staticmethod
-    def isFloatArray1D(U: Tuple[float]) -> None:
-        if not isinstance(U, (tuple, list, np.ndarray)):
-            error_msg = f"Cannot convert U (type={type(U)}) into a numpy float array"
+    def isFloatArray1D(knotvector: Tuple[float]) -> None:
+        if not isinstance(knotvector, (tuple, list, np.ndarray)):
+            error_msg = f"Cannot convert knotvector (type={type(knotvector)}) into a numpy float array"
             raise TypeError(error_msg)
         try:
-            Ud = np.array(U, dtype="float16")
+            Ud = np.array(knotvector, dtype="float16")
         except TypeError as e:
-            error_msg = f"Cannot convert U (type={type(U)}) into a numpy float array"
+            error_msg = f"Cannot convert knotvector (type={type(knotvector)}) into a numpy float array"
             raise TypeError(error_msg)
         except ValueError as e:
-            raise TypeError(f"All the elements inside U must be floats! Received {U}")
+            raise TypeError(
+                f"All the elements inside knotvector must be floats! Received {knotvector}"
+            )
         if Ud.ndim == 0:
             raise TypeError(
-                f"Received U is type {type(U)}, but it's required a Tuple[float]"
+                f"Received knotvector is type {type(knotvector)}, but it's required a Tuple[float]"
             )
         if Ud.ndim != 1:
-            raise ValueError(f"U is not a 1D array")
+            raise ValueError(f"knotvector is not a 1D array")
 
     @staticmethod
-    def isOrdenedVector(U: Tuple[float]) -> None:
-        npts = len(U)
+    def isOrdenedVector(knotvector: Tuple[float]) -> None:
+        npts = len(knotvector)
         for i in range(npts - 1):
-            if U[i] > U[i + 1]:
+            if knotvector[i] > knotvector[i + 1]:
                 raise ValueError("The given KnotVector must be ordened")
 
     @staticmethod
-    def Limits(U: Tuple[float]) -> None:
+    def Limits(knotvector: Tuple[float]) -> None:
         if VerifyKnotVector.minU is not None:
-            VerifyKnotVector.InferiorLimit(U)
+            VerifyKnotVector.InferiorLimit(knotvector)
         if VerifyKnotVector.maxU is not None:
-            VerifyKnotVector.SuperiorLimit(U)
+            VerifyKnotVector.SuperiorLimit(knotvector)
 
     @staticmethod
-    def InferiorLimit(U: Tuple[float]) -> None:
-        for u in U:
+    def InferiorLimit(knotvector: Tuple[float]) -> None:
+        for u in knotvector:
             if u < VerifyKnotVector.minU:
                 raise ValueError(
-                    f"All the values in U must be bigger than {VerifyKnotVector.minU}"
+                    f"All the values in knotvector must be bigger than {VerifyKnotVector.minU}"
                 )
 
     @staticmethod
-    def SuperiorLimit(U: Tuple[float]) -> None:
-        for u in U:
+    def SuperiorLimit(knotvector: Tuple[float]) -> None:
+        for u in knotvector:
             if u > VerifyKnotVector.maxU:
                 raise ValueError(
-                    f"All the values in U must be less than {VerifyKnotVector.maxU}"
+                    f"All the values in knotvector must be less than {VerifyKnotVector.maxU}"
                 )
 
     @staticmethod
-    def SameQuantityBoundary(U: Tuple[float]) -> None:
-        U = np.array(U)
-        minU = np.min(U)
-        maxU = np.max(U)
-        if np.sum(U == minU) != np.sum(U == maxU):
-            raise ValueError("U must contain the same quantity of 0 and 1. U = ", U)
+    def SameQuantityBoundary(knotvector: Tuple[float]) -> None:
+        knotvector = np.array(knotvector)
+        minU = np.min(knotvector)
+        maxU = np.max(knotvector)
+        if np.sum(knotvector == minU) != np.sum(knotvector == maxU):
+            raise ValueError(
+                "knotvector must contain the same quantity of 0 and 1. knotvector = ",
+                knotvector,
+            )
 
     @staticmethod
-    def CountInternalValues(U: Tuple[float]) -> None:
-        setU = list(set(U))
-        U = np.array(U)
-        minU = np.min(U)
-        maxU = np.max(U)
+    def CountInternalValues(knotvector: Tuple[float]) -> None:
+        setU = list(set(knotvector))
+        knotvector = np.array(knotvector)
+        minU = np.min(knotvector)
+        maxU = np.max(knotvector)
         setU.remove(minU)
         setU.remove(maxU)
-        qttmin = np.sum(U == minU)
+        qttmin = np.sum(knotvector == minU)
         for u in setU:
-            if np.sum(U == u) > qttmin:
+            if np.sum(knotvector == u) > qttmin:
                 raise ValueError
 
     @staticmethod
@@ -108,24 +113,24 @@ class VerifyKnotVector(object):
             )
 
     @staticmethod
-    def all(U: Tuple[float]) -> None:
-        if isinstance(U, Interface_KnotVector):
+    def all(knotvector: Tuple[float]) -> None:
+        if isinstance(knotvector, Interface_KnotVector):
             return
-        VerifyKnotVector.isFloatArray1D(U)
-        VerifyKnotVector.isOrdenedVector(U)
-        VerifyKnotVector.Limits(U)
-        VerifyKnotVector.SameQuantityBoundary(U)
-        VerifyKnotVector.CountInternalValues(U)
+        VerifyKnotVector.isFloatArray1D(knotvector)
+        VerifyKnotVector.isOrdenedVector(knotvector)
+        VerifyKnotVector.Limits(knotvector)
+        VerifyKnotVector.SameQuantityBoundary(knotvector)
+        VerifyKnotVector.CountInternalValues(knotvector)
 
 
 class KnotVector(list):
-    def __init__(self, U: Tuple[float]):
-        VerifyKnotVector.all(U)
-        degree, npts = self.compute_pn(U)
+    def __init__(self, knotvector: Tuple[float]):
+        VerifyKnotVector.all(knotvector)
+        degree, npts = self.compute_pn(knotvector)
         VerifyKnotVector.PN(degree, npts)
         self.__degree = degree
         self.__npts = npts
-        super().__init__(U)
+        super().__init__(knotvector)
 
     @property
     def degree(self) -> int:
@@ -136,22 +141,22 @@ class KnotVector(list):
         return self.__npts
 
     @staticmethod
-    def compute_pn(U: Tuple[float]):
+    def compute_pn(knotvector: Tuple[float]):
         """
-        We have that U = [0, ..., 0, ?, ..., ?, 1, ..., 1]
-        And that U[degree] = 0, but U[degree+1] != 0
-        The same way, U[npts] = 1, but U[npts-1] != 0
+        We have that knotvector = [0, ..., 0, ?, ..., ?, 1, ..., 1]
+        And that knotvector[degree] = 0, but knotvector[degree+1] != 0
+        The same way, knotvector[npts] = 1, but knotvector[npts-1] != 0
 
         Using that, we know that
-            len(U) = m + 1 = npts + degree + 1
+            len(knotvector) = m + 1 = npts + degree + 1
         That means that
             m = npts + degree
         """
-        minU = min(U)
+        minU = min(knotvector)
         degree = 0
-        while U[degree + 1] == minU:
+        while knotvector[degree + 1] == minU:
             degree += 1
-        npts = len(U) - degree - 1
+        npts = len(knotvector) - degree - 1
         return degree, npts
 
     def span_onevalue(self, u: float) -> int:
@@ -159,24 +164,24 @@ class KnotVector(list):
             u = float(u)
         except Exception as e:
             raise TypeError
-        U = np.array(self)
+        knotvector = np.array(self)
         minU = np.min(self)
         maxU = np.max(self)
         if u < minU:
             raise ValueError(f"Received u = {u} < minU = {minU}")
         if maxU < u:
             raise ValueError(f"Received u = {u} > maxU = {maxU}")
-        lower = int(np.max(np.where(U == minU)))
-        upper = int(np.min(np.where(U == maxU)))
+        lower = int(np.max(np.where(knotvector == minU)))
+        upper = int(np.min(np.where(knotvector == maxU)))
         if u == minU:
             return lower
         if u == maxU:
             return upper
         mid = (lower + upper) // 2
         while True:
-            if u < U[mid]:
+            if u < knotvector[mid]:
                 upper = mid
-            elif U[mid + 1] <= u:
+            elif knotvector[mid + 1] <= u:
                 lower = mid
             else:
                 return mid
@@ -294,13 +299,13 @@ class GeneratorKnotVector:
     def weight(degree: int, ws: Tuple[float]) -> KnotVector:
         VerifyKnotVector.isFloatArray1D(ws)
         VerifyKnotVector.isIntegerNonNegative(degree)
-        U = np.cumsum(ws)
-        U -= U[0]
-        U /= U[-1]
-        U *= VerifyKnotVector.maxU - VerifyKnotVector.minU
-        U += VerifyKnotVector.minU
-        U = degree * [0] + list(U) + degree * [1]
-        return KnotVector(U)
+        knotvector = np.cumsum(ws)
+        knotvector -= knotvector[0]
+        knotvector /= knotvector[-1]
+        knotvector *= VerifyKnotVector.maxU - VerifyKnotVector.minU
+        knotvector += VerifyKnotVector.minU
+        knotvector = degree * [0] + list(knotvector) + degree * [1]
+        return KnotVector(knotvector)
 
     @staticmethod
     def uniform(degree: int, npts: int) -> KnotVector:

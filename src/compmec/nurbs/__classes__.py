@@ -14,7 +14,7 @@ class Interface_KnotVector(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def verify_input_init(self, U: Tuple[float]):
+    def verify_input_init(self, knotvector: Tuple[float]):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -43,7 +43,7 @@ class Interface_KnotVector(abc.ABC):
 
 class Interface_BaseFunction_Evaluator_BaseCurve(abc.ABC):
     @abc.abstractproperty
-    def U(self) -> Interface_KnotVector:
+    def knotvector(self) -> Interface_KnotVector:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -85,7 +85,7 @@ class Interface_BaseFunction_BaseCurve(Interface_BaseFunction_Evaluator_BaseCurv
 
 class Interface_BaseFunction(Interface_BaseFunction_BaseCurve):
     @abc.abstractmethod
-    def __init__(self, U: Interface_KnotVector):
+    def __init__(self, knotvector: Interface_KnotVector):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -95,7 +95,7 @@ class Interface_BaseFunction(Interface_BaseFunction_BaseCurve):
 
 class Interface_BaseCurve(Interface_BaseFunction_BaseCurve):
     @abc.abstractmethod
-    def __init__(self, U: Interface_KnotVector, P: np.ndarray):
+    def __init__(self, knotvector: Interface_KnotVector, ctrlpoints: np.ndarray):
         raise NotImplementedError
 
     @abc.abstractproperty
@@ -103,7 +103,7 @@ class Interface_BaseCurve(Interface_BaseFunction_BaseCurve):
         raise NotImplementedError
 
     @abc.abstractproperty
-    def P(self) -> np.ndarray:
+    def ctrlpoints(self) -> np.ndarray:
         raise NotImplementedError
 
     @abc.abstractmethod

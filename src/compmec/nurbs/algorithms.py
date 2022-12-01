@@ -82,7 +82,7 @@ class Chapter1:
         return B
 
     @staticmethod
-    def PointOnBezierCurve(P: Array1D[Point], npts: int, u: float) -> Point:
+    def PointOnBezierCurve(ctrlpoints: Array1D[Point], npts: int, u: float) -> Point:
         """
         #### Algorithm A1.4
         Compute point on Bezier curve
