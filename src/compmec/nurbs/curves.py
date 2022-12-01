@@ -125,29 +125,21 @@ class BaseCurve(Interface_BaseCurve):
 
     def knot_insert(self, knots: Union[float, Tuple[float]]):
         table = self.__transform_knots_to_table(knots)
-        npts, degree = self.npts, self.degree
         knotvector = np.array(self.knotvector).tolist()
         ctrlpoints = list(self.ctrlpoints)
         for knot, times in table.items():
-            knotvector = KnotVector(knotvector)
-            span = knotvector.span(knot)
-            mult = knotvector.mult(knot)
-            npts, knotvector, ctrlpoints = Chapter5.CurveKnotIns(
-                npts, degree, knotvector, ctrlpoints, knot, span, mult, times
+            knotvector, ctrlpoints = Chapter5.CurveKnotIns(
+                knotvector, ctrlpoints, knot, times
             )
         self.__set_UFP(knotvector, ctrlpoints)
 
     def knot_remove(self, knots: Union[float, Tuple[float]]):
         table = self.__transform_knots_to_table(knots)
-        npts, degree = self.npts, self.degree
-        knotvector = np.array(self.knotvector).tolist()
+        knotvector = list(self.knotvector)
         ctrlpoints = list(self.ctrlpoints)
         for knot, times in table.items():
-            knotvector = KnotVector(knotvector)
-            span = knotvector.span(knot)
-            mult = knotvector.mult(knot)
             t, knotvector, ctrlpoints = Chapter5.RemoveCurveKnot(
-                npts, degree, knotvector, ctrlpoints, knot, span, mult, times
+                knotvector, ctrlpoints, knot, times
             )
             if t != times:
                 if t == 0:
@@ -162,19 +154,17 @@ class BaseCurve(Interface_BaseCurve):
     def degree_increase(self, times: Optional[int] = 1):
         knotvector = list(self.knotvector)
         ctrlpoints = list(self.ctrlpoints)
-        nq, Uq, Qw = Chapter5.DegreeElevateCurve(
-            self.npts, self.degree, knotvector, ctrlpoints, times
+        knotvector, ctrlpoints = Chapter5.DegreeElevateCurve(
+            knotvector, ctrlpoints, times
         )
-        Uq = KnotVector(Uq)
-        Qw = np.array(Qw)
-        self.__set_UFP(Uq, Qw)
+        self.__set_UFP(knotvector, ctrlpoints)
 
     def degree_decrease(self, times: Optional[int] = 1):
-        newP = np.copy(self.ctrlpoints)
-        newF = self.F
+        knotvector = list(self.knotvector)
+        ctrlpoints = list(self.ctrlpoints)
         for i in range(times):
-            newF, newP = degree_decrease(newF, newP)
-        self.__set_UFP(newF.knotvector, newP)
+            knotvector, ctrlpoints = Chapter5.DegreeReduceCurve(knotvector, ctrlpoints)
+        self.__set_UFP(knotvector, ctrlpoints)
 
 
 class SplineCurve(BaseCurve):

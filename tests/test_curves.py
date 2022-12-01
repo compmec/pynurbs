@@ -148,7 +148,7 @@ class TestSplineCurve:
         assert np.all(C.ctrlpoints == ctrlpoints)
 
     @pytest.mark.order(3)
-    @pytest.mark.timeout(5)
+    @pytest.mark.timeout(10)
     @pytest.mark.dependency(
         depends=[
             "TestSplineCurve::test_begin",
@@ -167,7 +167,7 @@ class TestSplineCurve:
                 assert type(Cval) == type(ctrlpoints[0])
 
     @pytest.mark.order(3)
-    @pytest.mark.timeout(5)
+    @pytest.mark.timeout(10)
     @pytest.mark.dependency(
         depends=[
             "TestSplineCurve::test_begin",
@@ -191,7 +191,7 @@ class TestSplineCurve:
                         assert type(Cval[0]) == type(ctrlpoints[0][0])
 
     @pytest.mark.order(3)
-    @pytest.mark.timeout(5)
+    @pytest.mark.timeout(10)
     @pytest.mark.dependency(
         depends=[
             "TestSplineCurve::test_begin",
@@ -206,7 +206,7 @@ class TestSplineCurve:
                     ctrlpoints = self.create_random_controlpoints(npts, 0)
                     C = SplineCurve(knotvector, ctrlpoints)
 
-                    nsample = np.random.randint(10, 129)
+                    nsample = np.random.randint(npts + degree + 2, npts + degree + 11)
                     t = np.linspace(0, 1, nsample)
                     Cval = C(t)
                     assert len(Cval) == nsample
@@ -231,7 +231,9 @@ class TestSplineCurve:
                         ctrlpoints = self.create_random_controlpoints(npts, ndim)
                         C = SplineCurve(knotvector, ctrlpoints)
 
-                        nsample = np.random.randint(10, 129)
+                        nsample = np.random.randint(
+                            npts + degree + 2, npts + degree + 11
+                        )
                         t = np.linspace(0, 1, nsample)
                         Cval = C(t)
                         assert len(Cval) == nsample
@@ -239,7 +241,7 @@ class TestSplineCurve:
                         assert np.array(Cval).shape == (nsample, ndim)
 
     @pytest.mark.order(3)
-    @pytest.mark.timeout(5)
+    @pytest.mark.timeout(10)
     @pytest.mark.dependency(
         depends=[
             "TestSplineCurve::test_begin",
@@ -259,7 +261,7 @@ class TestSplineCurve:
                 ctrlpoints = self.create_random_controlpoints(npts, ndim)
                 C = SplineCurve(knotvector, ctrlpoints)
 
-                nsample = np.random.randint(10, 129)
+                nsample = np.random.randint(npts + degree + 2, npts + degree + 11)
                 t = np.linspace(0, 1, nsample)
                 Cval = C(t)
                 assert len(Cval) == nsample
@@ -424,7 +426,6 @@ class TestSplineCurve:
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(5)
-    @pytest.mark.skip(reason="Needs implementation")
     @pytest.mark.dependency(
         depends=[
             "TestSplineCurve::test_begin",
@@ -443,6 +444,7 @@ class TestSplineCurve:
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(5)
+    @pytest.mark.skip(reason="Needs implementation")
     @pytest.mark.dependency(
         depends=["TestSplineCurve::test_begin", "TestSplineCurve::test_degree_increase"]
     )

@@ -3,6 +3,8 @@ from typing import Any, List, Tuple
 
 import numpy as np
 
+from compmec.nurbs.knotspace import KnotVector
+
 
 class Point:
     pass
@@ -681,32 +683,30 @@ class Chapter5:
 
     @staticmethod
     def CurveKnotIns(
-        npts: int,
-        degree: int,
-        UP: Array1D[float],
-        Pw: Array1D[Point],
-        u: float,
-        k: int,
-        s: int,
-        r: int,
+        knotvector: Array1D[float],
+        ctrlpoints: Array1D[Point],
+        knot: float,
+        times: int,
     ) -> Tuple:
         """
         #### Algorithm A5.1 - NURBs book - pag 151
             Compute new curve from knot insertion
         #### Input:
-            ``npts``: int -- number of points before insertion
-            ``degree``: int -- curver degree order
-            ``UP``: Array1D[float] -- knot vector after knot insertion
-            ``Pw``: Array1D[Point] -- Control points before knot insertion
-            ``u``: float -- knot to be inserted
-            ``k``: int -- span where U_k <= u < U_{k+1}
-            ``s``: int -- multiplicity of knot 'u'
-            ``r``: int -- number of insertions of u
+            ``knotvector``: Array1D[float] -- knot vector after knot insertion
+            ``ctrlpoints``: Array1D[Point] -- Control points before knot insertion
+            ``knot``: float -- knot to be inserted
+            ``times``: int -- number of insertions of u
         #### Output:
-            ``nq``: int -- number of points after insertion
             ``UQ``: Array1D[float] -- knot vector after knot insertion
             ``Qw``: Array1D[Point] -- Control points after knot insertion
         """
+        npts = len(ctrlpoints)
+        degree = len(knotvector) - npts - 1
+        r = times
+        k, s = Chapter2.FindSpanMult(npts, degree, knot, knotvector)
+        Pw = ctrlpoints
+        UP = knotvector
+        u = knot
         np = npts - 1
         p = degree
         if r + s > p:
@@ -736,7 +736,7 @@ class Chapter5:
             Qw[k + r - j - s] = Rw[p - j - s]
         for i in range(L + 1, k - s):
             Qw[i] = Rw[i - L]
-        return nq + 1, UQ, Qw
+        return UQ, Qw
 
     @staticmethod
     def CurvePntByCornerCut(
@@ -859,36 +859,35 @@ class Chapter5:
 
     @staticmethod
     def RemoveCurveKnot(
-        npts: int,
-        degree: int,
-        U: Array1D[float],
-        Pw: Array1D[Point],
-        u: float,
-        r: int,
-        s: int,
-        num: int,
+        knotvector: Array1D[float],
+        ctrlpoints: Array1D[Point],
+        knot: float,
+        times: int,
     ):
         """
         #### Algorith A5.8 - NURBs book - pag 185
             Remove knot u (index r) num times.
         #### Input:
-            ``npts``: int -- Number of control points = n+1
-            ``degree``: int -- curver degree order
-            ``U``: Array1D[float] -- knot vector
-            ``Pw``: Array1D[Point] -- Control points
-            ``u``: float -- The knot to remove
-            ``r``: int -- span of knot to remove
-            ``s``: int -- Multiplicity of the knot
-            ``num``: int -- Number of times to remove the knot
+            ``knotvector``: Array1D[float] -- knot vector
+            ``ctrlpoints``: Array1D[Point] -- Control points
+            ``knot``: float -- The knot to remove
+            ``times``: int -- Number of times to remove the knot
         #### Output:
             ``t``: int -- indicator how many points took out: 0 <= t <= num
             ``Un``: Array1D[float] -- New knot vector
             ``Pw``: Array1D[Point] -- New control points
         """
-        TOLERANCE = 1e-7
+        TOLERANCE = 1e-9
+        npts = len(ctrlpoints)
+        degree = len(knotvector) - npts - 1
+        u = knot
+        r, s = Chapter2.FindSpanMult(npts, degree, knot, knotvector)
+        Pw = ctrlpoints
+        num = times
+        U = knotvector
         n = npts - 1
         p = degree
-        m = n + p + 1  # Careful. In original algorithm there's an +1 that shouldn't be
+        m = n + p + 1
         ord = p + 1
         fout = (2 * r - s - p) // 2
         last = r - s
@@ -962,38 +961,43 @@ class Chapter5:
 
     @staticmethod
     def DegreeElevateCurve(
-        npts: int, degree: int, U: Array1D[float], Pw: Array1D[Point], t: int
+        knotvector: Array1D[float], ctrlpoints: Array1D[Point], times: int
     ):
         """
         #### Algorith A5.9 - NURBs book - pag 206
             Degree elevate a curve t times
         #### Input:
-            ``npts``: int -- Number of control points = n+1
-            ``degree``: int -- curver degree order
-            ``U``: Array1D[float] -- knot vector
-            ``Pw``: Array1D[Point] -- Control points
-            ``t``: int -- Number of times to increase degree
+            ``knotvector``: Array1D[float] -- knot vector
+            ``ctrlpoints``: Array1D[Point] -- Control points
+            ``times``: int -- Number of times to increase degree
         #### Output:
-            ``nh``: int --
             ``Uh``: Array1D[float] -- New knot vector
             ``Qw``: Array1D[Point] -- New control points
         """
+        npts = len(ctrlpoints)
+        degree = len(knotvector) - npts - 1
         p = degree
         n = npts - 1
+        t = times
+        U = knotvector
+        Pw = ctrlpoints
+        # Init variables
+        bezalfs = [[0] * (p + 1)] * (p + t + 1)
+        bpts = [0] * (p + 1)
+        ebpts = [0] * (p + t + 1)
+        Nextbpts = [0] * (p - 1)
+        alfs = [0] * p
+        Uh = [None] * (11 * npts)
+        Qw = [None] * (11 * npts)
+
+        # Init algorithm
         m = n + p + 1
         ph = p + t
         ph2 = ph // 2
-        # Compute Bezier degree elevation coefficients
-        bezalfs = [[None] * (ph + 1)] * (ph + 1)
-        Qw = [None] * (11 * m)
-        Uh = [None] * (11 * m)
-        Nextbpts = [None] * (11 * m)
-        bpts = [None] * (11 * m)
-        ebpts = [None] * (11 * m)
-        alfs = [None] * (11 * m)
 
-        bezalfs[0][0] = 1
-        bezalfs[ph][0] = 1
+        # Compute Bezier degree elevation coefficients
+        bezalfs[0][0] = 1.0
+        bezalfs[ph][0] = 1.0
         for i in range(1, ph2 + 1):
             inv = 1 / math.comb(ph, i)
             mpi = min(p, i)
@@ -1013,16 +1017,17 @@ class Chapter5:
         Qw[0] = Pw[0]
         for i in range(ph + 1):
             Uh[i] = ua
+        # Initialize first Bezier seg
         for i in range(p + 1):
             bpts[i] = Pw[i]
         while b < m:  # big loop thru knot vector
             i = b
             while True:
-                b += 1
-                if b == m:
+                if b >= m:
                     break
                 if U[b] != U[b + 1]:
                     break
+                b += 1
             mul = b - i + 1
             mh = mh + mul + t
             ub = U[b]
@@ -1091,8 +1096,10 @@ class Chapter5:
             else:
                 for i in range(ph + 1):
                     Uh[kind + i] = ub
+        Uh = Uh[: mh + 1]
         nh = mh - ph - 1
-        return nh, Uh, Qw
+        Qw = Qw[: nh + 1]
+        return Uh, Qw
 
     @staticmethod
     def DegreeElevateSurface():
@@ -1103,12 +1110,143 @@ class Chapter5:
         pass
 
     @staticmethod
-    def DegreeReduceCurve():
+    def DegreeReduceCurve(knotvector: Array1D[float], ctrlpoints: Array1D[Point]):
         """
         #### Algorith A5.11 - NURBs book - pag 223
             Degree reduce a curve from p to p-1
+        #### Input:
+            ``knotvector``: Array1D[float] -- knot vector
+            ``ctrlpoints``: Array1D[Point] -- Control points
+        #### Output:
+            ``Uh``: Array1D[float] -- New knot vector
+            ``Qw``: Array1D[Point] -- New control points
         """
-        pass
+        npts = len(ctrlpoints)
+        degree = len(knotvector) - npts - 1
+        TOLERANCE = 1e-9
+
+        p = degree
+        n = npts - 1
+        m = n + p + 1
+        U = list(knotvector)
+        Qw = list(ctrlpoints)
+
+        # Init vars
+        bpts = [0] * (p + 1)
+        Nextbpts = [0] * (p - 1)
+        rbpts = [0] * p
+        alphas = [0] * (p - 1)
+        e = [0] * m
+        Pw = [0] * npts
+        Uh = [0] * (m + 1)
+
+        # Init some variables
+        ph = p - 1
+        mh = ph
+        kind = ph + 1
+        r = -1
+        a = p
+        b = p + 1
+        cind = 1
+        mult = p
+        m = n + p + 1
+        Pw[0] = Qw[0]
+        for i in range(ph + 1):  # Compute left end of knot vector
+            Uh[i] = U[0]
+        for i in range(p + 1):  # Initialize first Bezier segment
+            bpts[i] = Qw[i]
+        for i in range(m):  # Initialize error vector
+            e[i] = 0.0
+        # Loop through the knot vector
+        while b < m:
+            i = b
+            while True:
+                if b >= m:
+                    break
+                if U[b] != U[b + 1]:
+                    break
+                b += 1
+            mult = b - i + 1
+            mh = mh + mult - 1
+            oldr = r
+            r = p - mult
+            lbz = 1 + (oldr // 2) if oldr > 0 else 1
+            # Insert knot U[b] r times
+            if r > 0:
+                numer = U[b] - U[a]
+                for k in range(p, mult - 1, -1):
+                    alphas[k - mult - 1] = numer / (U[a + k] - U[a])
+                for j in range(1, r + 1):
+                    save = r - j
+                    s = mult + j
+                    for k in range(p, s - 1, -1):
+                        bpts[k] = (
+                            alphas[k] * bpts[k] + (1 - alphas[k - s]) * bpts[k - 1]
+                        )
+                    Nextbpts[save] = bpts[p]
+            # Degree reduce bezier segment
+            # MaxErr = BezDegreeReduce(bpts, rbpts)
+            MaxErr = 0
+            e[a] += MaxErr
+            if e[a] > TOLERANCE:
+                raise ValueError("Curve not degree reducible")
+            # Remove knot U[a] oldr times
+            if oldr > 0:
+                first = kind
+                last = kind
+                for k in range(oldr):
+                    i = first
+                    j = last
+                    kj = j - kind
+                    while j - i > k:
+                        alfa = (U[a] - Uh[i - 1]) / (U[b] - Uh[i - 1])
+                        beta = (U[a] - Uh[j - k - 1]) / (U[b] - Uh[j - k - 1])
+                        Pw[i - 1] = (Pw[i - 1] - (1 - alfa) * Pw[i - 2]) / alfa
+                        rbpts[kj] = (rbpts[kj] - beta * rbpts[kj + 1]) / (1 - beta)
+                        i += 1
+                        j -= 1
+                        kj -= 1
+                    # Compute knot removal error bounds (Br)
+                    if j - i < k:
+                        Br = Chapter5.Distance4D(Pw[i - 2], rbpts[kj + 1])
+                    else:
+                        delta = (U[a] - Uh[i - 1]) / (U[b] - Uh[i - 1])
+                        A = delta * rbpts[kj + 1] + (1 - delta) * Pw[i - 2]
+                        Br = Chapter5.Distance4D(Pw[i - 1], A)
+                    # Update the error vector
+                    K = a + oldr - k
+                    q = (2 * p - k + 1) / 2
+                    L = K - q
+                    for ii in range(L, a + 1):  # These knot spans were affected
+                        e[ii] += Br
+                        if e[ii] > TOLERANCE:
+                            raise ValueError
+                        first -= 1
+                        last += 1
+                cind = i - 1
+            # Load knot vector and control points
+            if a != p:
+                for i in range(ph - oldr):
+                    Uh[kind] = U[a]
+                    kind += 1
+            for i in range(lbz, ph + 1):
+                Pw[cind] = rbpts[i]
+                cind += 1
+            # Set up for next pass through
+            if b < m:
+                for i in range(r):
+                    bpts[i] = Nextbpts[i]
+                for i in range(r, p + 1):
+                    bpts[i] = Qw[b - p + i]
+                a = b
+                b += 1
+            else:
+                for i in range(ph + 1):
+                    Uh[kind + i] = U[b]
+        Uh = Uh[: mh + 1]
+        nh = mh - ph - 1
+        Pw = Pw[: nh + 1]
+        return Uh, Pw
 
 
 class Custom:
