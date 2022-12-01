@@ -48,7 +48,7 @@ class TestSplineCurve:
     @pytest.mark.dependency(depends=["TestSplineCurve::test_begin"])
     def test_creation_scalar_curve(self, ntests=1):
         for degree in range(1, 5):
-            for npts in range(degree + 1, degree + 1):
+            for npts in range(degree + 1, degree + 11):
                 for i in range(ntests):
                     self.create_random_bspline(degree, npts, 0)
 
@@ -94,20 +94,16 @@ class TestSplineCurve:
             "TestSplineCurve::test_creation_vectorial_curve",
         ]
     )
-    def test_compare_two_curves(self, ntests=1):
+    def test_compare_two_curves(self, ntests=100):
         for i in range(ntests):
             degree = np.random.randint(0, 5)
             npts = np.random.randint(degree + 1, degree + 11)
             ndim = np.random.randint(0, 4)
-            U = GeneratorKnotVector.random(degree, npts=npts)
-            if ndim == 0:
-                P = np.random.uniform(-1, 1, npts)
-                P3 = np.random.uniform(-1, 1, npts)
-            else:
-                P = np.random.uniform(-1, 1, (npts, ndim))
-                P3 = np.random.uniform(-1, 1, (npts, ndim))
-            C1 = SplineCurve(U, P)
-            C2 = SplineCurve(U, P)
+            U = self.create_random_knotvector(degree, npts)
+            P1 = self.create_random_controlpoints(npts, ndim)
+            P3 = self.create_random_controlpoints(npts, ndim)
+            C1 = SplineCurve(U, P1)
+            C2 = SplineCurve(U, P1)
             C3 = SplineCurve(U, P3)
             assert id(C1) != id(C2)
             assert C1 == C2

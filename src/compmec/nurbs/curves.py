@@ -161,6 +161,8 @@ class BaseCurve(Interface_BaseCurve):
         U = list(self.U)
         P = list(self.P)
         nq, Uq, Qw = Chapter5.DegreeElevateCurve(self.npts, self.degree, U, P, times)
+        Uq = KnotVector(Uq)
+        Qw = np.array(Qw)
         self.__set_UFP(Uq, Qw)
 
     def degree_decrease(self, times: Optional[int] = 1):
