@@ -281,6 +281,17 @@ class TestCustom:
                         )
                     np.testing.assert_allclose(Coriginal, Ccomputed)
 
+    @pytest.mark.order(1)
+    @pytest.mark.dependency()
+    def test_BezDegreeReduce(self, ntests=100):
+        for degree in range(2, 5):
+            ndim = np.random.randint(1, 2)
+            npts = degree + 1
+            U = [0] * npts + [1] * npts
+            P = np.random.uniform(-1, 1, (npts, ndim))
+            newP, error = Chapter5.BezDegreeReduce(P)
+            assert len(newP) == npts - 1
+
 
 @pytest.mark.order(1)
 @pytest.mark.dependency(

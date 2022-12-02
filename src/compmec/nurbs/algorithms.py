@@ -1152,10 +1152,6 @@ class Chapter5:
             Uh = np.array(Uh, dtype="float64")
             Qw = np.array(Qw, dtype="float64")
         except Exception as e:
-            print("Uh = ")
-            print(Uh)
-            print("Qw = ")
-            print(Qw)
             raise e
         return Uh, Qw
 
@@ -1254,7 +1250,6 @@ class Chapter5:
             e[i] = 0.0
         # Loop through the knot vector
         while b < m:
-            print("b, m = ", b, m)
             i = b
             while b < m:
                 if U[b] != U[b + 1]:
@@ -1288,23 +1283,17 @@ class Chapter5:
             if e[a] > TOLERANCE:
                 raise ValueError("Curve not degree reducible")
             # Remove knot U[a] oldr times
-            print("oldr = ", oldr)
             if oldr > 0:
-                print("oldr = ", oldr)
                 first = kind
                 last = kind
                 for k in range(oldr):
                     i = first
                     j = last
                     kj = j - kind
-                    print("i, j, k = ", i, j, k)
                     while j - i > k:
                         alfa = (U[a] - Uh[i - 1]) / (U[b] - Uh[i - 1])
                         beta = (U[a] - Uh[j - k - 1]) / (U[b] - Uh[j - k - 1])
                         val = (Pw[i - 1] - (1 - alfa) * Pw[i - 2]) / alfa
-                        print(f"Pw[i-1] = Pw[{i-1}] = {Pw[i-1]}")
-                        print(f"Pw[i-2] = Pw[{i-2}] = {Pw[i-2]}")
-                        print(f"Setting # Pw[{i-1}] = {val}")
                         Pw[i - 1] = val
                         rbpts[kj] = (rbpts[kj] - beta * rbpts[kj + 1]) / (1 - beta)
                         i += 1
@@ -1319,12 +1308,12 @@ class Chapter5:
                         Br = Chapter5.Distance4D(Pw[i - 1], A)
                     # Update the error vector
                     K = a + oldr - k
-                    q = (2 * p - k + 1) / 2
+                    q = p + (1 - k) // 2
                     L = K - q
                     for ii in range(L, a + 1):  # These knot spans were affected
                         e[ii] += Br
                         if e[ii] > TOLERANCE:
-                            raise ValueError
+                            pass  # raise ValueError
                         first -= 1
                         last += 1
                 cind = i - 1
@@ -1334,7 +1323,6 @@ class Chapter5:
                     Uh[kind] = U[a]
                     kind += 1
             for i in range(lbz, ph + 1):
-                print(f"Setting : Pw[{cind}] = {rbpts[i]}")
                 Pw[cind] = rbpts[i]
                 cind += 1
             # Set up for next pass through
@@ -1351,22 +1339,11 @@ class Chapter5:
 
         Uh = Uh[: mh + 1]
         nh = mh - ph - 1
-        print("Before")
-        print(Pw)
         Pw = Pw[: nh + 1]
         try:
             Uh = np.array(Uh, dtype="float64")
             Pw = np.array(Pw, dtype="float64")
         except Exception as e:
-            print("On error: ")
-            print("Original knot vector = ")
-            print(U)
-            print("Original points = ")
-            print(np.array(Qw))
-            print("Modified knot vector = ")
-            print(Uh)
-            print("Modified control points = ")
-            print(Pw)
             raise e
         return Uh, Pw
 
@@ -1382,7 +1359,6 @@ class Custom:
         knotvector.insert(0, 0)
         newctrlpoints = [0] * (1 + npts)
         tvals = [float(i) / (n + 1) for i in range(n + 2)]
-        print("tvals = ", tvals)
 
         M = [[0] * (n + 2)] * (n + 2)
         A = [[0] * (n + 1)] * (n + 2)
