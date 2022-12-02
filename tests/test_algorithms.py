@@ -289,7 +289,7 @@ class TestCustom:
             npts = degree + 1
             U = [0] * npts + [1] * npts
             P = np.random.uniform(-1, 1, (npts, ndim))
-            newP, error = Chapter5.BezDegreeReduce(P)
+            newP, error = Custom.BezDegreeReduce(P)
             assert len(newP) == npts - 1
 
 

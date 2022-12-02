@@ -3,7 +3,7 @@ from typing import Dict, Iterable, List, Optional, Tuple, Union
 import numpy as np
 
 from compmec.nurbs.__classes__ import Interface_BaseCurve
-from compmec.nurbs.algorithms import Chapter5
+from compmec.nurbs.algorithms import Chapter5, Custom
 from compmec.nurbs.basefunctions import (
     BaseFunction,
     RationalBaseFunction,
@@ -156,9 +156,13 @@ class BaseCurve(Interface_BaseCurve):
     def degree_increase(self, times: Optional[int] = 1):
         knotvector = list(self.knotvector)
         ctrlpoints = list(self.ctrlpoints)
-        knotvector, ctrlpoints = Chapter5.DegreeElevateCurve(
-            knotvector, ctrlpoints, times
-        )
+        if self.degree + 1 == self.npts:  # If is bezier
+            ctrlpoints = Custom.BezDegreeIncrease(ctrlpoints, times)
+            knotvector = [0] * times + list(knotvector) + [1] * times
+        else:
+            knotvector, ctrlpoints = Chapter5.DegreeElevateCurve(
+                knotvector, ctrlpoints, times
+            )
         self.__set_UFP(knotvector, ctrlpoints)
 
     def degree_decrease(self, times: Optional[int] = 1):

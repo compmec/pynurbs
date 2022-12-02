@@ -1102,7 +1102,7 @@ class Chapter5:
                 ebpts[i] = 0
                 mpi = min(p, i)
                 for j in range(max(0, i - t), mpi + 1):
-                    ebpts[i] = ebpts[i] + bezalfs[i][j] * bpts[j]
+                    ebpts[i] += bezalfs[i][j] * bpts[j]
             if oldr > 1:  # Must remove knot u = U[a] oldr times
                 first = kind - 2
                 last = kind
@@ -1162,41 +1162,6 @@ class Chapter5:
             Degree elevate a surface t times
         """
         pass
-
-    @staticmethod
-    def BezDegreeReduce(ctrlpoints: Array1D[Point]):
-        """
-        #### Algorithm to reduce degree of bezier curve
-            It's used in Alggorithm A5.11
-            It uses Equations 5.41, 5.42, 5.45 and 5.46
-        #### Input:
-            ``ctrlpoints``: Array1D[Point] -- Control points
-        #### Output:
-            ``ctrlpoints``: Array1D[Point] -- New control points
-            ``MaxErr``: float -- Maximum error of bezier reduction
-        """
-        ctrlpoints = np.array(ctrlpoints)
-        npts = len(ctrlpoints)
-        degree = npts - 1
-        nsample = 3 * npts
-        newctrlpoints = np.zeros([npts - 1] + list(ctrlpoints.shape[1:]))
-
-        M = np.zeros((nsample, degree))
-        G = np.zeros((nsample, npts))
-        tvals = [i / (nsample - 1) for i in range(nsample)]
-        for i, ti in enumerate(tvals):
-            ti1 = 1 - ti
-            for j in range(degree):  # Compute evaluation of old bezier
-                M[i, j] = math.comb(npts - 2, j) * ti1 ** (npts - 2 - j) * ti**j
-            for j in range(npts):  # Compute evaluation of new bezier
-                G[i, j] = math.comb(npts - 1, j) * ti1 ** (npts - 1 - j) * ti**j
-        A = M.T @ M
-        B = M.T @ G
-        Matrix = np.linalg.solve(A, B)
-        for i in range(npts - 1):
-            for j in range(npts):
-                newctrlpoints[i] += Matrix[i, j] * ctrlpoints[j]
-        return newctrlpoints, 0
 
     @staticmethod
     def DegreeReduceCurve(knotvector: Array1D[float], ctrlpoints: Array1D[Point]):
@@ -1277,7 +1242,7 @@ class Chapter5:
                         bpts[k] += (1 - alphas[k - s]) * bpts[k - 1]
                     Nextbpts[save] = bpts[p]
             # Degree reduce bezier segment
-            rbpts, MaxErr = Chapter5.BezDegreeReduce(bpts)
+            rbpts, MaxErr = Custom.BezDegreeReduce(bpts)
             MaxErr = 0
             e[a] += MaxErr
             if e[a] > TOLERANCE:
@@ -1349,6 +1314,59 @@ class Chapter5:
 
 
 class Custom:
+    @staticmethod
+    def BezDegreeIncrease(ctrlpoints: Array1D[Point], times: int):
+        """
+        #### Algorithm to increase degree of bezier curve
+            It uses Equations 5.41, 5.42, 5.45 and 5.46
+        #### Input:
+            ``ctrlpoints``: Array1D[Point] -- Control points
+            ``times``: int -- Times to increase degree
+        #### Output:
+            ``ctrlpoints``: Array1D[Point] -- New control points
+        """
+        npts = len(ctrlpoints)
+        degree = npts - 1
+        newctrlpoints = [0] * (npts + times)
+        newctrlpoints[0] = ctrlpoints[0]
+        newctrlpoints[npts + times - 1] = ctrlpoints[npts - 1]
+        for i in range(1, npts + times - 1):
+            lower = max(0, i - times)
+            upper = min(degree, i) + 1
+            for j in range(lower, upper):
+                coef = (
+                    math.comb(degree, j)
+                    * math.comb(times, i - j)
+                    / math.comb(degree + times, i)
+                )
+                newctrlpoints[i] = newctrlpoints[i] + coef * ctrlpoints[j]
+        return newctrlpoints
+
+    @staticmethod
+    def BezDegreeReduce(ctrlpoints: Array1D[Point]):
+        """
+        #### Algorithm to reduce degree of bezier curve
+            It's used in Alggorithm A5.11
+            It uses Equations 5.41, 5.42, 5.45 and 5.46
+        #### Input:
+            ``ctrlpoints``: Array1D[Point] -- Control points
+        #### Output:
+            ``ctrlpoints``: Array1D[Point] -- New control points
+            ``MaxErr``: float -- Maximum error of bezier reduction
+        """
+        ctrlpoints = np.array(ctrlpoints)
+        npts = len(ctrlpoints)
+        degree = npts - 1
+        newctrlpoints = [0] * (npts - 1)
+
+        newctrlpoints[0] = ctrlpoints[0]
+        newctrlpoints[npts - 2] = ctrlpoints[npts - 1]
+        if degree % 2:  # degree is odd
+            pass
+        else:  # degree is even
+            pass
+        return newctrlpoints, 0
+
     @staticmethod
     def increase_bezier_degree(knotvector: Tuple[float], ctrlpoints: Array1D[Point]):
         npts = len(ctrlpoints)
