@@ -1343,7 +1343,96 @@ class Custom:
         return newctrlpoints
 
     @staticmethod
+    def FindMaximumDistanceBetweenBezier(Q: Array1D[Point], P: Array1D[Point]):
+        npts = len(Q)
+        p = npts - 1
+        us = np.linspace(0, 1, 129)
+        maximum = 0
+        for i, ui in enumerate(us):
+            Cq, Cp = 0, 0
+            ui1 = 1 - ui
+            for j in range(p + 1):
+                Cq += math.comb(p, j) * ui**j * ui1 ** (p - j) * Q[j]
+            for j in range(p):
+                Cp += math.comb(p - 1, j) * ui**j * ui1 ** (p - 1 - j) * P[j]
+            distance = Chapter5.Distance4D(Cp, Cq)
+            if maximum < distance:
+                maximum = distance
+        return maximum
+
+    @staticmethod
     def BezDegreeReduce(ctrlpoints: Array1D[Point]):
+        """
+        #### Algorithm to reduce degree of bezier curve
+            It's used in Alggorithm A5.11
+            It finds the value of P[i], 0 < i < npts-2 such
+            it minimizes the integral
+                I = int_0^1  abs(Ci(u) - Cd(u))^2 du
+            Where Ci is the increased curve, and Cd the (wanted) decreased curve
+                Ci = sum_{i=0}^{degree} B_{i,degree}(u) * Q[i]
+                Cd = sum_{i=0}^{degree-1} B_{i,degree-1}(u) * P[i]
+            We still have P[0] = Q[0] and P[degree-1] = Q[degree]
+        #### Input:
+            ``ctrlpoints``: Array1D[Point] -- Control points
+        #### Output:
+            ``ctrlpoints``: Array1D[Point] -- New control points
+            ``MaxErr``: float -- Maximum error of bezier reduction
+        """
+        return Custom.BezDegreeReduce_leastsquare(ctrlpoints)
+
+    @staticmethod
+    def BezDegreeReduce_leastsquare(ctrlpoints: Array1D[Point]):
+        """
+        #### Algorithm to reduce degree of bezier curve
+            It's used in Alggorithm A5.11
+            It finds the value of P[i], 0 < i < npts-2 such
+            it minimizes the integral
+                I = int_0^1  abs(Ci(u) - Cd(u))^2 du
+            Where Ci is the increased curve, and Cd the (wanted) decreased curve
+                Ci = sum_{i=0}^{degree} B_{i,degree}(u) * Q[i]
+                Cd = sum_{i=0}^{degree-1} B_{i,degree-1}(u) * P[i]
+            We still have P[0] = Q[0] and P[degree-1] = Q[degree]
+        #### Input:
+            ``ctrlpoints``: Array1D[Point] -- Control points
+        #### Output:
+            ``ctrlpoints``: Array1D[Point] -- New control points
+            ``MaxErr``: float -- Maximum error of bezier reduction
+        """
+
+        Q = ctrlpoints
+        npts = len(Q)
+        degree = npts - 1
+        p = degree
+        M = np.zeros((degree, degree), dtype="float64")
+        K = np.zeros((degree, degree + 1), dtype="float64")
+        for i in range(p):
+            for j in range(p):
+                M[i, j] = (
+                    math.comb(p - 1, i)
+                    * math.comb(p - 1, j)
+                    / math.comb(2 * p - 2, i + j)
+                )
+                M[i, j] /= 2 * p - 1
+        for i in range(p):
+            for j in range(p + 1):
+                K[i, j] = (
+                    math.comb(p - 1, i) * math.comb(p, j) / math.comb(2 * p - 1, i + j)
+                )
+                K[i, j] /= 2 * p
+        M[0, 0] = 1
+        M[p - 1, p - 1] = 1
+        K[0, 0] = 1
+        K[p - 1, p] = 1
+        A = np.linalg.solve(M, K)
+        P = []
+        for i in range(npts - 1):
+            P.append(A[i, :] @ Q)
+        P = np.array(P)
+        error = Custom.FindMaximumDistanceBetweenBezier(Q, P)
+        return P, error
+
+    @staticmethod
+    def BezDegreeReduce_nurbsbook(ctrlpoints: Array1D[Point]):
         """
         #### Algorithm to reduce degree of bezier curve
             It's used in Alggorithm A5.11
@@ -1354,18 +1443,31 @@ class Custom:
             ``ctrlpoints``: Array1D[Point] -- New control points
             ``MaxErr``: float -- Maximum error of bezier reduction
         """
-        ctrlpoints = np.array(ctrlpoints)
+        Q = ctrlpoints
         npts = len(ctrlpoints)
         degree = npts - 1
-        newctrlpoints = [0] * (npts - 1)
+        P = [0] * degree
 
-        newctrlpoints[0] = ctrlpoints[0]
-        newctrlpoints[npts - 2] = ctrlpoints[npts - 1]
+        P[0] = Q[0]
+        P[degree - 1] = Q[degree]
+        r = (degree - 1) // 2
+        alpha = [i / (degree) for i in range(degree)]
+        for i in range(1, r):
+            P[i] = (Q[i] - alpha[i] * P[i - 1]) / (1 - alpha[i])
+        for i in range(degree - 2, r, -1):
+            val = (Q[i + 1] - (1 - alpha[i + 1]) * P[i + 1]) / alpha[i + 1]
+            P[i] = val
+        alpha = [i / (degree) for i in range(degree)]
         if degree % 2:  # degree is odd
-            pass
+            PrL = (Q[r] - alpha[r] * P[r - 1]) / (1 - alpha[r])
+            PrR = (Q[r + 1] - (1 - alpha[r + 1]) * P[r + 1]) / alpha[r + 1]
+            P[r] = 0.5 * (PrL + PrR)
+            error = Chapter5.Distance4D(PrL, PrR)
         else:  # degree is even
-            pass
-        return newctrlpoints, 0
+            P[r] = (Q[r] - alpha[r] * P[r - 1]) / (1 - alpha[r])
+            pointtocomputeerror = 0.5 * (P[r] + P[r + 1])
+            error = Chapter5.Distance4D(P[r + 1], pointtocomputeerror)
+        return P, error
 
     @staticmethod
     def increase_bezier_degree(knotvector: Tuple[float], ctrlpoints: Array1D[Point]):

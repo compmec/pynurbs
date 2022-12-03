@@ -166,10 +166,22 @@ class BaseCurve(Interface_BaseCurve):
         self.__set_UFP(knotvector, ctrlpoints)
 
     def degree_decrease(self, times: Optional[int] = 1):
+        raise NotImplementedError("Needs implementation of degree reduce.")
+        if self.degree - times < 1:
+            raise ValueError(
+                f"Cannot reduce curve {times} times. Final degree would be {self.degree-times}"
+            )
         knotvector = list(self.knotvector)
         ctrlpoints = list(self.ctrlpoints)
-        for i in range(times):
-            knotvector, ctrlpoints = Chapter5.DegreeReduceCurve(knotvector, ctrlpoints)
+        if self.degree + 1 == self.npts:  # If is bezier
+            for t in range(times):
+                ctrlpoints, error = Custom.BezDegreeReduce(ctrlpoints)
+            knotvector = [0] * (self.npts - times) + [1] * (self.npts - times)
+        else:
+            for i in range(times):
+                knotvector, ctrlpoints = Chapter5.DegreeReduceCurve(
+                    knotvector, ctrlpoints
+                )
         self.__set_UFP(knotvector, ctrlpoints)
 
 
