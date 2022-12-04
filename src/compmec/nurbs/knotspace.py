@@ -267,15 +267,8 @@ class KnotVector(list):
         try:
             obj = self.__class__(obj)
         except Exception as e:
-            raise ValueError(
-                f"No sucess trying to convert {type(obj)} into {self.__class__}. Cause {str(e)}"
-            )
-        print("Comparing!")
-        print("    self.npts = ", self.npts)
-        print("  self.degree = ", self.degree)
-        print(" ---")
-        print("     obj.npts = ", obj.npts)
-        print("   obj.degree = ", obj.degree)
+            error_msg = f"No sucess trying to convert {type(obj)} into {self.__class__}. Cause {str(e)}"
+            raise ValueError(error_msg)
         if self.npts != obj.npts:
             return False
         if self.degree != obj.degree:

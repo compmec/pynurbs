@@ -1204,13 +1204,24 @@ class Chapter5:
         pass
 
     @staticmethod
-    def DegreeReduceCurve(knotvector: Array1D[float], ctrlpoints: Array1D[Point]):
+    def DegreeReduceCurve(
+        knotvector: Array1D[float], ctrlpoints: Array1D[Point], times: int
+    ):
+
+        return Chapter5.DegreeReduceCurve_nurbsbook(knotvector, ctrlpoints, times)
+
+    @staticmethod
+    def DegreeReduceCurve_nurbsbook(
+        knotvector: Array1D[float], ctrlpoints: Array1D[Point], times: int
+    ):
         """
         #### Algorith A5.11 - NURBs book - pag 223
-            Degree reduce a curve from p to p-1
+            Degree reduce a curve from (degree) to (degree - times)
+            Entry is not protected
         #### Input:
             ``knotvector``: Array1D[float] -- knot vector
             ``ctrlpoints``: Array1D[Point] -- Control points
+            ``times``: Array1D[Point] -- Control points
         #### Output:
             ``Uh``: Array1D[float] -- New knot vector
             ``Pw``: Array1D[Point] -- New control points
@@ -1219,7 +1230,6 @@ class Chapter5:
         knotvector = list(knotvector)
         npts = len(ctrlpoints)
         degree = len(knotvector) - npts - 1
-        TOLERANCE = 1e-9
 
         p = degree
         n = npts - 1
@@ -1399,44 +1409,47 @@ class Custom:
 
     @staticmethod
     def FindMaximumDistanceBetweenBezier(Q: Array1D[Point], P: Array1D[Point]):
-        npts = len(Q)
-        p = npts - 1
+        degreeQ = len(Q) - 1
+        degreeP = len(P) - 1
         us = np.linspace(0, 1, 129)
         maximum = 0
         for i, ui in enumerate(us):
             Cq, Cp = 0, 0
             ui1 = 1 - ui
-            for j in range(p + 1):
-                Cq += math.comb(p, j) * ui**j * ui1 ** (p - j) * Q[j]
-            for j in range(p):
-                Cp += math.comb(p - 1, j) * ui**j * ui1 ** (p - 1 - j) * P[j]
+            for j in range(degreeQ + 1):
+                Cq += math.comb(degreeQ, j) * ui**j * ui1 ** (degreeQ - j) * Q[j]
+            for j in range(degreeP + 1):
+                Cp += math.comb(degreeP, j) * ui**j * ui1 ** (degreeP - j) * P[j]
             distance = Chapter5.Distance4D(Cp, Cq)
             if maximum < distance:
                 maximum = distance
         return maximum
 
     @staticmethod
-    def BezDegreeReduce(ctrlpoints: Array1D[Point]):
+    def BezDegreeReduce(ctrlpoints: Array1D[Point], times: int):
         """
         #### Algorithm to reduce degree of bezier curve
             It's used in Alggorithm A5.11
-            It finds the value of P[i], 0 < i < npts-2 such
+            It finds the value of P[i], 0 < i < npts-1-times such
             it minimizes the integral
                 I = int_0^1  abs(Ci(u) - Cd(u))^2 du
             Where Ci is the increased curve, and Cd the (wanted) decreased curve
                 Ci = sum_{i=0}^{degree} B_{i,degree}(u) * Q[i]
-                Cd = sum_{i=0}^{degree-1} B_{i,degree-1}(u) * P[i]
-            We still have P[0] = Q[0] and P[degree-1] = Q[degree]
+                Cd = sum_{i=0}^{degree-times} B_{i,degree-times}(u) * P[i]
+            We still have P[0] = Q[0] and P[degree-times] = Q[degree]
+
+            The entries are not protected.
         #### Input:
             ``ctrlpoints``: Array1D[Point] -- Control points
+            ``times``: int -- Number of times to reduce degree
         #### Output:
             ``ctrlpoints``: Array1D[Point] -- New control points
             ``MaxErr``: float -- Maximum error of bezier reduction
         """
-        return Custom.BezDegreeReduce_leastsquare(ctrlpoints)
+        return Custom.BezDegreeReduce_leastsquare(ctrlpoints, times)
 
     @staticmethod
-    def BezDegreeReduce_leastsquare(ctrlpoints: Array1D[Point]):
+    def BezDegreeReduce_leastsquare(ctrlpoints: Array1D[Point], times: int):
         """
         #### Algorithm to reduce degree of bezier curve
             It's used in Alggorithm A5.11
@@ -1458,24 +1471,24 @@ class Custom:
         npts = len(Q)
         degree = npts - 1
         p = degree
-        M = np.zeros((degree, degree), dtype="float64")
-        K = np.zeros((degree, degree + 1), dtype="float64")
-        for i in range(p):
-            for j in range(p):
-                M[i, j] = math.comb(p - 1, i) * math.comb(p - 1, j)
-                M[i, j] /= (2 * p - 1) * math.comb(2 * p - 2, i + j)
-        for i in range(p):
+        t = times
+        M = np.zeros((degree + 1 - times, degree + 1 - times), dtype="float64")
+        K = np.zeros((degree + 1 - times, degree + 1), dtype="float64")
+        for i in range(p + 1 - t):
+            for j in range(p + 1 - t):
+                M[i, j] = math.comb(p - t, i) * math.comb(p - t, j)
+                M[i, j] /= (2 * (p - t) + 1) * math.comb(2 * (p - t), i + j)
             for j in range(p + 1):
-                K[i, j] = math.comb(p - 1, i) * math.comb(p, j)
-                K[i, j] /= 2 * p * math.comb(2 * p - 1, i + j)
+                K[i, j] = math.comb(p - t, i) * math.comb(p, j)
+                K[i, j] /= (2 * p + 1 - t) * math.comb(2 * p - t, i + j)
         M[0, 0] = 1
         M[0, 1:] = 0
-        M[p - 1, : p - 1] = 0
-        M[p - 1, p - 1] = 1
+        M[p - t, : p - t] = 0
+        M[p - t, p - t] = 1
         K[0, 0] = 1
         K[0, 1:] = 0
-        K[p - 1, :p] = 0
-        K[p - 1, p] = 1
+        K[p - t, :p] = 0
+        K[p - t, p] = 1
         A = np.linalg.solve(M, K)
         P = A @ Q
         P = np.array(P)

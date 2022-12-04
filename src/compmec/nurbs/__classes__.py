@@ -107,14 +107,6 @@ class Interface_BaseCurve(Interface_BaseFunction_BaseCurve):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def degree_increase(self, times: Optional[int] = 1):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def degree_decrease(self, times: Optional[int] = 1):
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def __eq__(self, obj: object) -> bool:
         raise NotImplementedError
 

@@ -456,16 +456,11 @@ class TestSplineCurve:
         curve = SplineCurve(knotvector, ctrlpoints)
         curve.degree_increase()
         assert curve.degree == (degree + 1)
-        print("Original ctrl points = ")
-        print(ctrlpoints)
         correctctrlpoints = [
             ctrlpoints[0],
             0.5 * (ctrlpoints[0] + ctrlpoints[1]),
             ctrlpoints[1],
         ]
-        print("ctrlpoints[0] = ", ctrlpoints[0])
-        print("ctrlpoints[1] = ", ctrlpoints[1])
-        print("0.5*(ct[0] + ct[1]) = ", 0.5 * (ctrlpoints[0] + ctrlpoints[1]))
         np.testing.assert_allclose(curve.ctrlpoints, correctctrlpoints)
 
     @pytest.mark.order(3)

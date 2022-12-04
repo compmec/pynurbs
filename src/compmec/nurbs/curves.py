@@ -44,6 +44,20 @@ class BaseCurve(Interface_BaseCurve):
     def ctrlpoints(self):
         return self.__ctrlpoints
 
+    @degree.setter
+    def degree(self, value: int):
+        if not isinstance(value, int):
+            raise TypeError("To set new degree, it must be an integer")
+        if value < 1:
+            raise ValueError("The degree must be 1 or higher!")
+        times = int(value) - self.degree
+        if times == 0:
+            return
+        if times > 0:
+            self.degree_increase(times)
+        else:
+            self.degree_decrease(times)
+
     @ctrlpoints.setter
     def ctrlpoints(self, value: np.ndarray):
         if not isinstance(value, (list, tuple, np.ndarray)):
@@ -156,7 +170,16 @@ class BaseCurve(Interface_BaseCurve):
     def knot_clean(self, tolerance: float = 1e-9):
         """Remove all unecessary knots.
         If removing the knot the error is bigger than the tolerance, nothing happens"""
-        raise NotImplementedError
+        intknots = list(set(self.knotvector))
+        while True:
+            removed = False
+            for knot in intknots:
+                try:
+                    self.knot_remove(knot)
+                except ValueError as e:
+                    pass
+            if not removed:
+                break
 
     def degree_increase(self, times: Optional[int] = 1):
         knotvector = list(self.knotvector)
@@ -170,22 +193,25 @@ class BaseCurve(Interface_BaseCurve):
             )
         self.__set_UFP(knotvector, ctrlpoints)
 
-    def degree_decrease(self, times: Optional[int] = 1):
-        # raise NotImplementedError("Needs implementation of degree reduce.")
+    def degree_decrease(self, times: Optional[int] = 1, tolerance: float = 1e-9):
+        if times == 0:
+            return
         if self.degree - times < 1:
-            error_msg = f"Cannot reduce curve {times} times. Final degree would be {self.degree-times}"
+            error_msg = f"Cannot reduce curve {times} times. Final degree would be {self.degree-times}, must be at least 1"
             raise ValueError(error_msg)
         knotvector = list(self.knotvector)
         ctrlpoints = list(self.ctrlpoints)
         if self.degree + 1 == self.npts:  # If is bezier
-            for t in range(times):
-                ctrlpoints, error = Custom.BezDegreeReduce(ctrlpoints)
+            ctrlpoints, error = Custom.BezDegreeReduce(ctrlpoints, times)
             knotvector = [0] * (self.npts - times) + [1] * (self.npts - times)
         else:
-            for i in range(times):
-                knotvector, ctrlpoints = Chapter5.DegreeReduceCurve(
-                    knotvector, ctrlpoints
-                )
+            knotvector, ctrlpoints, error = Chapter5.DegreeReduceCurve(
+                knotvector, ctrlpoints, times
+            )
+
+        if error > tolerance:
+            error_msg = "Cannot reduce degree {times} times cause the error is too big"
+            raise ValueError(error_msg)
         self.__set_UFP(knotvector, ctrlpoints)
 
     def degree_clean(self, tolerance: float = 1e-9):
