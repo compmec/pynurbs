@@ -454,7 +454,7 @@ class TestSplineCurve:
         ctrlpoints = np.random.uniform(-1, 1, (npts, 2))
 
         curve = SplineCurve(knotvector, ctrlpoints)
-        curve.degree_increase()
+        curve.degree += 1
         assert curve.degree == (degree + 1)
         correctctrlpoints = [
             ctrlpoints[0],
@@ -478,7 +478,7 @@ class TestSplineCurve:
         ctrlpoints = np.random.uniform(-1, 1, (npts, 2))
 
         curve = SplineCurve(knotvector, ctrlpoints)
-        curve.degree_increase()
+        curve.degree += 1
         assert curve.degree == (degree + 1)
         correctctrlpoints = [
             ctrlpoints[0],
@@ -503,7 +503,7 @@ class TestSplineCurve:
         ctrlpoints = np.random.uniform(-1, 1, (npts, 2))
 
         curve = SplineCurve(knotvector, ctrlpoints)
-        curve.degree_increase()
+        curve.degree += 1
         assert curve.degree == (degree + 1)
         Pgood = [
             ctrlpoints[0],
@@ -530,7 +530,7 @@ class TestSplineCurve:
         ctrlpoints = np.random.uniform(-1, 1, (npts, 2))
 
         curve = SplineCurve(knotvector, ctrlpoints)
-        curve.degree_increase(4)
+        curve.degree += 4
         assert curve.degree == (degree + 4)
         correctctrlpoints = [
             ctrlpoints[0],
@@ -562,7 +562,7 @@ class TestSplineCurve:
             matrix = self.matrix_increase_degree(degree, times)
             matrix = np.array(matrix)
             Pgood = matrix @ ctrlpoints
-            curve.degree_increase(times)
+            curve.degree += times
             assert curve.degree == (degree + times)
             np.testing.assert_allclose(curve.ctrlpoints[0], ctrlpoints[0])
             np.testing.assert_allclose(curve.ctrlpoints[-1], ctrlpoints[-1])
@@ -586,7 +586,7 @@ class TestSplineCurve:
         Uinc = [0] * (npts + 1) + [1] * (npts + 1)
         Pinc = [Pgood[0], 0.5 * (Pgood[0] + Pgood[1]), Pgood[1]]
         curve = SplineCurve(Uinc, Pinc)
-        curve.degree_decrease()
+        curve.degree -= 1
 
         assert curve.knotvector == Ugood
         np.testing.assert_allclose(curve.ctrlpoints, Pgood)
@@ -611,7 +611,7 @@ class TestSplineCurve:
         matrix = self.matrix_increase_degree(degree, 1)
         Pinc = matrix @ Pgood
         curve = SplineCurve(Uinc, Pinc)
-        curve.degree_decrease()
+        curve.degree -= 1
 
         assert curve.knotvector == Ugood
         np.testing.assert_allclose(curve.ctrlpoints, Pgood)
@@ -643,7 +643,7 @@ class TestSplineCurve:
             Pgood[3],
         ]
         curve = SplineCurve(Uinc, Pinc)
-        curve.degree_decrease()
+        curve.degree -= 1
 
         assert curve.knotvector == Ugood
         np.testing.assert_allclose(curve.ctrlpoints, Pgood)
@@ -669,7 +669,7 @@ class TestSplineCurve:
             matrix = self.matrix_increase_degree(degree, 1)
             Pinc = matrix @ Pgood
             curve = SplineCurve(Uinc, Pinc)
-            curve.degree_decrease()
+            curve.degree -= 1
 
             assert curve.knotvector == Ugood
             np.testing.assert_allclose(curve.ctrlpoints, Pgood)
@@ -693,9 +693,9 @@ class TestSplineCurve:
                 knotvector = self.create_random_knotvector(degree, npts)
                 ctrlpoints = self.create_random_controlpoints(npts, ndim)
                 C = SplineCurve(knotvector, ctrlpoints)
-                C.degree_increase(times)
+                C.degree += 1
                 assert C.degree == degree + times
-                C.degree_decrease(times)
+                C.degree -= 1
                 assert C.degree == degree
                 np.testing.assert_allclose(C.ctrlpoints[0], ctrlpoints[0])
                 np.testing.assert_allclose(C.ctrlpoints[degree], ctrlpoints[degree])
@@ -719,8 +719,8 @@ class TestSplineCurve:
                 knotvector = self.create_random_knotvector(degree, npts)
                 ctrlpoints = self.create_random_controlpoints(npts, ndim)
                 C = SplineCurve(knotvector, ctrlpoints)
-                C.degree_increase(times)
-                C.degree_decrease(times)
+                C.degree += times
+                C.degree -= times
                 assert C.degree == degree
                 np.testing.assert_allclose(C.ctrlpoints[0], ctrlpoints[0])
                 np.testing.assert_allclose(C.ctrlpoints[degree], ctrlpoints[degree])

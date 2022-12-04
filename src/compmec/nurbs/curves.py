@@ -48,15 +48,15 @@ class BaseCurve(Interface_BaseCurve):
     def degree(self, value: int):
         if not isinstance(value, int):
             raise TypeError("To set new degree, it must be an integer")
+        value = int(value)
         if value < 1:
             raise ValueError("The degree must be 1 or higher!")
-        times = int(value) - self.degree
-        if times == 0:
+        if value == self.degree:
             return
-        if times > 0:
-            self.degree_increase(times)
+        if value > self.degree:
+            self.__degree_increase(value - self.degree)
         else:
-            self.degree_decrease(times)
+            self.__degree_decrease(self.degree - value)
 
     @ctrlpoints.setter
     def ctrlpoints(self, value: np.ndarray):
@@ -181,7 +181,7 @@ class BaseCurve(Interface_BaseCurve):
             if not removed:
                 break
 
-    def degree_increase(self, times: Optional[int] = 1):
+    def __degree_increase(self, times: int):
         knotvector = list(self.knotvector)
         ctrlpoints = list(self.ctrlpoints)
         if self.degree + 1 == self.npts:  # If is bezier
@@ -193,9 +193,7 @@ class BaseCurve(Interface_BaseCurve):
             )
         self.__set_UFP(knotvector, ctrlpoints)
 
-    def degree_decrease(self, times: Optional[int] = 1, tolerance: float = 1e-9):
-        if times == 0:
-            return
+    def __degree_decrease(self, times: int = 1, tolerance: float = 1e-9):
         if self.degree - times < 1:
             error_msg = f"Cannot reduce curve {times} times. Final degree would be {self.degree-times}, must be at least 1"
             raise ValueError(error_msg)
@@ -213,6 +211,13 @@ class BaseCurve(Interface_BaseCurve):
             error_msg = "Cannot reduce degree {times} times cause the error is too big"
             raise ValueError(error_msg)
         self.__set_UFP(knotvector, ctrlpoints)
+
+    def degree_decrease(self, times: Optional[int]):
+        """
+        The same as mycurve.degree -= 1
+        But this function forces the degree reductions without looking the error
+        """
+        self.__degree_decrease(times, 1e9)
 
     def degree_clean(self, tolerance: float = 1e-9):
         """
@@ -253,9 +258,7 @@ class BaseCurve(Interface_BaseCurve):
         for curve in curves:
             maximum_degree = max(maximum_degree, curve.degree)
         for curve in curves:
-            if curve.degree < maximum_degree:
-                curve.degree_increase(maximum_degree - curve.degree)
-        ncurves = len(curves)
+            curve.degree = maximum_degree
         allctrlpoints = []
         for curve in curves:
             allctrlpoints.append(curve.ctrlpoints)
