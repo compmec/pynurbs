@@ -287,33 +287,33 @@ class Chapter2:
         n = npts - 1
         U = knotvector
         u = knot
-        ndu = [[0] * (p + 1)] * (p + 1)
-        ders = [[0] * (p + 1)] * (p + 1)
-        a = [[0] * (p + 1)] * (p + 1)
-        left = [0] * (p + 1)
-        right = [0] * (p + 1)
+        ndu = np.empty((p + 1, p + 1), dtype="object")
+        ders = np.empty((p + 1, p + 1), dtype="object")
+        a = np.empty((p + 1, p + 1), dtype="object")
+        left = np.empty(p + 1, dtype="object")
+        right = np.empty(p + 1, dtype="object")
         ndu[0, 0] = 1
         for j in range(1, p + 1):
             left[j] = u - U[i + 1 - j]
             right[j] = U[i + j] - u
             saved = 0
             for r in range(j):
-                ndu[j][r] = right[r + 1] + left[j - r]  # Lower triangle
+                ndu[j, r] = right[r + 1] + left[j - r]  # Lower triangle
                 temp = ndu[r, j - 1] / ndu[j, r]
-                ndu[r][j] = saved + right[r + 1] * temp  # Upper triangle
+                ndu[r, j] = saved + right[r + 1] * temp  # Upper triangle
                 saved = left[j - r] * temp
-            ndu[j][j] = saved
+            ndu[j, j] = saved
         for j in range(p + 1):  # Load the basis functions
-            ders[0][j] = ndu[j][p]
+            ders[0, j] = ndu[j, p]
         for r in range(p + 1):  # Loop over function index
             s1, s2 = 0, 1
-            a[0][0] = 0
+            a[0, 0] = 0
             for k in range(1, n + 1):  # Loop to compute kth derivative
                 d = 0
                 rk, pk = r - k, p - k
                 if r >= k:
-                    a[s2][0] = a[s1][0] / ndu[pk + 1][rk]
-                    d = a[s2][0] * ndu[rk][pk]
+                    a[s2, 0] = a[s1, 0] / ndu[pk + 1, rk]
+                    d = a[s2, 0] * ndu[rk, pk]
                 if rk >= -1:
                     j1 = 1
                 else:
@@ -322,19 +322,19 @@ class Chapter2:
                     j2 = k - 1
                     j2 = p - r
                 for j in range(j1, j2 + 1):
-                    a[s2][j] = (a[s1][j] - a[s1][j - 1]) / ndu[pk + 1][rk + j]
-                    d += a[s2][j] * ndu[rk + j][pk]
+                    a[s2, j] = (a[s1, j] - a[s1, j - 1]) / ndu[pk + 1, rk + j]
+                    d += a[s2, j] * ndu[rk + j, pk]
                 if r <= pk:
-                    a[s2][k] = -a[s1][k - 1] / ndu[pk + 1][r]
-                    d += a[s2][k] * ndu[r][pk]
-                ders[k][r] = d
+                    a[s2, k] = -a[s1, k - 1] / ndu[pk + 1, r]
+                    d += a[s2, k] * ndu[r, pk]
+                ders[k, r] = d
                 j = s1
                 s1 = s2
                 s2 = j
         r = p
         for k in range(1, n + 1):
             for j in range(p + 1):
-                ders[k][j] *= r
+                ders[k, j] *= r
             r *= p - k
         return ders
 
@@ -410,29 +410,29 @@ class Chapter2:
             return ders
         for j in range(0, p + 1):  # Initialize zeroth-degree functs
             if U[i + j] <= u < U[i + j + 1]:
-                N[j][0] = 1
+                N[j, 0] = 1
             else:
-                N[j][0] = 0
+                N[j, 0] = 0
         for k in range(1, p + 1):  # Compute full triangular table
-            if N[0][k - 1] == 0:
+            if N[0, k - 1] == 0:
                 saved = 0
             else:
-                saved = (u - U[i]) * N[0][k - 1] / (U[i + k] - U[i])
+                saved = (u - U[i]) * N[0, k - 1] / (U[i + k] - U[i])
             for j in range(p - k + 1):
                 Uleft = U[i + j + 1]
                 Uright = U[i + j + k + 1]
-                if N[j + 1][k - 1] == 0:
-                    N[j][k] = saved
+                if N[j + 1, k - 1] == 0:
+                    N[j, k] = saved
                     saved = 0
                 else:
-                    temp = N[j + 1][k - 1] / (Uright - Uleft)
-                    N[j][k] = saved + (Uright - u) * temp
+                    temp = N[j + 1, k - 1] / (Uright - Uleft)
+                    N[j, k] = saved + (Uright - u) * temp
                     saved = (u - Uleft) * temp
-        ders[0] = N[0][p]  # The function value
+        ders[0] = N[0, p]  # The function value
         ND = [0] * (p + 1)
         for k in range(1, n + 1):  # Compute the derivatives
             for j in range(k + 1):  # Load appropriate column
-                ND[j] = N[j][p - k]
+                ND[j] = N[j, p - k]
             for jj in range(1, k + 1):
                 if ND[0] == 0:
                     saved = 0
@@ -509,7 +509,7 @@ class Chapter3:
         nders = Chapter2.DersBasisFuns(span, u, p, du, U)
         for k in range(du + 1):
             for j in range(p + 1):
-                CK[k] = CK[k] + nders[k][j] * P[span - p + j]
+                CK[k] = CK[k] + nders[k, j] * P[span - p + j]
         return CK
 
     @staticmethod
@@ -534,18 +534,18 @@ class Chapter3:
             ``r1``: int -- The lower bound of derivative: r1 <= i <= r2 - k
             ``r2``: int -- The upper bound of derivative: r1 <= i <= r2 - k
         #### Output:
-            ``PK``: Array2D[Point] -- PK[k][i] is the i-th control point of the k-th derivative
+            ``PK``: Array2D[Point] -- PK[k, i] is the i-th control point of the k-th derivative
         """
         PK = [[0] * (d + 1)] * (r + 1)
         r = r2 - r1
         for i in range(r + 1):
-            PK[0][i] = P[r1 + i]
+            PK[0, i] = P[r1 + i]
         for k in range(1, d + 1):
             temp = p - k + 1
             for i in range(r - k + 1):
-                PK[k][i] = (
+                PK[k, i] = (
                     temp
-                    * (PK[k - 1][i + 1] - PK[k - 1][i])
+                    * (PK[k - 1, i + 1] - PK[k - 1, i])
                     / (U[r1 + i + p + 1] - U[r1 + i + k])
                 )
         return PK
@@ -581,7 +581,7 @@ class Chapter3:
         PK = Chapter3.CurveDerivCpts(npts, degree, U, P, du, span - p, span)
         for k in range(du + 1):
             for j in range(p - k + 1):
-                CK[k] = CK[k] + N[j][p - k] * PK[k][j]
+                CK[k] = CK[k] + N[j, p - k] * PK[k, j]
         return CK
 
     @staticmethod
@@ -641,7 +641,7 @@ class Chapter3:
             ``u``: float -- knot to evaluate at first coordinate
             ``v``: float -- knot to evaluate at second coordinate
         #### Output:
-            ``SKL``: Array2D[float] -- SKL[k][l] is the derivative of S(u, v) with respect to u k times and v l times
+            ``SKL``: Array2D[float] -- SKL[k, l] is the derivative of S(u, v) with respect to u k times and v l times
         """
         pass
 
@@ -902,10 +902,10 @@ class Chapter5:
         m = n + p + 1
         a, b = p, p + 1
         nb = 0
-        Qw = [[0] * (2 * degree + 2)] * (m)
+        Qw = np.empty((m, degree + 1), dtype="object")
         alphas = [0] * (p + 1)
         for i in range(p + 1):
-            Qw[nb][i] = Pw[i]
+            Qw[nb, i] = Pw[i]
         while b < m:
             i = b
             while b < m:
@@ -924,15 +924,15 @@ class Chapter5:
                     s = mult + j  # This many new points
                     for k in range(p, s - 1, -1):
                         alpha = alphas[k - s]
-                        Qw[nb][k] = alpha * Qw[nb][k] + (1 - alpha) * Qw[nb][k - 1]
+                        Qw[nb, k] = alpha * Qw[nb, k] + (1 - alpha) * Qw[nb, k - 1]
                     if b < m:  # Control point of next segment
-                        Qw[nb + 1][save] = Qw[nb][p]
+                        Qw[nb + 1, save] = Qw[nb, p]
             nb += 1  # Bezier segment completed
             if b < m:  # Initialize for next segment
                 for i in range(p - mult, p + 1):
-                    Qw[nb][i] = Pw[b - p + i]
+                    Qw[nb, i] = Pw[b - p + i]
                 a, b = b, b + 1
-        return Qw[:nb]
+        return Qw[:nb].tolist()
 
     @staticmethod
     def DecomposeSurface():
@@ -1071,7 +1071,7 @@ class Chapter5:
         U = knotvector
         Pw = ctrlpoints
         # Init variables
-        bezalfs = [[0] * (p + 1)] * (p + t + 1)
+        bezalfs = np.zeros((p + t + 1, p + 1))
         bpts = [0] * (p + 1)
         ebpts = [0] * (p + t + 1)
         Nextbpts = [0] * (p - 1)
@@ -1085,17 +1085,17 @@ class Chapter5:
         ph2 = ph // 2
 
         # Compute Bezier degree elevation coefficients
-        bezalfs[0][0] = 1.0
-        bezalfs[ph][0] = 1.0
+        bezalfs[0, 0] = 1.0
+        bezalfs[ph, 0] = 1.0
         for i in range(1, ph2 + 1):
             inv = 1 / math.comb(ph, i)
             mpi = min(p, i)
             for j in range(max(0, i - t), mpi + 1):
-                bezalfs[i][j] = inv * math.comb(p, j) * math.comb(t, i - j)
+                bezalfs[i, j] = inv * math.comb(p, j) * math.comb(t, i - j)
         for i in range(ph2 + 1, ph):
             mpi = min(p, i)
             for j in range(max(0, i - t), mpi + 1):
-                bezalfs[i][j] = bezalfs[ph - i][p - j]
+                bezalfs[i, j] = bezalfs[ph - i, p - j]
         mh = ph
         kind = ph + 1
         r = -1
@@ -1142,7 +1142,7 @@ class Chapter5:
                 ebpts[i] = 0
                 mpi = min(p, i)
                 for j in range(max(0, i - t), mpi + 1):
-                    ebpts[i] += bezalfs[i][j] * bpts[j]
+                    ebpts[i] += bezalfs[i, j] * bpts[j]
             if oldr > 1:  # Must remove knot u = U[a] oldr times
                 first = kind - 2
                 last = kind
@@ -1519,3 +1519,20 @@ class Custom:
             pointtocomputeerror = 0.5 * (P[r] + P[r + 1])
             error = Chapter5.Distance4D(P[r + 1], pointtocomputeerror)
         return P, error
+
+    @staticmethod
+    def UniteBezierCurvesSameDegree(
+        internalknots: Array1D[float], allctrlpoints: Array2D[Point]
+    ):
+        ncurves = len(allctrlpoints)
+        degree = len(allctrlpoints[0]) - 1
+        p = degree
+        newknotvector = [0] * (p + 1)
+        for knot in internalknots:
+            newknotvector += [knot] * p
+        newknotvector += [1] * (p + 1)
+        finalnpts = len(newknotvector) - degree - 1
+        ctrlpoints = [allctrlpoints[0, 0]] * finalnpts
+        for i in range(ncurves):
+            ctrlpoints[1 + i * p : 1 + (i + 1) * p] = allctrlpoints[i, 1:]
+        return newknotvector, ctrlpoints

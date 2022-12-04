@@ -153,6 +153,11 @@ class BaseCurve(Interface_BaseCurve):
                 raise ValueError(error_msg)
         self.__set_UFP(knotvector, ctrlpoints)
 
+    def knot_clean(self, tolerance: float = 1e-9):
+        """Remove all unecessary knots.
+        If removing the knot the error is bigger than the tolerance, nothing happens"""
+        raise NotImplementedError
+
     def degree_increase(self, times: Optional[int] = 1):
         knotvector = list(self.knotvector)
         ctrlpoints = list(self.ctrlpoints)
@@ -183,13 +188,77 @@ class BaseCurve(Interface_BaseCurve):
                 )
         self.__set_UFP(knotvector, ctrlpoints)
 
+    def degree_clean(self, tolerance: float = 1e-9):
+        """
+        Reduces au maximum the degree of the curve received the tolerance.
+        If the reduced degree error is bigger than the tolerance, nothing happen
+        """
+        raise NotImplementedError
+
+    def copy(self) -> Interface_BaseCurve:
+        return self.__class__(self.knotvector, self.ctrlpoints)
+
+    @classmethod
+    def unit_curves(
+        cls, curves: Tuple[Interface_BaseCurve], internal_knots: Tuple[float]
+    ) -> Interface_BaseCurve:
+        for i in range(len(internal_knots) - 1):
+            if internal_knots[i] >= internal_knots[i + 1]:
+                raise ValueError("The internal knots are not sorted!")
+        if len(internal_knots) + 1 != len(curves):
+            error_msg = f"You must have (k+1) curves ({len(curves)}) for (k) internal knots ({len(internal_knots)})"
+            raise ValueError(error_msg)
+        for i, curve in enumerate(curves):
+            if not isinstance(curve, Interface_BaseCurve):
+                error_msg = f"Curve[{i}] is type {type(curve)}, but it must be BaseCurve instance."
+                raise TypeError(error_msg)
+            if type(curve) != type(curves[0]):
+                error_msg = f"Curve[{i}] is type {type(curve)} but they all must be the same type (type(Curve[0])={type(curves[0])})."
+        for i in range(len(curves) - 1):
+            if np.any(curves[i].ctrlpoints[-1] != curves[i + 1].ctrlpoints[0]):
+                error_msg = f"Cannot unite curve[{i}] with curve[{i+1}] cause the control points don't match"
+                raise ValueError(error_msg)
+        for i, curve in enumerate(curves):
+            if curve.npts != curve.degree + 1:
+                raise NotImplementedError(
+                    "For the moment, we can only unite bezier curves"
+                )
+        maximum_degree = 0
+        for curve in curves:
+            maximum_degree = max(maximum_degree, curve.degree)
+        for curve in curves:
+            if curve.degree < maximum_degree:
+                curve.degree_increase(maximum_degree - curve.degree)
+        ncurves = len(curves)
+        allctrlpoints = []
+        for curve in curves:
+            allctrlpoints.append(curve.ctrlpoints)
+        knotvector, ctrlpoints = Custom.UniteBezierCurvesSameDegree(
+            internal_knots, allctrlpoints
+        )
+        return cls(knotvector, ctrlpoints)
+
+    def _split_into_bezier(self) -> Tuple[Interface_BaseCurve]:
+        if self.degree + 1 == self.npts:  # is bezier
+            return [self.copy()]
+
+        knotvector = list(self.knotvector)
+        ctrlpoints = list(self.ctrlpoints)
+        allctrls = Chapter5.DecomposeCurve(knotvector, ctrlpoints)
+        listcurves = [0] * len(allctrls)
+        n, p = self.npts - 1, self.degree
+        U0, U1 = self.knotvector[0], self.knotvector[-1]
+        Ubezier = [U0] * (p + 1) + [U1] * (p + 1)
+        for i, ctpt in enumerate(allctrls):
+            listcurves[i] = self.__class__(Ubezier, ctpt)
+        return tuple(listcurves)
+
     def split(
         self, knots: Optional[Union[float, np.ndarray]] = None
     ) -> Tuple[Interface_BaseCurve]:
-        knotvector = list(self.knotvector)
-        ctrlpoints = list(self.ctrlpoints)
-        allctrls = Custom.SplitIntoBezierCurves(knotvector, ctrlpoints)
-        print(allctrls)
+        if knots is None:
+            return self._split_into_bezier()
+        raise NotImplementedError("Needs implementation for [float, np.ndarray]")
 
 
 class SplineCurve(BaseCurve):
