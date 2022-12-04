@@ -487,21 +487,21 @@ def test_basefunction_fails():
     R = RationalBaseFunction(knotvector)
     with pytest.raises(ValueError):
         w = np.linspace(-1, 1, npts)
-        R.w = w
+        R.weights = w
 
     R1 = RationalBaseFunction(knotvector)
-    R1.w = np.random.uniform(0.5, 1.5, npts)
+    R1.weights = np.random.uniform(0.5, 1.5, npts)
     R2 = RationalBaseFunction(knotvector)
-    R2.w = np.random.uniform(0.5, 1.5, npts)
+    R2.weights = np.random.uniform(0.5, 1.5, npts)
     knotvector = GeneratorKnotVector.random(degree, npts)
     with pytest.raises(TypeError):
-        R1.w = "asd"
+        R1.weights = "asd"
     with pytest.raises(ValueError):
-        R1.w = np.random.uniform(1, 2, npts - 1)
+        R1.weights = np.random.uniform(1, 2, npts - 1)
     with pytest.raises(ValueError):
-        R1.w = np.random.uniform(1, 2, npts + 1)
+        R1.weights = np.random.uniform(1, 2, npts + 1)
     with pytest.raises(ValueError):
-        R1.w = np.random.uniform(1, 2, size=(npts, 2))
+        R1.weights = np.random.uniform(1, 2, size=(npts, 2))
 
 
 @pytest.mark.order(2)
@@ -518,15 +518,15 @@ def test_comparation():
     N2 = SplineBaseFunction(Uorg)
     N3 = SplineBaseFunction(Udif)
     R1 = RationalBaseFunction(Uorg)
-    R1.w = worg
+    R1.weights = worg
     R2 = RationalBaseFunction(Uorg)
-    R2.w = worg
+    R2.weights = worg
     R3 = RationalBaseFunction(Uorg)
-    R3.w = wdif
+    R3.weights = wdif
     R4 = RationalBaseFunction(Udif)
-    R4.w = wdif
+    R4.weights = wdif
     R5 = RationalBaseFunction(Udif)
-    R5.w = worg
+    R5.weights = worg
 
     assert N1 == N2
     assert R1 == R2
@@ -550,13 +550,13 @@ def test_comparation():
 @pytest.mark.dependency(depends=["test_comparation"])
 def test_insert_remove_knot():
     Uorg = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # degree = 3, npts = 5
-    w = np.random.uniform(1, 2, 5)
+    weights = np.random.uniform(1, 2, 5)
     N1 = SplineBaseFunction(Uorg)
     N2 = SplineBaseFunction(Uorg)
     R1 = RationalBaseFunction(Uorg)
-    R1.w = w
+    R1.weights = weights
     R2 = RationalBaseFunction(Uorg)
-    R2.w = w
+    R2.weights = weights
 
     assert N1 == N2
     assert R1 == R2
@@ -577,10 +577,10 @@ def test_insert_remove_knot():
 )
 def test_derivate_functions():
     knotvector = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # degree = 3, npts = 5
-    w = np.random.uniform(1, 2, 5)
+    weights = np.random.uniform(1, 2, 5)
     N = SplineBaseFunction(knotvector)
     R = RationalBaseFunction(knotvector)
-    R.w = w
+    R.weights = weights
 
     N.derivate()
     R.derivate()

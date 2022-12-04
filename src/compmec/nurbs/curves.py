@@ -7,7 +7,6 @@ from compmec.nurbs.algorithms import Chapter5, Custom
 from compmec.nurbs.basefunctions import (
     BaseFunction,
     RationalBaseFunction,
-    RationalWeightsVector,
     SplineBaseFunction,
 )
 from compmec.nurbs.knotspace import KnotVector
@@ -96,18 +95,17 @@ class BaseCurve(Interface_BaseCurve):
 
     def __eq__(self, obj: object) -> bool:
         if type(self) != type(obj):
-            error_msg = (
-                f"Cannot compare a {type(obj)} object with a {self.__class__} object"
-            )
-            raise TypeError(error_msg)
+            return False
         knots = self.knotvector.knots
-        utest = [
-            np.linspace(a, b, 2 + self.degree) for a, b in zip(knots[:-1], knots[1:])
-        ]
+        pairs = list(zip(knots[:-1], knots[1:]))
+        utest = [np.linspace(ua, ub, 2 + self.degree) for ua, ub in pairs]
         utest = list(set(np.array(utest).reshape(-1)))
-        Cusel = self(utest)
-        Cuobj = obj(utest)
-        return np.all(np.abs(Cusel - Cuobj) < 1e-9)
+        for i, ui in enumerate(utest):
+            Cusel = self.evaluate(ui)
+            Cuobj = obj.evaluate(ui)
+            if np.any(np.abs(Cusel - Cuobj) > 1e-9):
+                return False
+        return True
 
     def __ne__(self, __obj: object):
         return not self.__eq__(__obj)
@@ -247,7 +245,11 @@ class BaseCurve(Interface_BaseCurve):
         Reduces au maximum the degree of the curve received the tolerance.
         If the reduced degree error is bigger than the tolerance, nothing happen
         """
-        raise NotImplementedError
+        try:
+            while True:
+                self.__degree_decrease(1, tolerance)
+        except ValueError as e:
+            pass
 
     def copy(self) -> Interface_BaseCurve:
         return self.__class__(self.knotvector, self.ctrlpoints)
@@ -347,19 +349,17 @@ class SplineCurve(BaseCurve):
         return SplineBaseFunction(knotvector)
 
 
-class RationalCurve(BaseCurve, RationalWeightsVector):
+class RationalCurve(BaseCurve):
     def __init__(self, knotvector: KnotVector, controlpoints: np.ndarray):
         super().__init__(knotvector, controlpoints)
-        self.w = np.ones(self.npts, dtype="float64")
 
     def _create_base_function_instance(self, knotvector: KnotVector):
         return RationalBaseFunction(knotvector)
 
-    def __eq__(self, obj):
-        if type(self) != type(obj):
-            raise TypeError
-        if np.any(self.w != obj.w):
-            return False
-        if not super().__eq__(obj):
-            return False
-        return True
+    @property
+    def weights(self):
+        return self.F.weights
+
+    @weights.setter
+    def weights(self, value: Tuple[float]):
+        self.F.weights = value

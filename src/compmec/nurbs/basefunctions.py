@@ -54,30 +54,6 @@ def R(i: int, j: int, k: int, u: float, U: KnotVector, w: Tuple[float]) -> float
     return w[i] * Niju / soma
 
 
-class RationalWeightsVector(object):
-    @property
-    def w(self):
-        return self.__w
-
-    @w.setter
-    def w(self, value: Tuple[float]):
-        try:
-            value = np.array(value, dtype="float64")
-        except Exception as e:
-            raise TypeError(f"Input is not valid. Type = {type(value)}, not np.ndarray")
-        if value.ndim != 1:
-            raise ValueError(f"Input must be 1D array")
-        if len(value) != self.npts:
-            raise ValueError(
-                f"Input must have same number of points as knotvector.npts"
-            )
-        for v in value:
-            v = float(v)
-            if v < 0:
-                raise ValueError("The weights must be positive")
-        self.__w = value
-
-
 class BaseFunction(Interface_BaseFunction):
     def __init__(self, knotvector: KnotVector):
         self.__U = KnotVector(knotvector)
@@ -175,10 +151,10 @@ class SplineEvaluatorClass(BaseEvaluator):
 class RationalEvaluatorClass(BaseEvaluator):
     def __init__(self, F: BaseFunction, i: Union[int, slice], j: int):
         super().__init__(F, i, j)
-        self.__w = F.w
+        self.__weights = F.weights
 
     def compute_one_value(self, i: int, u: float, span: int) -> float:
-        return R(i, self.second_index, span, u, self.knotvector, self.__w)
+        return R(i, self.second_index, span, u, self.knotvector, self.__weights)
 
 
 class BaseFunctionDerivable(BaseFunction):
@@ -286,10 +262,9 @@ class SplineBaseFunction(BaseFunctionGetItem):
         return SplineEvaluatorClass(self, i, j)
 
 
-class RationalBaseFunction(BaseFunctionGetItem, RationalWeightsVector):
+class RationalBaseFunction(BaseFunctionGetItem):
     def __init__(self, knotvector: KnotVector):
         super().__init__(knotvector)
-        self.w = np.ones(self.npts, dtype="float64")
 
     def create_evaluator_instance(self, i: Union[int, slice], j: int):
         return RationalEvaluatorClass(self, i, j)
@@ -297,6 +272,31 @@ class RationalBaseFunction(BaseFunctionGetItem, RationalWeightsVector):
     def __eq__(self, obj):
         if not super().__eq__(obj):
             return False
-        if np.any(self.w != obj.w):
+        if np.any(self.weights != obj.weights):
             return False
         return True
+
+    @property
+    def weights(self):
+        try:
+            return self.__weights
+        except AttributeError as e:
+            self.__weights = np.ones(self.npts, dtype="float64")
+        return self.__weights
+
+    @weights.setter
+    def weights(self, value: Tuple[float]):
+        try:
+            value = np.array(value, dtype="float64")
+        except Exception as e:
+            raise TypeError(f"Input is not valid. Type = {type(value)}, not np.ndarray")
+        if value.ndim != 1:
+            raise ValueError(f"Input must be 1D array")
+        if len(value) != self.npts:
+            raise ValueError(
+                f"Input must have same number of points as knotvector.npts"
+            )
+        value = np.array(value, dtype="float64")
+        if np.any(value <= 0):
+            raise ValueError("All the weights must be positive")
+        self.__weights = value
