@@ -211,7 +211,7 @@ class Chapter2:
     @staticmethod
     def FindSpanMult(
         npts: int, degree: int, knot: float, knotvector: Array1D[float]
-    ) -> int:
+    ) -> Tuple[int, int]:
         """
         #### Algorithm A2.1
         Determine the knot span index
@@ -744,14 +744,17 @@ class Chapter5:
         npts = len(ctrlpoints)
         degree = len(knotvector) - npts - 1
         r = times
-        k, s = Chapter2.FindSpanMult(npts, degree, knot, knotvector)
+        span, mult = Chapter2.FindSpanMult(npts, degree, knot, knotvector)
+        k, s = span, mult
         Pw = ctrlpoints
         UP = knotvector
         u = knot
         np = npts - 1
         p = degree
-        if r + s > p:
-            raise ValueError(f"r + s > p : {r} + {s} > {p}")
+        if r <= 0:
+            return list(knotvector), list(ctrlpoints)
+        if times + mult > degree:
+            raise ValueError(f"times + mult > degree : {times} + {mult} > {degree}")
         mp = np + p + 1
         nq = np + r
         mq = nq + p + 1
@@ -887,12 +890,49 @@ class Chapter5:
         pass
 
     @staticmethod
-    def DecomposeCurve():
+    def DecomposeCurve(knotvector: Array1D[float], ctrlpoints: Array1D[Point]):
         """
         #### Algorith A5.6 - NURBs book - pag 173
             Decompose curve into bezier segments
         """
-        pass
+        npts = len(ctrlpoints)
+        degree = len(knotvector) - npts - 1
+        U, Pw = knotvector, ctrlpoints
+        n, p = npts - 1, degree
+        m = n + p + 1
+        a, b = p, p + 1
+        nb = 0
+        Qw = [[0] * (2 * degree + 2)] * (m)
+        alphas = [0] * (p + 1)
+        for i in range(p + 1):
+            Qw[nb][i] = Pw[i]
+        while b < m:
+            i = b
+            while b < m:
+                if U[b] != U[b + 1]:
+                    break
+                b += 1
+            mult = b - i + 1
+            if mult < p:
+                numer = U[b] - U[a]  # Numerator of alpha
+                # Compute and store alphas
+                for j in range(p, mult, -1):
+                    alphas[j - mult - 1] = numer / (U[a + j] - U[a])
+                r = p - mult  # Insert knot r times
+                for j in range(1, r + 1):
+                    save = r - j
+                    s = mult + j  # This many new points
+                    for k in range(p, s - 1, -1):
+                        alpha = alphas[k - s]
+                        Qw[nb][k] = alpha * Qw[nb][k] + (1 - alpha) * Qw[nb][k - 1]
+                    if b < m:  # Control point of next segment
+                        Qw[nb + 1][save] = Qw[nb][p]
+            nb += 1  # Bezier segment completed
+            if b < m:  # Initialize for next segment
+                for i in range(p - mult, p + 1):
+                    Qw[nb][i] = Pw[b - p + i]
+                a, b = b, b + 1
+        return Qw[:nb]
 
     @staticmethod
     def DecomposeSurface():
@@ -1173,7 +1213,7 @@ class Chapter5:
             ``ctrlpoints``: Array1D[Point] -- Control points
         #### Output:
             ``Uh``: Array1D[float] -- New knot vector
-            ``Qw``: Array1D[Point] -- New control points
+            ``Pw``: Array1D[Point] -- New control points
         """
         ctrlpoints = list(np.array(ctrlpoints, dtype="float64"))
         knotvector = list(knotvector)
@@ -1193,8 +1233,8 @@ class Chapter5:
         rbpts = [0] * p
         alphas = [0] * (p - 1)
         e = [0] * m
-        Pw = [0] * npts
-        Uh = [0] * (m + 1)
+        Pw = [0] * npts  # It will be less than that
+        Uh = [0] * (m + 1)  # It will be less than that
 
         # Init some variables
         ph = p - 1
@@ -1315,6 +1355,24 @@ class Chapter5:
 
 class Custom:
     @staticmethod
+    def SplitIntoBezierCurves(knotvector: Array1D[float], ctrlpoints: Array1D[Point]):
+        npts = len(ctrlpoints)
+        degree = len(knotvector) - npts - 1
+        allknots = list(set(knotvector))
+        allknots.remove(0)
+        allknots.remove(1)
+        for knot in allknots:
+            span, mult = Chapter2.FindSpanMult(npts, degree, knot, knotvector)
+            times = degree - mult
+            knotvector, ctrlpoints = Chapter5.CurveKnotIns(
+                knotvector, ctrlpoints, knot, times
+            )
+            npts = len(ctrlpoints)
+        listctrlpts = []
+
+        return listctrlpts
+
+    @staticmethod
     def BezDegreeIncrease(ctrlpoints: Array1D[Point], times: int):
         """
         #### Algorithm to increase degree of bezier curve
@@ -1334,11 +1392,8 @@ class Custom:
             lower = max(0, i - times)
             upper = min(degree, i) + 1
             for j in range(lower, upper):
-                coef = (
-                    math.comb(degree, j)
-                    * math.comb(times, i - j)
-                    / math.comb(degree + times, i)
-                )
+                coef = math.comb(degree, j) * math.comb(times, i - j)
+                coef /= math.comb(degree + times, i)
                 newctrlpoints[i] = newctrlpoints[i] + coef * ctrlpoints[j]
         return newctrlpoints
 
@@ -1407,26 +1462,22 @@ class Custom:
         K = np.zeros((degree, degree + 1), dtype="float64")
         for i in range(p):
             for j in range(p):
-                M[i, j] = (
-                    math.comb(p - 1, i)
-                    * math.comb(p - 1, j)
-                    / math.comb(2 * p - 2, i + j)
-                )
-                M[i, j] /= 2 * p - 1
+                M[i, j] = math.comb(p - 1, i) * math.comb(p - 1, j)
+                M[i, j] /= (2 * p - 1) * math.comb(2 * p - 2, i + j)
         for i in range(p):
             for j in range(p + 1):
-                K[i, j] = (
-                    math.comb(p - 1, i) * math.comb(p, j) / math.comb(2 * p - 1, i + j)
-                )
-                K[i, j] /= 2 * p
+                K[i, j] = math.comb(p - 1, i) * math.comb(p, j)
+                K[i, j] /= 2 * p * math.comb(2 * p - 1, i + j)
         M[0, 0] = 1
+        M[0, 1:] = 0
+        M[p - 1, : p - 1] = 0
         M[p - 1, p - 1] = 1
         K[0, 0] = 1
+        K[0, 1:] = 0
+        K[p - 1, :p] = 0
         K[p - 1, p] = 1
         A = np.linalg.solve(M, K)
-        P = []
-        for i in range(npts - 1):
-            P.append(A[i, :] @ Q)
+        P = A @ Q
         P = np.array(P)
         error = Custom.FindMaximumDistanceBetweenBezier(Q, P)
         return P, error
@@ -1468,32 +1519,3 @@ class Custom:
             pointtocomputeerror = 0.5 * (P[r] + P[r + 1])
             error = Chapter5.Distance4D(P[r + 1], pointtocomputeerror)
         return P, error
-
-    @staticmethod
-    def increase_bezier_degree(knotvector: Tuple[float], ctrlpoints: Array1D[Point]):
-        npts = len(ctrlpoints)
-        degree = len(knotvector) - npts
-        p, n = degree, npts - 1
-        knotvector = list(knotvector)
-        knotvector.append(1)
-        knotvector.insert(0, 0)
-        newctrlpoints = [0] * (1 + npts)
-        tvals = [float(i) / (n + 1) for i in range(n + 2)]
-
-        M = [[0] * (n + 2)] * (n + 2)
-        A = [[0] * (n + 1)] * (n + 2)
-        M = np.array(M, dtype="float64")
-        A = np.array(A, dtype="float64")
-        for j, tj in enumerate(tvals):
-            tj1 = 1 - tj
-            for i in range(n + 2):
-                M[j, i] = math.comb(n + 1, i) * tj1 ** (n + 1 - i) * tj**i
-            for i in range(n + 1):
-                A[j, i] = math.comb(n, i) * tj1 ** (n - i) * tj**i
-        F = np.linalg.solve(M, A)  # F is such Q = F @ P
-
-        for i in range(n + 2):
-            for j in range(n + 1):
-                newctrlpoints[i] += F[i][j] * ctrlpoints[j]
-
-        return (knotvector, newctrlpoints)

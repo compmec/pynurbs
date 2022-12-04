@@ -166,11 +166,10 @@ class BaseCurve(Interface_BaseCurve):
         self.__set_UFP(knotvector, ctrlpoints)
 
     def degree_decrease(self, times: Optional[int] = 1):
-        raise NotImplementedError("Needs implementation of degree reduce.")
+        # raise NotImplementedError("Needs implementation of degree reduce.")
         if self.degree - times < 1:
-            raise ValueError(
-                f"Cannot reduce curve {times} times. Final degree would be {self.degree-times}"
-            )
+            error_msg = f"Cannot reduce curve {times} times. Final degree would be {self.degree-times}"
+            raise ValueError(error_msg)
         knotvector = list(self.knotvector)
         ctrlpoints = list(self.ctrlpoints)
         if self.degree + 1 == self.npts:  # If is bezier
@@ -183,6 +182,14 @@ class BaseCurve(Interface_BaseCurve):
                     knotvector, ctrlpoints
                 )
         self.__set_UFP(knotvector, ctrlpoints)
+
+    def split(
+        self, knots: Optional[Union[float, np.ndarray]] = None
+    ) -> Tuple[Interface_BaseCurve]:
+        knotvector = list(self.knotvector)
+        ctrlpoints = list(self.ctrlpoints)
+        allctrls = Custom.SplitIntoBezierCurves(knotvector, ctrlpoints)
+        print(allctrls)
 
 
 class SplineCurve(BaseCurve):

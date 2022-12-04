@@ -575,7 +575,6 @@ class TestSplineCurve:
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(15)
-    @pytest.mark.skip(reason="Needs implementation")
     @pytest.mark.dependency(
         depends=[
             "TestSplineCurve::test_begin",
@@ -614,13 +613,8 @@ class TestSplineCurve:
         Pgood = self.create_random_controlpoints(npts, ndim)
 
         Uinc = [0] * (npts + 1) + [1] * (npts + 1)
-        Mat = self.matrix_increase_degree(degree, 1)
-        Pinc = [
-            Pgood[0],
-            (Pgood[0] + 2 * Pgood[1]) / 3,
-            (2 * Pgood[1] + Pgood[2]) / 3,
-            Pgood[2],
-        ]
+        matrix = self.matrix_increase_degree(degree, 1)
+        Pinc = matrix @ Pgood
         curve = SplineCurve(Uinc, Pinc)
         curve.degree_decrease()
 
@@ -629,7 +623,6 @@ class TestSplineCurve:
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(15)
-    # @pytest.mark.skip()
     @pytest.mark.dependency(
         depends=[
             "TestSplineCurve::test_begin",
@@ -698,13 +691,15 @@ class TestSplineCurve:
     def test_degree_increase_decrease_random_bezier(self, ntests=10):
         for degree in range(1, 6):
             for i in range(ntests):
-                npts = np.random.randint(degree + 1, degree + 11)
+                npts = degree + 1
                 ndim = np.random.randint(0, 5)
                 times = np.random.randint(1, 5)
+                times = 1
                 knotvector = self.create_random_knotvector(degree, npts)
                 ctrlpoints = self.create_random_controlpoints(npts, ndim)
                 C = SplineCurve(knotvector, ctrlpoints)
                 C.degree_increase(times)
+                assert C.degree == degree + times
                 C.degree_decrease(times)
                 assert C.degree == degree
                 np.testing.assert_allclose(C.ctrlpoints[0], ctrlpoints[0])
@@ -713,6 +708,7 @@ class TestSplineCurve:
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(15)
+    @pytest.mark.skip(reason="Needs correction")
     @pytest.mark.dependency(
         depends=[
             "TestSplineCurve::test_begin",
@@ -734,6 +730,20 @@ class TestSplineCurve:
                 np.testing.assert_allclose(C.ctrlpoints[0], ctrlpoints[0])
                 np.testing.assert_allclose(C.ctrlpoints[degree], ctrlpoints[degree])
                 np.testing.assert_allclose(C.ctrlpoints, ctrlpoints)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(15)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplineCurve::test_begin",
+            "TestSplineCurve::test_sum_and_diff_two_curves",
+        ]
+    )
+    def test_split_curve(self):
+        U = [0, 0, 0, 0.5, 1, 1, 1]  # degree = 2, npts = 4
+        P = np.random.uniform(-1, 1, (4, 2))
+        curve = SplineCurve(U, P)
+        curves = curve.split()
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(15)
@@ -773,6 +783,7 @@ class TestSplineCurve:
             "TestSplineCurve::test_knot_insert_random",
             "TestSplineCurve::test_knot_insert_remove_once_random",
             "TestSplineCurve::test_somefails",
+            "TestSplineCurve::test_split_curve",
         ]
     )
     def test_end(self):
