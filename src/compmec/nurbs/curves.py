@@ -69,6 +69,9 @@ class BaseCurve(Interface_BaseCurve):
             error_msg = f"Received Control Points is type {type(value)}."
             error_msg += f" But it must be an array of floats"
             raise TypeError(error_msg)
+        value = np.array(value, dtype="object")
+        if np.any(value == None):
+            raise TypeError("None is inside the array of control points")
         try:
             value = np.array(value, dtype="float64")
         except Exception as e:
@@ -77,9 +80,6 @@ class BaseCurve(Interface_BaseCurve):
             )
             error_msg += f" Cause {e}"
             error_msg += f" Received {str(value)[:400]}"
-            raise TypeError(error_msg)
-        if value.ndim == 0:
-            error_msg = f"The Control Points must be a array, not a single value"
             raise TypeError(error_msg)
         if value.shape[0] != self.npts:
             error_msg = f"The number of control points must be the same of degrees of freedom of KnotVector.\npts"
@@ -168,6 +168,9 @@ class BaseCurve(Interface_BaseCurve):
         knotvector = list(self.knotvector)
         ctrlpoints = list(self.ctrlpoints)
         for knot, times in table.items():
+            if knot not in knotvector:
+                error_msg = f"Requested remove ({knot:.3f}), it's not in {knotvector}"
+                raise ValueError(error_msg)
             result = Chapter5.RemoveCurveKnot(knotvector, ctrlpoints, knot, times)
             t, knotvector, ctrlpoints = result
             if t != times:
@@ -184,6 +187,7 @@ class BaseCurve(Interface_BaseCurve):
             for knot in intknots:
                 try:
                     self.knot_remove(knot)
+                    removed = True
                 except ValueError as e:
                     pass
             if not removed:
@@ -262,17 +266,14 @@ class BaseCurve(Interface_BaseCurve):
             if not isinstance(curve, Interface_BaseCurve):
                 error_msg = f"Curve[{i}] is type {type(curve)}, but it must be BaseCurve instance."
                 raise TypeError(error_msg)
-            if type(curve) != type(curves[0]):
-                error_msg = f"Curve[{i}] is type {type(curve)} but they all must be the same type (type(Curve[0])={type(curves[0])})."
         for i in range(len(curves) - 1):
             if np.any(curves[i].ctrlpoints[-1] != curves[i + 1].ctrlpoints[0]):
                 error_msg = f"Cannot unite curve[{i}] with curve[{i+1}] cause the control points don't match"
                 raise ValueError(error_msg)
         for i, curve in enumerate(curves):
             if curve.npts != curve.degree + 1:
-                raise NotImplementedError(
-                    "For the moment, we can only unite bezier curves"
-                )
+                error_msg = "For the moment, we can only unite bezier curves"
+                raise NotImplementedError(error_msg)
         maximum_degree = 0
         for curve in curves:
             maximum_degree = max(maximum_degree, curve.degree)
@@ -308,7 +309,34 @@ class BaseCurve(Interface_BaseCurve):
     ) -> Tuple[Interface_BaseCurve]:
         if knots is None:
             return self._split_into_bezier()
-        raise NotImplementedError("Needs implementation for [float, np.ndarray]")
+        if isinstance(knots, (int, float)):
+            knots = tuple([knots])
+        knots = np.array(knots, dtype="float64")
+        if knots.ndim != 1:
+            raise ValueError
+        knots = list(set(knots))
+        knots.sort()
+        knots = tuple(knots)
+        copycurve = self.copy()
+        for i in range(copycurve.degree):
+            copycurve.knot_insert(knots)
+        knotvector = np.array(list(copycurve.knotvector)[1:-1], dtype="float64")
+        listcurves = [None] * (len(knots) + 1)
+        all_knots = copycurve.knotvector.knots
+        pairs = list(zip(all_knots[:-1], all_knots[1:]))
+        print("pairs = ")
+        print(pairs)
+        for i, (ua, ub) in enumerate(pairs):
+            middle = knotvector[(ua <= knotvector) * (knotvector <= ub)]
+            middle = (middle - ua) / (ub - ua)
+            newknotvect = [0] + list(middle) + [1]
+            newnpts = len(newknotvect) - copycurve.degree - 1
+            newctrlpts = copycurve.ctrlpoints[
+                i * (newnpts - 1) : (i + 1) * (newnpts - 1) + 1
+            ]
+            newcurve = copycurve.__class__(newknotvect, newctrlpts)
+            listcurves[i] = newcurve
+        return listcurves
 
 
 class SplineCurve(BaseCurve):

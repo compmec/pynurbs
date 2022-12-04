@@ -683,7 +683,7 @@ class TestSplineCurve:
             "TestSplineCurve::test_degree_decrease_bezier_random_degree",
         ]
     )
-    def test_degree_increase_decrease_random_bezier(self, ntests=100):
+    def test_degree_increase_decrease_random_bezier(self, ntests=1):
         for degree in range(1, 6):
             for i in range(ntests):
                 npts = degree + 1
@@ -702,14 +702,14 @@ class TestSplineCurve:
                 np.testing.assert_allclose(C.ctrlpoints, ctrlpoints)
 
     @pytest.mark.order(3)
-    @pytest.mark.timeout(30)
+    @pytest.mark.timeout(60)
     @pytest.mark.dependency(
         depends=[
             "TestSplineCurve::test_begin",
             "TestSplineCurve::test_degree_increase_decrease_random_bezier",
         ]
     )
-    def test_degree_increase_decrease_random(self, ntests=10):
+    def test_degree_increase_decrease_random(self, ntests=1):
         for degree in range(1, 3):
             for i in range(ntests):
                 npts = np.random.randint(degree + 2, degree + 4)
@@ -738,6 +738,75 @@ class TestSplineCurve:
         P = np.random.uniform(-1, 1, (4, 2))
         curve = SplineCurve(U, P)
         curves = curve.split()
+        assert len(curves) == 2
+
+        degree, npts = 3, 4
+        knotvector = [0, 0, 0, 0, 1, 1, 1, 1]
+        ctrlpoints = np.random.uniform(-1, 1, npts)
+        curve = SplineCurve(knotvector, ctrlpoints)
+        assert len(curve.split()) == 1  # cause it's bezier
+
+        assert len(curve.split(0.5)) == 2
+
+        assert len(curve.split([0.3, 0.7])) == 3
+
+        with pytest.raises(ValueError):
+            curve.split([[0.3, 0.7], [0.5, 0.8]])
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(15)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplineCurve::test_begin",
+            "TestSplineCurve::test_sum_and_diff_two_curves",
+        ]
+    )
+    def test_unite_curve(self):
+        U = [0, 0, 0, 0.5, 1, 1, 1]  # degree = 2, npts = 4
+        P = np.random.uniform(-1, 1, (4, 2))
+        curve = SplineCurve(U, P)
+        curves = curve.split()
+        newcurve = SplineCurve.unite_curves(curves, [0, 0.5, 1])
+        assert curve == newcurve
+
+        with pytest.raises(ValueError):
+            SplineCurve.unite_curves(curves, (0.3, 0.5, 0.4))
+        with pytest.raises(ValueError):
+            SplineCurve.unite_curves(curves, (0.3, 0.4, 0.5, 0.6))
+        with pytest.raises(TypeError):
+            SplineCurve.unite_curves([curve, 1], (0.3, 0.4, 0.5))
+        with pytest.raises(ValueError):
+            Utemp = [0, 0, 0, 1, 1, 1]
+            P1 = np.random.uniform(-1, 1, (3, 2))
+            P2 = np.random.uniform(-1, 1, (3, 2))
+            C1 = SplineCurve(Utemp, P1)
+            C2 = SplineCurve(Utemp, P2)
+            SplineCurve.unite_curves([C1, C2], [0, 0.5, 1])
+
+        with pytest.raises(ValueError):
+            U = [0, 0, 0, 0.5, 1, 1, 1]  # degree = 2, npts = 4
+            P = np.random.uniform(-1, 1, (4, 2))
+            curve = SplineCurve(U, P)
+            curves = curve.split(0.7)
+            print("curves = ")
+            print(curves)
+            SplineCurve.unite_curves(curves, [0, 0.7, 1])
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(15)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplineCurve::test_begin",
+            "TestSplineCurve::test_sum_and_diff_two_curves",
+        ]
+    )
+    def test_knotclean(self):
+        U = [0, 0, 0, 0.5, 1, 1, 1]  # degree = 2, npts = 4
+        P = np.random.uniform(-1, 1, (4, 2))
+        curve = SplineCurve(U, P)
+        curve.knot_insert(0.5)
+        curve.knot_clean()
+        assert curve.knotvector == U
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(15)
@@ -757,6 +826,54 @@ class TestSplineCurve:
             C == 1
         with pytest.raises(TypeError):
             C + 1
+
+        with pytest.raises(TypeError):
+            C.degree = "asd"
+        with pytest.raises(ValueError):
+            C.degree = -1
+        C.degree = degree
+
+        with pytest.raises(TypeError):
+            newP = np.empty(ctrlpoints.shape, dtype="object")
+            C.ctrlpoints = newP
+        with pytest.raises(TypeError):
+            newP = np.empty(ctrlpoints.shape, dtype="object")
+            C.ctrlpoints = newP
+        with pytest.raises(TypeError):
+            for i in range(npts):
+                newP[i] = "asd"
+            C.ctrlpoints = newP
+        with pytest.raises(ValueError):
+            P1 = np.random.uniform(-1, 1, (npts, 2))
+            P2 = np.random.uniform(-1, 1, (npts, 3))
+            C1 = SplineCurve(knotvector, P1)
+            C2 = SplineCurve(knotvector, P2)
+            C1 + C2
+        with pytest.raises(TypeError):
+            C.knot_insert(["asd", 3, None])
+
+        with pytest.raises(ValueError):
+            C.knot_insert([[0.9, 0.1], [0.5, 0.3]])
+        with pytest.raises(ValueError):
+            C.knot_insert([-0.1, 0.1])
+        with pytest.raises(ValueError):
+            C.knot_insert([1.1, 0.1])
+
+        with pytest.raises(ValueError):
+            C.knot_remove(0.5)
+        U = [0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1]  # deg=3, npt=7
+        P = np.random.uniform(-1, 1, 7)
+        C = SplineCurve(U, P)
+        with pytest.raises(ValueError):
+            C.knot_remove([0.5, 0.5, 0.5, 0.5])
+        with pytest.raises(ValueError):
+            C.degree -= 1
+        with pytest.raises(ValueError):
+            C.degree -= 4
+        C.degree_decrease(1)  # forced
+        with pytest.raises(ValueError):
+            C.degree_decrease(5)
+        newC = C.copy()
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(15)

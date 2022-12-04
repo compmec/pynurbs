@@ -36,7 +36,9 @@ class VerifyKnotVector(object):
         npts = len(knotvector)
         for i in range(npts - 1):
             if knotvector[i] > knotvector[i + 1]:
-                raise ValueError("The given KnotVector must be ordened")
+                error_msg = f"The given KnotVector must be ordened.\n"
+                error_msg += f"    knotvector = {list(knotvector)}"
+                raise ValueError(error_msg)
 
     @staticmethod
     def Limits(knotvector: Tuple[float]) -> None:
