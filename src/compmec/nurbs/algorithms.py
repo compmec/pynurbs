@@ -3,7 +3,7 @@ from typing import Any, List, Tuple
 
 import numpy as np
 
-from compmec.nurbs.knotspace import KnotVector
+from compmec.nurbs import SplineBaseFunction
 
 
 class Point:
@@ -1405,6 +1405,8 @@ class Custom:
                 coef = math.comb(degree, j) * math.comb(times, i - j)
                 coef /= math.comb(degree + times, i)
                 newctrlpoints[i] = newctrlpoints[i] + coef * ctrlpoints[j]
+        print("BezDegreeIncrease degree = ")
+        print()
         return newctrlpoints
 
     @staticmethod
@@ -1535,17 +1537,51 @@ class Custom:
 
     @staticmethod
     def UniteBezierCurvesSameDegree(
-        internalknots: Array1D[float], allctrlpoints: Array2D[Point]
+        all_knots: Array1D[float], allctrlpoints: Array2D[Point]
     ):
         ncurves = len(allctrlpoints)
         degree = len(allctrlpoints[0]) - 1
+        allctrlpoints = np.array(allctrlpoints)
         p = degree
-        newknotvector = [0] * (p + 1)
-        for knot in internalknots:
+        newknotvector = [0]
+        for knot in all_knots:
             newknotvector += [knot] * p
-        newknotvector += [1] * (p + 1)
+        newknotvector += [1]
         finalnpts = len(newknotvector) - degree - 1
         ctrlpoints = [allctrlpoints[0, 0]] * finalnpts
         for i in range(ncurves):
             ctrlpoints[1 + i * p : 1 + (i + 1) * p] = allctrlpoints[i, 1:]
         return newknotvector, ctrlpoints
+
+    @staticmethod
+    def LeastSquareSpline(
+        knotvector: Array1D[float],
+        ctrlpoints: Array1D[Point],
+        desknotvect: Array1D[float],
+    ):
+        """Takes time to compute, cause we integrate and solve system"""
+        ndivsubint = 1049
+        all_knots = list(set(knotvector))
+        all_knots.sort()
+        pairs = list(zip(all_knots[:-1], all_knots[1:]))
+        Nq = SplineBaseFunction(knotvector)
+        Np = SplineBaseFunction(desknotvect)
+        M = np.zeros((Np.npts, Np.npts), dtype="float64")
+        F = np.zeros((Np.npts, Nq.npts), dtype="float64")
+        for i, (a, b) in enumerate(pairs):
+            u = np.linspace(a, b, ndivsubint).tolist()
+            Nqu = Nq(u)
+            Npu = Np(u)
+            M += Npu @ Npu.T
+            F += Npu @ Nqu.T
+        M[0, 0] = 1
+        M[0, 1:] = 0
+        M[-1, :-1] = 0
+        M[-1, -1] = 1
+        F[0, 0] = 1
+        F[0, 1:] = 0
+        F[-1, :-1] = 0
+        F[-1, -1] = 1
+        A = np.linalg.solve(M, F)
+        P = A @ np.array(ctrlpoints)
+        return P

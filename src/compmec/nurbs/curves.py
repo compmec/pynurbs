@@ -18,6 +18,11 @@ class BaseCurve(Interface_BaseCurve):
         self.__set_UFP(knotvector, ctrlpoints)
 
     def __call__(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+        for i in range(self.degree):
+            self.knot_insert(u)
+        return self.evaluate(u)
+
+    def evaluate(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         L = self.F(u)
         return L.T @ self.ctrlpoints
 
@@ -95,8 +100,7 @@ class BaseCurve(Interface_BaseCurve):
                 f"Cannot compare a {type(obj)} object with a {self.__class__} object"
             )
             raise TypeError(error_msg)
-        knots = list(set(self.knotvector))
-        knots.sort()
+        knots = self.knotvector.knots
         utest = [
             np.linspace(a, b, 2 + self.degree) for a, b in zip(knots[:-1], knots[1:])
         ]
@@ -145,17 +149,21 @@ class BaseCurve(Interface_BaseCurve):
             table[knot] = np.sum(knots == knot)
         return table
 
-    def knot_insert(self, knots: Union[float, Tuple[float]]):
+    def knot_insert(self, knots: Union[float, Tuple[float]]) -> None:
         table = self.__transform_knots_to_table(knots)
         knotvector = np.array(self.knotvector).tolist()
         ctrlpoints = list(self.ctrlpoints)
         for knot, times in table.items():
+            mult = self.knotvector.mult(knot)
+            times = min(times, self.degree - mult)
+            if times < 1:
+                continue
             knotvector, ctrlpoints = Chapter5.CurveKnotIns(
                 knotvector, ctrlpoints, knot, times
             )
         self.__set_UFP(knotvector, ctrlpoints)
 
-    def knot_remove(self, knots: Union[float, Tuple[float]]):
+    def knot_remove(self, knots: Union[float, Tuple[float]]) -> None:
         table = self.__transform_knots_to_table(knots)
         knotvector = list(self.knotvector)
         ctrlpoints = list(self.ctrlpoints)
@@ -167,10 +175,10 @@ class BaseCurve(Interface_BaseCurve):
                 raise ValueError(error_msg)
         self.__set_UFP(knotvector, ctrlpoints)
 
-    def knot_clean(self, tolerance: float = 1e-9):
+    def knot_clean(self, tolerance: float = 1e-9) -> None:
         """Remove all unecessary knots.
         If removing the knot the error is bigger than the tolerance, nothing happens"""
-        intknots = list(set(self.knotvector))
+        intknots = self.knotvector.knots
         while True:
             removed = False
             for knot in intknots:
@@ -188,35 +196,46 @@ class BaseCurve(Interface_BaseCurve):
             ctrlpoints = Custom.BezDegreeIncrease(ctrlpoints, times)
             knotvector = [0] * times + list(knotvector) + [1] * times
         else:
-            knotvector, ctrlpoints = Chapter5.DegreeElevateCurve(
-                knotvector, ctrlpoints, times
-            )
+            oldknotvector = list(knotvector)
+            knotvector += times * list(self.knotvector.knots)
+            knotvector.sort()
+            ctrlpoints = Custom.LeastSquareSpline(oldknotvector, ctrlpoints, knotvector)
         self.__set_UFP(knotvector, ctrlpoints)
 
     def __degree_decrease(self, times: int = 1, tolerance: float = 1e-9):
-        if self.degree - times < 1:
-            error_msg = f"Cannot reduce curve {times} times. Final degree would be {self.degree-times}, must be at least 1"
-            raise ValueError(error_msg)
         knotvector = list(self.knotvector)
         ctrlpoints = list(self.ctrlpoints)
         if self.degree + 1 == self.npts:  # If is bezier
             ctrlpoints, error = Custom.BezDegreeReduce(ctrlpoints, times)
             knotvector = [0] * (self.npts - times) + [1] * (self.npts - times)
         else:
-            knotvector, ctrlpoints, error = Chapter5.DegreeReduceCurve(
-                knotvector, ctrlpoints, times
+            for t in range(times):
+                for knot in self.knotvector.knots:
+                    if knot in knotvector:
+                        knotvector.remove(knot)
+            ctrlpoints = Custom.LeastSquareSpline(
+                self.knotvector, ctrlpoints, knotvector
             )
-
+            new_curve = self.__class__(knotvector, ctrlpoints)
+            usample = np.linspace(1 / 5, 4 / 5, 129)
+            oripoints = self.evaluate(usample)
+            newpoints = new_curve.evaluate(usample)
+            diff2 = np.abs(oripoints - newpoints)
+            error = np.max(diff2)
         if error > tolerance:
-            error_msg = "Cannot reduce degree {times} times cause the error is too big"
+            error_msg = f"Cannot reduce degree {times} times cause the error ({error:.1e}) is too big > {tolerance:.1e} "
             raise ValueError(error_msg)
+
         self.__set_UFP(knotvector, ctrlpoints)
 
-    def degree_decrease(self, times: Optional[int]):
+    def degree_decrease(self, times: Optional[int] = 1):
         """
         The same as mycurve.degree -= 1
         But this function forces the degree reductions without looking the error
         """
+        if self.degree - times < 1:
+            error_msg = f"Cannot reduce curve {times} times. Final degree would be {self.degree-times}, must be at least 1"
+            raise ValueError(error_msg)
         self.__degree_decrease(times, 1e9)
 
     def degree_clean(self, tolerance: float = 1e-9):
@@ -230,14 +249,14 @@ class BaseCurve(Interface_BaseCurve):
         return self.__class__(self.knotvector, self.ctrlpoints)
 
     @classmethod
-    def unit_curves(
-        cls, curves: Tuple[Interface_BaseCurve], internal_knots: Tuple[float]
+    def unite_curves(
+        cls, curves: Tuple[Interface_BaseCurve], all_knots: Tuple[float]
     ) -> Interface_BaseCurve:
-        for i in range(len(internal_knots) - 1):
-            if internal_knots[i] >= internal_knots[i + 1]:
-                raise ValueError("The internal knots are not sorted!")
-        if len(internal_knots) + 1 != len(curves):
-            error_msg = f"You must have (k+1) curves ({len(curves)}) for (k) internal knots ({len(internal_knots)})"
+        for i in range(len(all_knots) - 1):
+            if all_knots[i] >= all_knots[i + 1]:
+                raise ValueError("Received knots are not sorted!")
+        if len(all_knots) - 1 != len(curves):
+            error_msg = f"You must have (k-1) curves ({len(curves)}) for (k) knots ({len(all_knots)})"
             raise ValueError(error_msg)
         for i, curve in enumerate(curves):
             if not isinstance(curve, Interface_BaseCurve):
@@ -259,18 +278,20 @@ class BaseCurve(Interface_BaseCurve):
             maximum_degree = max(maximum_degree, curve.degree)
         for curve in curves:
             curve.degree = maximum_degree
-        allctrlpoints = []
+        all_ctrlpoints = []
         for curve in curves:
-            allctrlpoints.append(curve.ctrlpoints)
+            all_ctrlpoints.append(curve.ctrlpoints)
         knotvector, ctrlpoints = Custom.UniteBezierCurvesSameDegree(
-            internal_knots, allctrlpoints
+            all_knots, all_ctrlpoints
         )
         return cls(knotvector, ctrlpoints)
 
     def _split_into_bezier(self) -> Tuple[Interface_BaseCurve]:
         if self.degree + 1 == self.npts:  # is bezier
             return [self.copy()]
-
+        all_knots = self.knotvector.knots
+        for i in range(self.degree):  # We will insert knot maximum as possible
+            self.knot_insert(all_knots)
         knotvector = list(self.knotvector)
         ctrlpoints = list(self.ctrlpoints)
         allctrls = Chapter5.DecomposeCurve(knotvector, ctrlpoints)

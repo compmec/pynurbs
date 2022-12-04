@@ -140,6 +140,12 @@ class KnotVector(list):
     def npts(self) -> int:
         return self.__npts
 
+    @property
+    def knots(self) -> Tuple[float]:
+        knts = list(set(self))
+        knts.sort()
+        return tuple(knts)
+
     @staticmethod
     def compute_pn(knotvector: Tuple[float]):
         """

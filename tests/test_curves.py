@@ -110,7 +110,7 @@ class TestSplineCurve:
             "TestSplineCurve::test_creation_vectorial_curve",
         ]
     )
-    def test_compare_two_curves(self, ntests=100):
+    def test_compare_two_curves(self, ntests=10):
         for i in range(ntests):
             degree = np.random.randint(0, 5)
             npts = np.random.randint(degree + 1, degree + 11)
@@ -675,7 +675,7 @@ class TestSplineCurve:
             np.testing.assert_allclose(curve.ctrlpoints, Pgood)
 
     @pytest.mark.order(3)
-    @pytest.mark.timeout(15)
+    @pytest.mark.timeout(30)
     @pytest.mark.dependency(
         depends=[
             "TestSplineCurve::test_begin",
@@ -683,7 +683,7 @@ class TestSplineCurve:
             "TestSplineCurve::test_degree_decrease_bezier_random_degree",
         ]
     )
-    def test_degree_increase_decrease_random_bezier(self, ntests=10):
+    def test_degree_increase_decrease_random_bezier(self, ntests=100):
         for degree in range(1, 6):
             for i in range(ntests):
                 npts = degree + 1
@@ -702,8 +702,7 @@ class TestSplineCurve:
                 np.testing.assert_allclose(C.ctrlpoints, ctrlpoints)
 
     @pytest.mark.order(3)
-    @pytest.mark.timeout(15)
-    @pytest.mark.skip(reason="Needs correction")
+    @pytest.mark.timeout(30)
     @pytest.mark.dependency(
         depends=[
             "TestSplineCurve::test_begin",
@@ -711,11 +710,11 @@ class TestSplineCurve:
         ]
     )
     def test_degree_increase_decrease_random(self, ntests=10):
-        for degree in range(1, 6):
+        for degree in range(1, 3):
             for i in range(ntests):
-                npts = np.random.randint(degree + 1, degree + 11)
+                npts = np.random.randint(degree + 2, degree + 4)
                 ndim = np.random.randint(0, 5)
-                times = np.random.randint(1, 5)
+                times = np.random.randint(1, 3)
                 knotvector = self.create_random_knotvector(degree, npts)
                 ctrlpoints = self.create_random_controlpoints(npts, ndim)
                 C = SplineCurve(knotvector, ctrlpoints)
