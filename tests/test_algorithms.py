@@ -158,17 +158,6 @@ class TestChapter5Algorithms:
     @pytest.mark.dependency(
         depends=[
             "TestChapter5Algorithms::test_begin",
-            "TestChapter2Algorithms::test_FindSpanMult",
-        ]
-    )
-    def test_CurvePntByCornerCut(self):
-        pass
-
-    @pytest.mark.order(1)
-    @pytest.mark.timeout(2)
-    @pytest.mark.dependency(
-        depends=[
-            "TestChapter5Algorithms::test_begin",
             "TestChapter2Algorithms::test_FindSpan",
         ]
     )
@@ -223,6 +212,40 @@ class TestChapter5Algorithms:
             degree = np.random.randint(1, 5)
             npts = np.random.randint(degree + 1, degree + 11)
             U = [0] * degree + list(np.linspace(0, 1, npts - degree + 1)) + [1] * degree
+
+    @pytest.mark.order(1)
+    @pytest.mark.timeout(3)
+    @pytest.mark.dependency(
+        depends=[
+            "TestChapter5Algorithms::test_begin",
+        ]
+    )
+    def test_degree_increase(self):
+        for degree in range(2, 5):
+            for npts in range(degree + 1, degree + 11):
+                times = 1
+                middle = list(np.linspace(0, 1, npts - degree + 1))
+                knotvector = [0] * degree + middle + [1] * degree
+                ctrlpoints = np.random.uniform(-1, 1, (npts, 2))
+                Uh, Qw = Chapter5.DegreeElevateCurve_nurbsbook(
+                    knotvector, ctrlpoints, times
+                )
+
+    @pytest.mark.order(1)
+    @pytest.mark.timeout(3)
+    @pytest.mark.dependency(
+        depends=[
+            "TestChapter5Algorithms::test_begin",
+        ]
+    )
+    def test_degree_decrease(self):
+        degree = 2
+        for npts in range(degree + 1, degree + 11):
+            times = 1
+            middle = list(np.linspace(0, 1, npts - degree + 1))
+            knotvector = [0] * degree + middle + [1] * degree
+            ctrlpoints = np.random.uniform(-1, 1, (npts, 2))
+            Uh, Qw = Chapter5.DegreeReduceCurve_nurbsbook(knotvector, ctrlpoints, times)
 
     @pytest.mark.order(1)
     @pytest.mark.dependency(

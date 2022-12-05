@@ -6,7 +6,6 @@ from compmec.nurbs.knotspace import GeneratorKnotVector
 
 
 @pytest.mark.order(1)
-# @pytest.mark.skip()
 @pytest.mark.dependency()
 def test_begin():
     pass
