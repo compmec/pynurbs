@@ -1,5 +1,5 @@
-__version__ = "0.2.3"
+__version__ = "1.0.0"
 
 from compmec.nurbs.basefunctions import RationalBaseFunction, SplineBaseFunction
 from compmec.nurbs.curves import RationalCurve, SplineCurve
-from compmec.nurbs.knotspace import KnotVector
+from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector

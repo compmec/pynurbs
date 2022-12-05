@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
 
-from compmec.nurbs import KnotVector
-from compmec.nurbs.knotspace import GeneratorKnotVector
+from compmec.nurbs import GeneratorKnotVector, KnotVector
 
 
 @pytest.mark.order(1)
