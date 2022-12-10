@@ -1,5 +1,5 @@
 import math
-from typing import Any, List, Tuple
+from typing import Tuple
 
 import numpy as np
 
@@ -10,19 +10,9 @@ class Point:
     pass
 
 
-class Array1D(Tuple):
-    pass
-
-
-class Array2D(Tuple):
-    pass
-
-
 class Chapter2:
     @staticmethod
-    def FindSpan(
-        npts: int, degree: int, knot: float, knotvector: Array1D[float]
-    ) -> int:
+    def FindSpan(npts: int, degree: int, knot: float, knotvector: Tuple[float]) -> int:
         """
         #### Algorithm A2.1
         Determine the knot span index
@@ -30,7 +20,7 @@ class Chapter2:
             ``npts``: int -- number of DOFs
             ``degree``: int -- degree
             ``u``: float -- knot value
-            ``U``: Array1D[float] -- knot vector
+            ``U``: Tuple[float] -- knot vector
         #### Output:
             ``index``: int -- The span index
         """
@@ -53,7 +43,7 @@ class Chapter2:
 
     @staticmethod
     def FindSpanMult(
-        npts: int, degree: int, knot: float, knotvector: Array1D[float]
+        npts: int, degree: int, knot: float, knotvector: Tuple[float]
     ) -> Tuple[int, int]:
         """
         #### Algorithm A2.1
@@ -62,7 +52,7 @@ class Chapter2:
             ``npts``: int -- number of DOFs
             ``degree``: int -- degree
             ``u``: float -- knot value
-            ``U``: Array1D[float] -- knot vector
+            ``U``: Tuple[float] -- knot vector
         #### Output:
             ``k``: int -- The span index
             ``s``: int -- Multiplicity of the knot
@@ -90,8 +80,8 @@ class Chapter5:
 
     @staticmethod
     def CurveKnotIns(
-        knotvector: Array1D[float],
-        ctrlpoints: Array1D[Point],
+        knotvector: Tuple[float],
+        ctrlpoints: Tuple[Point],
         knot: float,
         times: int,
     ) -> Tuple:
@@ -99,13 +89,13 @@ class Chapter5:
         #### Algorithm A5.1 - NURBs book - pag 151
             Compute new curve from knot insertion
         #### Input:
-            ``knotvector``: Array1D[float] -- knot vector after knot insertion
-            ``ctrlpoints``: Array1D[Point] -- Control points before knot insertion
+            ``knotvector``: Tuple[float] -- knot vector after knot insertion
+            ``ctrlpoints``: Tuple[Point] -- Control points before knot insertion
             ``knot``: float -- knot to be inserted
             ``times``: int -- number of insertions of u
         #### Output:
-            ``UQ``: Array1D[float] -- knot vector after knot insertion
-            ``Qw``: Array1D[Point] -- Control points after knot insertion
+            ``UQ``: Tuple[float] -- knot vector after knot insertion
+            ``Qw``: Tuple[Point] -- Control points after knot insertion
         """
         npts = len(ctrlpoints)
         degree = len(knotvector) - npts - 1
@@ -152,8 +142,8 @@ class Chapter5:
     def CurvePntByCornerCut(
         npts: int,
         degree: int,
-        knotvector: Array1D[float],
-        Pw: Array1D[Point],
+        knotvector: Tuple[float],
+        Pw: Tuple[Point],
         knot: float,
     ) -> Point:
         """
@@ -162,8 +152,8 @@ class Chapter5:
         #### Input:
             ``npts``: int -- number of points
             ``degree``: int -- curver degree order
-            ``U``: Array1D[float] -- knot vector
-            ``Pw``: Array1D[Point] -- Control points
+            ``U``: Tuple[float] -- knot vector
+            ``Pw``: Tuple[Point] -- Control points
             ``u``: float -- evaluation knot
         #### Output:
             ``C``: Point -- Evaluated point
@@ -187,7 +177,7 @@ class Chapter5:
 
     @staticmethod
     def RefineKnotVectCurve(
-        npts: int, degree: int, knotvector: Array1D[float], Pw: Array1D[Point], X, r
+        npts: int, degree: int, knotvector: Tuple[float], Pw: Tuple[Point], X, r
     ) -> Tuple:
         """
         #### Algorith A5.4 - NURBs book - pag 155
@@ -195,13 +185,13 @@ class Chapter5:
         #### Input:
             ``npts``: int -- number of points
             ``degree``: int -- curver degree order
-            ``U``: Array1D[float] -- knot vector
-            ``Pw``: Array1D[Point] -- Control points
+            ``U``: Tuple[float] -- knot vector
+            ``Pw``: Tuple[Point] -- Control points
             ``X``: float -- evaluation knot
             ``r``: float -- evaluation knot
         #### Output:
-            ``Ubar``: Array1D[float] -- New knot vector
-            ``Qw``: Array1D[Point] -- New control points
+            ``Ubar``: Tuple[float] -- New knot vector
+            ``Qw``: Tuple[Point] -- New control points
         """
         n = npts - 1
         p = degree
@@ -241,7 +231,7 @@ class Chapter5:
             k = k - 1
 
     @staticmethod
-    def DecomposeCurve(knotvector: Array1D[float], ctrlpoints: Array1D[Point]):
+    def DecomposeCurve(knotvector: Tuple[float], ctrlpoints: Tuple[Point]):
         """
         #### Algorith A5.6 - NURBs book - pag 173
             Decompose curve into bezier segments
@@ -287,8 +277,8 @@ class Chapter5:
 
     @staticmethod
     def RemoveCurveKnot(
-        knotvector: Array1D[float],
-        ctrlpoints: Array1D[Point],
+        knotvector: Tuple[float],
+        ctrlpoints: Tuple[Point],
         knot: float,
         times: int,
     ):
@@ -296,14 +286,14 @@ class Chapter5:
         #### Algorith A5.8 - NURBs book - pag 185
             Remove knot u (index r) num times.
         #### Input:
-            ``knotvector``: Array1D[float] -- knot vector
-            ``ctrlpoints``: Array1D[Point] -- Control points
+            ``knotvector``: Tuple[float] -- knot vector
+            ``ctrlpoints``: Tuple[Point] -- Control points
             ``knot``: float -- The knot to remove
             ``times``: int -- Number of times to remove the knot
         #### Output:
             ``t``: int -- indicator how many points took out: 0 <= t <= num
-            ``Un``: Array1D[float] -- New knot vector
-            ``Pw``: Array1D[Point] -- New control points
+            ``Un``: Tuple[float] -- New knot vector
+            ``Pw``: Tuple[Point] -- New control points
         """
         TOLERANCE = 1e-9
         npts = len(ctrlpoints)
@@ -391,34 +381,34 @@ class Chapter5:
 
     @staticmethod
     def DegreeElevateCurve(
-        knotvector: Array1D[float], ctrlpoints: Array1D[Point], times: int
+        knotvector: Tuple[float], ctrlpoints: Tuple[Point], times: int
     ):
         """
         #### Algorith A5.9 - NURBs book - pag 206
             Degree elevate a curve t times
         #### Input:
-            ``knotvector``: Array1D[float] -- knot vector
-            ``ctrlpoints``: Array1D[Point] -- Control points
+            ``knotvector``: Tuple[float] -- knot vector
+            ``ctrlpoints``: Tuple[Point] -- Control points
             ``times``: int -- Number of times to increase degree
         #### Output:
-            ``Uh``: Array1D[float] -- New knot vector
-            ``Qw``: Array1D[Point] -- New control points
+            ``Uh``: Tuple[float] -- New knot vector
+            ``Qw``: Tuple[Point] -- New control points
         """
 
     @staticmethod
     def DegreeElevateCurve_nurbsbook(
-        knotvector: Array1D[float], ctrlpoints: Array1D[Point], times: int
+        knotvector: Tuple[float], ctrlpoints: Tuple[Point], times: int
     ):
         """
         #### Algorith A5.9 - NURBs book - pag 206
             Degree elevate a curve t times
         #### Input:
-            ``knotvector``: Array1D[float] -- knot vector
-            ``ctrlpoints``: Array1D[Point] -- Control points
+            ``knotvector``: Tuple[float] -- knot vector
+            ``ctrlpoints``: Tuple[Point] -- Control points
             ``times``: int -- Number of times to increase degree
         #### Output:
-            ``Uh``: Array1D[float] -- New knot vector
-            ``Qw``: Array1D[Point] -- New control points
+            ``Uh``: Tuple[float] -- New knot vector
+            ``Qw``: Tuple[Point] -- New control points
         """
         ctrlpoints = list(np.array(ctrlpoints, dtype="float64"))
         knotvector = list(knotvector)
@@ -556,25 +546,25 @@ class Chapter5:
 
     @staticmethod
     def DegreeReduceCurve(
-        knotvector: Array1D[float], ctrlpoints: Array1D[Point], times: int
+        knotvector: Tuple[float], ctrlpoints: Tuple[Point], times: int
     ):
         return Chapter5.DegreeReduceCurve_nurbsbook(knotvector, ctrlpoints, times)
 
     @staticmethod
     def DegreeReduceCurve_nurbsbook(
-        knotvector: Array1D[float], ctrlpoints: Array1D[Point], times: int
+        knotvector: Tuple[float], ctrlpoints: Tuple[Point], times: int
     ):
         """
         #### Algorith A5.11 - NURBs book - pag 223
             Degree reduce a curve from (degree) to (degree - times)
             Entry is not protected
         #### Input:
-            ``knotvector``: Array1D[float] -- knot vector
-            ``ctrlpoints``: Array1D[Point] -- Control points
-            ``times``: Array1D[Point] -- Control points
+            ``knotvector``: Tuple[float] -- knot vector
+            ``ctrlpoints``: Tuple[Point] -- Control points
+            ``times``: Tuple[Point] -- Control points
         #### Output:
-            ``Uh``: Array1D[float] -- New knot vector
-            ``Pw``: Array1D[Point] -- New control points
+            ``Uh``: Tuple[float] -- New knot vector
+            ``Pw``: Tuple[Point] -- New control points
         """
         assert times == 1
         TOLERANCE = 1e9
@@ -713,15 +703,15 @@ class Chapter5:
 
 class Custom:
     @staticmethod
-    def BezDegreeIncrease(ctrlpoints: Array1D[Point], times: int):
+    def BezDegreeIncrease(ctrlpoints: Tuple[Point], times: int):
         """
         #### Algorithm to increase degree of bezier curve
             It uses Equations 5.41, 5.42, 5.45 and 5.46
         #### Input:
-            ``ctrlpoints``: Array1D[Point] -- Control points
+            ``ctrlpoints``: Tuple[Point] -- Control points
             ``times``: int -- Times to increase degree
         #### Output:
-            ``ctrlpoints``: Array1D[Point] -- New control points
+            ``ctrlpoints``: Tuple[Point] -- New control points
         """
         npts = len(ctrlpoints)
         degree = npts - 1
@@ -738,7 +728,7 @@ class Custom:
         return newctrlpoints
 
     @staticmethod
-    def FindMaximumDistanceBetweenBezier(Q: Array1D[Point], P: Array1D[Point]):
+    def FindMaximumDistanceBetweenBezier(Q: Tuple[Point], P: Tuple[Point]):
         degreeQ = len(Q) - 1
         degreeP = len(P) - 1
         us = np.linspace(0, 1, 129)
@@ -756,7 +746,7 @@ class Custom:
         return maximum
 
     @staticmethod
-    def BezDegreeReduce(ctrlpoints: Array1D[Point], times: int):
+    def BezDegreeReduce(ctrlpoints: Tuple[Point], times: int):
         """
         #### Algorithm to reduce degree of bezier curve
             It's used in Alggorithm A5.11
@@ -770,16 +760,16 @@ class Custom:
 
             The entries are not protected.
         #### Input:
-            ``ctrlpoints``: Array1D[Point] -- Control points
+            ``ctrlpoints``: Tuple[Point] -- Control points
             ``times``: int -- Number of times to reduce degree
         #### Output:
-            ``ctrlpoints``: Array1D[Point] -- New control points
+            ``ctrlpoints``: Tuple[Point] -- New control points
             ``MaxErr``: float -- Maximum error of bezier reduction
         """
         return Custom.BezDegreeReduce_leastsquare(ctrlpoints, times)
 
     @staticmethod
-    def BezDegreeReduce_leastsquare(ctrlpoints: Array1D[Point], times: int):
+    def BezDegreeReduce_leastsquare(ctrlpoints: Tuple[Point], times: int):
         """
         #### Algorithm to reduce degree of bezier curve
             It's used in Alggorithm A5.11
@@ -791,9 +781,9 @@ class Custom:
                 Cd = sum_{i=0}^{degree-1} B_{i,degree-1}(u) * P[i]
             We still have P[0] = Q[0] and P[degree-1] = Q[degree]
         #### Input:
-            ``ctrlpoints``: Array1D[Point] -- Control points
+            ``ctrlpoints``: Tuple[Point] -- Control points
         #### Output:
-            ``ctrlpoints``: Array1D[Point] -- New control points
+            ``ctrlpoints``: Tuple[Point] -- New control points
             ``MaxErr``: float -- Maximum error of bezier reduction
         """
 
@@ -826,15 +816,15 @@ class Custom:
         return P, error
 
     @staticmethod
-    def BezDegreeReduce_nurbsbook(ctrlpoints: Array1D[Point]):
+    def BezDegreeReduce_nurbsbook(ctrlpoints: Tuple[Point]):
         """
         #### Algorithm to reduce degree of bezier curve
             It's used in Alggorithm A5.11
             It uses Equations 5.41, 5.42, 5.45 and 5.46
         #### Input:
-            ``ctrlpoints``: Array1D[Point] -- Control points
+            ``ctrlpoints``: Tuple[Point] -- Control points
         #### Output:
-            ``ctrlpoints``: Array1D[Point] -- New control points
+            ``ctrlpoints``: Tuple[Point] -- New control points
             ``MaxErr``: float -- Maximum error of bezier reduction
         """
         Q = ctrlpoints
@@ -865,7 +855,7 @@ class Custom:
 
     @staticmethod
     def UniteBezierCurvesSameDegree(
-        all_knots: Array1D[float], allctrlpoints: Array2D[Point]
+        all_knots: Tuple[float], allctrlpoints: np.ndarray[Point]
     ):
         ncurves = len(allctrlpoints)
         degree = len(allctrlpoints[0]) - 1
@@ -883,9 +873,9 @@ class Custom:
 
     @staticmethod
     def LeastSquareSpline(
-        knotvector: Array1D[float],
-        ctrlpoints: Array1D[Point],
-        desknotvect: Array1D[float],
+        knotvector: Tuple[float],
+        ctrlpoints: Tuple[Point],
+        desknotvect: Tuple[float],
     ):
         """Takes time to compute, cause we integrate and solve system"""
         ndivsubint = 1049
