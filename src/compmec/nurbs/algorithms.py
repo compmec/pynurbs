@@ -1,5 +1,5 @@
 import math
-from typing import Tuple
+from typing import Any, Tuple
 
 import numpy as np
 
@@ -854,9 +854,7 @@ class Custom:
         return P, error
 
     @staticmethod
-    def UniteBezierCurvesSameDegree(
-        all_knots: Tuple[float], allctrlpoints: np.ndarray[Point]
-    ):
+    def UniteBezierCurvesSameDegree(all_knots: Tuple[float], allctrlpoints: Any):
         ncurves = len(allctrlpoints)
         degree = len(allctrlpoints[0]) - 1
         allctrlpoints = np.array(allctrlpoints)

@@ -1,4 +1,4 @@
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 from compmec.nurbs.basefunctions import RationalBaseFunction, SplineBaseFunction
 from compmec.nurbs.curves import RationalCurve, SplineCurve
