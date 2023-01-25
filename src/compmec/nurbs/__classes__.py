@@ -37,8 +37,9 @@ class Interface_KnotVector(abc.ABC):
     def __eq__(self, obj: object) -> bool:
         raise NotImplementedError
 
+    @abc.abstractmethod
     def __ne__(self, obj: object) -> bool:
-        return not self.__eq__(obj)
+        raise NotImplementedError
 
 
 class Interface_BaseFunction_Evaluator_BaseCurve(abc.ABC):
@@ -110,5 +111,6 @@ class Interface_BaseCurve(Interface_BaseFunction_BaseCurve):
     def __eq__(self, obj: object) -> bool:
         raise NotImplementedError
 
+    @abc.abstractmethod
     def __ne__(self, obj: object) -> bool:
-        return not self.__eq__(obj)
+        raise NotImplementedError

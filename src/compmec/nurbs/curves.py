@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
@@ -14,11 +15,13 @@ from compmec.nurbs.knotspace import KnotVector
 
 class BaseCurve(Interface_BaseCurve):
     def __init__(self, knotvector: KnotVector, ctrlpoints: np.ndarray):
+        self.insert_knot_at_call = True
         self.__set_UFP(knotvector, ctrlpoints)
 
     def __call__(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
-        for i in range(self.degree):
-            self.knot_insert(u)
+        if self.insert_knot_at_call:
+            for i in range(self.degree):
+                self.knot_insert(u)
         return self.evaluate(u)
 
     def evaluate(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
@@ -26,7 +29,13 @@ class BaseCurve(Interface_BaseCurve):
         return L.T @ self.ctrlpoints
 
     def derivate(self):
-        self.F.derivate()
+        newU = list(self.knotvector)
+        for knot in list(set(self.knotvector)):
+            newU.remove(knot)
+        newU = self.knotvector.__class__(newU)
+        newP = np.random.uniform(0, 1, [newU.npts] + list(self.ctrlpoints.shape[1:]))
+        newC = self.__class__(newU, newP)
+        return newC
 
     @property
     def degree(self):
@@ -274,8 +283,7 @@ class BaseCurve(Interface_BaseCurve):
                 raise ValueError(error_msg)
         for i, curve in enumerate(curves):
             if curve.npts != curve.degree + 1:
-                error_msg = "For the moment, we can only unite bezier curves"
-                raise NotImplementedError(error_msg)
+                raise NotImplementedError  # Only bezier curves for now
         maximum_degree = 0
         for curve in curves:
             maximum_degree = max(maximum_degree, curve.degree)
@@ -326,8 +334,6 @@ class BaseCurve(Interface_BaseCurve):
         listcurves = [None] * (len(knots) + 1)
         all_knots = copycurve.knotvector.knots
         pairs = list(zip(all_knots[:-1], all_knots[1:]))
-        print("pairs = ")
-        print(pairs)
         for i, (ua, ub) in enumerate(pairs):
             middle = knotvector[(ua <= knotvector) * (knotvector <= ub)]
             middle = (middle - ua) / (ub - ua)

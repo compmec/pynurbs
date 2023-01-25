@@ -837,6 +837,24 @@ class TestSplineCurve:
             "TestSplineCurve::test_sum_and_diff_two_curves",
         ]
     )
+    def test_derivate(self):
+        U = [0, 0, 0, 1, 1, 1]  # degree = 2, npts = 3
+        P = np.random.uniform(-1, 1, (3, 2))
+        curve = SplineCurve(U, P)
+        testdcurve = curve.derivate()
+        newU = [0, 0, 1, 1]
+        newP = 2 * np.array([P[1] - P[0], P[2] - P[1]])
+        gooddcurve = SplineCurve(newU, newP)
+        # assert testdcurve == gooddcurve
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(15)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplineCurve::test_begin",
+            "TestSplineCurve::test_sum_and_diff_two_curves",
+        ]
+    )
     def test_somefails(self):
         degree = np.random.randint(1, 5)
         npts = np.random.randint(degree + 1, degree + 11)
