@@ -1,10 +1,9 @@
 import abc
-from typing import Any, Iterable, Optional, Tuple, Type, Union
+from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 
-from compmec.nurbs.__classes__ import (Interface_BaseFunction,
-                                       Interface_Evaluator)
+from compmec.nurbs.__classes__ import Intface_BaseFunction, Intface_Evaluator
 from compmec.nurbs.knotspace import KnotVector
 
 
@@ -37,7 +36,8 @@ def N(i: int, j: int, k: int, u: float, U: KnotVector) -> float:
     else:
         factor2 = (U[i + j + 1] - u) / (U[i + j + 1] - U[i + 1])
 
-    result = factor1 * N(i, j - 1, k, u, U) + factor2 * N(i + 1, j - 1, k, u, U)
+    result = factor1 * N(i, j - 1, k, u, U)
+    result += factor2 * N(i + 1, j - 1, k, u, U)
     return result
 
 
@@ -55,7 +55,7 @@ def R(i: int, j: int, k: int, u: float, U: KnotVector, w: Tuple[float]) -> float
     return w[i] * Niju / soma
 
 
-class BaseFunction(Interface_BaseFunction):
+class BaseFunction(Intface_BaseFunction):
     def __init__(self, knotvector: KnotVector):
         self.__U = KnotVector(knotvector)
 
@@ -78,7 +78,7 @@ class BaseFunction(Interface_BaseFunction):
         self.knotvector.knot_remove(knot, times)
 
 
-class BaseEvaluator(Interface_Evaluator):
+class BaseEvaluator(Intface_Evaluator):
     def __init__(self, F: BaseFunction, i: Union[int, slice], j: int):
         self.__U = F.knotvector
         self.__first_index = i
@@ -135,7 +135,7 @@ class BaseEvaluator(Interface_Evaluator):
         span = np.array(span, dtype="int16")
         return self.compute_all(u, span)
 
-    def __call__(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def __call__(self, u: np.ndarray) -> np.ndarray:
         result = self.evalf(u)
         result = self.__A @ result
         return result[self.first_index]
@@ -155,7 +155,10 @@ class RationalEvaluatorClass(BaseEvaluator):
         self.__weights = F.weights
 
     def compute_one_value(self, i: int, u: float, span: int) -> float:
-        return R(i, self.second_index, span, u, self.knotvector, self.__weights)
+        j = self.second_index
+        U = self.knotvector
+        w = self.__weights
+        return R(i, j, span, u, U, w)
 
 
 class BaseFunctionDerivable(BaseFunction):
@@ -202,7 +205,8 @@ class BaseFunctionGetItem(BaseFunctionDerivable):
         if not isinstance(index, int):
             raise TypeError
         if not (0 <= index <= self.degree):
-            error_msg = f"Second index (={index}) must be in [0, {self.degree}]"
+            error_msg = f"Second index (={index}) "
+            error_msg += f"must be in [0, {self.degree}]"
             raise IndexError(error_msg)
 
     @abc.abstractmethod
@@ -220,7 +224,7 @@ class BaseFunctionGetItem(BaseFunctionDerivable):
         self.__valid_second_index(j)
         return self.create_evaluator_instance(i, j)
 
-    def __call__(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def __call__(self, u: np.ndarray) -> np.ndarray:
         i, j = slice(None, None, None), self.degree
         evaluator = self.create_evaluator_instance(i, j)
         return evaluator(u)
@@ -281,23 +285,18 @@ class RationalBaseFunction(BaseFunctionGetItem):
     def weights(self):
         try:
             return self.__weights
-        except AttributeError as e:
+        except AttributeError:
             self.__weights = np.ones(self.npts, dtype="float64")
         return self.__weights
 
     @weights.setter
     def weights(self, value: Tuple[float]):
-        try:
-            value = np.array(value, dtype="float64")
-        except Exception as e:
-            raise TypeError(f"Input is not valid. Type = {type(value)}, not np.ndarray")
-        if value.ndim != 1:
-            raise ValueError(f"Input must be 1D array")
-        if len(value) != self.npts:
-            raise ValueError(
-                f"Input must have same number of points as knotvector.npts"
-            )
         value = np.array(value, dtype="float64")
+        if value.ndim != 1:
+            raise ValueError("Input must be 1D array")
+        if len(value) != self.npts:
+            error_msg = "Lenght of weights must be equal to knotvector.npts"
+            raise ValueError(error_msg)
         if np.any(value <= 0):
             raise ValueError("All the weights must be positive")
         self.__weights = value

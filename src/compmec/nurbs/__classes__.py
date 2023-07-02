@@ -4,7 +4,7 @@ from typing import Any, Optional, Tuple, Union
 import numpy as np
 
 
-class Interface_KnotVector(abc.ABC):
+class Intface_KnotVector(abc.ABC):
     @abc.abstractproperty
     def degree(self) -> int:
         raise NotImplementedError
@@ -22,7 +22,7 @@ class Interface_KnotVector(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def span(self, u: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
+    def span(self, knot: np.ndarray) -> np.ndarray:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -42,27 +42,27 @@ class Interface_KnotVector(abc.ABC):
         raise NotImplementedError
 
 
-class Interface_BaseFunction_Evaluator_BaseCurve(abc.ABC):
+class Intface_BaseFunction_Evaluator_BaseCurve(abc.ABC):
     @abc.abstractproperty
-    def knotvector(self) -> Interface_KnotVector:
+    def knotvector(self) -> Intface_KnotVector:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def __call__(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def __call__(self, u: np.ndarray) -> np.ndarray:
         raise NotImplementedError
 
 
-class Interface_Evaluator(Interface_BaseFunction_Evaluator_BaseCurve):
+class Intface_Evaluator(Intface_BaseFunction_Evaluator_BaseCurve):
     @abc.abstractproperty
     def first_index(self) -> Union[int, slice]:
         raise NotImplementedError
 
     @abc.abstractproperty
-    def first_index(self) -> Union[int, slice]:
+    def second_index(self) -> Union[int, slice]:
         raise NotImplementedError
 
 
-class Interface_BaseFunction_BaseCurve(Interface_BaseFunction_Evaluator_BaseCurve):
+class Intface_BaseFunction_BaseCurve(Intface_BaseFunction_Evaluator_BaseCurve):
     @abc.abstractproperty
     def degree(self) -> int:
         raise NotImplementedError
@@ -84,9 +84,9 @@ class Interface_BaseFunction_BaseCurve(Interface_BaseFunction_Evaluator_BaseCurv
         raise NotImplementedError
 
 
-class Interface_BaseFunction(Interface_BaseFunction_BaseCurve):
+class Intface_BaseFunction(Intface_BaseFunction_BaseCurve):
     @abc.abstractmethod
-    def __init__(self, knotvector: Interface_KnotVector):
+    def __init__(self, knotvector: Intface_KnotVector):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -94,13 +94,13 @@ class Interface_BaseFunction(Interface_BaseFunction_BaseCurve):
         raise NotImplementedError
 
 
-class Interface_BaseCurve(Interface_BaseFunction_BaseCurve):
+class Intface_BaseCurve(Intface_BaseFunction_BaseCurve):
     @abc.abstractmethod
-    def __init__(self, knotvector: Interface_KnotVector, ctrlpoints: np.ndarray):
+    def __init__(self, knotvector: Intface_KnotVector, ctrlpoints: np.ndarray):
         raise NotImplementedError
 
     @abc.abstractproperty
-    def F(self) -> Interface_BaseFunction:
+    def F(self) -> Intface_BaseFunction:
         raise NotImplementedError
 
     @abc.abstractproperty

@@ -1,27 +1,25 @@
-from copy import deepcopy
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 
-from compmec.nurbs.__classes__ import Interface_BaseCurve
+from compmec.nurbs.__classes__ import Intface_BaseCurve
 from compmec.nurbs.algorithms import Chapter5, Custom
-from compmec.nurbs.basefunctions import (BaseFunction, RationalBaseFunction,
-                                         SplineBaseFunction)
+from compmec.nurbs.basefunctions import RationalBaseFunction, SplineBaseFunction
 from compmec.nurbs.knotspace import KnotVector
 
 
-class BaseCurve(Interface_BaseCurve):
+class BaseCurve(Intface_BaseCurve):
     def __init__(self, knotvector: KnotVector, ctrlpoints: np.ndarray):
         self.insert_knot_at_call = True
         self.__set_UFP(knotvector, ctrlpoints)
 
-    def __call__(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def __call__(self, u: np.ndarray) -> np.ndarray:
         if self.insert_knot_at_call:
             for i in range(self.degree):
                 self.knot_insert(u)
         return self.evaluate(u)
 
-    def evaluate(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def evaluate(self, u: np.ndarray) -> np.ndarray:
         L = self.F(u)
         return L.T @ self.ctrlpoints
 
@@ -30,7 +28,8 @@ class BaseCurve(Interface_BaseCurve):
         for knot in list(set(self.knotvector)):
             newU.remove(knot)
         newU = self.knotvector.__class__(newU)
-        newP = np.random.uniform(0, 1, [newU.npts] + list(self.ctrlpoints.shape[1:]))
+        shape = [newU.npts] + list(self.ctrlpoints.shape[1:])
+        newP = np.random.uniform(0, 1, shape)
         newC = self.__class__(newU, newP)
         return newC
 
@@ -71,26 +70,21 @@ class BaseCurve(Interface_BaseCurve):
     @ctrlpoints.setter
     def ctrlpoints(self, value: np.ndarray):
         if not isinstance(value, (list, tuple, np.ndarray)):
-            error_msg = f"Received Control Points is type {type(value)}."
-            error_msg += f" But it must be an array of floats"
+            error_msg = f"Control points are invalid! type = {type(value)}."
             raise TypeError(error_msg)
         value = np.array(value, dtype="object")
         if np.any(value == None):
             raise TypeError("None is inside the array of control points")
         try:
             value = np.array(value, dtype="float64")
-        except Exception as e:
-            error_msg = (
-                f"Could not convert type {type(value)} into numpy array of floats."
-            )
-            error_msg += f" Cause {e}"
-            error_msg += f" Received {str(value)[:400]}"
+        except Exception:
+            error_msg = "Could not convert control points to array of floats"
             raise TypeError(error_msg)
         if value.shape[0] != self.npts:
-            error_msg = f"The number of control points must be the same of degrees of freedom of KnotVector.\npts"
-            error_msg += (
-                f"    knotvector.npts = {self.npts} != {len(value)} = len(ctrlpoints)"
-            )
+            error_msg = "The number of control points must be the same as"
+            error_msg += " degrees of freedom of KnotVector.\n"
+            error_msg += f"  knotvector.npts = {self.npts}"
+            error_msg += f"  len(ctrlpoints) = {len(value)}"
             raise ValueError(error_msg)
         self.__ctrlpoints = value
 
@@ -119,17 +113,16 @@ class BaseCurve(Interface_BaseCurve):
     def __neg__(self):
         return self.__class__(self.knotvector, np.copy(-self.ctrlpoints))
 
-    def __add__(self, __obj: object):
-        if type(self) != type(__obj):
-            error_msg = (
-                f"Cannot sum a {type(__obj)} object with a {self.__class__} object"
-            )
+    def __add__(self, obj: object):
+        if type(self) != type(obj):
+            error_msg = f"Cannot sum a {type(obj)} object with"
+            error_msg += f" a {self.__class__} object"
             raise TypeError(error_msg)
-        if self.knotvector != __obj.knotvector:
-            raise ValueError("The vectors of curves are not the same!")
-        if self.ctrlpoints.shape != __obj.ctrlpoints.shape:
+        if self.knotvector != obj.knotvector:
+            raise ValueError("The knotvectors of curves are not the same!")
+        if self.ctrlpoints.shape != obj.ctrlpoints.shape:
             raise ValueError("The shape of control points are not the same!")
-        newP = np.copy(self.ctrlpoints) + __obj.ctrlpoints
+        newP = np.copy(self.ctrlpoints) + obj.ctrlpoints
         return self.__class__(self.knotvector, newP)
 
     def __sub__(self, __obj: object):
@@ -139,12 +132,12 @@ class BaseCurve(Interface_BaseCurve):
         try:
             knots = float(knots)
             return {knots: 1}
-        except Exception as e:
+        except Exception:
             pass
         try:
             iter(knots)
             knots = np.array(knots, dtype="float64")
-        except Exception as e:
+        except Exception:
             raise TypeError
         if knots.ndim != 1:
             raise ValueError("Argument must be 'float' or a 'Array1D[float]'")
@@ -173,18 +166,23 @@ class BaseCurve(Interface_BaseCurve):
         ctrlpoints = list(self.ctrlpoints)
         for knot, times in table.items():
             if knot not in knotvector:
-                error_msg = f"Requested remove ({knot:.3f}), it's not in {knotvector}"
+                error_msg = f"Requested remove ({knot:.3f}),"
+                error_msg += f" it's not in {knotvector}"
                 raise ValueError(error_msg)
             result = Chapter5.RemoveCurveKnot(knotvector, ctrlpoints, knot, times)
             t, knotvector, ctrlpoints = result
             if t != times:
-                error_msg = f"Cannot remove knot {times} x {knot} (only {t} times)"
+                error_msg = f"Cannot remove knot {knot}"
+                error_msg += f" (only {t}/{times} times)"
                 raise ValueError(error_msg)
         self.__set_UFP(knotvector, ctrlpoints)
 
     def knot_clean(self, tolerance: float = 1e-9) -> None:
-        """Remove all unecessary knots.
-        If removing the knot the error is bigger than the tolerance, nothing happens"""
+        """
+        Remove all unecessary knots.
+        If removing the knot the error is bigger than the tolerance,
+        nothing happens
+        """
         intknots = self.knotvector.knots
         while True:
             removed = False
@@ -192,7 +190,7 @@ class BaseCurve(Interface_BaseCurve):
                 try:
                     self.knot_remove(knot)
                     removed = True
-                except ValueError as e:
+                except ValueError:
                     pass
             if not removed:
                 break
@@ -231,7 +229,8 @@ class BaseCurve(Interface_BaseCurve):
             diff2 = np.abs(oripoints - newpoints)
             error = np.max(diff2)
         if error > tolerance:
-            error_msg = f"Cannot reduce degree {times} times cause the error ({error:.1e}) is too big > {tolerance:.1e} "
+            error_msg = f"Cannot reduce degree {times} times"
+            error_msg += f"cause the error ({error:.1e}) is > {tolerance:.1e} "
             raise ValueError(error_msg)
 
         self.__set_UFP(knotvector, ctrlpoints)
@@ -242,7 +241,8 @@ class BaseCurve(Interface_BaseCurve):
         But this function forces the degree reductions without looking the error
         """
         if self.degree - times < 1:
-            error_msg = f"Cannot reduce curve {times} times. Final degree would be {self.degree-times}, must be at least 1"
+            error_msg = f"Cannot reduce curve {times} times."
+            error_msg += f"Final degree would be {self.degree-times}"
             raise ValueError(error_msg)
         self.__degree_decrease(times, 1e9)
 
@@ -254,29 +254,32 @@ class BaseCurve(Interface_BaseCurve):
         try:
             while True:
                 self.__degree_decrease(1, tolerance)
-        except ValueError as e:
+        except ValueError:
             pass
 
-    def copy(self) -> Interface_BaseCurve:
+    def copy(self) -> Intface_BaseCurve:
         return self.__class__(self.knotvector, self.ctrlpoints)
 
     @classmethod
     def unite_curves(
-        cls, curves: Tuple[Interface_BaseCurve], all_knots: Tuple[float]
-    ) -> Interface_BaseCurve:
+        cls, curves: Tuple[Intface_BaseCurve], all_knots: Tuple[float]
+    ) -> Intface_BaseCurve:
         for i in range(len(all_knots) - 1):
             if all_knots[i] >= all_knots[i + 1]:
                 raise ValueError("Received knots are not sorted!")
         if len(all_knots) - 1 != len(curves):
-            error_msg = f"You must have (k-1) curves ({len(curves)}) for (k) knots ({len(all_knots)})"
+            error_msg = f"You must have (k-1) curves ({len(curves)})"
+            error_msg += f"for (k) knots ({len(all_knots)})"
             raise ValueError(error_msg)
         for i, curve in enumerate(curves):
-            if not isinstance(curve, Interface_BaseCurve):
-                error_msg = f"Curve[{i}] is type {type(curve)}, but it must be BaseCurve instance."
+            if not isinstance(curve, Intface_BaseCurve):
+                error_msg = f"Curve[{i}] is type {type(curve)},"
+                error_msg += "but it must be BaseCurve instance."
                 raise TypeError(error_msg)
         for i in range(len(curves) - 1):
             if np.any(curves[i].ctrlpoints[-1] != curves[i + 1].ctrlpoints[0]):
-                error_msg = f"Cannot unite curve[{i}] with curve[{i+1}] cause the control points don't match"
+                error_msg = f"Cannot unite curve[{i}] with curve[{i+1}]"
+                error_msg += "cause the control points don't match"
                 raise ValueError(error_msg)
         for i, curve in enumerate(curves):
             if curve.npts != curve.degree + 1:
@@ -294,7 +297,7 @@ class BaseCurve(Interface_BaseCurve):
         )
         return cls(knotvector, ctrlpoints)
 
-    def _split_into_bezier(self) -> Tuple[Interface_BaseCurve]:
+    def _split_into_bezier(self) -> Tuple[Intface_BaseCurve]:
         if self.degree + 1 == self.npts:  # is bezier
             return [self.copy()]
         all_knots = self.knotvector.knots
@@ -304,7 +307,7 @@ class BaseCurve(Interface_BaseCurve):
         ctrlpoints = list(self.ctrlpoints)
         allctrls = Chapter5.DecomposeCurve(knotvector, ctrlpoints)
         listcurves = [0] * len(allctrls)
-        n, p = self.npts - 1, self.degree
+        p = self.degree
         U0, U1 = self.knotvector[0], self.knotvector[-1]
         Ubezier = [U0] * (p + 1) + [U1] * (p + 1)
         for i, ctpt in enumerate(allctrls):
@@ -313,7 +316,7 @@ class BaseCurve(Interface_BaseCurve):
 
     def split(
         self, knots: Optional[Union[float, np.ndarray]] = None
-    ) -> Tuple[Interface_BaseCurve]:
+    ) -> Tuple[Intface_BaseCurve]:
         if knots is None:
             return self._split_into_bezier()
         if isinstance(knots, (int, float)):
@@ -336,9 +339,9 @@ class BaseCurve(Interface_BaseCurve):
             middle = (middle - ua) / (ub - ua)
             newknotvect = [0] + list(middle) + [1]
             newnpts = len(newknotvect) - copycurve.degree - 1
-            newctrlpts = copycurve.ctrlpoints[
-                i * (newnpts - 1) : (i + 1) * (newnpts - 1) + 1
-            ]
+            lowerind = i * (newnpts - 1)
+            upperind = (i + 1) * (newnpts - 1) + 1
+            newctrlpts = copycurve.ctrlpoints[lowerind:upperind]
             newcurve = copycurve.__class__(newknotvect, newctrlpts)
             listcurves[i] = newcurve
         return listcurves

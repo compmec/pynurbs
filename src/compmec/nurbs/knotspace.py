@@ -2,7 +2,7 @@ from typing import Optional, Tuple, Union
 
 import numpy as np
 
-from compmec.nurbs.__classes__ import Interface_KnotVector
+from compmec.nurbs.__classes__ import Intface_KnotVector
 
 
 class ValidationKnotVector(object):
@@ -46,7 +46,7 @@ class ValidationKnotVector(object):
             raise ValueError("An internal knot has multiplicity too high")
 
 
-class KnotVector(Interface_KnotVector, list):
+class KnotVector(Intface_KnotVector, list):
     def __init__(self, knotvector: Tuple[float]):
         ValidationKnotVector.all(knotvector)
         knotvector = np.array(knotvector)
@@ -98,6 +98,20 @@ class KnotVector(Interface_KnotVector, list):
         if maxU < u:
             raise ValueError(f"Received u = {u} > maxU = {maxU}")
 
+    def __valid_insert_knot(self, u: float, times: float):
+        if times <= 0:
+            raise ValueError
+        mult = self.mult_onevalue(u)
+        if times > self.degree - mult:
+            raise ValueError
+
+    def __valid_remove_knot(self, u: float, times: float):
+        if times <= 0:
+            raise ValueError
+        mult = self.mult_onevalue(u)
+        if times > mult:
+            raise ValueError
+
     def span_onevalue(self, u: float) -> int:
         self.__valid_knot(u)
         vector = np.array(self)
@@ -128,8 +142,7 @@ class KnotVector(Interface_KnotVector, list):
         return np.array(result, dtype="int16")
 
     def mult_onevalue(self, u: float) -> int:
-        if not (min(self) <= u <= max(self)):
-            raise ValueError
+        self.__valid_knot(u)
         return np.sum(np.abs(np.array(self) - u) < 1e-12)
 
     def mult(self, u: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
@@ -141,12 +154,6 @@ class KnotVector(Interface_KnotVector, list):
         for i in range(npts):
             result[i] = self.mult(u[i])
         return result
-
-    def verify_insert_remove_knot(self, knot: float, times: Optional[int] = 1):
-        if not isinstance(times, int):
-            raise TypeError
-        if times < 1:
-            raise ValueError
 
     def __knot_insert(self, knot: float, times: int):
         if times == 1:
@@ -163,11 +170,6 @@ class KnotVector(Interface_KnotVector, list):
         for i in range(times):
             self.__knot_insert(knot, 1)
 
-    def knot_insert(self, knot: float, times: Optional[int] = 1):
-        self.__valid_knot(knot)
-        self.verify_insert_remove_knot(knot, times)
-        self.__knot_insert(knot, times)
-
     def __knot_remove(self, knot: float, times: int):
         if times == 1:
             span = self.span_onevalue(knot)
@@ -180,11 +182,14 @@ class KnotVector(Interface_KnotVector, list):
         for i in range(times):
             self.__knot_remove(knot, 1)
 
+    def knot_insert(self, knot: float, times: Optional[int] = 1):
+        self.__valid_knot(knot)
+        self.__valid_insert_knot(knot, times)
+        self.__knot_insert(knot, times)
+
     def knot_remove(self, knot: float, times: Optional[int] = 1):
-        self.verify_insert_remove_knot(knot, times)
-        if knot not in self:
-            error_msg = f"Cannot remove knot {knot} cause it's not in {self}"
-            raise ValueError(error_msg)
+        self.__valid_knot(knot)
+        self.__valid_remove_knot(knot, times)
         self.__knot_remove(knot, times)
 
     def __eq__(self, obj: object):

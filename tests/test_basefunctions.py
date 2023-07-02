@@ -494,7 +494,7 @@ def test_basefunction_fails():
     R2 = RationalBaseFunction(knotvector)
     R2.weights = np.random.uniform(0.5, 1.5, npts)
     knotvector = GeneratorKnotVector.random(degree, npts)
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         R1.weights = "asd"
     with pytest.raises(ValueError):
         R1.weights = np.random.uniform(1, 2, npts - 1)
