@@ -239,7 +239,7 @@ class BaseFunctionGetItem(BaseFunctionDerivable):
         return True
 
 
-class SplineBaseFunction(BaseFunctionGetItem):
+class SplineFunction(BaseFunctionGetItem):
     def __doc__(self):
         """
         This function is recursively determined like
@@ -267,7 +267,7 @@ class SplineBaseFunction(BaseFunctionGetItem):
         return SplineEvaluatorClass(self, i, j)
 
 
-class RationalBaseFunction(BaseFunctionGetItem):
+class RationalFunction(BaseFunctionGetItem):
     def __init__(self, knotvector: KnotVector):
         super().__init__(knotvector)
 

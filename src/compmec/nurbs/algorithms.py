@@ -3,7 +3,7 @@ from typing import Any, Tuple
 
 import numpy as np
 
-from compmec.nurbs import SplineBaseFunction
+from compmec.nurbs import SplineFunction
 
 
 class Point:
@@ -880,8 +880,8 @@ class Custom:
         all_knots = list(set(knotvector))
         all_knots.sort()
         pairs = list(zip(all_knots[:-1], all_knots[1:]))
-        Nq = SplineBaseFunction(knotvector)
-        Np = SplineBaseFunction(desknotvect)
+        Nq = SplineFunction(knotvector)
+        Np = SplineFunction(desknotvect)
         M = np.zeros((Np.npts, Np.npts), dtype="float64")
         F = np.zeros((Np.npts, Nq.npts), dtype="float64")
         for i, (a, b) in enumerate(pairs):

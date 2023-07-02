@@ -4,7 +4,7 @@ import numpy as np
 
 from compmec.nurbs.__classes__ import Intface_BaseCurve
 from compmec.nurbs.algorithms import Chapter5, Custom
-from compmec.nurbs.basefunctions import RationalBaseFunction, SplineBaseFunction
+from compmec.nurbs.functions import RationalFunction, SplineFunction
 from compmec.nurbs.knotspace import KnotVector
 
 
@@ -352,7 +352,7 @@ class SplineCurve(BaseCurve):
         super().__init__(knotvector, controlpoints)
 
     def _create_base_function_instance(self, knotvector: KnotVector):
-        return SplineBaseFunction(knotvector)
+        return SplineFunction(knotvector)
 
 
 class RationalCurve(BaseCurve):
@@ -360,7 +360,7 @@ class RationalCurve(BaseCurve):
         super().__init__(knotvector, controlpoints)
 
     def _create_base_function_instance(self, knotvector: KnotVector):
-        return RationalBaseFunction(knotvector)
+        return RationalFunction(knotvector)
 
     @property
     def weights(self):
