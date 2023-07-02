@@ -1,4 +1,4 @@
-from typing import Iterable, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 
@@ -6,146 +6,62 @@ from compmec.nurbs.__classes__ import Interface_KnotVector
 
 
 class ValidationKnotVector(object):
-
-    minU = 0
-    maxU = 1
-
     @staticmethod
-    def isFloatArray1D(knotvector: Tuple[float]) -> None:
-        if not isinstance(knotvector, (tuple, list, np.ndarray)):
-            error_msg = f"Cannot convert knotvector (type={type(knotvector)}) into a numpy float array"
-            raise TypeError(error_msg)
-        for i, knot in enumerate(knotvector):
-            if not isinstance(knot, (int, float)):
-                error_msg = f"knot vector must be 1D array of floats. Type(knotvector[{i}]) = {type(knot)} "
-                raise TypeError(error_msg)
-
-    @staticmethod
-    def isOrdenedVector(knotvector: Tuple[float]) -> None:
-        npts = len(knotvector)
-        for i in range(npts - 1):
-            if knotvector[i] > knotvector[i + 1]:
-                error_msg = f"The given KnotVector must be ordened.\n"
-                error_msg += f"    knotvector = {list(knotvector)}"
-                raise ValueError(error_msg)
-
-    @staticmethod
-    def Limits(knotvector: Tuple[float]) -> None:
-        if ValidationKnotVector.minU is not None:
-            ValidationKnotVector.InferiorLimit(knotvector)
-        if ValidationKnotVector.maxU is not None:
-            ValidationKnotVector.SuperiorLimit(knotvector)
-
-    @staticmethod
-    def InferiorLimit(knotvector: Tuple[float]) -> None:
-        minU = ValidationKnotVector.minU
-        for u in knotvector:
-            if u < minU:
-                error_msg = f"All the values in knotvector must be >= {minU}"
-                raise ValueError(error_msg)
-
-    @staticmethod
-    def SuperiorLimit(knotvector: Tuple[float]) -> None:
-        maxU = ValidationKnotVector.maxU
-        for u in knotvector:
-            if u > maxU:
-                error_msg = f"All the values in knotvector must be <= {maxU}"
-                raise ValueError(error_msg)
-
-    @staticmethod
-    def SameQuantityBoundary(knotvector: Tuple[float]) -> None:
-        knotvector = np.array(knotvector)
-        minU = np.min(knotvector)
-        maxU = np.max(knotvector)
-        if np.sum(knotvector == minU) != np.sum(knotvector == maxU):
-            error_msg = (
-                "knot vector must contain the same quantity of {minU} and {maxU}."
-            )
+    def array1D(knotvector: Tuple[float]):
+        knotvector = np.array(knotvector, "float64")
+        if knotvector.ndim != 1:
+            error_msg = "Argument must be a 1D array.\n"
+            error_msg += f"Received shape = {knotvector.shape}"
             raise ValueError(error_msg)
 
     @staticmethod
-    def CountInternalMultiplicity(knotvector: Tuple[float]) -> None:
-        setU = list(set(knotvector))
-        setU.remove(knotvector[-1])
-        setU.remove(knotvector[0])
-        if setU == []:
-            return
-        knotvector = np.array(knotvector)
-        degree = np.sum(knotvector == knotvector[0]) - 1
-        multknots = [np.sum(knotvector == u) for u in setU]
-        maxmultknots = np.max(multknots)
-        if degree != 0:
-            if maxmultknots > degree:
-                u = knotvector[np.where(multknots == maxmultknots)[0]]
-                error_msg = (
-                    f"The knot {u} has multiplicty {maxmultknots} > degree = {degree}"
-                )
-                raise ValueError(error_msg)
-        else:
-            if maxmultknots > 1:
-                error_msg = "For degree = 0, each knot must appear only once"
-                raise ValueError(error_msg)
-
-    @staticmethod
-    def isInteger(val: int):
-        if not isinstance(val, int):
-            try:
-                int(val)
-            except Exception as e:
-                raise TypeError(f"The value must be an integer. Received {type(val)}")
-
-    @staticmethod
-    def isNonNegative(val: int):
-        if val < 0:
-            raise ValueError(f"The value must be > 0. Received {val}")
-
-    @staticmethod
-    def isIntegerNonNegative(value: int):
-        ValidationKnotVector.isInteger(value)
-        ValidationKnotVector.isNonNegative(value)
-
-    @staticmethod
-    def PN(degree: int, npts: int):
-        ValidationKnotVector.isIntegerNonNegative(degree)
-        ValidationKnotVector.isIntegerNonNegative(npts)
-        if npts <= degree:
-            raise ValueError(
-                "Must npts > degree. Received npts=%d, degree=%d" % (npts, degree)
-            )
+    def degree_npts(degree: int, npts: int):
+        if not isinstance(degree, int):
+            raise TypeError("Degree must be an integer")
+        if not isinstance(npts, int):
+            raise TypeError("Number of points must be integer")
+        if degree <= 0:
+            raise ValueError("Degree must be >= 1")
+        if not (npts > degree):
+            raise ValueError("Must have npts > degree")
 
     @staticmethod
     def all(knotvector: Tuple[float]) -> None:
-        if isinstance(knotvector, Interface_KnotVector):
+        ValidationKnotVector.array1D(knotvector)
+        knotvector = np.array(knotvector, dtype="float64")
+        # Ordered
+        sorted_array = np.copy(knotvector)
+        sorted_array.sort()
+        if np.any(knotvector != sorted_array):
+            raise ValueError("Knotvector must be ordored")
+        # Multiplicity
+        set_knotvector = list(set(knotvector.tolist()))
+        set_knotvector.sort()
+        multknots = [np.sum(knotvector == u) for u in set_knotvector]
+        if multknots[0] != multknots[-1]:
+            raise ValueError("Extremities quantities are not equal")
+        if len(multknots) == 2:  # No internal knot
             return
-        try:
-            ValidationKnotVector.isFloatArray1D(knotvector)
-            ValidationKnotVector.isOrdenedVector(knotvector)
-            ValidationKnotVector.Limits(knotvector)
-            ValidationKnotVector.SameQuantityBoundary(knotvector)
-            ValidationKnotVector.CountInternalMultiplicity(knotvector)
-        except Exception as e:
-            error_msg = f"The received knot vector is not valid!\n"
-            error_msg += f"   type = {type(knotvector)}\n"
-            error_msg += f"  value = {str(knotvector)[:400]}\n"
-            error_msg += f"  Cause = {str(e)}"
-            raise e.__class__(error_msg)
+        if max(multknots[1:-1]) >= multknots[0]:
+            raise ValueError("An internal knot has multiplicity too high")
 
 
 class KnotVector(Interface_KnotVector, list):
     def __init__(self, knotvector: Tuple[float]):
         ValidationKnotVector.all(knotvector)
-        degree, npts = self.compute_pn(knotvector)
+        knotvector = np.array(knotvector)
+        degree, npts = self.compute_degree_npts(knotvector)
         self.__degree = degree
         self.__npts = npts
         super().__init__(knotvector)
 
     @property
     def degree(self) -> int:
-        return self.__degree
+        return int(self.__degree)
 
     @property
     def npts(self) -> int:
-        return self.__npts
+        return int(self.__npts)
 
     @property
     def knots(self) -> Tuple[float]:
@@ -154,7 +70,7 @@ class KnotVector(Interface_KnotVector, list):
         return tuple(knts)
 
     @staticmethod
-    def compute_pn(knotvector: Tuple[float]):
+    def compute_degree_npts(knotvector: Tuple[float]):
         """
         We have that knotvector = [0, ..., 0, ?, ..., ?, 1, ..., 1]
         And that knotvector[degree] = 0, but knotvector[degree+1] != 0
@@ -165,36 +81,37 @@ class KnotVector(Interface_KnotVector, list):
         That means that
             m = npts + degree
         """
-        minU = min(knotvector)
-        degree = 0
-        while knotvector[degree + 1] == minU:
-            degree += 1
+        min_knots = min(knotvector)
+        degree = np.sum(knotvector == min_knots) - 1
         npts = len(knotvector) - degree - 1
-        return degree, npts
+        return int(degree), int(npts)
 
-    def span_onevalue(self, u: float) -> int:
+    def __valid_knot(self, u: float):
         try:
             u = float(u)
-        except Exception as e:
+        except Exception:
             raise TypeError
-        knotvector = np.array(self)
         minU = np.min(self)
         maxU = np.max(self)
         if u < minU:
             raise ValueError(f"Received u = {u} < minU = {minU}")
         if maxU < u:
             raise ValueError(f"Received u = {u} > maxU = {maxU}")
-        lower = int(np.max(np.where(knotvector == minU)))
-        upper = int(np.min(np.where(knotvector == maxU)))
-        if u == minU:
+
+    def span_onevalue(self, u: float) -> int:
+        self.__valid_knot(u)
+        vector = np.array(self)
+        lower = int(np.max(np.where(vector == self[0])))
+        upper = int(np.min(np.where(vector == self[-1])))
+        if u == self[0]:
             return lower
-        if u == maxU:
+        if u == self[-1]:
             return upper
         mid = (lower + upper) // 2
         while True:
-            if u < knotvector[mid]:
+            if u < vector[mid]:
                 upper = mid
-            elif knotvector[mid + 1] <= u:
+            elif vector[mid + 1] <= u:
                 lower = mid
             else:
                 return mid
@@ -230,10 +147,6 @@ class KnotVector(Interface_KnotVector, list):
             raise TypeError
         if times < 1:
             raise ValueError
-        if not isinstance(knot, float):
-            raise TypeError
-        if not (min(self) <= knot <= max(self)):
-            raise ValueError
 
     def __knot_insert(self, knot: float, times: int):
         if times == 1:
@@ -242,8 +155,8 @@ class KnotVector(Interface_KnotVector, list):
             copylist.insert(span + 1, knot)
             ValidationKnotVector.all(copylist)
             self.insert(span + 1, knot)
-            degree, npts = self.compute_pn(list(self))
-            ValidationKnotVector.PN(degree, npts)
+            degree, npts = self.compute_degree_npts(list(self))
+            ValidationKnotVector.degree_npts(degree, npts)
             self.__degree = degree
             self.__npts = npts
             return
@@ -251,15 +164,16 @@ class KnotVector(Interface_KnotVector, list):
             self.__knot_insert(knot, 1)
 
     def knot_insert(self, knot: float, times: Optional[int] = 1):
+        self.__valid_knot(knot)
         self.verify_insert_remove_knot(knot, times)
         self.__knot_insert(knot, times)
 
     def __knot_remove(self, knot: float, times: int):
         if times == 1:
             span = self.span_onevalue(knot)
-            self.remove(knot)
-            degree, npts = self.compute_pn(list(self))
-            ValidationKnotVector.PN(degree, npts)
+            self.pop(span)
+            degree, npts = self.compute_degree_npts(list(self))
+            ValidationKnotVector.degree_npts(degree, npts)
             self.__degree = degree
             self.__npts = npts
             return
@@ -269,16 +183,17 @@ class KnotVector(Interface_KnotVector, list):
     def knot_remove(self, knot: float, times: Optional[int] = 1):
         self.verify_insert_remove_knot(knot, times)
         if knot not in self:
-            raise ValueError(f"Cannot remove knot {knot} cause it's not in {self}")
+            error_msg = f"Cannot remove knot {knot} cause it's not in {self}"
+            raise ValueError(error_msg)
         self.__knot_remove(knot, times)
 
     def __eq__(self, obj: object):
-        if not isinstance(obj, (list, tuple, self.__class__)):
-            return False
-        try:
-            obj = self.__class__(obj)
-        except Exception as e:
-            return False
+        if not isinstance(obj, self.__class__):
+            # Will try to cenvert obj
+            try:
+                obj = self.__class__(obj)
+            except ValueError:
+                return False
         if self.npts != obj.npts:
             return False
         if self.degree != obj.degree:
@@ -295,29 +210,37 @@ class KnotVector(Interface_KnotVector, list):
 class GeneratorKnotVector:
     @staticmethod
     def bezier(degree: int) -> KnotVector:
-        ValidationKnotVector.isIntegerNonNegative(degree)
-        return GeneratorKnotVector.uniform(degree, degree + 1)
-
-    @staticmethod
-    def weight(degree: int, ws: Tuple[float]) -> KnotVector:
-        ValidationKnotVector.isFloatArray1D(ws)
-        ValidationKnotVector.isIntegerNonNegative(degree)
-        knotvector = np.cumsum(ws)
-        knotvector -= knotvector[0]
-        knotvector /= knotvector[-1]
-        knotvector *= ValidationKnotVector.maxU - ValidationKnotVector.minU
-        knotvector += ValidationKnotVector.minU
-        knotvector = degree * [0] + list(knotvector) + degree * [1]
-        return KnotVector(knotvector)
+        npts = degree + 1
+        ValidationKnotVector.degree_npts(degree, npts)
+        return KnotVector((degree + 1) * [0] + (degree + 1) * [1])
 
     @staticmethod
     def uniform(degree: int, npts: int) -> KnotVector:
-        ValidationKnotVector.PN(degree, npts)
-        ws = np.ones(npts - degree + 1)
-        return GeneratorKnotVector.weight(degree, ws)
+        ValidationKnotVector.degree_npts(degree, npts)
+        weights = np.ones(npts - degree)
+        return GeneratorKnotVector.weight(degree, weights)
 
     @staticmethod
     def random(degree: int, npts: int) -> KnotVector:
-        ValidationKnotVector.PN(degree, npts)
-        ws = np.random.rand(npts - degree + 1)
-        return GeneratorKnotVector.weight(degree, ws)
+        ValidationKnotVector.degree_npts(degree, npts)
+        weights = np.random.rand(npts - degree)
+        return GeneratorKnotVector.weight(degree, weights)
+
+    @staticmethod
+    def weight(degree: int, weights: Tuple[float]) -> KnotVector:
+        """
+        Creates a KnotVector with degree ```degree``` and spaced points
+        depending on the ```weights``` vectors.
+        The number of segments are equal to lenght of weights
+
+        degree = 1 and weights = [1] -> [0, 0, 1, 1]
+        degree = 1 and weights = [1, 1] -> [0, 0, 0.5, 1, 1]
+        degree = 1 and weights = [1, 1, 2] -> [0, 0.25, 0.5, 1, 1]
+        """
+        ValidationKnotVector.array1D(weights)
+        npts = len(weights) + degree
+        ValidationKnotVector.degree_npts(degree, npts)
+        cumsum = np.cumsum(weights)
+        listknots = [knot / cumsum[-1] for knot in cumsum]
+        knotvector = (degree + 1) * [0] + listknots + degree * [1]
+        return KnotVector(knotvector)

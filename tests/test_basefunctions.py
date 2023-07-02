@@ -336,7 +336,7 @@ def test_tablevalues_p3n5():
 def test_tableUuniform_sum1():
     ntests = 10
     for i in range(ntests):
-        degree = np.random.randint(0, 6)
+        degree = np.random.randint(1, 6)
         npts = np.random.randint(degree + 1, degree + 21)
         knotvector = GeneratorKnotVector.uniform(degree, npts)
         u = np.random.rand(11)
@@ -354,7 +354,7 @@ def test_tableUuniform_sum1():
 def test_tableUrandom_sum1():
     ntests = 10
     for i in range(ntests):
-        degree = np.random.randint(0, 6)
+        degree = np.random.randint(1, 6)
         npts = np.random.randint(degree + 1, degree + 21)
         knotvector = GeneratorKnotVector.random(degree, npts)
         u = np.random.rand(11)
@@ -429,7 +429,7 @@ def test_rational_somesinglevalues_p1n2():
 def test_rational_tableUuniform_sum1():
     ntests = 10
     for i in range(ntests):
-        degree = np.random.randint(0, 6)
+        degree = np.random.randint(1, 6)
         npts = np.random.randint(degree + 1, degree + 21)
         knotvector = GeneratorKnotVector.uniform(degree, npts)
         u = np.random.rand(11)

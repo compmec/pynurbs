@@ -89,7 +89,7 @@ class TestSplineCurve:
     )
     def test_creationfail(self, ntests=10):
         for i in range(ntests):
-            degree = np.random.randint(0, 5)
+            degree = np.random.randint(1, 5)
             npts = np.random.randint(degree + 1, degree + 11)
             ndim = np.random.randint(1, 4)
             knotvector = self.create_random_knotvector(degree, npts)
@@ -112,7 +112,7 @@ class TestSplineCurve:
     )
     def test_compare_two_curves(self, ntests=10):
         for i in range(ntests):
-            degree = np.random.randint(0, 5)
+            degree = np.random.randint(1, 5)
             npts = np.random.randint(degree + 1, degree + 11)
             ndim = np.random.randint(0, 4)
             knotvector = self.create_random_knotvector(degree, npts)
@@ -135,7 +135,7 @@ class TestSplineCurve:
         ]
     )
     def test_curve_is_callable(self):
-        degree = np.random.randint(0, 5)
+        degree = np.random.randint(1, 5)
         npts = np.random.randint(degree + 1, degree + 11)
         knotvector = GeneratorKnotVector.random(degree, npts=npts)
         ctrlpoints = np.random.uniform(-1, 1, npts)
@@ -152,7 +152,7 @@ class TestSplineCurve:
         ]
     )
     def test_curve_attributes(self):
-        degree = np.random.randint(0, 5)
+        degree = np.random.randint(1, 5)
         npts = np.random.randint(degree + 1, degree + 11)
         ndim = np.random.randint(0, 5)
         knotvector = self.create_random_knotvector(degree, npts)

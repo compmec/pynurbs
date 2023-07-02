@@ -3,7 +3,8 @@ from typing import Any, Iterable, Optional, Tuple, Type, Union
 
 import numpy as np
 
-from compmec.nurbs.__classes__ import Interface_BaseFunction, Interface_Evaluator
+from compmec.nurbs.__classes__ import (Interface_BaseFunction,
+                                       Interface_Evaluator)
 from compmec.nurbs.knotspace import KnotVector
 
 
@@ -13,7 +14,7 @@ def N(i: int, j: int, k: int, u: float, U: KnotVector) -> float:
     Remember that N_{i, j}(u) = 0   if  ( u not in [U[i], U[i+j+1]] )
     """
 
-    npts, degree = U.npts, U.degree
+    npts = U.npts
 
     if k < i:
         return 0

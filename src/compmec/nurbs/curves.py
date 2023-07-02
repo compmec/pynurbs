@@ -5,11 +5,8 @@ import numpy as np
 
 from compmec.nurbs.__classes__ import Interface_BaseCurve
 from compmec.nurbs.algorithms import Chapter5, Custom
-from compmec.nurbs.basefunctions import (
-    BaseFunction,
-    RationalBaseFunction,
-    SplineBaseFunction,
-)
+from compmec.nurbs.basefunctions import (BaseFunction, RationalBaseFunction,
+                                         SplineBaseFunction)
 from compmec.nurbs.knotspace import KnotVector
 
 
