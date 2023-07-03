@@ -79,10 +79,6 @@ class Intface_BaseFunction_BaseCurve(Intface_BaseFunction_Evaluator_BaseCurve):
     def knot_remove(self, knot: float, times: Optional[int] = 1):
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def derivate(self):
-        raise NotImplementedError
-
 
 class Intface_BaseFunction(Intface_BaseFunction_BaseCurve):
     @abc.abstractmethod

@@ -26,16 +26,6 @@ class BaseCurve(Intface_BaseCurve):
         L = self.F(u)
         return L.T @ self.ctrlpoints
 
-    def derivate(self):
-        newU = list(self.knotvector)
-        for knot in list(set(self.knotvector)):
-            newU.remove(knot)
-        newU = self.knotvector.__class__(newU)
-        shape = [newU.npts] + list(self.ctrlpoints.shape[1:])
-        newP = np.random.uniform(0, 1, shape)
-        newC = self.__class__(newU, newP)
-        return newC
-
     @property
     def degree(self):
         return self.knotvector.degree
