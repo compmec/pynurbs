@@ -2,6 +2,7 @@ from typing import Optional, Tuple, Union
 
 import numpy as np
 
+from compmec.nurbs import algorithms
 from compmec.nurbs.__classes__ import Intface_KnotVector
 
 
@@ -50,7 +51,8 @@ class KnotVector(Intface_KnotVector, list):
     def __init__(self, knotvector: Tuple[float]):
         ValidationKnotVector.all(knotvector)
         knotvector = np.array(knotvector)
-        degree, npts = self.compute_degree_npts(knotvector)
+        degree = algorithms.KnotVector.find_degree(knotvector)
+        npts = algorithms.KnotVector.find_npts(knotvector)
         self.__degree = degree
         self.__npts = npts
         super().__init__(knotvector)
@@ -71,23 +73,6 @@ class KnotVector(Intface_KnotVector, list):
 
     def deepcopy(self):
         return self.__class__(list(self))
-
-    @staticmethod
-    def compute_degree_npts(knotvector: Tuple[float]):
-        """
-        We have that knotvector = [0, ..., 0, ?, ..., ?, 1, ..., 1]
-        And that knotvector[degree] = 0, but knotvector[degree+1] != 0
-        The same way, knotvector[npts] = 1, but knotvector[npts-1] != 0
-
-        Using that, we know that
-            len(knotvector) = m + 1 = npts + degree + 1
-        That means that
-            m = npts + degree
-        """
-        min_knots = min(knotvector)
-        degree = np.sum(knotvector == min_knots) - 1
-        npts = len(knotvector) - degree - 1
-        return int(degree), int(npts)
 
     def __valid_knot(self, u: float):
         try:
@@ -145,8 +130,9 @@ class KnotVector(Intface_KnotVector, list):
         return np.array(result, dtype="int16")
 
     def mult_onevalue(self, u: float) -> int:
-        self.__valid_knot(u)
-        return np.sum(np.abs(np.array(self) - u) < 1e-12)
+        if u < self[0] or self[-1] < u:
+            raise ValueError("Outside interval")
+        return algorithms.KnotVector.find_mult(u, list(self))
 
     def mult(self, u: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
         u = np.array(u)
@@ -165,7 +151,8 @@ class KnotVector(Intface_KnotVector, list):
             copylist.insert(span + 1, knot)
             ValidationKnotVector.all(copylist)
             self.insert(span + 1, knot)
-            degree, npts = self.compute_degree_npts(list(self))
+            degree = algorithms.KnotVector.find_degree(list(self))
+            npts = algorithms.KnotVector.find_npts(list(self))
             ValidationKnotVector.degree_npts(degree, npts)
             self.__degree = degree
             self.__npts = npts
@@ -177,7 +164,8 @@ class KnotVector(Intface_KnotVector, list):
         if times == 1:
             span = self.span_onevalue(knot)
             self.pop(span)
-            degree, npts = self.compute_degree_npts(list(self))
+            degree = algorithms.KnotVector.find_degree(list(self))
+            npts = algorithms.KnotVector.find_npts(list(self))
             ValidationKnotVector.degree_npts(degree, npts)
             self.__degree = degree
             self.__npts = npts

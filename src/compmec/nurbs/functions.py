@@ -4,55 +4,8 @@ from typing import Any, Optional, Tuple, Union
 import numpy as np
 
 from compmec.nurbs.__classes__ import Intface_BaseFunction, Intface_Evaluator
+from compmec.nurbs.algorithms import N, R
 from compmec.nurbs.knotspace import KnotVector
-
-
-def N(i: int, j: int, k: int, u: float, U: KnotVector) -> float:
-    """
-    Returns the value of N_{ij}(u) in the interval [u_{k}, u_{k+1}]
-    Remember that N_{i, j}(u) = 0   if  ( u not in [U[i], U[i+j+1]] )
-    """
-
-    npts = U.npts
-
-    if k < i:
-        return 0
-    if j == 0:
-        if i == k:
-            return 1
-        if i + 1 == npts and k == npts:
-            return 1
-        return 0
-    if i + j < k:
-        return 0
-
-    if U[i] == U[i + j]:
-        factor1 = 0
-    else:
-        factor1 = (u - U[i]) / (U[i + j] - U[i])
-
-    if U[i + j + 1] == U[i + 1]:
-        factor2 = 0
-    else:
-        factor2 = (U[i + j + 1] - u) / (U[i + j + 1] - U[i + 1])
-
-    result = factor1 * N(i, j - 1, k, u, U)
-    result += factor2 * N(i + 1, j - 1, k, u, U)
-    return result
-
-
-def R(i: int, j: int, k: int, u: float, U: KnotVector, w: Tuple[float]) -> float:
-    """
-    Returns the value of R_{ij}(u) in the interval [u_{k}, u_{k+1}]
-    """
-    Niju = N(i, j, k, u, U)
-    if Niju == 0:
-        return 0
-    npts = len(w)
-    soma = 0
-    for z in range(npts):
-        soma += w[z] * N(z, j, k, u, U)
-    return w[i] * Niju / soma
 
 
 class BaseFunction(Intface_BaseFunction):

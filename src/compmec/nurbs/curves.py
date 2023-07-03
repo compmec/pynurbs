@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 
@@ -10,19 +10,12 @@ from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
 
 class BaseCurve(Intface_BaseCurve):
     def __init__(self, knotvector: KnotVector, ctrlpoints: np.ndarray):
-        self.insert_knot_at_call = True
         self.__set_UFP(knotvector, ctrlpoints)
-
-    def __str__(self) -> str:
-        return str(self.knotvector) + "\n" + str(self.ctrlpoints)
 
     def deepcopy(self) -> Intface_BaseCurve:
         return self.__class__(self.knotvector, self.ctrlpoints)
 
     def __call__(self, u: np.ndarray) -> np.ndarray:
-        if self.insert_knot_at_call:
-            for i in range(self.degree):
-                self.knot_insert(u)
         return self.evaluate(u)
 
     def evaluate(self, u: np.ndarray) -> np.ndarray:
@@ -128,7 +121,14 @@ class BaseCurve(Intface_BaseCurve):
     def __sub__(self, __obj: object):
         return self + (-__obj)
 
-    def __transform_knots_to_table(self, knots: Union[float, Tuple[float]]):
+    def __transform_knots_to_table(self, knots: Union[float, Tuple[float]]) -> Dict:
+        """
+        Receives a float or an array of floats.
+        It returns a dictionary with the number of apearances of knot.
+        Example:
+            [0, 0.5, 0.5, 1] -> {0: 1, 0.5: 2, 1: 1}
+            [0, 0.5, 1, 2, 2, 4] -> {0: 1, 0.5: 1, 2: 2, 4: 1}
+        """
         try:
             knots = float(knots)
             return {knots: 1}
@@ -147,18 +147,21 @@ class BaseCurve(Intface_BaseCurve):
         return table
 
     def knot_insert(self, knots: Union[float, Tuple[float]]) -> None:
-        table = self.__transform_knots_to_table(knots)
-        knotvector = np.array(self.knotvector).tolist()
-        ctrlpoints = list(self.ctrlpoints)
-        for knot, times in table.items():
-            mult = self.knotvector.mult(knot)
-            times = min(times, self.degree - mult)
-            if times < 1:
-                continue
-            knotvector, ctrlpoints = Chapter5.CurveKnotIns(
-                knotvector, ctrlpoints, knot, times
-            )
-        self.__set_UFP(knotvector, ctrlpoints)
+        knots = np.array(knots, dtype="float64")
+        if knots.ndim == 0:
+            knots = [knots]
+        elif knots.ndim == 1:
+            pass
+        else:
+            raise ValueError("Invalid input of knots")
+        newknotvector = np.array(self.knotvector).tolist()
+
+        newknotvector.extend(knots)
+        newknotvector.sort()
+        newknotvector = KnotVector(newknotvector)
+        T, _ = LeastSquare.spline(self.knotvector, newknotvector)
+        newcontrolpoints = T @ self.ctrlpoints
+        self.__set_UFP(newknotvector, newcontrolpoints)
 
     def knot_remove(self, knots: Union[float, Tuple[float]]) -> None:
         table = self.__transform_knots_to_table(knots)
@@ -259,60 +262,6 @@ class BaseCurve(Intface_BaseCurve):
                 self.__degree_decrease(1, tolerance)
         except ValueError:
             pass
-
-    @classmethod
-    def unite_curves(
-        cls, curves: Tuple[Intface_BaseCurve], all_knots: Tuple[float]
-    ) -> Intface_BaseCurve:
-        for i in range(len(all_knots) - 1):
-            if all_knots[i] >= all_knots[i + 1]:
-                raise ValueError("Received knots are not sorted!")
-        if len(all_knots) - 1 != len(curves):
-            error_msg = f"You must have (k-1) curves ({len(curves)})"
-            error_msg += f"for (k) knots ({len(all_knots)})"
-            raise ValueError(error_msg)
-        for i, curve in enumerate(curves):
-            if not isinstance(curve, Intface_BaseCurve):
-                error_msg = f"Curve[{i}] is type {type(curve)},"
-                error_msg += "but it must be BaseCurve instance."
-                raise TypeError(error_msg)
-        for i in range(len(curves) - 1):
-            if np.any(curves[i].ctrlpoints[-1] != curves[i + 1].ctrlpoints[0]):
-                error_msg = f"Cannot unite curve[{i}] with curve[{i+1}]"
-                error_msg += "cause the control points don't match"
-                raise ValueError(error_msg)
-        for i, curve in enumerate(curves):
-            if curve.npts != curve.degree + 1:
-                raise NotImplementedError  # Only bezier curves for now
-        maximum_degree = 0
-        for curve in curves:
-            maximum_degree = max(maximum_degree, curve.degree)
-        for curve in curves:
-            curve.degree = maximum_degree
-        all_ctrlpoints = []
-        for curve in curves:
-            all_ctrlpoints.append(curve.ctrlpoints)
-        knotvector, ctrlpoints = Custom.UniteBezierCurvesSameDegree(
-            all_knots, all_ctrlpoints
-        )
-        return cls(knotvector, ctrlpoints)
-
-    def _split_into_bezier(self) -> Tuple[Intface_BaseCurve]:
-        if self.degree + 1 == self.npts:  # is bezier
-            return [self.deepcopy()]
-        all_knots = self.knotvector.knots
-        for i in range(self.degree):  # We will insert knot maximum as possible
-            self.knot_insert(all_knots)
-        knotvector = list(self.knotvector)
-        ctrlpoints = list(self.ctrlpoints)
-        allctrls = Chapter5.DecomposeCurve(knotvector, ctrlpoints)
-        listcurves = [0] * len(allctrls)
-        p = self.degree
-        U0, U1 = self.knotvector[0], self.knotvector[-1]
-        Ubezier = [U0] * (p + 1) + [U1] * (p + 1)
-        for i, ctpt in enumerate(allctrls):
-            listcurves[i] = self.__class__(Ubezier, ctpt)
-        return tuple(listcurves)
 
     def split(
         self, knots: Optional[Union[float, np.ndarray]] = None

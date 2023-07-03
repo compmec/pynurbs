@@ -522,10 +522,10 @@ class TestKnotOperations:
     def test_somefails(self):
         degree = np.random.randint(1, 5)
         npts = np.random.randint(degree + 2, degree + 11)
-        knotvector = GeneratorKnotVector.random(degree, npts=npts)
+        knotvector = GeneratorKnotVector.random(degree, npts)
         ctrlpoints = np.random.uniform(-1, 1, npts)
         C = SplineCurve(knotvector, ctrlpoints)
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             C.knot_insert(["asd", 3, None])
         with pytest.raises(ValueError):
             C.knot_insert([[0.9, 0.1], [0.5, 0.3]])
@@ -764,9 +764,9 @@ class TestSplitUnite:
             "TestSplitUnite::test_split_number_curves",
             "TestSplitUnite::test_split_matchboundary",
             "TestSplitUnite::test_splitrand_matchboundary",
-            "TestSplitUnite::test_split_known_case1",
-            "TestSplitUnite::test_split_known_case2",
-            "TestSplitUnite::test_unite_known_case",
+            "TestSplitUnite::test_split_knowncase1",
+            "TestSplitUnite::test_split_knowncase2",
+            "TestSplitUnite::test_unite_knowncase",
             "TestSplitUnite::test_somefails",
         ]
     )
@@ -777,7 +777,6 @@ class TestSplitUnite:
 class TestDegreeOperations:
     @pytest.mark.order(3)
     @pytest.mark.timeout(15)
-    @pytest.mark.skip(reason="Needs correction")
     @pytest.mark.dependency(
         depends=[
             "TestKnotOperations::test_end",
@@ -795,14 +794,13 @@ class TestDegreeOperations:
         ]
     )
     def test_degree_increase_bezier_degree_1(self):
-        degree = 1
-        npts = degree + 1
-        knotvector = [0] * npts + [1] * npts
-        ctrlpoints = np.random.uniform(-1, 1, (npts, 2))
+        degree, npts = 1, 2
+        knotvector = (degree + 1) * [0] + (degree + 1) * [1]
+        ctrlpoints = np.random.uniform(-1, 1, npts)
 
         curve = SplineCurve(knotvector, ctrlpoints)
         curve.degree += 1
-        assert curve.degree == (degree + 2)
+        assert curve.degree == (degree + 1)
         correctctrlpoints = [
             ctrlpoints[0],
             0.5 * (ctrlpoints[0] + ctrlpoints[1]),
@@ -819,14 +817,13 @@ class TestDegreeOperations:
         ]
     )
     def test_degree_increase_bezier_degree_2(self):
-        degree = 2
-        npts = degree + 1
-        knotvector = [0] * npts + [1] * npts
-        ctrlpoints = np.random.uniform(-1, 1, (npts, 2))
+        degree, npts = 2, 3
+        knotvector = (degree + 1) * [0] + (degree + 1) * [1]
+        ctrlpoints = np.random.uniform(-1, 1, npts)
 
         curve = SplineCurve(knotvector, ctrlpoints)
         curve.degree += 1
-        assert curve.degree == (degree + 2)
+        assert curve.degree == (degree + 1)
         correctctrlpoints = [
             ctrlpoints[0],
             (ctrlpoints[0] + 2 * ctrlpoints[1]) / 3,
