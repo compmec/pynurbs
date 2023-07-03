@@ -3,7 +3,7 @@ from typing import Any, Tuple
 
 import numpy as np
 
-from compmec.nurbs import SplineFunction
+from compmec.nurbs.functions import SplineFunction
 
 
 class Point:
@@ -137,98 +137,6 @@ class Chapter5:
         for i in range(L + 1, k - s):
             Qw[i] = Rw[i - L]
         return UQ, Qw
-
-    @staticmethod
-    def CurvePntByCornerCut(
-        npts: int,
-        degree: int,
-        knotvector: Tuple[float],
-        Pw: Tuple[Point],
-        knot: float,
-    ) -> Point:
-        """
-        #### Algorithm A5.2 - NURBs book - pag 153
-            Compute point on rational B-spline curve
-        #### Input:
-            ``npts``: int -- number of points
-            ``degree``: int -- curver degree order
-            ``U``: Tuple[float] -- knot vector
-            ``Pw``: Tuple[Point] -- Control points
-            ``u``: float -- evaluation knot
-        #### Output:
-            ``C``: Point -- Evaluated point
-        """
-        n = npts - 1
-        p = degree
-        if u == U[0]:
-            return Pw[0] / w
-        if u == U[n + p + 1]:
-            return Pw[n] / w
-        Rw = [None] * (11 * (n + p + 1))
-        k, s = Chapter2.FindSpanMult(n, p, u, U)  # General case
-        r = p - s
-        for i in range(r + 1):
-            Rw[i] = Pw[k - p + i]
-        for j in range(1, r + 1):
-            for i in range(r - j + 1):
-                alfa = (u - U[k - p + j + i]) / (U[i + k + 1] - U[k - p + j + i])
-                Rw[i] = alfa * Rw[i + 1] + (1 - alfa) * Rw[i]
-        return Rw[0] / w
-
-    @staticmethod
-    def RefineKnotVectCurve(
-        npts: int, degree: int, knotvector: Tuple[float], Pw: Tuple[Point], X, r
-    ) -> Tuple:
-        """
-        #### Algorith A5.4 - NURBs book - pag 155
-            Refine curve knot vector
-        #### Input:
-            ``npts``: int -- number of points
-            ``degree``: int -- curver degree order
-            ``U``: Tuple[float] -- knot vector
-            ``Pw``: Tuple[Point] -- Control points
-            ``X``: float -- evaluation knot
-            ``r``: float -- evaluation knot
-        #### Output:
-            ``Ubar``: Tuple[float] -- New knot vector
-            ``Qw``: Tuple[Point] -- New control points
-        """
-        n = npts - 1
-        p = degree
-        m = n + p + 1
-        Ubar = [None] * (11 * m)
-
-        a = Chapter2.FindSpan(npts, degree, X[0], U)
-        b = Chapter2.FindSpan(npts, degree, X[r], U)
-        b = b + 1
-        Qw = [0] * ()
-        for j in range(a - p + 1):
-            Qw[j] = Pw[j]
-        for j in range(b - 1, n + 1):
-            Qw[j + r + 1] = Pw[j]
-        for j in range(a + 1):
-            Ubar[j] = U[j]
-        for j in range(b + p, m + 1):
-            Ubar[j + r + 1] = U[j]
-        i = b + p - 1
-        k = b + p + r
-        for j in range(r, -1, -1):
-            while (X[j] <= U[i]) and (i > a):
-                Qw[k - p - 1] = Pw[i - p - 1]
-                Ubar[k] = U[i]
-                k = k - 1
-                i = i - 1
-            Qw[k - p - 1] = Qw[k - p]
-            for l in range(1, p + 1):
-                ind = k - p + l
-                alfa = Ubar[k + l] - X[j]
-                if abs(alfa) == 0:
-                    Qw[ind - 1] = Qw[ind]
-                else:
-                    alfa = alfa / (Ubar[k + l] - U[i - p + l])
-                    Qw[ind - 1] = alfa * Qw[ind - 1] + (1 - alfa) * Qw[ind]
-            Ubar[k] = X[j]
-            k = k - 1
 
     @staticmethod
     def DecomposeCurve(knotvector: Tuple[float], ctrlpoints: Tuple[Point]):
@@ -543,12 +451,6 @@ class Chapter5:
         except Exception as e:
             raise e
         return Uh, Qw
-
-    @staticmethod
-    def DegreeReduceCurve(
-        knotvector: Tuple[float], ctrlpoints: Tuple[Point], times: int
-    ):
-        return Chapter5.DegreeReduceCurve_nurbsbook(knotvector, ctrlpoints, times)
 
     @staticmethod
     def DegreeReduceCurve_nurbsbook(

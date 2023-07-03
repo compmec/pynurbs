@@ -70,7 +70,7 @@ class BaseFunction(Intface_BaseFunction):
     @property
     def knotvector(self) -> KnotVector:
         return self.__U
-    
+
     @property
     def knots(self) -> Tuple[float]:
         return self.__U.knots

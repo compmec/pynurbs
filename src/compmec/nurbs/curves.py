@@ -5,15 +5,15 @@ import numpy as np
 from compmec.nurbs.__classes__ import Intface_BaseCurve
 from compmec.nurbs.algorithms import *
 from compmec.nurbs.functions import RationalFunction, SplineFunction
-from compmec.nurbs.knotspace import KnotVector, GeneratorKnotVector
+from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
 
 
 class BaseCurve(Intface_BaseCurve):
     def __init__(self, knotvector: KnotVector, ctrlpoints: np.ndarray):
         self.insert_knot_at_call = True
         self.__set_UFP(knotvector, ctrlpoints)
-    
-    def copy(self) -> Intface_BaseCurve:
+
+    def deepcopy(self) -> Intface_BaseCurve:
         return self.__class__(self.knotvector, self.ctrlpoints)
 
     def __call__(self, u: np.ndarray) -> np.ndarray:
@@ -47,7 +47,7 @@ class BaseCurve(Intface_BaseCurve):
     @property
     def knotvector(self):
         return self.F.knotvector
-    
+
     @property
     def knots(self):
         return self.F.knots
@@ -247,11 +247,14 @@ class BaseCurve(Intface_BaseCurve):
         The same as mycurve.degree -= 1
         But this function forces the degree reductions without looking the error
         """
-        if self.degree - times < 1:
-            error_msg = f"Cannot reduce curve {times} times."
-            error_msg += f"Final degree would be {self.degree-times}"
-            raise ValueError(error_msg)
-        self.__degree_decrease(times, 1e9)
+        self.degree = self.degree - times
+
+    def degree_increase(self, times: Optional[int] = 1):
+        """
+        The same as mycurve.degree += times
+        But this function forces the degree reductions without looking the error
+        """
+        self.degree = self.degree + times
 
     def degree_clean(self, tolerance: float = 1e-9):
         """
@@ -263,8 +266,6 @@ class BaseCurve(Intface_BaseCurve):
                 self.__degree_decrease(1, tolerance)
         except ValueError:
             pass
-
-    
 
     @classmethod
     def unite_curves(

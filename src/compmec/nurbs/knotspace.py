@@ -69,6 +69,9 @@ class KnotVector(Intface_KnotVector, list):
         values.sort()
         return tuple(values)
 
+    def deepcopy(self):
+        return self.__class__(list(self))
+
     @staticmethod
     def compute_degree_npts(knotvector: Tuple[float]):
         """

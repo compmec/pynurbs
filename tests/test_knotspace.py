@@ -382,10 +382,18 @@ def test_insert_knot_remove():
     assert Uo == U2
     Uo.knot_insert(0.5)
     assert Uo == U3
+    with pytest.raises(ValueError):
+        Uo.knot_insert(0.5)
 
     Uo = KnotVector(Uinc0)
     Uo.knot_insert(0.5, 2)
     assert Uo == U2
+    with pytest.raises(ValueError):
+        # Cannot insert 0 times
+        Uo.knot_insert(0.5, 0)
+    with pytest.raises(ValueError):
+        # Can insert only once, not twice
+        Uo.knot_insert(0.5, 2)
 
     Uo = KnotVector(Uinc0)
     Uo.knot_insert(0.5, 3)
@@ -400,6 +408,14 @@ def test_insert_knot_remove():
     assert Uo == U0
     with pytest.raises(ValueError):
         Uo.knot_remove(0.5)
+    with pytest.raises(ValueError):
+        Uo.knot_remove(0.5)
+    with pytest.raises(ValueError):
+        # Cannot remove 0 times
+        Uo.knot_remove(0.5, 0)
+    with pytest.raises(ValueError):
+        # Cannot remove 0 times
+        Uo.knot_remove(0.5, 2)
 
     Uo = KnotVector(Uinc3)
     Uo.knot_remove(0.5, 2)
