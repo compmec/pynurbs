@@ -1,5 +1,6 @@
 import pytest
 
+
 @pytest.mark.order(3)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(
@@ -18,7 +19,6 @@ class TestInitBezierCurve:
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
-    
 
     @pytest.mark.order(3)
     @pytest.mark.dependency(depends=["TestInitBezierCurve::test_begin"])
@@ -26,14 +26,8 @@ class TestInitBezierCurve:
         pass
 
 
-
 @pytest.mark.order(3)
 @pytest.mark.timeout(2)
-@pytest.mark.dependency(
-    depends=[
-        "test_begin",
-        "TestInitBezierCurve::test_end"
-    ]
-)
+@pytest.mark.dependency(depends=["test_begin", "TestInitBezierCurve::test_end"])
 def test_end():
     pass

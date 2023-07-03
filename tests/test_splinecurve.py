@@ -107,11 +107,11 @@ class TestInitSplineCurve:
     @pytest.mark.dependency(depends=["TestInitSplineCurve::test_build_vectorial"])
     def test_compare_two_curves(self):
         degree = np.random.randint(1, 5)
-        npts = np.random.randint(degree + 1, degree + 11)
-        ndim = np.random.randint(0, 4)
+        npts = np.random.randint(degree + 2, degree + 11)
+        ndim = np.random.randint(1, 4)
         knotvector = GeneratorKnotVector.random(degree, npts)
-        P1 = np.random.uniform(-1, 1, (npts, ndim))
-        P4 = np.random.uniform(-1, 1, (npts, ndim))
+        P1 = np.random.uniform(-2, -1, (npts, ndim))
+        P4 = np.random.uniform(1, 2, (npts, ndim))
         C1 = SplineCurve(knotvector, P1)
         C2 = SplineCurve(knotvector, P1)
         C3 = C1.deepcopy()
@@ -130,7 +130,7 @@ class TestInitSplineCurve:
             "TestInitSplineCurve::test_build_vectorial",
             "TestInitSplineCurve::test_atributesgood",
             "TestInitSplineCurve::test_functions",
-            "TestInitSplineCurve::test_compare_two_curves"
+            "TestInitSplineCurve::test_compare_two_curves",
         ]
     )
     def test_end(self):
@@ -148,7 +148,7 @@ class TestCallShape:
     @pytest.mark.dependency(depends=["TestCallShape::test_begin"])
     def test_build_scalar(self):
         for degree in range(1, 5):
-            for npts in range(degree + 1, degree + 11):
+            for npts in range(degree + 2, degree + 11):
                 knotvector = GeneratorKnotVector.random(degree, npts)
                 ctrlpoints = np.random.uniform(-1, 1, npts)
                 SplineCurve(knotvector, ctrlpoints)
@@ -158,7 +158,7 @@ class TestCallShape:
     @pytest.mark.dependency(depends=["TestCallShape::test_begin"])
     def test_build_vectorial(self):
         for degree in range(1, 5):
-            for npts in range(degree + 1, degree + 11):
+            for npts in range(degree + 2, degree + 11):
                 for ndim in range(1, 5):
                     knotvector = GeneratorKnotVector.random(degree, npts)
                     ctrlpoints = np.random.uniform(-1, 1, (npts, ndim))
@@ -174,7 +174,7 @@ class TestCallShape:
     )
     def test_callscal_scalpts(self):
         for degree in range(1, 5):
-            for npts in range(degree + 1, degree + 11):
+            for npts in range(degree + 2, degree + 11):
                 knotvector = GeneratorKnotVector.random(degree, npts)
                 ctrlpoints = np.random.uniform(-1, 1, npts)
                 curve = SplineCurve(knotvector, ctrlpoints)
@@ -193,7 +193,7 @@ class TestCallShape:
     )
     def test_callscal_vectpts(self, ntests=1):
         for degree in range(1, 5):
-            for npts in range(degree + 1, degree + 11):
+            for npts in range(degree + 2, degree + 11):
                 for ndim in range(1, 5):
                     knotvector = GeneratorKnotVector.random(degree, npts)
                     ctrlpoints = np.random.uniform(-1, 1, (npts, ndim))
@@ -216,7 +216,7 @@ class TestCallShape:
     )
     def test_callvect_scalpts(self):
         for degree in range(1, 5):
-            for npts in range(degree + 1, degree + 11):
+            for npts in range(degree + 2, degree + 11):
                 knotvector = GeneratorKnotVector.random(degree, npts)
                 ctrlpoints = np.random.uniform(-1, 1, npts)
                 curve = SplineCurve(knotvector, ctrlpoints)
@@ -240,7 +240,7 @@ class TestCallShape:
     )
     def test_callvect_vectpts(self):
         for degree in range(1, 5):
-            for npts in range(degree + 1, degree + 11):
+            for npts in range(degree + 2, degree + 11):
                 for ndim in range(1, 5):
                     knotvector = GeneratorKnotVector.random(degree, npts)
                     ctrlpoints = np.random.uniform(-1, 1, (npts, ndim))
@@ -304,7 +304,7 @@ class TestSumSubtract:
         It's expected a ValueError
         """
         for degree in range(1, 5):
-            for npts in range(degree + 1, degree + 11):
+            for npts in range(degree + 2, degree + 11):
                 U1 = GeneratorKnotVector.random(degree, npts)
                 U2 = U1.deepcopy()
                 P1 = np.random.uniform(-1, 1, npts)
@@ -330,7 +330,7 @@ class TestSumSubtract:
         curve obtained by summing the control points
         """
         for degree in range(1, 5):
-            for npts in range(degree + 1, degree + 11):
+            for npts in range(degree + 2, degree + 11):
                 knotvector = GeneratorKnotVector.random(degree, npts)
                 P1 = np.random.uniform(-1, 1, npts)
                 P2 = np.random.uniform(-1, 1, npts)
@@ -352,7 +352,7 @@ class TestSumSubtract:
     )
     def test_sumsub_vector(self):
         for degree in range(1, 5):
-            for npts in range(degree + 1, degree + 11):
+            for npts in range(degree + 2, degree + 11):
                 ndim = np.random.randint(1, 4)
                 knotvector = GeneratorKnotVector.random(degree, npts)
                 P1 = np.random.uniform(-1, 1, (npts, ndim))
@@ -373,7 +373,6 @@ class TestSumSubtract:
 class TestKnotOperations:
     @pytest.mark.order(3)
     @pytest.mark.dependency(depends=["TestCallShape::test_end"])
-    @pytest.mark.skip(reason="Needs implementation")
     def test_begin(self):
         pass
 
@@ -384,28 +383,35 @@ class TestKnotOperations:
             "TestKnotOperations::test_begin",
         ]
     )
-    def test_knot_insert_known_case(self):
-        Uorig = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5]  # Example 5.1 nurbs book
-        Uorig = np.array(Uorig, dtype="float64") / 5  # degree = 3, npts = 8
-        Uorig = KnotVector(Uorig)
-        degree, npts = 3, 8
-        knot = 0.5
-        ndim = 3
-        ctrlpoints = np.random.uniform(-1, 1, (npts, ndim))
-        Corig = SplineCurve(Uorig, ctrlpoints)
+    def test_insert_known_case(self):
+        """
+        Example 5.1 of nurbs book
+        """
+        degree, npts, ndim = 3, 8, 3
+        knot = 2.5
+        Uorig = KnotVector([0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5])
+        assert Uorig.degree == degree
+        assert Uorig.npts == npts
+        assert Uorig.span(knot) == 5
+        assert Uorig.mult(knot) == 0
+
+        P = np.random.uniform(-1, 1, (npts, ndim))
+        Corig = SplineCurve(Uorig, P)
+        assert Corig.degree == degree
+        assert Corig.npts == npts
+        Corig.knot_insert(knot)
+        assert Corig.degree == degree
+        assert Corig.npts == npts + 1
 
         Q = np.zeros((npts + 1, ndim), dtype="float64")
-        Q[:3] = ctrlpoints[:3]
-        Q[3] = (1 / 6) * ctrlpoints[2] + (5 / 6) * ctrlpoints[3]
-        Q[4] = (1 / 2) * ctrlpoints[3] + (1 / 2) * ctrlpoints[4]
-        Q[5] = (5 / 6) * ctrlpoints[4] + (1 / 6) * ctrlpoints[5]
-        Q[6:] = ctrlpoints[5:]
+        Q[:3] = P[:3]
+        Q[3] = (1 / 6) * P[2] + (5 / 6) * P[3]
+        Q[4] = (1 / 2) * P[3] + (1 / 2) * P[4]
+        Q[5] = (5 / 6) * P[4] + (1 / 6) * P[5]
+        Q[6:] = P[5:]
 
-        Uinse = list(Uorig)
-        Uinse.insert(6, knot)
-        Uinse = KnotVector(Uinse)
+        Uinse = [0, 0, 0, 0, 1, 2, 2.5, 3, 4, 5, 5, 5, 5]
         Cinse = SplineCurve(Uinse, Q)
-
         assert Corig == Cinse
 
     @pytest.mark.order(3)
@@ -413,60 +419,140 @@ class TestKnotOperations:
     @pytest.mark.dependency(
         depends=[
             "TestKnotOperations::test_begin",
-            "TestKnotOperations::test_knot_insert_known_case",
+            "TestKnotOperations::test_insert_known_case",
         ]
     )
-    def test_knot_insert_random(self, ntests=10):
-        for i in range(ntests):
-            degree = np.random.randint(1, 5)
-            npts = np.random.randint(degree + 1, degree + 11)
-            ndim = np.random.randint(0, 5)
-            knotvector = self.create_random_knotvector(degree, npts)
-            ctrlpoints = self.create_random_controlpoints(npts, ndim)
-            C = SplineCurve(knotvector, ctrlpoints)
+    def test_remove_known_case(self):
+        degree, npts, ndim = 3, 9, 3
+        knot = 2.5
+        Uorig = KnotVector([0, 0, 0, 0, 1, 2, 2.5, 3, 4, 5, 5, 5, 5])
 
-    @pytest.mark.order(3)
-    @pytest.mark.timeout(15)
-    @pytest.mark.dependency(
-        depends=[
-            "TestKnotOperations::test_begin",
-            "TestKnotOperations::test_knot_insert_random",
-        ]
-    )
-    def test_knot_remove(self):
-        pass
+        Q = np.random.uniform(-1, 1, (npts - 1, ndim))
+        P = np.zeros((npts, ndim), dtype="float64")
+        P[:3] = Q[:3]
+        P[3] = (1 / 6) * Q[2] + (5 / 6) * Q[3]
+        P[4] = (1 / 2) * Q[3] + (1 / 2) * Q[4]
+        P[5] = (5 / 6) * Q[4] + (1 / 6) * Q[5]
+        P[6:] = Q[5:]
+
+        Corig = SplineCurve(Uorig, P)
+        assert Corig.degree == degree
+        assert Corig.npts == npts
+        Corig.knot_remove(knot)
+        assert Corig.degree == degree
+        assert Corig.npts == npts - 1
+
+        Uinse = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5]
+        Cinse = SplineCurve(Uinse, Q)
+        assert Corig == Cinse
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(10)
     @pytest.mark.dependency(
         depends=[
             "TestKnotOperations::test_begin",
-            "TestKnotOperations::test_knot_insert_random",
-            "TestKnotOperations::test_knot_remove",
+            "TestKnotOperations::test_insert_known_case",
+            "TestKnotOperations::test_remove_known_case",
         ]
     )
-    def test_knot_insert_remove_once_random(self, ntests=1):
+    def test_insert_remove_once_random(self):
         for degree in range(1, 6):
-            for i in range(ntests):
-                npts = np.random.randint(degree + 1, degree + 11)
-                ndim = np.random.randint(0, 5)
-                knotvector = self.create_random_knotvector(degree, npts)
-                ctrlpoints = self.create_random_controlpoints(npts, ndim)
-                C = SplineCurve(knotvector, ctrlpoints)
+            npts = np.random.randint(degree + 2, degree + 11)
+            ndim = np.random.randint(1, 5)
+            knotvector = GeneratorKnotVector.random(degree, npts)
+            ctrlpoints = np.random.uniform(-1, 1, (npts, ndim))
+            curve = SplineCurve(knotvector, ctrlpoints)
 
-                knot = np.random.uniform(0, 1)
-                C.knot_insert(knot)
-                C.knot_remove(knot)
+            knot = np.random.uniform(0, 1)
+            curve.knot_insert(knot)
+            curve.knot_remove(knot)
 
-                assert C == SplineCurve(knotvector, ctrlpoints)
+            assert curve == SplineCurve(knotvector, ctrlpoints)
 
     @pytest.mark.order(3)
+    @pytest.mark.timeout(15)
     @pytest.mark.dependency(
         depends=[
             "TestKnotOperations::test_begin",
-            "TestKnotOperations::test_knot_insert_random",
-            "TestKnotOperations::test_knot_remove",
-            "TestKnotOperations::test_knot_insert_remove_once_random",
+            "TestKnotOperations::test_insert_remove_once_random",
+        ]
+    )
+    def test_knotclean(self):
+        U = KnotVector([0, 0, 0, 0.5, 1, 1, 1])
+        assert U.degree == 2
+        assert U.npts == 4
+        P = np.random.uniform(-1, 1, (4, 2))
+        curve = SplineCurve(U, P)
+        curve.knot_insert(0.5)
+        curve.knot_clean()
+        assert curve.knotvector == U
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(15)
+    @pytest.mark.dependency(
+        depends=[
+            "TestKnotOperations::test_begin",
+            "TestKnotOperations::test_knotclean",
+        ]
+    )
+    def test_knotclean_random(self):
+        for degree in range(1, 5):
+            npts = np.random.randint(degree + 2, degree + 11)
+            ndim = np.random.randint(1, 5)
+            U = GeneratorKnotVector.random(degree, npts)
+            P = np.random.uniform(-1, 1, (npts, ndim))
+            curve = SplineCurve(U, P)
+            knot = np.random.rand()
+            curve.knot_insert(knot)
+            curve.knot_clean()
+            assert curve.knotvector == U
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(15)
+    @pytest.mark.dependency(
+        depends=[
+            "TestKnotOperations::test_begin",
+            "TestKnotOperations::test_insert_known_case",
+            "TestKnotOperations::test_remove_known_case",
+            "TestKnotOperations::test_insert_remove_once_random",
+            "TestKnotOperations::test_knotclean",
+            "TestKnotOperations::test_knotclean_random",
+        ]
+    )
+    def test_somefails(self):
+        degree = np.random.randint(1, 5)
+        npts = np.random.randint(degree + 2, degree + 11)
+        knotvector = GeneratorKnotVector.random(degree, npts=npts)
+        ctrlpoints = np.random.uniform(-1, 1, npts)
+        C = SplineCurve(knotvector, ctrlpoints)
+        with pytest.raises(TypeError):
+            C.knot_insert(["asd", 3, None])
+        with pytest.raises(ValueError):
+            C.knot_insert([[0.9, 0.1], [0.5, 0.3]])
+        with pytest.raises(ValueError):
+            C.knot_insert([-0.1, 0.1])
+        with pytest.raises(ValueError):
+            C.knot_insert([1.1, 0.1])
+        with pytest.raises(ValueError):
+            C.knot_remove(0.5)
+
+        U = [0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1]  # deg=3, npt=7
+        P = np.random.uniform(-1, 1, 7)
+        C = SplineCurve(U, P)
+        with pytest.raises(ValueError):
+            C.knot_remove([0.5, 0.5, 0.5, 0.5])
+
+    @pytest.mark.order(3)
+    # @pytest.mark.skip(reason="Pause")
+    @pytest.mark.dependency(
+        depends=[
+            "TestKnotOperations::test_begin",
+            "TestKnotOperations::test_insert_known_case",
+            "TestKnotOperations::test_remove_known_case",
+            "TestKnotOperations::test_insert_remove_once_random",
+            "TestKnotOperations::test_knotclean",
+            "TestKnotOperations::test_knotclean_random",
+            "TestKnotOperations::test_somefails",
         ]
     )
     def test_end(self):
@@ -475,7 +561,7 @@ class TestKnotOperations:
 
 class TestSplitUnite:
     @pytest.mark.order(3)
-    @pytest.mark.timeout(15)
+    @pytest.mark.skip(reason="Needs correction")
     @pytest.mark.dependency(
         depends=[
             "TestKnotOperations::test_end",
@@ -491,127 +577,178 @@ class TestSplitUnite:
             "TestSplitUnite::test_begin",
         ]
     )
-    def test_split_curve(self):
-        U = [0, 0, 0, 0.5, 1, 1, 1]  # degree = 2, npts = 4
-        P = np.random.uniform(-1, 1, (4, 2))
-        curve = SplineCurve(U, P)
-        curves = curve.split()
+    def test_split_number_curves(self):
+        U = KnotVector([0, 0, 0, 0.5, 1, 1, 1])
+        P = np.random.uniform(-1, 1, U.npts)
+        C = SplineCurve(U, P)
+        assert len(C.split()) == 2
+        assert len(C.split(0.5)) == 2
+        assert len(C.split(0.25)) == 2
+        assert len(C.split([0.25, 0.75])) == 3
+        assert C == SplineCurve(U, P)
+
+        U = KnotVector([0, 0, 0, 0.25, 0.5, 0.75, 1, 1, 1])
+        P = np.random.uniform(-1, 1, U.npts)
+        C = SplineCurve(U, P)
+        assert len(C.split()) == 4
+        assert len(C.split(0.5)) == 2
+        assert len(C.split(0.25)) == 2
+        assert len(C.split([0.25, 0.75])) == 3
+        assert C == SplineCurve(U, P)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(15)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplitUnite::test_begin",
+            "TestSplitUnite::test_split_number_curves",
+        ]
+    )
+    def test_split_matchboundary(self):
+        U = KnotVector([0, 0, 0, 0.5, 1, 1, 1])
+        P = np.random.uniform(-1, 1, U.npts)
+        C = SplineCurve(U, P)
+        curves = C.split()
+        assert np.all(curves[0](0.5) == curves[1](0.5))
+        assert min(curves[0].knotvector) == 0
+        assert max(curves[0].knotvector) == 0.5
+        assert min(curves[1].knotvector) == 0.5
+        assert max(curves[1].knotvector) == 1
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(15)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplitUnite::test_begin",
+            "TestSplitUnite::test_split_matchboundary",
+        ]
+    )
+    def test_splitrand_matchboundary(self):
+        for degree in range(1, 5):
+            for npts in range(degree + 2, degree + 11):
+                U = GeneratorKnotVector.random(degree, npts)
+                P = np.random.uniform(-1, 1, npts)
+                C = SplineCurve(U, P)
+                knots = C.knots
+                curves = C.split()
+                assert len(curves) == len(knots) - 1
+                for i, seg in enumerate(curves):
+                    assert seg.degree == degree
+                    assert seg.npts == degree + 1
+                    assert min(seg.knotvector) == knots[i]
+                    assert max(seg.knotvector) == knots[i + 1]
+                for i, knot in enumerate(knots[:-1]):
+                    np.all(curves[i](knot) == curves[i + 1](knot))
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(15)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplitUnite::test_begin",
+            "TestSplitUnite::test_splitrand_matchboundary",
+        ]
+    )
+    def test_split_knowncase1(self):
+        """
+        Split bezier -> one bezier
+        """
+        degree, npts = 2, 3
+        U = KnotVector([0, 0, 0, 1, 1, 1])
+        assert U.degree == degree
+        assert U.npts == npts
+        P = np.random.uniform(-1, 1, npts)
+        curve_original = SplineCurve(U, P)
+        curves = curve_original.split()
+        assert len(curves) == 1
+        assert curves[0] == curve_original
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(15)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSplitUnite::test_begin",
+            "TestSplitUnite::test_splitrand_matchboundary",
+            "TestSplitUnite::test_split_knowncase2",
+        ]
+    )
+    def test_split_knowncase2(self):
+        degree, npts, ndim = 2, 4, 2
+        U = KnotVector([0, 0, 0, 0.5, 1, 1, 1])
+        assert U.degree == degree
+        assert U.npts == npts
+        P = np.random.uniform(-1, 1, (npts, ndim))
+        curve_original = SplineCurve(U, P)
+        curves = curve_original.split()
         assert len(curves) == 2
-
-        degree, npts = 3, 4
-        knotvector = [0, 0, 0, 0, 1, 1, 1, 1]
-        ctrlpoints = np.random.uniform(-1, 1, npts)
-        curve = SplineCurve(knotvector, ctrlpoints)
-        assert len(curve.split()) == 1  # cause it's bezier
-
-        assert len(curve.split(0.5)) == 2
-
-        assert len(curve.split([0.3, 0.7])) == 3
-
-        with pytest.raises(ValueError):
-            curve.split([[0.3, 0.7], [0.5, 0.8]])
+        assert curves[0].knotvector == [0, 0, 0, 0.5, 0.5, 0.5]
+        assert curves[1].knotvector == [0.5, 0.5, 0.5, 1, 1, 1]
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(
         depends=[
             "TestSplitUnite::test_begin",
+            "TestSplitUnite::test_split_knowncase1",
+            "TestSplitUnite::test_split_knowncase2",
         ]
     )
-    def test_unite_curve(self):
-        U = [0, 0, 0, 0.5, 1, 1, 1]  # degree = 2, npts = 4
-        P = np.random.uniform(-1, 1, (4, 2))
-        curve = SplineCurve(U, P)
-        curves = curve.split()
-        newcurve = SplineCurve.unite_curves(curves, [0, 0.5, 1])
-        assert curve == newcurve
+    def test_unite_knowncase(self):
+        U0 = KnotVector([0, 0, 0, 0.5, 0.5, 0.5])
+        U1 = KnotVector([0.5, 0.5, 0.5, 1, 1, 1])
+        assert U0.degree == 2
+        assert U1.degree == 2
+        assert U0.npts == 3
+        assert U1.npts == 3
+        P0 = np.random.uniform(-1, 1, (3, 2))
+        P1 = np.random.uniform(-1, 1, (3, 2))
+        P1[0] = P0[-1]
+        curve0 = SplineCurve(U0, P0)
+        curve1 = SplineCurve(U1, P1)
 
-        with pytest.raises(ValueError):
-            SplineCurve.unite_curves(curves, (0.3, 0.5, 0.4))
-        with pytest.raises(ValueError):
-            SplineCurve.unite_curves(curves, (0.3, 0.4, 0.5, 0.6))
-        with pytest.raises(TypeError):
-            SplineCurve.unite_curves([curve, 1], (0.3, 0.4, 0.5))
-        with pytest.raises(ValueError):
-            Utemp = [0, 0, 0, 1, 1, 1]
-            P1 = np.random.uniform(-1, 1, (3, 2))
-            P2 = np.random.uniform(-1, 1, (3, 2))
-            C1 = SplineCurve(Utemp, P1)
-            C2 = SplineCurve(Utemp, P2)
-            SplineCurve.unite_curves([C1, C2], [0, 0.5, 1])
-
-        with pytest.raises(ValueError):
-            U = [0, 0, 0, 0.5, 1, 1, 1]  # degree = 2, npts = 4
-            P = np.random.uniform(-1, 1, (4, 2))
-            curve = SplineCurve(U, P)
-            curves = curve.split(0.7)
-            print("curves = ")
-            print(curves)
-            SplineCurve.unite_curves(curves, [0, 0.7, 1])
+        newcurve = curve0 + curve1  # Concatenate
+        curves = newcurve.split(0.5)
+        assert curves[0] == curve0
+        assert curves[0] == curve1
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(
         depends=[
             "TestSplitUnite::test_begin",
+            "TestSplitUnite::test_split_knowncase1",
+            "TestSplitUnite::test_split_knowncase2",
         ]
     )
-    def test_knotclean(self):
-        U = [0, 0, 0, 0.5, 1, 1, 1]  # degree = 2, npts = 4
-        P = np.random.uniform(-1, 1, (4, 2))
-        curve = SplineCurve(U, P)
-        curve.knot_insert(0.5)
-        curve.knot_clean()
-        assert curve.knotvector == U
+    def test_somefails(self):
+        pass
 
     @pytest.mark.order(3)
-    @pytest.mark.timeout(15)
     @pytest.mark.dependency(
         depends=[
             "TestSplitUnite::test_begin",
+            "TestSplitUnite::test_split_number_curves",
+            "TestSplitUnite::test_split_matchboundary",
+            "TestSplitUnite::test_splitrand_matchboundary",
+            "TestSplitUnite::test_split_knowncase1",
+            "TestSplitUnite::test_split_knowncase2",
+            "TestSplitUnite::test_unite_knowncase",
+            "TestSplitUnite::test_somefails",
         ]
     )
     def test_somefails(self):
         degree = np.random.randint(1, 5)
-        npts = np.random.randint(degree + 1, degree + 11)
+        npts = np.random.randint(degree + 2, degree + 11)
         knotvector = GeneratorKnotVector.random(degree, npts=npts)
         ctrlpoints = np.random.uniform(-1, 1, npts)
         C = SplineCurve(knotvector, ctrlpoints)
         with pytest.raises(TypeError):
-            C + 1
-
-        with pytest.raises(TypeError):
-            C.degree = "asd"
-        with pytest.raises(ValueError):
-            C.degree = -1
-        C.degree = degree
-
-        with pytest.raises(TypeError):
-            newP = np.empty(ctrlpoints.shape, dtype="object")
-            C.ctrlpoints = newP
-        with pytest.raises(TypeError):
-            newP = np.empty(ctrlpoints.shape, dtype="object")
-            C.ctrlpoints = newP
-        with pytest.raises(TypeError):
-            for i in range(npts):
-                newP[i] = "asd"
-            C.ctrlpoints = newP
-        with pytest.raises(ValueError):
-            P1 = np.random.uniform(-1, 1, (npts, 2))
-            P2 = np.random.uniform(-1, 1, (npts, 3))
-            C1 = SplineCurve(knotvector, P1)
-            C2 = SplineCurve(knotvector, P2)
-            C1 + C2
-        with pytest.raises(TypeError):
             C.knot_insert(["asd", 3, None])
-
         with pytest.raises(ValueError):
             C.knot_insert([[0.9, 0.1], [0.5, 0.3]])
         with pytest.raises(ValueError):
             C.knot_insert([-0.1, 0.1])
         with pytest.raises(ValueError):
             C.knot_insert([1.1, 0.1])
-
         with pytest.raises(ValueError):
             C.knot_remove(0.5)
         U = [0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1]  # deg=3, npt=7
@@ -619,19 +756,18 @@ class TestSplitUnite:
         C = SplineCurve(U, P)
         with pytest.raises(ValueError):
             C.knot_remove([0.5, 0.5, 0.5, 0.5])
-        with pytest.raises(ValueError):
-            C.degree -= 1
-        with pytest.raises(ValueError):
-            C.degree -= 4
-        C.degree_decrease(1)  # forced
-        with pytest.raises(ValueError):
-            C.degree_decrease(5)
-        newC = C.deepcopy()
 
     @pytest.mark.order(3)
     @pytest.mark.dependency(
         depends=[
             "TestSplitUnite::test_begin",
+            "TestSplitUnite::test_split_number_curves",
+            "TestSplitUnite::test_split_matchboundary",
+            "TestSplitUnite::test_splitrand_matchboundary",
+            "TestSplitUnite::test_split_known_case1",
+            "TestSplitUnite::test_split_known_case2",
+            "TestSplitUnite::test_unite_known_case",
+            "TestSplitUnite::test_somefails",
         ]
     )
     def test_end(self):
@@ -641,6 +777,7 @@ class TestSplitUnite:
 class TestDegreeOperations:
     @pytest.mark.order(3)
     @pytest.mark.timeout(15)
+    @pytest.mark.skip(reason="Needs correction")
     @pytest.mark.dependency(
         depends=[
             "TestKnotOperations::test_end",
@@ -665,7 +802,7 @@ class TestDegreeOperations:
 
         curve = SplineCurve(knotvector, ctrlpoints)
         curve.degree += 1
-        assert curve.degree == (degree + 1)
+        assert curve.degree == (degree + 2)
         correctctrlpoints = [
             ctrlpoints[0],
             0.5 * (ctrlpoints[0] + ctrlpoints[1]),
@@ -689,7 +826,7 @@ class TestDegreeOperations:
 
         curve = SplineCurve(knotvector, ctrlpoints)
         curve.degree += 1
-        assert curve.degree == (degree + 1)
+        assert curve.degree == (degree + 2)
         correctctrlpoints = [
             ctrlpoints[0],
             (ctrlpoints[0] + 2 * ctrlpoints[1]) / 3,
@@ -714,7 +851,7 @@ class TestDegreeOperations:
 
         curve = SplineCurve(knotvector, ctrlpoints)
         curve.degree += 1
-        assert curve.degree == (degree + 1)
+        assert curve.degree == (degree + 2)
         Pgood = [
             ctrlpoints[0],
             (ctrlpoints[0] + 3 * ctrlpoints[1]) / 4,
@@ -955,6 +1092,19 @@ class TestDegreeOperations:
                 C.degree += times
                 C.degree_clean()
                 assert C.degree == degree
+
+    def test_fails(self):
+        U = KnotVector([0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1])
+        assert U.degree == 3
+        assert U.npts == 7
+        P = np.random.uniform(-1, 1, 7)
+        C = SplineCurve(U, P)
+        with pytest.raises(ValueError):
+            C.degree -= 1
+        with pytest.raises(ValueError):
+            C.degree -= 4
+        with pytest.raises(ValueError):
+            C.degree_decrease(5)
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(15)

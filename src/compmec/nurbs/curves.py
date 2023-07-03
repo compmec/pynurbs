@@ -13,6 +13,9 @@ class BaseCurve(Intface_BaseCurve):
         self.insert_knot_at_call = True
         self.__set_UFP(knotvector, ctrlpoints)
 
+    def __str__(self) -> str:
+        return str(self.knotvector) + "\n" + str(self.ctrlpoints)
+
     def deepcopy(self) -> Intface_BaseCurve:
         return self.__class__(self.knotvector, self.ctrlpoints)
 
@@ -296,7 +299,7 @@ class BaseCurve(Intface_BaseCurve):
 
     def _split_into_bezier(self) -> Tuple[Intface_BaseCurve]:
         if self.degree + 1 == self.npts:  # is bezier
-            return [self.copy()]
+            return [self.deepcopy()]
         all_knots = self.knotvector.knots
         for i in range(self.degree):  # We will insert knot maximum as possible
             self.knot_insert(all_knots)
@@ -314,6 +317,11 @@ class BaseCurve(Intface_BaseCurve):
     def split(
         self, knots: Optional[Union[float, np.ndarray]] = None
     ) -> Tuple[Intface_BaseCurve]:
+        """
+        Separate the current spline at specified knots
+        If no arguments are given, it splits at every knot and
+            returns a list of bezier curves
+        """
         if knots is None:
             return self._split_into_bezier()
         if isinstance(knots, (int, float)):
@@ -324,7 +332,7 @@ class BaseCurve(Intface_BaseCurve):
         knots = list(set(knots))
         knots.sort()
         knots = tuple(knots)
-        copycurve = self.copy()
+        copycurve = self.deepcopy()
         for i in range(copycurve.degree):
             copycurve.knot_insert(knots)
         knotvector = np.array(list(copycurve.knotvector)[1:-1], dtype="float64")
@@ -345,16 +353,19 @@ class BaseCurve(Intface_BaseCurve):
 
 
 class SplineCurve(BaseCurve):
-    def __init__(self, knotvector: KnotVector, controlpoints: np.ndarray):
-        super().__init__(knotvector, controlpoints)
+    def __init__(self, knotvector: KnotVector, ctrlpoints: np.ndarray):
+        super().__init__(knotvector, ctrlpoints)
+
+    def __repr__(self):
+        return f"SplineCurve of degree {self.degree} and {self.npts} control points"
 
     def _create_base_function_instance(self, knotvector: KnotVector):
         return SplineFunction(knotvector)
 
 
 class RationalCurve(BaseCurve):
-    def __init__(self, knotvector: KnotVector, controlpoints: np.ndarray):
-        super().__init__(knotvector, controlpoints)
+    def __init__(self, knotvector: KnotVector, ctrlpoints: np.ndarray):
+        super().__init__(knotvector, ctrlpoints)
 
     def _create_base_function_instance(self, knotvector: KnotVector):
         return RationalFunction(knotvector)
