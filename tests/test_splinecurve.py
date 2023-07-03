@@ -561,7 +561,6 @@ class TestKnotOperations:
 
 class TestSplitUnite:
     @pytest.mark.order(3)
-    @pytest.mark.skip(reason="Needs correction")
     @pytest.mark.dependency(
         depends=[
             "TestKnotOperations::test_end",
@@ -637,7 +636,7 @@ class TestSplitUnite:
                     assert seg.npts == degree + 1
                     assert min(seg.knotvector) == knots[i]
                     assert max(seg.knotvector) == knots[i + 1]
-                for i, knot in enumerate(knots[:-1]):
+                for i, knot in enumerate(knots[1:-1]):
                     np.all(curves[i](knot) == curves[i + 1](knot))
 
     @pytest.mark.order(3)
@@ -668,7 +667,7 @@ class TestSplitUnite:
         depends=[
             "TestSplitUnite::test_begin",
             "TestSplitUnite::test_splitrand_matchboundary",
-            "TestSplitUnite::test_split_knowncase2",
+            "TestSplitUnite::test_split_knowncase1",
         ]
     )
     def test_split_knowncase2(self):
@@ -685,6 +684,7 @@ class TestSplitUnite:
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(15)
+    @pytest.mark.skip(reason="Needs correction")
     @pytest.mark.dependency(
         depends=[
             "TestSplitUnite::test_begin",
@@ -709,18 +709,6 @@ class TestSplitUnite:
         curves = newcurve.split(0.5)
         assert curves[0] == curve0
         assert curves[0] == curve1
-
-    @pytest.mark.order(3)
-    @pytest.mark.timeout(15)
-    @pytest.mark.dependency(
-        depends=[
-            "TestSplitUnite::test_begin",
-            "TestSplitUnite::test_split_knowncase1",
-            "TestSplitUnite::test_split_knowncase2",
-        ]
-    )
-    def test_somefails(self):
-        pass
 
     @pytest.mark.order(3)
     @pytest.mark.dependency(

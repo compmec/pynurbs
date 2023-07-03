@@ -79,8 +79,8 @@ class KnotVector(Intface_KnotVector, list):
             u = float(u)
         except Exception:
             raise TypeError
-        minU = np.min(self)
-        maxU = np.max(self)
+        minU = self[0]
+        maxU = self[-1]
         if u < minU:
             raise ValueError(f"Received u = {u} < minU = {minU}")
         if maxU < u:

@@ -294,6 +294,7 @@ class KnotVector:
     def split(knotvector: Tuple[float], nodes: Tuple[float]) -> List[Tuple[float]]:
         """
         It splits the knotvector at nodes.
+        You may put initial and final values.
         Example:
             >> U = [0, 0, 0.5, 1, 1]
             >> split(U, [0.5])

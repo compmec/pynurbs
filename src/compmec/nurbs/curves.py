@@ -2,8 +2,8 @@ from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 
+from compmec.nurbs import algorithms as algo
 from compmec.nurbs.__classes__ import Intface_BaseCurve
-from compmec.nurbs.algorithms import *
 from compmec.nurbs.functions import RationalFunction, SplineFunction
 from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
 
@@ -121,31 +121,6 @@ class BaseCurve(Intface_BaseCurve):
     def __sub__(self, __obj: object):
         return self + (-__obj)
 
-    def __transform_knots_to_table(self, knots: Union[float, Tuple[float]]) -> Dict:
-        """
-        Receives a float or an array of floats.
-        It returns a dictionary with the number of apearances of knot.
-        Example:
-            [0, 0.5, 0.5, 1] -> {0: 1, 0.5: 2, 1: 1}
-            [0, 0.5, 1, 2, 2, 4] -> {0: 1, 0.5: 1, 2: 2, 4: 1}
-        """
-        try:
-            knots = float(knots)
-            return {knots: 1}
-        except Exception:
-            pass
-        try:
-            iter(knots)
-            knots = np.array(knots, dtype="float64")
-        except Exception:
-            raise TypeError
-        if knots.ndim != 1:
-            raise ValueError("Argument must be 'float' or a 'Array1D[float]'")
-        table = {}
-        for knot in list(set(knots)):
-            table[knot] = np.sum(knots == knot)
-        return table
-
     def knot_insert(self, knots: Union[float, Tuple[float]]) -> None:
         knots = np.array(knots, dtype="float64")
         if knots.ndim == 0:
@@ -159,26 +134,44 @@ class BaseCurve(Intface_BaseCurve):
         newknotvector.extend(knots)
         newknotvector.sort()
         newknotvector = KnotVector(newknotvector)
-        T, _ = LeastSquare.spline(self.knotvector, newknotvector)
+        T, _ = algo.LeastSquare.spline(self.knotvector, newknotvector)
         newcontrolpoints = T @ self.ctrlpoints
         self.__set_UFP(newknotvector, newcontrolpoints)
 
-    def knot_remove(self, knots: Union[float, Tuple[float]]) -> None:
-        table = self.__transform_knots_to_table(knots)
-        knotvector = list(self.knotvector)
-        ctrlpoints = list(self.ctrlpoints)
-        for knot, times in table.items():
-            if knot not in knotvector:
-                error_msg = f"Requested remove ({knot:.3f}),"
-                error_msg += f" it's not in {knotvector}"
+    def knot_remove(
+        self, nodes: Union[float, Tuple[float]], tolerance: float = 1e-9
+    ) -> None:
+        nodes = np.array(nodes, dtype="float64")
+        if nodes.ndim == 0:
+            nodes = np.array([nodes.tolist()])
+        elif nodes.ndim != 1:
+            raise ValueError("Nodes invalid")
+        nodes_requested = list(set(list(nodes)))
+        newknotvector = list(self.knotvector)
+        for node in nodes_requested:
+            if not node in self.knots:
+                error_msg = f"Requested remove ({node:.3f}),"
+                error_msg += f" which it's not in knotvector"
                 raise ValueError(error_msg)
-            result = Chapter5.RemoveCurveKnot(knotvector, ctrlpoints, knot, times)
-            t, knotvector, ctrlpoints = result
-            if t != times:
-                error_msg = f"Cannot remove knot {knot}"
-                error_msg += f" (only {t}/{times} times)"
+        times_requested = [sum(abs(nodes - node) < 1e-9) for node in nodes]
+        for node, times in zip(nodes_requested, times_requested):
+            mult = self.knotvector.mult(node)
+            if times > mult:
+                error_msg = f"Requested remove {times} times the node "
+                error_msg += f"{node:.3f}, but only {mult} available."
                 raise ValueError(error_msg)
-        self.__set_UFP(knotvector, ctrlpoints)
+            for i in range(times):
+                newknotvector.remove(node)
+        newknotvector = KnotVector(newknotvector)
+        T, E = algo.LeastSquare.spline(self.knotvector, newknotvector)
+        error = np.moveaxis(self.ctrlpoints, 0, -1) @ E @ self.ctrlpoints
+        error = np.max(np.abs(error))
+        if error > tolerance:
+            error_msg = f"Cannot remove the nodes {nodes} cause the "
+            error_msg += f" error ({error:.1e}) is > {tolerance:.1e} "
+            raise ValueError(error_msg)
+        newctrlpoints = T @ self.ctrlpoints
+        self.__set_UFP(newknotvector, newctrlpoints)
 
     def knot_clean(self, tolerance: float = 1e-9) -> None:
         """
@@ -199,44 +192,27 @@ class BaseCurve(Intface_BaseCurve):
                 break
 
     def __degree_increase(self, times: int):
-        knotvector = list(self.knotvector)
-        ctrlpoints = list(self.ctrlpoints)
-        if self.degree + 1 == self.npts:  # If is bezier
-            ctrlpoints = Custom.BezDegreeIncrease(ctrlpoints, times)
-            knotvector = [0] * times + list(knotvector) + [1] * times
-        else:
-            oldknotvector = list(knotvector)
-            knotvector += times * list(self.knotvector.knots)
-            knotvector.sort()
-            ctrlpoints = Custom.LeastSquareSpline(oldknotvector, ctrlpoints, knotvector)
-        self.__set_UFP(knotvector, ctrlpoints)
+        newknotvector = list(self.knotvector) + times * list(self.knots)
+        newknotvector.sort()
+        T, _ = algo.LeastSquare.spline(self.knotvector, newknotvector)
+        newctrlpoints = T @ self.ctrlpoints
+        self.__set_UFP(newknotvector, newctrlpoints)
 
     def __degree_decrease(self, times: int = 1, tolerance: float = 1e-9):
-        knotvector = list(self.knotvector)
-        ctrlpoints = list(self.ctrlpoints)
-        if self.degree + 1 == self.npts:  # If is bezier
-            ctrlpoints, error = Custom.BezDegreeReduce(ctrlpoints, times)
-            knotvector = [0] * (self.npts - times) + [1] * (self.npts - times)
-        else:
-            for t in range(times):
-                for knot in self.knotvector.knots:
-                    if knot in knotvector:
-                        knotvector.remove(knot)
-            ctrlpoints = Custom.LeastSquareSpline(
-                self.knotvector, ctrlpoints, knotvector
-            )
-            new_curve = self.__class__(knotvector, ctrlpoints)
-            usample = np.linspace(1 / 5, 4 / 5, 129)
-            oripoints = self.evaluate(usample)
-            newpoints = new_curve.evaluate(usample)
-            diff2 = np.abs(oripoints - newpoints)
-            error = np.max(diff2)
+        newknotvector = list(self.knotvector)
+        for knot in self.knots:
+            mult = min(times, self.knotvector.mult(knot))
+            for i in range(mult):
+                newknotvector.remove(knot)
+        T, E = algo.LeastSquare.spline(self.knotvector, newknotvector)
+        error = np.moveaxis(self.ctrlpoints, 0, -1) @ E @ self.ctrlpoints
+        error = np.max(np.abs(error))
         if error > tolerance:
-            error_msg = f"Cannot reduce degree {times} times"
+            error_msg = f"Cannot reduce degree {times} times "
             error_msg += f"cause the error ({error:.1e}) is > {tolerance:.1e} "
             raise ValueError(error_msg)
-
-        self.__set_UFP(knotvector, ctrlpoints)
+        newctrlpoints = T @ self.ctrlpoints
+        self.__set_UFP(newknotvector, newctrlpoints)
 
     def degree_decrease(self, times: Optional[int] = 1):
         """
@@ -264,41 +240,44 @@ class BaseCurve(Intface_BaseCurve):
             pass
 
     def split(
-        self, knots: Optional[Union[float, np.ndarray]] = None
+        self, nodes: Optional[Union[float, np.ndarray]] = None
     ) -> Tuple[Intface_BaseCurve]:
         """
         Separate the current spline at specified knots
         If no arguments are given, it splits at every knot and
             returns a list of bezier curves
         """
-        if knots is None:
-            return self._split_into_bezier()
-        if isinstance(knots, (int, float)):
-            knots = tuple([knots])
-        knots = np.array(knots, dtype="float64")
-        if knots.ndim != 1:
-            raise ValueError
-        knots = list(set(knots))
-        knots.sort()
-        knots = tuple(knots)
+        if nodes is None:  # split into beziers
+            if self.degree + 1 == self.npts:  # already bezier
+                return (self.deepcopy(),)
+            return self.split(self.knots)
+        nodes = np.array(nodes, dtype="float64")
+        if nodes.ndim == 0:
+            nodes = np.array([nodes])
+        elif nodes.ndim != 1:
+            raise ValueError("Nodes invalid")
+        nodes = list(nodes) + [self.knotvector[0], self.knotvector[-1]]
+        nodes = list(set(nodes))
+        nodes.sort()
         copycurve = self.deepcopy()
-        for i in range(copycurve.degree):
-            copycurve.knot_insert(knots)
-        knotvector = np.array(list(copycurve.knotvector)[1:-1], dtype="float64")
-        listcurves = [None] * (len(knots) + 1)
-        all_knots = copycurve.knotvector.knots
-        pairs = list(zip(all_knots[:-1], all_knots[1:]))
-        for i, (ua, ub) in enumerate(pairs):
-            middle = knotvector[(ua <= knotvector) * (knotvector <= ub)]
-            middle = (middle - ua) / (ub - ua)
-            newknotvect = [0] + list(middle) + [1]
-            newnpts = len(newknotvect) - copycurve.degree - 1
-            lowerind = i * (newnpts - 1)
-            upperind = (i + 1) * (newnpts - 1) + 1
+        for node in nodes[1:-1]:
+            mult = self.knotvector.mult(node)
+            copycurve.knot_insert((self.degree - mult) * [node])
+
+        allknotvec = algo.KnotVector.split(self.knotvector, nodes)
+        listcurves = [0] * len(allknotvec)
+        for i, newknotvec in enumerate(allknotvec):
+            nodeinf, nodesup = nodes[i], nodes[i + 1]
+            lowerind = copycurve.knotvector.span(nodeinf) - self.degree
+            if nodesup < self.knotvector[-1]:
+                upperind = copycurve.knotvector.span(nodesup) - self.degree + 1
+            else:
+                upperind = None
             newctrlpts = copycurve.ctrlpoints[lowerind:upperind]
-            newcurve = copycurve.__class__(newknotvect, newctrlpts)
+            newcurve = self.__class__(newknotvec, newctrlpts)
             listcurves[i] = newcurve
-        return listcurves
+        del copycurve
+        return tuple(listcurves)
 
 
 class SplineCurve(BaseCurve):
