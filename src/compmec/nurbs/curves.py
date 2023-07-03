@@ -3,15 +3,18 @@ from typing import Optional, Tuple, Union
 import numpy as np
 
 from compmec.nurbs.__classes__ import Intface_BaseCurve
-from compmec.nurbs.algorithms import Chapter5, Custom
+from compmec.nurbs.algorithms import *
 from compmec.nurbs.functions import RationalFunction, SplineFunction
-from compmec.nurbs.knotspace import KnotVector
+from compmec.nurbs.knotspace import KnotVector, GeneratorKnotVector
 
 
 class BaseCurve(Intface_BaseCurve):
     def __init__(self, knotvector: KnotVector, ctrlpoints: np.ndarray):
         self.insert_knot_at_call = True
         self.__set_UFP(knotvector, ctrlpoints)
+    
+    def copy(self) -> Intface_BaseCurve:
+        return self.__class__(self.knotvector, self.ctrlpoints)
 
     def __call__(self, u: np.ndarray) -> np.ndarray:
         if self.insert_knot_at_call:
@@ -44,6 +47,10 @@ class BaseCurve(Intface_BaseCurve):
     @property
     def knotvector(self):
         return self.F.knotvector
+    
+    @property
+    def knots(self):
+        return self.F.knots
 
     @property
     def F(self):
@@ -257,8 +264,7 @@ class BaseCurve(Intface_BaseCurve):
         except ValueError:
             pass
 
-    def copy(self) -> Intface_BaseCurve:
-        return self.__class__(self.knotvector, self.ctrlpoints)
+    
 
     @classmethod
     def unite_curves(

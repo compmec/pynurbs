@@ -65,9 +65,9 @@ class KnotVector(Intface_KnotVector, list):
 
     @property
     def knots(self) -> Tuple[float]:
-        knts = list(set(self))
-        knts.sort()
-        return tuple(knts)
+        values = list(set(list(self)))
+        values.sort()
+        return tuple(values)
 
     @staticmethod
     def compute_degree_npts(knotvector: Tuple[float]):
