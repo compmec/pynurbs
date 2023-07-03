@@ -12,7 +12,8 @@ from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
 @pytest.mark.dependency(
     depends=[
         "tests/test_knotspace.py::test_end",
-        "tests/test_basefunctions.py::test_end",
+        "tests/test_functions.py::test_end",
+        "tests/test_beziercurve.py::test_end",
     ],
     scope="session",
 )
@@ -103,6 +104,7 @@ class TestInitSplineCurve:
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(15)
+    @pytest.mark.dependency(depends=["TestInitSplineCurve::test_build_vectorial"])
     def test_compare_two_curves(self):
         degree = np.random.randint(1, 5)
         npts = np.random.randint(degree + 1, degree + 11)
@@ -128,6 +130,7 @@ class TestInitSplineCurve:
             "TestInitSplineCurve::test_build_vectorial",
             "TestInitSplineCurve::test_atributesgood",
             "TestInitSplineCurve::test_functions",
+            "TestInitSplineCurve::test_compare_two_curves"
         ]
     )
     def test_end(self):
