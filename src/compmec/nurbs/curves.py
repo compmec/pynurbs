@@ -1,11 +1,11 @@
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 
 from compmec.nurbs import algorithms as algo
 from compmec.nurbs.__classes__ import Intface_BaseCurve
 from compmec.nurbs.functions import RationalFunction, SplineFunction
-from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
+from compmec.nurbs.knotspace import KnotVector
 
 
 class BaseCurve(Intface_BaseCurve):
@@ -48,8 +48,6 @@ class BaseCurve(Intface_BaseCurve):
 
     @degree.setter
     def degree(self, value: int):
-        if not isinstance(value, int):
-            raise TypeError("To set new degree, it must be an integer")
         value = int(value)
         if value < 1:
             raise ValueError("The degree must be 1 or higher!")
@@ -62,22 +60,21 @@ class BaseCurve(Intface_BaseCurve):
 
     @ctrlpoints.setter
     def ctrlpoints(self, value: np.ndarray):
-        if not isinstance(value, (list, tuple, np.ndarray)):
-            error_msg = f"Control points are invalid! type = {type(value)}."
-            raise TypeError(error_msg)
-        value = np.array(value, dtype="object")
-        if np.any(value == None):
-            raise TypeError("None is inside the array of control points")
         try:
-            value = np.array(value, dtype="float64")
+            iter(value)
         except Exception:
-            error_msg = "Could not convert control points to array of floats"
-            raise TypeError(error_msg)
-        if value.shape[0] != self.npts:
+            raise ValueError
+        if len(value) != self.npts:
             error_msg = "The number of control points must be the same as"
             error_msg += " degrees of freedom of KnotVector.\n"
             error_msg += f"  knotvector.npts = {self.npts}"
             error_msg += f"  len(ctrlpoints) = {len(value)}"
+            raise ValueError(error_msg)
+        try:
+            1.0 * value[0] - 1.5 * value[0] + 3.1 * value[0]
+        except Exception:
+            error_msg = "For each control point P, it's needed operations"
+            error_msg = "with floats like 1.0*P - 1.5*P + 3.1*P"
             raise ValueError(error_msg)
         self.__ctrlpoints = value
 
@@ -86,22 +83,37 @@ class BaseCurve(Intface_BaseCurve):
         self.__F = self._create_base_function_instance(knotvector)
         self.ctrlpoints = ctrlpoints
 
-    def __eq__(self, obj: object) -> bool:
-        if type(self) != type(obj):
+    def __eq__(self, other: object) -> bool:
+        if type(self) != type(other):
             return False
-        knots = self.knotvector.knots
-        pairs = list(zip(knots[:-1], knots[1:]))
-        utest = [np.linspace(ua, ub, 2 + self.degree) for ua, ub in pairs]
-        utest = list(set(np.array(utest).reshape(-1)))
-        for i, ui in enumerate(utest):
-            Cusel = self.evaluate(ui)
-            Cuobj = obj.evaluate(ui)
-            if np.any(np.abs(Cusel - Cuobj) > 1e-9):
-                return False
+        if self.knotvector[0] != other.knotvector[0]:
+            return False
+        if self.knotvector[-1] != other.knotvector[-1]:
+            return False
+        selfcopy = self.deepcopy()
+        othercopy = other.deepcopy()
+        maxdegree = max(self.degree, other.degree)
+        selfcopy.degree = maxdegree
+        othercopy.degree = maxdegree
+        allknots = list(selfcopy.knots) + list(othercopy.knots)
+        allknots = list(set(allknots))
+        allknots.sort()
+        for knot in allknots[1:-1]:
+            multself = selfcopy.knotvector.mult(knot)
+            multother = othercopy.knotvector.mult(knot)
+            diff = multself - multother
+            if diff > 0:
+                othercopy.knot_insert(diff * [knot])
+            elif diff < 0:
+                selfcopy.knot_insert((-diff) * [knot])
+        # Now the knotvectors are equal
+        diffctrlpoints = selfcopy.ctrlpoints - othercopy.ctrlpoints
+        if np.all(np.abs(diffctrlpoints) > 1e-9):
+            return False
         return True
 
-    def __ne__(self, __obj: object):
-        return not self.__eq__(__obj)
+    def __ne__(self, obj: object):
+        return not self.__eq__(obj)
 
     def __neg__(self):
         return self.__class__(self.knotvector, np.copy(-self.ctrlpoints))
@@ -118,20 +130,45 @@ class BaseCurve(Intface_BaseCurve):
         newP = np.copy(self.ctrlpoints) + obj.ctrlpoints
         return self.__class__(self.knotvector, newP)
 
-    def __sub__(self, __obj: object):
-        return self + (-__obj)
+    def __sub__(self, obj: object):
+        return self + (-obj)
 
-    def knot_insert(self, knots: Union[float, Tuple[float]]) -> None:
-        knots = np.array(knots, dtype="float64")
-        if knots.ndim == 0:
-            knots = [knots]
-        elif knots.ndim == 1:
-            pass
-        else:
-            raise ValueError("Invalid input of knots")
+    def __or__(self, other: object):
+        umaxleft = self.knotvector[-1]
+        uminright = other.knotvector[0]
+        if umaxleft != uminright:
+            error_msg = f"max(Uleft) = {umaxleft} != {uminright} = min(Uright)"
+            raise ValueError(error_msg)
+        pointleft = self.ctrlpoints[-1]
+        pointright = other.ctrlpoints[0]
+        if np.sum((pointleft - pointright) ** 2) > 1e-9:
+            error_msg = "Points are not coincident.\n"
+            error_msg += f"  Point left = {pointleft}\n"
+            error_msg += f" Point right = {pointright}"
+            raise ValueError(error_msg)
+        othercopy = other.deepcopy()
+        selfcopy = self.deepcopy()
+        maxdegree = max(self.degree, other.degree)
+        selfcopy.degree = maxdegree
+        othercopy.degree = maxdegree
+        npts0 = selfcopy.npts
+        npts1 = othercopy.npts
+        newknotvector = np.empty(maxdegree + npts0 + npts1, dtype="float64")
+        newknotvector.fill(np.nan)
+        newknotvector[:npts0] = selfcopy.knotvector[:npts0]
+        newknotvector[npts0:] = othercopy.knotvector[1:]
+        newknotvector = KnotVector(newknotvector)
+        newshape = [npts0 + npts1 - 1] + list(self.ctrlpoints.shape[1:])
+        newctrlpoints = np.zeros(newshape, dtype="float64")
+        newctrlpoints[:npts0] = selfcopy.ctrlpoints[:npts0]
+        newctrlpoints[npts0:] = othercopy.ctrlpoints[1:]
+        return self.__class__(newknotvector, newctrlpoints)
+
+    def knot_insert(self, nodes: Union[float, Tuple[float]]) -> None:
+        nodes = np.array(nodes, dtype="float64").flatten()
         newknotvector = np.array(self.knotvector).tolist()
 
-        newknotvector.extend(knots)
+        newknotvector.extend(nodes)
         newknotvector.sort()
         newknotvector = KnotVector(newknotvector)
         T, _ = algo.LeastSquare.spline(self.knotvector, newknotvector)
@@ -141,17 +178,13 @@ class BaseCurve(Intface_BaseCurve):
     def knot_remove(
         self, nodes: Union[float, Tuple[float]], tolerance: float = 1e-9
     ) -> None:
-        nodes = np.array(nodes, dtype="float64")
-        if nodes.ndim == 0:
-            nodes = np.array([nodes.tolist()])
-        elif nodes.ndim != 1:
-            raise ValueError("Nodes invalid")
+        nodes = np.array(nodes, dtype="float64").flatten()
         nodes_requested = list(set(list(nodes)))
         newknotvector = list(self.knotvector)
         for node in nodes_requested:
-            if not node in self.knots:
+            if node not in self.knots:
                 error_msg = f"Requested remove ({node:.3f}),"
-                error_msg += f" which it's not in knotvector"
+                error_msg += " which it's not in knotvector"
                 raise ValueError(error_msg)
         times_requested = [sum(abs(nodes - node) < 1e-9) for node in nodes]
         for node, times in zip(nodes_requested, times_requested):
@@ -179,17 +212,13 @@ class BaseCurve(Intface_BaseCurve):
         If removing the knot the error is bigger than the tolerance,
         nothing happens
         """
-        intknots = self.knotvector.knots
-        while True:
-            removed = False
-            for knot in intknots:
-                try:
-                    self.knot_remove(knot)
-                    removed = True
-                except ValueError:
-                    pass
-            if not removed:
-                break
+        internal_knots = self.knotvector.knots[1:-1]
+        for knot in internal_knots:
+            try:
+                while True:
+                    self.knot_remove(knot, tolerance)
+            except ValueError:
+                pass
 
     def __degree_increase(self, times: int):
         newknotvector = list(self.knotvector) + times * list(self.knots)
@@ -219,14 +248,14 @@ class BaseCurve(Intface_BaseCurve):
         The same as mycurve.degree -= 1
         But this function forces the degree reductions without looking the error
         """
-        self.degree = self.degree - times
+        self.degree -= times
 
     def degree_increase(self, times: Optional[int] = 1):
         """
         The same as mycurve.degree += times
         But this function forces the degree reductions without looking the error
         """
-        self.degree = self.degree + times
+        self.degree += times
 
     def degree_clean(self, tolerance: float = 1e-9):
         """
@@ -251,11 +280,7 @@ class BaseCurve(Intface_BaseCurve):
             if self.degree + 1 == self.npts:  # already bezier
                 return (self.deepcopy(),)
             return self.split(self.knots)
-        nodes = np.array(nodes, dtype="float64")
-        if nodes.ndim == 0:
-            nodes = np.array([nodes])
-        elif nodes.ndim != 1:
-            raise ValueError("Nodes invalid")
+        nodes = np.array(nodes, dtype="float64").flatten()
         nodes = list(nodes) + [self.knotvector[0], self.knotvector[-1]]
         nodes = list(set(nodes))
         nodes.sort()
