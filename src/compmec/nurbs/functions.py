@@ -1,60 +1,14 @@
 import abc
-from typing import Any, Iterable, Optional, Tuple, Type, Union
+from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 
-from compmec.nurbs.__classes__ import Interface_BaseFunction, Interface_Evaluator
+from compmec.nurbs.__classes__ import Intface_BaseFunction, Intface_Evaluator
+from compmec.nurbs.algorithms import N, R
 from compmec.nurbs.knotspace import KnotVector
 
 
-def N(i: int, j: int, k: int, u: float, U: KnotVector) -> float:
-    """
-    Returns the value of N_{ij}(u) in the interval [u_{k}, u_{k+1}]
-    Remember that N_{i, j}(u) = 0   if  ( u not in [U[i], U[i+j+1]] )
-    """
-
-    npts, degree = U.npts, U.degree
-
-    if k < i:
-        return 0
-    if j == 0:
-        if i == k:
-            return 1
-        if i + 1 == npts and k == npts:
-            return 1
-        return 0
-    if i + j < k:
-        return 0
-
-    if U[i] == U[i + j]:
-        factor1 = 0
-    else:
-        factor1 = (u - U[i]) / (U[i + j] - U[i])
-
-    if U[i + j + 1] == U[i + 1]:
-        factor2 = 0
-    else:
-        factor2 = (U[i + j + 1] - u) / (U[i + j + 1] - U[i + 1])
-
-    result = factor1 * N(i, j - 1, k, u, U) + factor2 * N(i + 1, j - 1, k, u, U)
-    return result
-
-
-def R(i: int, j: int, k: int, u: float, U: KnotVector, w: Tuple[float]) -> float:
-    """
-    Returns the value of R_{ij}(u) in the interval [u_{k}, u_{k+1}]
-    """
-    Niju = N(i, j, k, u, U)
-    if Niju == 0:
-        return 0
-    npts = len(w)
-    soma = 0
-    for z in range(npts):
-        soma += w[z] * N(z, j, k, u, U)
-    return w[i] * Niju / soma
-
-
-class BaseFunction(Interface_BaseFunction):
+class BaseFunction(Intface_BaseFunction):
     def __init__(self, knotvector: KnotVector):
         self.__U = KnotVector(knotvector)
 
@@ -70,6 +24,10 @@ class BaseFunction(Interface_BaseFunction):
     def knotvector(self) -> KnotVector:
         return self.__U
 
+    @property
+    def knots(self) -> Tuple[float]:
+        return self.__U.knots
+
     def knot_insert(self, knot: float, times: Optional[int] = 1):
         self.knotvector.knot_insert(knot, times)
 
@@ -77,7 +35,7 @@ class BaseFunction(Interface_BaseFunction):
         self.knotvector.knot_remove(knot, times)
 
 
-class BaseEvaluator(Interface_Evaluator):
+class BaseEvaluator(Intface_Evaluator):
     def __init__(self, F: BaseFunction, i: Union[int, slice], j: int):
         self.__U = F.knotvector
         self.__first_index = i
@@ -134,7 +92,7 @@ class BaseEvaluator(Interface_Evaluator):
         span = np.array(span, dtype="int16")
         return self.compute_all(u, span)
 
-    def __call__(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def __call__(self, u: np.ndarray) -> np.ndarray:
         result = self.evalf(u)
         result = self.__A @ result
         return result[self.first_index]
@@ -154,7 +112,10 @@ class RationalEvaluatorClass(BaseEvaluator):
         self.__weights = F.weights
 
     def compute_one_value(self, i: int, u: float, span: int) -> float:
-        return R(i, self.second_index, span, u, self.knotvector, self.__weights)
+        j = self.second_index
+        U = self.knotvector
+        w = self.__weights
+        return R(i, j, span, u, U, w)
 
 
 class BaseFunctionDerivable(BaseFunction):
@@ -201,7 +162,8 @@ class BaseFunctionGetItem(BaseFunctionDerivable):
         if not isinstance(index, int):
             raise TypeError
         if not (0 <= index <= self.degree):
-            error_msg = f"Second index (={index}) must be in [0, {self.degree}]"
+            error_msg = f"Second index (={index}) "
+            error_msg += f"must be in [0, {self.degree}]"
             raise IndexError(error_msg)
 
     @abc.abstractmethod
@@ -219,7 +181,7 @@ class BaseFunctionGetItem(BaseFunctionDerivable):
         self.__valid_second_index(j)
         return self.create_evaluator_instance(i, j)
 
-    def __call__(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def __call__(self, u: np.ndarray) -> np.ndarray:
         i, j = slice(None, None, None), self.degree
         evaluator = self.create_evaluator_instance(i, j)
         return evaluator(u)
@@ -234,7 +196,7 @@ class BaseFunctionGetItem(BaseFunctionDerivable):
         return True
 
 
-class SplineBaseFunction(BaseFunctionGetItem):
+class SplineFunction(BaseFunctionGetItem):
     def __doc__(self):
         """
         This function is recursively determined like
@@ -262,7 +224,7 @@ class SplineBaseFunction(BaseFunctionGetItem):
         return SplineEvaluatorClass(self, i, j)
 
 
-class RationalBaseFunction(BaseFunctionGetItem):
+class RationalFunction(BaseFunctionGetItem):
     def __init__(self, knotvector: KnotVector):
         super().__init__(knotvector)
 
@@ -280,23 +242,18 @@ class RationalBaseFunction(BaseFunctionGetItem):
     def weights(self):
         try:
             return self.__weights
-        except AttributeError as e:
+        except AttributeError:
             self.__weights = np.ones(self.npts, dtype="float64")
         return self.__weights
 
     @weights.setter
     def weights(self, value: Tuple[float]):
-        try:
-            value = np.array(value, dtype="float64")
-        except Exception as e:
-            raise TypeError(f"Input is not valid. Type = {type(value)}, not np.ndarray")
-        if value.ndim != 1:
-            raise ValueError(f"Input must be 1D array")
-        if len(value) != self.npts:
-            raise ValueError(
-                f"Input must have same number of points as knotvector.npts"
-            )
         value = np.array(value, dtype="float64")
+        if value.ndim != 1:
+            raise ValueError("Input must be 1D array")
+        if len(value) != self.npts:
+            error_msg = "Lenght of weights must be equal to knotvector.npts"
+            raise ValueError(error_msg)
         if np.any(value <= 0):
             raise ValueError("All the weights must be positive")
         self.__weights = value
