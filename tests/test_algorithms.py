@@ -11,6 +11,13 @@ def test_begin():
 
 
 class TestLeastSquare:
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(depends=["test_begin"])
+    def test_begin(self):
+        pass
+
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(depends=["TestLeastSquare::test_begin"])
     def test_chebyshev_nodes(self):
         nodes = LeastSquare.chebyshev_nodes(1)
         assert nodes[0] == 0.5
@@ -24,6 +31,8 @@ class TestLeastSquare:
         assert nodes[1] == 0.5
         assert abs(nodes[2] - (2 + np.sqrt(3)) / 4) < 1e-9
 
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(depends=["TestLeastSquare::test_begin"])
     def test_integral_value(self):
         """
         This is for testing the array LeastSquare.integrator_array
@@ -44,6 +53,8 @@ class TestLeastSquare:
         numeintegral = integrator @ fvals
         assert np.abs(symbintegral - numeintegral) < 1e-9
 
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(depends=["TestLeastSquare::test_begin"])
     def test_leastsquarespline_identity(self):
         U0 = [0, 0, 1, 1]
         U1 = [0, 0, 1, 1]
@@ -60,6 +71,8 @@ class TestLeastSquare:
         T, _ = LeastSquare.spline(U0, U1)
         np.testing.assert_almost_equal(T, np.eye(4))
 
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(depends=["TestLeastSquare::test_begin"])
     def test_leastsquarespline_error(self):
         U0 = [0, 0, 1, 1]
         U1 = [0, 0, 1, 1]  # Same curve
@@ -87,3 +100,22 @@ class TestLeastSquare:
         U1 = [0, 0, 0, 1, 1, 1]
         _, E = LeastSquare.spline(U0, U1)
         assert np.all(np.abs(E) < 1e-9)
+
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(
+        depends=[
+            "TestLeastSquare::test_begin",
+            "TestLeastSquare::test_chebyshev_nodes",
+            "TestLeastSquare::test_integral_value",
+            "TestLeastSquare::test_leastsquarespline_identity",
+            "TestLeastSquare::test_leastsquarespline_error",
+        ]
+    )
+    def test_end(self):
+        pass
+
+
+@pytest.mark.order(1)
+@pytest.mark.dependency(depends=["TestLeastSquare::test_end"])
+def test_end():
+    pass

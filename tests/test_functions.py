@@ -5,14 +5,13 @@ from compmec.nurbs import RationalFunction, SplineFunction
 from compmec.nurbs.knotspace import GeneratorKnotVector
 
 
-@pytest.mark.order(2)
-@pytest.mark.timeout(1)
+@pytest.mark.order(3)
 @pytest.mark.dependency(depends=["tests/test_knotspace.py::test_end"], scope="session")
 def test_begin():
     pass
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_CreationSplineFunction():
@@ -34,7 +33,7 @@ def test_CreationSplineFunction():
     assert N.npts == 4
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_CreationSplineFunction"])
 def test_SplineEvaluationFunctions_p1n2():
@@ -49,7 +48,7 @@ def test_SplineEvaluationFunctions_p1n2():
     N[:]
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_SplineEvaluationFunctions_p1n2"])
 def test_SplineEvaluationFunctions_p1n3():
@@ -66,7 +65,7 @@ def test_SplineEvaluationFunctions_p1n3():
     N[:]
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_SplineEvaluationFunctions_p1n2"])
 def test_somesinglevalues_p1n2():
@@ -86,7 +85,7 @@ def test_somesinglevalues_p1n2():
     assert N[1, 1](1.0) == 1
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_somesinglevalues_p1n2"])
 def test_somesinglevalues_p2n3():
@@ -121,7 +120,7 @@ def test_somesinglevalues_p2n3():
     assert N[2, 2](1.0) == 1
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_somesinglevalues_p1n2"])
 def test_tablevalues_p1n2():
@@ -138,7 +137,7 @@ def test_tablevalues_p1n2():
     np.testing.assert_allclose(M1test, M1good)
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p1n2"])
 def test_tablevalues_p1n3():
@@ -163,7 +162,7 @@ def test_tablevalues_p1n3():
     np.testing.assert_allclose(M1test, M1good)
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p1n2", "test_somesinglevalues_p2n3"])
 def test_tablevalues_p2n3():
@@ -190,7 +189,7 @@ def test_tablevalues_p2n3():
     np.testing.assert_allclose(M2test, M2good)
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p2n3"])
 def test_tablevalues_p2n4():
@@ -232,7 +231,7 @@ def test_tablevalues_p2n4():
     np.testing.assert_allclose(M2test, M2good)
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p2n3"])
 def test_tablevalues_p3n4():
@@ -273,7 +272,7 @@ def test_tablevalues_p3n4():
     np.testing.assert_allclose(M3test, M3good)
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p2n3", "test_tablevalues_p3n4"])
 def test_tablevalues_p3n5():
@@ -330,7 +329,7 @@ def test_tablevalues_p3n5():
     np.testing.assert_allclose(M3test, M3good)
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tablevalues_p3n5"])
 def test_tableUuniform_sum1():
@@ -348,7 +347,7 @@ def test_tableUuniform_sum1():
                 np.testing.assert_almost_equal(np.sum(M[:, k]), 1)
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_tableUuniform_sum1"])
 def test_tableUrandom_sum1():
@@ -366,7 +365,7 @@ def test_tableUrandom_sum1():
                 np.testing.assert_almost_equal(np.sum(M[:, k]), 1)
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_CreationRationalFunction():
@@ -388,7 +387,7 @@ def test_CreationRationalFunction():
     assert R.npts == 4
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_CreationRationalFunction"])
 def test_RationalEvaluationFunctions_p1n2():
@@ -403,7 +402,7 @@ def test_RationalEvaluationFunctions_p1n2():
     R[:]
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_RationalEvaluationFunctions_p1n2"])
 def test_rational_somesinglevalues_p1n2():
@@ -423,7 +422,7 @@ def test_rational_somesinglevalues_p1n2():
     assert R[1, 1](1.0) == 1
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_rational_somesinglevalues_p1n2"])
 def test_rational_tableUuniform_sum1():
@@ -441,7 +440,7 @@ def test_rational_tableUuniform_sum1():
                 np.testing.assert_almost_equal(np.sum(M[:, k]), 1)
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(
     depends=["test_CreationSplineFunction", "test_CreationRationalFunction"]
@@ -504,7 +503,7 @@ def test_basefunction_fails():
         R1.weights = np.random.uniform(1, 2, size=(npts, 2))
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(
     depends=["test_CreationSplineFunction", "test_CreationRationalFunction"]
@@ -545,7 +544,7 @@ def test_comparation():
         assert N1 == 1
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(depends=["test_comparation"])
 def test_insert_remove_knot():
@@ -570,7 +569,7 @@ def test_insert_remove_knot():
     assert R1 == R2
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.timeout(5)
 @pytest.mark.dependency(
     depends=["test_CreationSplineFunction", "test_CreationRationalFunction"]
@@ -586,7 +585,7 @@ def test_derivate_functions():
     R.derivate()
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(3)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
