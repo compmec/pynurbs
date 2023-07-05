@@ -15,19 +15,19 @@ A python package for [Non-Uniform rational B-Spline], parametrized geometry.
 * [X] Knot Vector
 * [X] Base Functions
 * [X] Curves
-* [] Surface
 
 Operations
 
 * Knots
-    * Insertion
-    * Removal
-    * Clean
+    * [X] Insertion
+    * [X] Removal
+    * [X] Clean
 * Degree
-    * Increase
-    * Decrease
-    * Clean
-* Split and unite
+    * [X] Increase
+    * [X] Decrease
+    * [X] Clean
+* [X] Split curves
+* [X] Unite curves
 
 ## Install
 
