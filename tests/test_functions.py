@@ -540,6 +540,13 @@ def test_comparation():
     assert N1 != "asd"
     assert N1 != 1
 
+    N1 = Function(Uorg)
+    R1 = Function(Uorg)
+    R1.weights = np.ones(5)
+    assert N1 == R1
+
+    assert np.all(N1(0.5) == R1(0.5))
+
 
 @pytest.mark.order(3)
 @pytest.mark.timeout(5)
@@ -583,6 +590,27 @@ def test_derivate_functions():
 
 
 @pytest.mark.order(3)
+@pytest.mark.timeout(5)
+@pytest.mark.dependency(
+    depends=["test_CreationSplineFunction", "test_CreationRationalFunction"]
+)
+def test_print():
+    knotvector = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # degree = 3, npts = 5
+    weights = np.random.uniform(1, 2, 5)
+    B = Function([0, 0, 1, 1])
+    N = Function(knotvector)
+    R = Function(knotvector)
+    R.weights = weights
+
+    B.__str__()
+    N.__str__()
+    R.__str__()
+    B.__repr__()
+    N.__repr__()
+    R.__repr__()
+
+
+@pytest.mark.order(3)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
@@ -594,6 +622,7 @@ def test_derivate_functions():
         "test_rational_tableUuniform_sum1",
         "test_basefunction_fails",
         "test_insert_remove_knot",
+        "test_print",
     ]
 )
 def test_end():

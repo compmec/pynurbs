@@ -11,18 +11,21 @@ from compmec.nurbs.knotspace import KnotVector
 class BaseFunction(Intface_BaseFunction):
     def __init__(self, knotvector: KnotVector):
         self.__knotvector = KnotVector(knotvector)
-        self.__weights = None
+        self.weights = None
+        self.__degree = self.knotvector.degree
 
     def __eq__(self, other: Intface_BaseFunction) -> bool:
         if not isinstance(other, Intface_BaseFunction):
             return False
         if self.degree != other.degree:
             return False
-        if self.npts != other.npts:
-            return False
         if self.knotvector != other.knotvector:
             return False
-        return np.all(self.weights == other.weights)
+        weightleft = self.weights
+        weightrigh = other.weights
+        weightleft = np.ones(self.npts) if self.weights is None else self.weights
+        weightrigh = np.ones(self.npts) if weightrigh is None else weightrigh
+        return np.all(weightleft == weightrigh)
 
     def __ne__(self, other: Intface_BaseFunction) -> bool:
         return not self.__eq__(other)
@@ -33,7 +36,7 @@ class BaseFunction(Intface_BaseFunction):
 
     @property
     def degree(self) -> int:
-        return self.knotvector.degree
+        return self.__degree
 
     @property
     def npts(self) -> int:
@@ -60,6 +63,10 @@ class BaseFunction(Intface_BaseFunction):
             error_msg = f"Weights shape invalid! {value.shape} != ({self.npts})"
             raise ValueError(error_msg)
         self.__weights = value
+
+    @degree.setter
+    def degree(self, value: int):
+        self.__degree = int(value)
 
     def knot_insert(self, knot: float, times: Optional[int] = 1):
         self.knotvector.knot_insert(knot, times)
@@ -181,30 +188,20 @@ class IndexableFunction(BaseFunction):
         self.__valid_second_index(j)
         return FunctionEvaluator(self, i, j)
 
-    def evalf(self, nodes: np.ndarray) -> np.ndarray:
-        evaluator = self[:, self.degree]
-        return evaluator(nodes)
-
 
 class DerivableFunction(IndexableFunction):
     def __init__(self, knotvector: KnotVector):
         super().__init__(knotvector)
-        self.__number_derivated = 0
         self.__matrix = np.eye(self.npts, dtype="float64")
-
-    @property
-    def degree(self) -> int:
-        return self.knotvector.degree - self.__number_derivated
 
     @property
     def matrix(self) -> np.ndarray:
         return np.copy(self.__matrix)
 
-    def derivate(self, times: Optional[int] = 1):
-        if times != 1:
-            for i in range(times):
-                self.derivate()
-            return
+    def derivate(self):
+        """
+        Derivates the function once. If you want more, call it in a loop
+        """
         avals = np.zeros(self.npts)
         for i in range(self.npts):
             diff = (
@@ -216,7 +213,7 @@ class DerivableFunction(IndexableFunction):
         for i in range(self.npts - 1):
             newA[i, i + 1] = -avals[i + 1]
         self.__matrix = self.__matrix @ newA
-        self.__number_derivated += 1
+        self.degree -= 1
 
     def evalf(self, nodes: np.ndarray) -> np.ndarray:
         evaluator = self[:, self.degree]
