@@ -4,7 +4,7 @@ import numpy as np
 
 from compmec.nurbs import algorithms as algo
 from compmec.nurbs.__classes__ import Intface_BaseCurve
-from compmec.nurbs.functions import RationalFunction, SplineFunction
+from compmec.nurbs.functions import Function
 from compmec.nurbs.knotspace import KnotVector
 
 
@@ -325,7 +325,8 @@ class Curve(BaseCurve):
 
     @property
     def F(self):
-        return RationalFunction(self.knotvector)
+        function = Function(self.knotvector)
+        return function
 
     def deepcopy(self):
         curve = super().deepcopy()

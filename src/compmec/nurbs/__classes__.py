@@ -42,9 +42,9 @@ class Intface_KnotVector(abc.ABC):
         raise NotImplementedError
 
 
-class Intface_BaseFunction_Evaluator_BaseCurve(abc.ABC):
+class Intface_Evaluator(abc.ABC):
     @abc.abstractproperty
-    def knotvector(self) -> Intface_KnotVector:
+    def evalf(self) -> Union[int, slice]:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -52,17 +52,19 @@ class Intface_BaseFunction_Evaluator_BaseCurve(abc.ABC):
         raise NotImplementedError
 
 
-class Intface_Evaluator(Intface_BaseFunction_Evaluator_BaseCurve):
-    @abc.abstractproperty
-    def first_index(self) -> Union[int, slice]:
+class Intface_BaseFunction_BaseCurve(abc.ABC):
+    @abc.abstractmethod
+    def __eq__(self, obj: object) -> bool:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def __ne__(self, obj: object) -> bool:
         raise NotImplementedError
 
     @abc.abstractproperty
-    def second_index(self) -> Union[int, slice]:
+    def knotvector(self) -> Intface_KnotVector:
         raise NotImplementedError
 
-
-class Intface_BaseFunction_BaseCurve(Intface_BaseFunction_Evaluator_BaseCurve):
     @abc.abstractproperty
     def degree(self) -> int:
         raise NotImplementedError
@@ -71,12 +73,24 @@ class Intface_BaseFunction_BaseCurve(Intface_BaseFunction_Evaluator_BaseCurve):
     def npts(self) -> int:
         raise NotImplementedError
 
+    @abc.abstractproperty
+    def knots(self) -> int:
+        raise NotImplementedError
+
     @abc.abstractmethod
     def knot_insert(self, knot: float, times: Optional[int] = 1):
         raise NotImplementedError
 
     @abc.abstractmethod
     def knot_remove(self, knot: float, times: Optional[int] = 1):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def degree_increase(self, times: Optional[int] = 1):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def degree_decrease(self, times: Optional[int] = 1):
         raise NotImplementedError
 
 
@@ -104,9 +118,9 @@ class Intface_BaseCurve(Intface_BaseFunction_BaseCurve):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def __eq__(self, obj: object) -> bool:
+    def knot_clean(self):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def __ne__(self, obj: object) -> bool:
+    def degree_clean(self):
         raise NotImplementedError

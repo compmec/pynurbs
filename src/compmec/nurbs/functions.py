@@ -10,23 +10,56 @@ from compmec.nurbs.knotspace import KnotVector
 
 class BaseFunction(Intface_BaseFunction):
     def __init__(self, knotvector: KnotVector):
-        self.__U = KnotVector(knotvector)
+        self.__knotvector = KnotVector(knotvector)
+        self.__weights = None
 
-    @property
-    def degree(self) -> int:
-        return self.__U.degree
+    def __eq__(self, other: Intface_BaseFunction) -> bool:
+        if not isinstance(other, Intface_BaseFunction):
+            return False
+        if self.degree != other.degree:
+            return False
+        if self.npts != other.npts:
+            return False
+        if self.knotvector != other.knotvector:
+            return False
+        return np.all(self.weights == other.weights)
 
-    @property
-    def npts(self) -> int:
-        return self.__U.npts
+    def __ne__(self, other: Intface_BaseFunction) -> bool:
+        return not self.__eq__(other)
 
     @property
     def knotvector(self) -> KnotVector:
-        return self.__U
+        return self.__knotvector
+
+    @property
+    def degree(self) -> int:
+        return self.knotvector.degree
+
+    @property
+    def npts(self) -> int:
+        return self.knotvector.npts
 
     @property
     def knots(self) -> Tuple[float]:
-        return self.__U.knots
+        return self.knotvector.knots
+
+    @property
+    def weights(self) -> Union[Tuple[float], None]:
+        return self.__weights
+
+    @weights.setter
+    def weights(self, value: Tuple[float]):
+        if value is None:
+            self.__weights = None
+            return
+        value = np.array(value, dtype="float64")
+        if not np.all(value > 0):
+            error_msg = "All weights must be positive!"
+            raise ValueError(error_msg)
+        if value.shape != (self.npts,):
+            error_msg = f"Weights shape invalid! {value.shape} != ({self.npts})"
+            raise ValueError(error_msg)
+        self.__weights = value
 
     def knot_insert(self, knot: float, times: Optional[int] = 1):
         self.knotvector.knot_insert(knot, times)
@@ -34,120 +67,90 @@ class BaseFunction(Intface_BaseFunction):
     def knot_remove(self, knot: float, times: Optional[int] = 1):
         self.knotvector.knot_remove(knot, times)
 
+    def degree_increase(self, times: Optional[int] = 1):
+        pass
 
-class BaseEvaluator(Intface_Evaluator):
-    def __init__(self, F: BaseFunction, i: Union[int, slice], j: int):
-        self.__U = F.knotvector
-        self.__first_index = i
-        self.__second_index = j
-        self.__A = F.A
-
-    @property
-    def knotvector(self) -> KnotVector:
-        return self.__U
-
-    @property
-    def first_index(self) -> Union[int, range]:
-        return self.__first_index
-
-    @property
-    def second_index(self) -> int:
-        return self.__second_index
+    def degree_decrease(self, times: Optional[int] = 1):
+        pass
 
     @abc.abstractmethod
-    def compute_one_value(self, i: int, u: float, span: int) -> float:
+    def evalf(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         raise NotImplementedError
 
-    def compute_vector(self, u: float, span: int) -> np.ndarray:
+    def __call__(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+        return self.evalf(nodes)
+
+
+class FunctionEvaluator(Intface_Evaluator):
+    def __init__(self, func: BaseFunction, i: Union[int, slice], j: int):
+        self.__knotvector = func.knotvector
+        self.__weights = func.weights
+        self.__first_index = i
+        self.__second_index = j
+
+    def compute_one_value(self, i: int, node: float, span: int) -> float:
+        j = self.__second_index
+        U = tuple(self.__knotvector)
+        if self.__weights is None:
+            return N(i, j, span, node, U)
+        return R(i, j, span, node, U, self.__weights)
+
+    def compute_vector(self, node: float, span: int) -> np.ndarray:
         """
         Given a 'u' float, it returns the vector with all BasicFunctions:
         compute_vector(u, span) = [F_{0j}(u), F_{1j}(u), ..., F_{npts-1,j}(u)]
         """
-        result = np.zeros(self.__U.npts, dtype="float64")
+        npts = self.__knotvector.npts
+        result = np.zeros(npts, dtype="float64")
         # for i in range(span, span+self.second_index):
-        for i in range(self.__U.npts):
-            result[i] = self.compute_one_value(i, u, span)
+        for i in range(npts):
+            result[i] = self.compute_one_value(i, node, span)
         return result
 
-    def compute_all(
-        self, u: Union[float, np.ndarray], span: Union[int, np.ndarray]
-    ) -> np.ndarray:
-        u = np.array(u, dtype="float64")
-        if span.ndim == 0:
-            return self.compute_vector(float(u), int(span))
-        result = np.zeros([self.__U.npts] + list(u.shape))
-        for k, (uk, sk) in enumerate(zip(u, span)):
-            result[:, k] = self.compute_all(uk, sk)
+    def compute_matrix(
+        self, nodes: Tuple[float], spans: Union[int, np.ndarray]
+    ) -> Tuple[Tuple[float]]:
+        """
+        Receives an 1D array of nodes, and returns a 2D array.
+        nodes.shape = (len(nodes), )
+        result.shape = (npts, len(nodes))
+        """
+        nodes = np.array(nodes, dtype="float64")
+        newshape = [self.__knotvector.npts] + list(nodes.shape)
+        result = np.zeros(newshape, dtype="float64")
+        for i, (nodei, spani) in enumerate(zip(nodes, spans)):
+            result[:, i] = self.compute_vector(nodei, spani)
         return result
 
-    def evalf(self, u: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def __evalf(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         """
         If i is integer, u is float -> float
         If i is integer, u is np.ndarray, ndim = k -> np.ndarray, ndim = k
         If i is slice, u is float -> 1D np.ndarray
         if i is slice, u is np.ndarray, ndim = k -> np.ndarray, ndim = k+1
         """
-        u = np.array(u, dtype="float64")
-        span = self.__U.span(u)
-        span = np.array(span, dtype="int16")
-        return self.compute_all(u, span)
+        nodes = np.array(nodes, dtype="float64")
+        flat_nodes = nodes.flatten()
+        flat_spans = self.__knotvector.span(flat_nodes)
+        flat_spans = np.array(flat_spans, dtype="int16")
+        newshape = [self.__knotvector.npts] + list(nodes.shape)
+        result = self.compute_matrix(flat_nodes, flat_spans)
+        return result.reshape(newshape)
 
-    def __call__(self, u: np.ndarray) -> np.ndarray:
-        result = self.evalf(u)
-        result = self.__A @ result
-        return result[self.first_index]
+    def evalf(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+        """
+        If i is integer, u is float -> float
+        If i is integer, u is np.ndarray, ndim = k -> np.ndarray, ndim = k
+        If i is slice, u is float -> 1D np.ndarray
+        if i is slice, u is np.ndarray, ndim = k -> np.ndarray, ndim = k+1
+        """
+        return self.__evalf(nodes)[self.__first_index]
 
-
-class SplineEvaluatorClass(BaseEvaluator):
-    def __init__(self, F: BaseFunction, i: Union[int, slice], j: int):
-        super().__init__(F, i, j)
-
-    def compute_one_value(self, i: int, u: float, span: int) -> float:
-        return N(i, self.second_index, span, u, self.knotvector)
-
-
-class RationalEvaluatorClass(BaseEvaluator):
-    def __init__(self, F: BaseFunction, i: Union[int, slice], j: int):
-        super().__init__(F, i, j)
-        self.__weights = F.weights
-
-    def compute_one_value(self, i: int, u: float, span: int) -> float:
-        j = self.second_index
-        U = self.knotvector
-        w = self.__weights
-        return R(i, j, span, u, U, w)
+    def __call__(self, nodes: np.ndarray) -> np.ndarray:
+        return self.evalf(nodes)
 
 
-class BaseFunctionDerivable(BaseFunction):
-    def __init__(self, knotvector: KnotVector):
-        super().__init__(knotvector)
-        self.__q = self.degree
-        self.__A = np.eye(self.npts, dtype="float64")
-
-    @property
-    def q(self) -> int:
-        return self.__q
-
-    @property
-    def A(self) -> np.ndarray:
-        return np.copy(self.__A)
-
-    def derivate(self):
-        avals = np.zeros(self.npts)
-        for i in range(self.npts):
-            diff = (
-                self.knotvector[i + self.degree] - self.knotvector[i]
-            )  # Maybe it's wrong
-            if diff != 0:
-                avals[i] = self.degree / diff
-        newA = np.diag(avals)
-        for i in range(self.npts - 1):
-            newA[i, i + 1] = -avals[i + 1]
-        self.__A = self.__A @ newA
-        self.__q -= 1
-
-
-class BaseFunctionGetItem(BaseFunctionDerivable):
+class IndexableFunction(BaseFunction):
     def __init__(self, knotvector: KnotVector):
         super().__init__(knotvector)
 
@@ -155,7 +158,8 @@ class BaseFunctionGetItem(BaseFunctionDerivable):
         if not isinstance(index, (int, slice)):
             raise TypeError
         if isinstance(index, int):
-            if not (-self.npts <= index < self.npts):
+            npts = self.npts
+            if not (-npts <= index < npts):
                 raise IndexError
 
     def __valid_second_index(self, index: int):
@@ -166,94 +170,72 @@ class BaseFunctionGetItem(BaseFunctionDerivable):
             error_msg += f"must be in [0, {self.degree}]"
             raise IndexError(error_msg)
 
-    @abc.abstractmethod
-    def create_evaluator_instance(self, i: Union[int, slice], j: int):
-        raise NotImplementedError
-
     def __getitem__(self, tup: Any):
         if isinstance(tup, tuple):
             if len(tup) > 2:
                 raise IndexError
             i, j = tup
         else:
-            i, j = tup, self.q
+            i, j = tup, self.degree
         self.__valid_first_index(i)
         self.__valid_second_index(j)
-        return self.create_evaluator_instance(i, j)
+        return FunctionEvaluator(self, i, j)
 
-    def __call__(self, u: np.ndarray) -> np.ndarray:
-        i, j = slice(None, None, None), self.degree
-        evaluator = self.create_evaluator_instance(i, j)
-        return evaluator(u)
-
-    def __eq__(self, obj: object) -> bool:
-        if type(self) != type(obj):
-            raise TypeError
-        if self.knotvector != obj.knotvector:
-            return False
-        if self.q != obj.q:
-            return False
-        return True
+    def evalf(self, nodes: np.ndarray) -> np.ndarray:
+        evaluator = self[:, self.degree]
+        return evaluator(nodes)
 
 
-class SplineFunction(BaseFunctionGetItem):
-    def __doc__(self):
-        """
-        This function is recursively determined like
-
-        N_{i, 0}(u) = { 1   if  knotvector[i] <= u < knotvector[i+1]
-                      { 0   else
-
-                          u - knotvector[i]
-        N_{i, j}(u) = --------------- * N_{i, j-1}(u)
-                       knotvector[i+j] - knotvector[i]
-                            knotvector[i+j+1] - u
-                      + ------------------- * N_{i+1, j-1}(u)
-                         knotvector[i+j+1] - knotvector[i+1]
-
-        As consequence, we have that
-
-        N_{i, j}(u) = 0   if  ( u not in [knotvector[i], knotvector[i+j+1]] )
-
-        """
-
+class DerivableFunction(IndexableFunction):
     def __init__(self, knotvector: KnotVector):
         super().__init__(knotvector)
-
-    def create_evaluator_instance(self, i: Union[int, slice], j: int):
-        return SplineEvaluatorClass(self, i, j)
-
-
-class RationalFunction(BaseFunctionGetItem):
-    def __init__(self, knotvector: KnotVector):
-        super().__init__(knotvector)
-
-    def create_evaluator_instance(self, i: Union[int, slice], j: int):
-        return RationalEvaluatorClass(self, i, j)
-
-    def __eq__(self, obj):
-        if not super().__eq__(obj):
-            return False
-        if np.any(self.weights != obj.weights):
-            return False
-        return True
+        self.__number_derivated = 0
+        self.__matrix = np.eye(self.npts, dtype="float64")
 
     @property
-    def weights(self):
-        try:
-            return self.__weights
-        except AttributeError:
-            self.__weights = np.ones(self.npts, dtype="float64")
-        return self.__weights
+    def degree(self) -> int:
+        return self.knotvector.degree - self.__number_derivated
 
-    @weights.setter
-    def weights(self, value: Tuple[float]):
-        value = np.array(value, dtype="float64")
-        if value.ndim != 1:
-            raise ValueError("Input must be 1D array")
-        if len(value) != self.npts:
-            error_msg = "Lenght of weights must be equal to knotvector.npts"
-            raise ValueError(error_msg)
-        if np.any(value <= 0):
-            raise ValueError("All the weights must be positive")
-        self.__weights = value
+    @property
+    def matrix(self) -> np.ndarray:
+        return np.copy(self.__matrix)
+
+    def derivate(self, times: Optional[int] = 1):
+        if times != 1:
+            for i in range(times):
+                self.derivate()
+            return
+        avals = np.zeros(self.npts)
+        for i in range(self.npts):
+            diff = (
+                self.knotvector[i + self.degree] - self.knotvector[i]
+            )  # Maybe it's wrong
+            if diff != 0:
+                avals[i] = self.degree / diff
+        newA = np.diag(avals)
+        for i in range(self.npts - 1):
+            newA[i, i + 1] = -avals[i + 1]
+        self.__matrix = self.__matrix @ newA
+        self.__number_derivated += 1
+
+    def evalf(self, nodes: np.ndarray) -> np.ndarray:
+        evaluator = self[:, self.degree]
+        return self.matrix @ evaluator(nodes)
+
+
+class Function(DerivableFunction):
+    def __doc__(self):
+        """
+        Spline and rational base function
+        """
+
+    def __repr__(self) -> str:
+        if self.npts == self.degree + 1:
+            return f"Bezier function of degree {self.degree}"
+        elif self.weights is None:
+            msg = "Spline"
+        else:
+            msg = "Rational"
+        msg += f" function of degree {self.degree} "
+        msg += f"and {self.npts} points"
+        return msg
