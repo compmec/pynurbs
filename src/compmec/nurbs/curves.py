@@ -20,7 +20,7 @@ class BaseCurve(Intface_BaseCurve):
 
     def evaluate(self, u: np.ndarray) -> np.ndarray:
         L = self.F(u)
-        return L.T @ self.ctrlpoints
+        return np.moveaxis(L, 0, -1) @ self.ctrlpoints
 
     @property
     def degree(self):
