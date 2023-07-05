@@ -4,23 +4,32 @@ import numpy as np
 
 from compmec.nurbs import algorithms as algo
 from compmec.nurbs.__classes__ import Intface_BaseCurve
-from compmec.nurbs.functions import RationalFunction, SplineFunction
+from compmec.nurbs.functions import Function
 from compmec.nurbs.knotspace import KnotVector
 
 
 class BaseCurve(Intface_BaseCurve):
-    def __init__(self, knotvector: KnotVector, ctrlpoints: np.ndarray):
-        self.__set_UFP(knotvector, ctrlpoints)
+    def __init__(self, knotvector: KnotVector):
+        self.knotvector = KnotVector(knotvector)
 
     def deepcopy(self) -> Intface_BaseCurve:
-        return self.__class__(self.knotvector, self.ctrlpoints)
+        curve = self.__class__(self.knotvector)
+        curve.ctrlpoints = self.ctrlpoints
+        return curve
 
     def __call__(self, u: np.ndarray) -> np.ndarray:
         return self.evaluate(u)
 
     def evaluate(self, u: np.ndarray) -> np.ndarray:
+        if self.ctrlpoints is None:
+            error_msg = "Cannot evaluate: There are no control points"
+            raise ValueError(error_msg)
         L = self.F(u)
-        return L.T @ self.ctrlpoints
+        return np.moveaxis(L, 0, -1) @ self.ctrlpoints
+
+    @property
+    def knotvector(self):
+        return KnotVector(self.__knotvector)
 
     @property
     def degree(self):
@@ -31,20 +40,16 @@ class BaseCurve(Intface_BaseCurve):
         return self.knotvector.npts
 
     @property
-    def knotvector(self):
-        return self.F.knotvector
-
-    @property
     def knots(self):
-        return self.F.knots
-
-    @property
-    def F(self):
-        return self.__F
+        return self.knotvector.knots
 
     @property
     def ctrlpoints(self):
         return self.__ctrlpoints
+
+    @knotvector.setter
+    def knotvector(self, value: KnotVector):
+        self.__knotvector = KnotVector(value)
 
     @degree.setter
     def degree(self, value: int):
@@ -60,6 +65,9 @@ class BaseCurve(Intface_BaseCurve):
 
     @ctrlpoints.setter
     def ctrlpoints(self, value: np.ndarray):
+        if value is None:
+            self.__ctrlpoints = None
+            return
         try:
             iter(value)
         except Exception:
@@ -77,11 +85,6 @@ class BaseCurve(Intface_BaseCurve):
             error_msg = "with floats like 1.0*P - 1.5*P + 3.1*P"
             raise ValueError(error_msg)
         self.__ctrlpoints = value
-
-    def __set_UFP(self, knotvector: KnotVector, ctrlpoints: np.ndarray):
-        knotvector = KnotVector(knotvector)
-        self.__F = self._create_base_function_instance(knotvector)
-        self.ctrlpoints = ctrlpoints
 
     def __eq__(self, other: object) -> bool:
         if type(self) != type(other):
@@ -173,7 +176,8 @@ class BaseCurve(Intface_BaseCurve):
         newknotvector = KnotVector(newknotvector)
         T, _ = algo.LeastSquare.spline(self.knotvector, newknotvector)
         newcontrolpoints = T @ self.ctrlpoints
-        self.__set_UFP(newknotvector, newcontrolpoints)
+        self.__knotvector = KnotVector(newknotvector)
+        self.ctrlpoints = newcontrolpoints
 
     def knot_remove(
         self, nodes: Union[float, Tuple[float]], tolerance: float = 1e-9
@@ -204,7 +208,8 @@ class BaseCurve(Intface_BaseCurve):
             error_msg += f" error ({error:.1e}) is > {tolerance:.1e} "
             raise ValueError(error_msg)
         newctrlpoints = T @ self.ctrlpoints
-        self.__set_UFP(newknotvector, newctrlpoints)
+        self.__knotvector = KnotVector(newknotvector)
+        self.ctrlpoints = newctrlpoints
 
     def knot_clean(self, tolerance: float = 1e-9) -> None:
         """
@@ -225,7 +230,8 @@ class BaseCurve(Intface_BaseCurve):
         newknotvector.sort()
         T, _ = algo.LeastSquare.spline(self.knotvector, newknotvector)
         newctrlpoints = T @ self.ctrlpoints
-        self.__set_UFP(newknotvector, newctrlpoints)
+        self.__knotvector = KnotVector(newknotvector)
+        self.ctrlpoints = newctrlpoints
 
     def __degree_decrease(self, times: int = 1, tolerance: float = 1e-9):
         newknotvector = list(self.knotvector)
@@ -241,7 +247,8 @@ class BaseCurve(Intface_BaseCurve):
             error_msg += f"cause the error ({error:.1e}) is > {tolerance:.1e} "
             raise ValueError(error_msg)
         newctrlpoints = T @ self.ctrlpoints
-        self.__set_UFP(newknotvector, newctrlpoints)
+        self.__knotvector = newknotvector
+        self.ctrlpoints = newctrlpoints
 
     def degree_decrease(self, times: Optional[int] = 1):
         """
@@ -305,28 +312,31 @@ class BaseCurve(Intface_BaseCurve):
         return tuple(listcurves)
 
 
-class SplineCurve(BaseCurve):
-    def __init__(self, knotvector: KnotVector, ctrlpoints: np.ndarray):
-        super().__init__(knotvector, ctrlpoints)
+class Curve(BaseCurve):
+    def __init__(
+        self,
+        knotvector: KnotVector,
+        ctrlpoints: Optional[np.ndarray] = None,
+        weights: Optional[np.ndarray] = None,
+    ):
+        super().__init__(knotvector)
+        self.ctrlpoints = ctrlpoints
+        self.weights = weights
 
-    def __repr__(self):
-        return f"SplineCurve of degree {self.degree} and {self.npts} control points"
+    @property
+    def F(self):
+        function = Function(self.knotvector)
+        return function
 
-    def _create_base_function_instance(self, knotvector: KnotVector):
-        return SplineFunction(knotvector)
-
-
-class RationalCurve(BaseCurve):
-    def __init__(self, knotvector: KnotVector, ctrlpoints: np.ndarray):
-        super().__init__(knotvector, ctrlpoints)
-
-    def _create_base_function_instance(self, knotvector: KnotVector):
-        return RationalFunction(knotvector)
+    def deepcopy(self):
+        curve = super().deepcopy()
+        curve.weights = self.weights
+        return curve
 
     @property
     def weights(self):
-        return self.F.weights
+        return self.__weights
 
     @weights.setter
     def weights(self, value: Tuple[float]):
-        self.F.weights = value
+        self.__weights = value
