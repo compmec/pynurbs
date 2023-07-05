@@ -31,7 +31,7 @@ Operations
 
 ## Install
 
-This library is available in [PyPI][pypilink]. To install it
+This library is available in [PyPI][pypi-url]. To install it
 
 ```
 pip install compmec-nurbs
@@ -46,7 +46,7 @@ The documentation can be found at [compmec-nurbs.readthedocs.io][docs-url]
 
 ## Contribute
 
-Please use the [Issues][issueslink] or refer to the email ```compmecgit@gmail.com```
+Please use the [Issues][issues-url] or refer to the email ```compmecgit@gmail.com```
 
 <!-- Badges: -->
 

@@ -20,7 +20,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath("../../src/compmec/"))
-from nurbs import __version__ as ver
+from compmec.nurbs import __version__ as ver
 
 autodoc_mock_imports = []
 
@@ -191,7 +191,7 @@ sphinx_gallery_conf = {
     # directory where function granular galleries are stored
     "backreferences_dir": None,
     # Modules for which function level galleries are created.  In
-    "doc_module": "compmec-section",
+    "doc_module": "compmec-nurbs",
     "image_scrapers": ("matplotlib",),
     "first_notebook_cell": ("%matplotlib inline\n"),
 }
