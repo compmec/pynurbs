@@ -312,18 +312,7 @@ class BaseCurve(Intface_BaseCurve):
         return tuple(listcurves)
 
 
-class SplineCurve(BaseCurve):
-    def __init__(self, knotvector: KnotVector, ctrlpoints: Optional[np.ndarray] = None):
-        super().__init__(knotvector)
-        if ctrlpoints is not None:
-            self.ctrlpoints = ctrlpoints
-
-    @property
-    def F(self):
-        return SplineFunction(self.knotvector)
-
-
-class RationalCurve(BaseCurve):
+class Curve(BaseCurve):
     def __init__(
         self,
         knotvector: KnotVector,
