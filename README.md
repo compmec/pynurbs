@@ -7,7 +7,7 @@
 [![Python Versions][pyversions-img]][pyversions-url]
 [![License: MIT][license-img]][license-url]
 
-A python package for [Non-Uniform rational B-Spline], parametrized geometry.
+A python package for [Non-Uniform rational B-Spline][nurbswiki-url], parametrized geometry.
 
 
 #### Features
@@ -52,6 +52,7 @@ Please use the [Issues][issues-url] or refer to the email ```compmecgit@gmail.co
 
 <!-- Badges: -->
 
+[nurbswiki-url]: https://pt.wikipedia.org/wiki/NURBS
 [lintblack-img]: https://github.com/compmec/nurbs/actions/workflows/black.yaml/badge.svg
 [lintblack-url]: https://github.com/compmec/nurbs/actions/workflows/black.yaml
 [docs-img]: https://readthedocs.org/projects/compmec-nurbs/badge/?version=latest

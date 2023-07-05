@@ -10,11 +10,16 @@ Documentation
 
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Contents:
-
-   rst/installation
-   rst/theory
+  :maxdepth: 1
+  :caption: Content
+  
+  rst/installation
+  rst/tutorial
+  rst/knotvector
+  rst/basisfunction
+  rst/curve
+  rst/advanced
+  rst/theory
 
 
 Support

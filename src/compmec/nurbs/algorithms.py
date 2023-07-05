@@ -191,8 +191,7 @@ class LeastSquare:
             B += np.einsum("k,ik,jk->ij", integrator, Nvalues, Mvalues)
             C += np.einsum("k,ik,jk->ij", integrator, Mvalues, Mvalues)
 
-        Cinv = np.linalg.inv(C)
-        T = Cinv @ B.T
+        T = np.linalg.solve(C, B.T)
         E = A - B @ T
         return T, E
 
