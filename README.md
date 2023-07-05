@@ -1,28 +1,33 @@
-[![PyPI Version][pypi-image]][pypi-url]
-[![Build Status][build-image]][build-url]
-[![Code Coverage][coverage-image]][coverage-url]
-[![][versions-image]][versions-url]
+[![Documentation Status][docs-img]][docs-url]
+[![Build Status][build-img]][build-url]
+[![Lint with Black][lintblack-img]][lintblack-url]
+[![Code Coverage][coverage-img]][coverage-url]
 
-# Nurbs
+[![PyPI Version][pypi-img]][pypi-url]
+[![Python Versions][pyversions-img]][pyversions-url]
+[![License: MIT][license-img]][license-url]
 
-This repository contains code for inteporlate functions using B-Splines and Nurbs.
+A python package for [Non-Uniform rational B-Spline], parametrized geometry.
 
 
 #### Features
 
-* Basic Functions
-    * Spline ```N```
-    * Rational ```R```
-    * Derivative
-* Curves
-    * Spline
-    * Rational
-* Knot operations
+* [X] Knot Vector
+* [X] Base Functions
+* [X] Curves
+* [] Surface
+
+Operations
+
+* Knots
     * Insertion
     * Removal
-* Degree operations
-    * Degree elevation
-    * Degree reduction
+    * Clean
+* Degree
+    * Increase
+    * Decrease
+    * Clean
+* Split and unite
 
 ## Install
 
@@ -32,25 +37,11 @@ This library is available in [PyPI][pypilink]. To install it
 pip install compmec-nurbs
 ```
 
-## Documentation
+For more details, refer to the [documentation][docs-url].
 
-In progress
+### Documentation
 
-
-# FAQ
-
-#### Must I learn the theory to use it?
-
-No! Just see the examples and it will be fine
-
-#### Can I understand the code here?
-
-Yes! The easier way is to look up the **python notebook** which contains the theory along examples
-
-#### Is this code efficient?
-
-No. It's written in python and the functions were made for easy understanding, not for performance.
-That means: It's not very fast, but it works fine.
+The documentation can be found at [compmec-nurbs.readthedocs.io][docs-url]
 
 
 ## Contribute
@@ -59,13 +50,21 @@ Please use the [Issues][issueslink] or refer to the email ```compmecgit@gmail.co
 
 <!-- Badges: -->
 
-[pypi-image]: https://img.shields.io/pypi/v/compmec-nurbs
+<!-- Badges: -->
+
+[lintblack-img]: https://github.com/compmec/nurbs/actions/workflows/black.yaml/badge.svg
+[lintblack-url]: https://github.com/compmec/nurbs/actions/workflows/black.yaml
+[docs-img]: https://readthedocs.org/projects/compmec-nurbs/badge/?version=latest
+[docs-url]: https://compmec-nurbs.readthedocs.io/en/latest/?badge=latest
+[pypi-img]: https://img.shields.io/pypi/v/compmec-nurbs
 [pypi-url]: https://pypi.org/project/compmec-nurbs/
-[build-image]: https://github.com/compmec/nurbs/actions/workflows/build.yaml/badge.svg
+[build-img]: https://github.com/compmec/nurbs/actions/workflows/build.yaml/badge.svg
 [build-url]: https://github.com/compmec/nurbs/actions/workflows/build.yaml
-[coverage-image]: https://codecov.io/gh/compmec/nurbs/branch/main/graph/badge.svg
-[coverage-url]: https://codecov.io/gh/compmec/nurbs/
-[versions-image]: https://img.shields.io/pypi/pyversions/compmec-nurbs.svg?style=flat-square
-[versions-url]: https://pypi.org/project/compmec-nurbs/
-[pypilink]: https://pypi.org/project/compmec-nurbs/
-[issueslink]: https://github.com/compmec/nurbs/issues
+[coverage-img]: https://codecov.io/gh/compmec/nurbs/branch/main/graph/badge.svg?token=vfGMPe9W3I
+[coverage-url]: https://codecov.io/gh/compmec/nurbs
+[pyversions-img]: https://img.shields.io/pypi/pyversions/compmec-nurbs.svg?style=flat-square
+[pyversions-url]: https://pypi.org/project/compmec-nurbs/
+[license-img]: https://img.shields.io/pypi/l/ansicolortags.svg
+[license-url]: https://github.com/compmec/nurbs/blob/main/LICENSE.md
+[pypi-url]: https://pypi.org/project/compmec-nurbs/
+[issues-url]: https://github.com/compmec/nurbs/issues
