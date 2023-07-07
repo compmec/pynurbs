@@ -90,11 +90,13 @@ class KnotVector(Intface_KnotVector):
     def __ior__(self, other: KnotVector) -> KnotVector:
         newvector = heavy.KnotVector.unite_vectors(tuple(self), tuple(other))
         if not heavy.KnotVector.is_valid_vector(newvector):
-            raise ValueError("Cannot use & in this case")
+            raise ValueError("Cannot use __or__ in this case")
         return self.__update_vector(newvector)
 
     def __iand__(self, other: KnotVector) -> KnotVector:
         newvector = heavy.KnotVector.intersect_vectors(tuple(self), tuple(other))
+        if not heavy.KnotVector.is_valid_vector(newvector):
+            raise ValueError("Cannot use __and__ in this case")
         return self.__update_vector(newvector)
 
     def __add__(self, other: Union[float, Tuple[float]]):
@@ -166,16 +168,18 @@ class KnotVector(Intface_KnotVector):
     def __insert_knots(self, knots: Tuple[float]):
         newvector = heavy.KnotVector.insert_knots(tuple(self), knots)
         if not heavy.KnotVector.is_valid_vector(newvector):
-            raise ValueError(f"Cannot insert knots {knots}")
+            error_msg = f"Cannot insert knots {knots} in knotvector {self}"
+            raise ValueError(error_msg)
         return self.__update_vector(newvector)
 
     def __remove_knots(self, knots: Tuple[float]):
         try:
             newvector = heavy.KnotVector.remove_knots(tuple(self), knots)
+            if not heavy.KnotVector.is_valid_vector(newvector):
+                raise ValueError
         except ValueError:
-            raise ValueError(f"Cannot remove knots {knots}")
-        if not heavy.KnotVector.is_valid_vector(newvector):
-            raise ValueError(f"Cannot remove knots {knots}")
+            error_msg = f"Cannot remove knots {knots} in knotvector {self}"
+            raise ValueError(error_msg)
         return self.__update_vector(newvector)
 
     def deepcopy(self) -> KnotVector:

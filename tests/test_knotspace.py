@@ -587,6 +587,13 @@ def test_or_and():
     assert U1 & U2 == [0, 0, 1, 2, 2]
     assert U2 & U1 == [0, 0, 1, 2, 2]
 
+    U1 = KnotVector([0, 0, 0, 1, 1, 2, 2, 2])
+    U2 = KnotVector([0, 0, 0, 1, 2, 2, 3, 3, 3])
+    assert U1 | U2 == U2 | U1
+    assert U1 | U2 == [0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 3]
+    with pytest.raises(ValueError):
+        print(U1 & U2)
+
 
 @pytest.mark.order(2)
 @pytest.mark.timeout(4)

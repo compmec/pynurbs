@@ -44,7 +44,7 @@ class Intface_KnotVector(abc.ABC):
 
 class Intface_Evaluator(abc.ABC):
     @abc.abstractproperty
-    def evalf(self) -> Union[int, slice]:
+    def eval(self) -> Union[int, slice]:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -73,6 +73,14 @@ class Intface_BaseFunction_BaseCurve(abc.ABC):
     def npts(self) -> int:
         raise NotImplementedError
 
+    @abc.abstractproperty
+    def knots(self) -> Tuple[float]:
+        raise NotImplementedError
+
+    @abc.abstractproperty
+    def weights(self) -> Tuple[float]:
+        raise NotImplementedError
+
 
 class Intface_BaseFunction(Intface_BaseFunction_BaseCurve):
     @abc.abstractmethod
@@ -80,7 +88,7 @@ class Intface_BaseFunction(Intface_BaseFunction_BaseCurve):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def evalf(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def eval(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -94,10 +102,6 @@ class Intface_BaseCurve(Intface_BaseFunction_BaseCurve):
         raise NotImplementedError
 
     @abc.abstractproperty
-    def F(self) -> Intface_BaseFunction:
-        raise NotImplementedError
-
-    @abc.abstractproperty
     def ctrlpoints(self) -> np.ndarray:
         raise NotImplementedError
 
@@ -107,4 +111,8 @@ class Intface_BaseCurve(Intface_BaseFunction_BaseCurve):
 
     @abc.abstractmethod
     def degree_clean(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def eval(self):
         raise NotImplementedError

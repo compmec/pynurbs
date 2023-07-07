@@ -252,7 +252,8 @@ class TestCallShape:
             ctrlpoints = np.random.uniform(-1, 1, npts)
             curve = Curve(knotvector, ctrlpoints)
 
-            tparam = np.random.uniform(0, 1)
+            umin, umax = knotvector[0], knotvector[-1]
+            tparam = np.random.uniform(umin, umax)
             curvevalues = curve(tparam)
             assert type(curvevalues) == type(ctrlpoints[0])
 
@@ -271,8 +272,8 @@ class TestCallShape:
                 knotvector = GeneratorKnotVector.bezier(degree)
                 ctrlpoints = np.random.uniform(-1, 1, (npts, ndim))
                 curve = Curve(knotvector, ctrlpoints)
-
-                tparam = np.random.uniform(0, 1)
+                umin, umax = knotvector[0], knotvector[-1]
+                tparam = np.random.uniform(umin, umax)
                 curvevalues = curve(tparam)
                 assert len(curvevalues) == ndim
                 assert type(curvevalues) == type(ctrlpoints[0])
@@ -297,7 +298,8 @@ class TestCallShape:
             lower = npts + degree + 2
             upper = npts + degree + 11
             nsample = np.random.randint(lower, upper)
-            tparam = np.linspace(0, 1, nsample)
+            umin, umax = knotvector[0], knotvector[-1]
+            tparam = np.linspace(umin, umax, nsample)
             Cval = curve(tparam)
             assert len(Cval) == nsample
             assert type(Cval[0]) == type(ctrlpoints[0])
@@ -322,7 +324,8 @@ class TestCallShape:
                 lower = npts + degree + 2
                 upper = npts + degree + 11
                 nsample = np.random.randint(lower, upper)
-                tparam = np.linspace(0, 1, nsample)
+                umin, umax = knotvector[0], knotvector[-1]
+                tparam = np.linspace(umin, umax, nsample)
                 curvevalues = curve(tparam)
                 assert len(curvevalues) == nsample
                 assert type(curvevalues[0]) == type(ctrlpoints[0])

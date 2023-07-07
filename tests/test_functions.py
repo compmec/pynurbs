@@ -753,7 +753,6 @@ class TestOthers:
 
 
 @pytest.mark.order(3)
-@pytest.mark.skip(reason="Finish reorganize")
 @pytest.mark.dependency(
     depends=[
         "test_begin",

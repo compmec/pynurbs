@@ -29,7 +29,7 @@ class BaseFunction(Intface_BaseFunction):
         return not self.__eq__(other)
 
     def __call__(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
-        return self.evalf(nodes)
+        return self.eval(nodes)
 
     @property
     def knotvector(self) -> KnotVector:
@@ -41,6 +41,10 @@ class BaseFunction(Intface_BaseFunction):
 
     @property
     def npts(self) -> int:
+        return self.knotvector.npts
+
+    @property
+    def knots(self) -> Tuple[float]:
         return self.knotvector.npts
 
     @property
@@ -117,9 +121,9 @@ class FunctionEvaluator(Intface_Evaluator):
             result[:, i] = self.compute_vector(nodei, spani)
         return result
 
-    def __evalf(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def __eval(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         """
-        Private and unprotected method of evalf
+        Private and unprotected method of eval
         """
         nodes = np.array(nodes, dtype="float64")
         flat_nodes = nodes.flatten()
@@ -129,17 +133,17 @@ class FunctionEvaluator(Intface_Evaluator):
         result = self.compute_matrix(flat_nodes, flat_spans)
         return result.reshape(newshape)
 
-    def evalf(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def eval(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         """
         If i is integer, u is float -> float
         If i is integer, u is np.ndarray, ndim = k -> np.ndarray, ndim = k
         If i is slice, u is float -> 1D np.ndarray
         if i is slice, u is np.ndarray, ndim = k -> np.ndarray, ndim = k+1
         """
-        return self.__evalf(nodes)[self.__first_index]
+        return self.__eval(nodes)[self.__first_index]
 
     def __call__(self, nodes: np.ndarray) -> np.ndarray:
-        return self.evalf(nodes)
+        return self.eval(nodes)
 
 
 class IndexableFunction(BaseFunction):
@@ -173,7 +177,7 @@ class IndexableFunction(BaseFunction):
         self.__valid_second_index(j)
         return FunctionEvaluator(self, i, j)
 
-    def evalf(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def eval(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         evaluator = self[:, self.degree]
         return evaluator(nodes)
 

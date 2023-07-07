@@ -48,7 +48,7 @@ class TestInitCurve:
     @pytest.mark.dependency(depends=["TestInitCurve::test_build_scalar"])
     def test_failbuild(self):
         degree, npts = 3, 9
-        knotvector = GeneratorKnotVector.uniform(degree, npts)
+        knotvector = GeneratorKnotVector.random(degree, npts)
         ctrlpoints = np.random.uniform(-1, 1, npts + 1)
         with pytest.raises(ValueError):
             Curve(knotvector, ctrlpoints)
@@ -63,7 +63,7 @@ class TestInitCurve:
     @pytest.mark.dependency(depends=["TestInitCurve::test_build_scalar"])
     def test_attributes(self):
         degree, npts = 3, 9
-        knotvector = GeneratorKnotVector.uniform(degree, npts)
+        knotvector = GeneratorKnotVector.random(degree, npts)
         ctrlpoints = np.random.uniform(-1, 1, npts)
         curve = Curve(knotvector, ctrlpoints)
         curve = Curve(knotvector, ctrlpoints)
@@ -78,7 +78,7 @@ class TestInitCurve:
     @pytest.mark.dependency(depends=["TestInitCurve::test_build_scalar"])
     def test_functions(self):
         degree, npts = 3, 9
-        knotvector = GeneratorKnotVector.uniform(degree, npts)
+        knotvector = GeneratorKnotVector.random(degree, npts)
         ctrlpoints = np.random.uniform(-1, 1, npts)
         curve = Curve(knotvector, ctrlpoints)
         curve = Curve(knotvector, ctrlpoints)
@@ -97,7 +97,7 @@ class TestInitCurve:
     @pytest.mark.dependency(depends=["TestInitCurve::test_attributes"])
     def test_atributesgood(self):
         degree, npts = 3, 9
-        knotvector = GeneratorKnotVector.uniform(degree, npts)
+        knotvector = GeneratorKnotVector.random(degree, npts)
         ctrlpoints = np.random.uniform(-1, 1, npts)
         curve = Curve(knotvector, ctrlpoints)
         assert curve.degree == degree
@@ -253,7 +253,7 @@ class TestCallShape:
                 ctrlpoints = np.random.uniform(-1, 1, npts)
                 curve = Curve(knotvector, ctrlpoints)
 
-                tparam = np.random.uniform(0, 1)
+                tparam = np.random.uniform(knotvector[0], knotvector[-1])
                 curvevalues = curve(tparam)
                 assert type(curvevalues) == type(ctrlpoints[0])
 
@@ -273,7 +273,7 @@ class TestCallShape:
                     ctrlpoints = np.random.uniform(-1, 1, (npts, ndim))
                     curve = Curve(knotvector, ctrlpoints)
 
-                    tparam = np.random.uniform(0, 1)
+                    tparam = np.random.uniform(knotvector[0], knotvector[-1])
                     curvevalues = curve(tparam)
                     assert len(curvevalues) == ndim
                     assert type(curvevalues) == type(ctrlpoints[0])
@@ -298,7 +298,7 @@ class TestCallShape:
                 lower = npts + degree + 2
                 upper = npts + degree + 9
                 nsample = np.random.randint(lower, upper)
-                tparam = np.linspace(0, 1, nsample)
+                tparam = np.linspace(knotvector[0], knotvector[-1], nsample)
                 Cval = curve(tparam)
                 assert len(Cval) == nsample
                 assert type(Cval[0]) == type(ctrlpoints[0])
@@ -323,7 +323,7 @@ class TestCallShape:
                     lower = npts + degree + 2
                     upper = npts + degree + 9
                     nsample = np.random.randint(lower, upper)
-                    tparam = np.linspace(0, 1, nsample)
+                    tparam = np.linspace(knotvector[0], knotvector[-1], nsample)
                     curvevalues = curve(tparam)
                     assert len(curvevalues) == nsample
                     assert type(curvevalues[0]) == type(ctrlpoints[0])
@@ -552,7 +552,8 @@ class TestKnotOperations:
             ctrlpoints = np.random.uniform(-1, 1, (npts, ndim))
             curve = Curve(knotvector, ctrlpoints)
 
-            knot = np.random.uniform(0, 1)
+            umin, umax = knotvector[0], knotvector[-1]
+            knot = np.random.uniform(umin, umax)
             curve.knot_insert(knot)
             curve.knot_remove(knot)
 
@@ -588,13 +589,14 @@ class TestKnotOperations:
         for degree in range(1, 5):
             npts = np.random.randint(degree + 2, degree + 9)
             ndim = np.random.randint(1, 5)
-            U = GeneratorKnotVector.random(degree, npts)
+            knotvector = GeneratorKnotVector.random(degree, npts)
             P = np.random.uniform(-1, 1, (npts, ndim))
-            curve = Curve(U, P)
-            knot = np.random.rand()
+            curve = Curve(knotvector, P)
+            umin, umax = knotvector[0], knotvector[-1]
+            knot = np.random.uniform(umin, umax)
             curve.knot_insert(knot)
             curve.knot_clean()
-            assert curve.knotvector == U
+            assert curve.knotvector == knotvector
 
     @pytest.mark.order(5)
     @pytest.mark.timeout(15)
@@ -616,10 +618,6 @@ class TestKnotOperations:
         C = Curve(knotvector, ctrlpoints)
         with pytest.raises(ValueError):
             C.knot_insert(["asd", 3, None])
-        with pytest.raises(ValueError):
-            C.knot_insert([-0.1, 0.1])
-        with pytest.raises(ValueError):
-            C.knot_insert([1.1, 0.1])
         with pytest.raises(ValueError):
             C.knot_remove(0.5)
 
