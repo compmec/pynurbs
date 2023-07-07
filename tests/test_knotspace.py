@@ -564,6 +564,32 @@ def test_degree_change():
 
 @pytest.mark.order(2)
 @pytest.mark.timeout(4)
+@pytest.mark.dependency(depends=["test_GeneratorUniform"])
+def test_or_and():
+    U1 = KnotVector([0, 0, 0, 1, 1, 1])
+    U2 = KnotVector([0, 0, 1, 1])
+    assert U1 | U2 == U1
+    assert U2 | U1 == U1
+    assert U1 & U2 == U2
+    assert U2 & U1 == U2
+
+    U1 = KnotVector([0, 0, 0.2, 1, 1])
+    U2 = KnotVector([0, 0, 0.8, 1, 1])
+    assert U1 | U2 == [0, 0, 0.2, 0.8, 1, 1]
+    assert U2 | U1 == [0, 0, 0.2, 0.8, 1, 1]
+    assert U1 & U2 == [0, 0, 1, 1]
+    assert U2 & U1 == [0, 0, 1, 1]
+
+    U1 = KnotVector([0, 0, 0, 1, 1, 2, 2, 2])
+    U2 = KnotVector([0, 0, 1, 2, 2, 3, 3])
+    with pytest.raises(ValueError):
+        U1 | U2
+    assert U1 & U2 == [0, 0, 1, 2, 2]
+    assert U2 & U1 == [0, 0, 1, 2, 2]
+
+
+@pytest.mark.order(2)
+@pytest.mark.timeout(4)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
@@ -602,6 +628,7 @@ def test_others():
         "test_compare_knotvectors_fail",
         "test_insert_knot_remove",
         "test_degree_change",
+        "test_or_and",
         "test_others",
     ]
 )

@@ -73,19 +73,29 @@ class KnotVector(Intface_KnotVector):
         try:
             return self.shift(other)
         except TypeError:
-            return self.__insert_knots(other)
+            return self.__insert_knots(tuple(other))
 
     def __isub__(self, other: Union[float, Tuple[float]]):
         try:
             return self.shift(-other)
         except TypeError:
-            return self.__remove_knots(other)
+            return self.__remove_knots(tuple(other))
 
     def __imul__(self, other: float):
         return self.scale(other)
 
     def __itruediv__(self, other: float):
         return self.scale(1 / other)
+
+    def __ior__(self, other: KnotVector) -> KnotVector:
+        newvector = heavy.KnotVector.unite_vectors(tuple(self), tuple(other))
+        if not heavy.KnotVector.is_valid_vector(newvector):
+            raise ValueError("Cannot use & in this case")
+        return self.__update_vector(newvector)
+
+    def __iand__(self, other: KnotVector) -> KnotVector:
+        newvector = heavy.KnotVector.intersect_vectors(tuple(self), tuple(other))
+        return self.__update_vector(newvector)
 
     def __add__(self, other: Union[float, Tuple[float]]):
         return self.deepcopy().__iadd__(other)
@@ -102,24 +112,30 @@ class KnotVector(Intface_KnotVector):
     def __truediv__(self, other: float):
         return self.deepcopy().__itruediv__(other)
 
-    def __eq__(self, obj: object):
-        if not isinstance(obj, self.__class__):
-            # Will try to cenvert obj
+    def __or__(self, other: float):
+        return self.deepcopy().__ior__(other)
+
+    def __and__(self, other: float):
+        return self.deepcopy().__iand__(other)
+
+    def __eq__(self, other: object):
+        if not isinstance(other, self.__class__):
+            # Will try to cenvert other
             try:
-                obj = self.__class__(obj)
+                other = self.__class__(other)
             except ValueError:
                 return False
-        if self.npts != obj.npts:
+        if self.npts != other.npts:
             return False
-        if self.degree != obj.degree:
+        if self.degree != other.degree:
             return False
         for i, v in enumerate(self):
-            if v != obj[i]:
+            if v != other[i]:
                 return False
         return True
 
-    def __ne__(self, __obj: object) -> bool:
-        return not self == __obj
+    def __ne__(self, other: object) -> bool:
+        return not self == other
 
     @property
     def degree(self) -> int:

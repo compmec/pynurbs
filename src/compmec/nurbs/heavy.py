@@ -298,6 +298,40 @@ class KnotVector:
         return tuple(newknotvector)
 
     @staticmethod
+    def unite_vectors(vector0: Tuple[float], vector1: Tuple[float]) -> Tuple[float]:
+        all_knots = list(set(vector0) | set(vector1))
+        all_mults = [0] * len(all_knots)
+        for vector in [vector0, vector1]:
+            for knot in vector:
+                index = all_knots.index(knot)
+                mult = KnotVector.find_mult(knot, vector)
+                if mult > all_mults[index]:
+                    all_mults[index] = mult
+        final_vector = []
+        for knot, mult in zip(all_knots, all_mults):
+            final_vector += [knot] * mult
+        final_vector.sort()
+        return tuple(final_vector)
+
+    @staticmethod
+    def intersect_vectors(vector0: Tuple[float], vector1: Tuple[float]) -> Tuple[float]:
+        all_knots = list(set(vector0) & set(vector1))
+        all_mults = [9999] * len(all_knots)
+        for vector in [vector0, vector1]:
+            for knot in vector:
+                if knot not in all_knots:
+                    continue
+                index = all_knots.index(knot)
+                mult = KnotVector.find_mult(knot, vector)
+                if mult < all_mults[index]:
+                    all_mults[index] = mult
+        final_vector = []
+        for knot, mult in zip(all_knots, all_mults):
+            final_vector += [knot] * mult
+        final_vector.sort()
+        return tuple(final_vector)
+
+    @staticmethod
     def split(knotvector: Tuple[float], nodes: Tuple[float]) -> Tuple[Tuple[float]]:
         """
         It splits the knotvector at nodes.
