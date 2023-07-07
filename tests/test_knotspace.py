@@ -519,6 +519,48 @@ def test_insert_knot_remove():
     with pytest.raises(ValueError):
         U0 -= [0.5] * 4
 
+    with pytest.raises(ValueError):
+        U0 -= [0]  # Take out one extremity
+
+
+@pytest.mark.order(2)
+@pytest.mark.timeout(4)
+@pytest.mark.dependency(depends=["test_GeneratorUniform"])
+def test_degree_change():
+    U = KnotVector([0, 0, 0, 1, 1, 1])
+    assert U == [0, 0, 0, 1, 1, 1]
+    assert U.degree == 2
+    assert U.npts == 3
+    U.degree = 1
+    assert U == [0, 0, 1, 1]
+    U.degree += 1
+    assert U == [0, 0, 0, 1, 1, 1]
+    U.degree -= 1
+    assert U == [0, 0, 1, 1]
+    U.degree = 4
+    assert U == [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]
+
+    U = KnotVector([0, 0, 0, 1, 1, 2, 2, 2])
+    assert U == [0, 0, 0, 1, 1, 2, 2, 2]
+    assert U.degree == 2
+    assert U.npts == 5
+    U.degree = 1
+    assert U == [0, 0, 1, 2, 2]
+    U.degree += 1
+    assert U == [0, 0, 0, 1, 1, 2, 2, 2]
+    U.degree -= 1
+    assert U == [0, 0, 1, 2, 2]
+    U.degree = 4
+    assert U == [0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2]
+    U.degree = 1
+    assert U == [0, 0, 1, 2, 2]
+    U.degree = 0
+    assert U == [0, 2]
+    U.degree = 1
+    assert U == [0, 0, 2, 2]
+    U.degree = 3
+    assert U == [0, 0, 0, 0, 2, 2, 2, 2]
+
 
 @pytest.mark.order(2)
 @pytest.mark.timeout(4)
@@ -535,6 +577,17 @@ def test_others():
     knotvect = KnotVector(knotvect)
     knotvect = KnotVector(knotvect)
 
+    newvect = knotvect + 1
+    newvect = knotvect - 1
+    newvect = knotvect * 2
+    newvect = knotvect / 2
+    newvect = 2 * knotvect
+
+    np.testing.assert_allclose(knotvect.knots, [0, 0.5, 1])
+
+    str(knotvect)
+    knotvect.__repr__()
+
 
 @pytest.mark.order(2)
 @pytest.mark.skip(reason="Needs adaption to new knotvector structure")
@@ -549,6 +602,7 @@ def test_others():
         "test_GeneratorKnotVectorFails",
         "test_compare_knotvectors_fail",
         "test_insert_knot_remove",
+        "test_degree_change",
         "test_others",
     ]
 )

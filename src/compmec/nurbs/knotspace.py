@@ -53,6 +53,12 @@ class KnotVector(Intface_KnotVector):
         self.__internal_vector = tuple(newvector)
         return self
 
+    def __str__(self) -> str:
+        return str(self.__internal_vector)
+
+    def __repr__(self) -> str:
+        return str(self)
+
     def __iter__(self) -> float:
         for knot in self.__internal_vector:
             yield knot
@@ -88,6 +94,9 @@ class KnotVector(Intface_KnotVector):
         return self.deepcopy().__isub__(other)
 
     def __mul__(self, other: float):
+        return self.deepcopy().__imul__(other)
+
+    def __rmul__(self, other: float):
         return self.deepcopy().__imul__(other)
 
     def __truediv__(self, other: float):
@@ -134,20 +143,23 @@ class KnotVector(Intface_KnotVector):
         knots = self.knots
         diff = value - self.degree
         if diff < 0:  # Decrease degree
-            self -= diff * knots
+            self -= (-diff) * knots
         if 0 < diff:  # Increase degree
             self += diff * knots
 
     def __insert_knots(self, knots: Tuple[float]):
         newvector = heavy.KnotVector.insert_knots(tuple(self), knots)
         if not heavy.KnotVector.is_valid_vector(newvector):
-            raise ValueError("Cannot insert knots")
+            raise ValueError(f"Cannot insert knots {knots}")
         return self.__update_vector(newvector)
 
     def __remove_knots(self, knots: Tuple[float]):
-        newvector = heavy.KnotVector.remove_knots(tuple(self), knots)
+        try:
+            newvector = heavy.KnotVector.remove_knots(tuple(self), knots)
+        except ValueError:
+            raise ValueError(f"Cannot remove knots {knots}")
         if not heavy.KnotVector.is_valid_vector(newvector):
-            raise ValueError("Cannot remove knots")
+            raise ValueError(f"Cannot remove knots {knots}")
         return self.__update_vector(newvector)
 
     def deepcopy(self) -> KnotVector:
