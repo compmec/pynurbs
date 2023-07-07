@@ -132,7 +132,7 @@ class BaseCurve(Intface_BaseCurve):
         array = np.array(value, dtype="float64")
         if not np.all(array > 0):
             raise ValueError("All weights must be > 0")
-        if array.shape != (self.npts, ):
+        if array.shape != (self.npts,):
             error_msg = "Weights must be a 1D array with "
             error_msg += f"{self.npts} points"
             raise ValueError(error_msg)

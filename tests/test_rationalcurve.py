@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from compmec.nurbs.curves import Curve
+from compmec.nurbs.knotspace import GeneratorKnotVector
 
 
 @pytest.mark.order(6)
@@ -16,6 +17,41 @@ from compmec.nurbs.curves import Curve
 )
 def test_begin():
     pass
+
+
+class TestBuild:
+    @pytest.mark.order(6)
+    @pytest.mark.dependency(depends=["test_begin"])
+    def test_begin(self):
+        pass
+
+    @pytest.mark.order(6)
+    @pytest.mark.timeout(1)
+    @pytest.mark.dependency(depends=["TestCircle::test_begin"])
+    def test_failbuild(self):
+        for degree in range(1, 6):
+            npts = np.random.randint(degree + 1, degree + 9)
+            knotvector = GeneratorKnotVector.random(degree, npts)
+            curve = Curve(knotvector)
+            with pytest.raises(ValueError):
+                curve.weights = 1
+            with pytest.raises(ValueError):
+                curve.weights = -1 * np.ones(npts)
+            with pytest.raises(ValueError):
+                curve.weights = "asd"
+
+    @pytest.mark.order(6)
+    @pytest.mark.dependency(
+        depends=[
+            "TestCircle::test_begin",
+            "TestCircle::test_quarter_circle_standard",
+            "TestCircle::test_quarter_circle_symmetric",
+            "TestCircle::test_half_circle",
+            "TestCircle::test_full_circle",
+        ]
+    )
+    def test_end(self):
+        pass
 
 
 class TestCircle:
