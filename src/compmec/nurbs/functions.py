@@ -45,7 +45,7 @@ class BaseFunction(Intface_BaseFunction):
 
     @property
     def knots(self) -> Tuple[float]:
-        return self.knotvector.npts
+        return self.knotvector.knots
 
     @property
     def weights(self) -> Union[Tuple[float], None]:

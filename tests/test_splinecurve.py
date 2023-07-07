@@ -914,6 +914,54 @@ class TestDegreeOperations:
         pass
 
 
+class TestOthers:
+    @pytest.mark.order(5)
+    @pytest.mark.timeout(15)
+    @pytest.mark.dependency(
+        depends=[
+            "test_begin",
+            "TestInitCurve::test_end",
+            "TestCallShape::test_end",
+            "TestKnotOperations::test_end",
+            "TestSplitUnite::test_end",
+            "TestDegreeOperations::test_end",
+            "TestSumSubtract::test_end",
+        ]
+    )
+    def test_begin(self):
+        pass
+
+    @pytest.mark.order(5)
+    @pytest.mark.timeout(10)
+    @pytest.mark.dependency(depends=["TestOthers::test_begin"])
+    def test_others(self):
+        knotvector = KnotVector([1, 1, 2, 2])
+        curve = Curve(knotvector)
+        assert curve.knotvector == knotvector
+        assert id(curve.knotvector) != id(knotvector)
+
+        newvector = knotvector.deepcopy()
+        newvector += [1.5]
+        curve.knotvector = newvector
+        with pytest.raises(ValueError):
+            curve(1.5)
+        curve.ctrlpoints = np.random.uniform(-1, 1, curve.npts)
+        curve.degree_increase(1)
+        curve.degree_decrease(1)
+        curve.knot_insert(1.5)
+        curve.knot_remove(1.5)
+        with pytest.raises(ValueError):
+            curve.knot_remove(1.5)
+        curve.knot_remove(1.5, None)  # No tolerance
+
+    @pytest.mark.order(5)
+    @pytest.mark.dependency(
+        depends=["TestOthers::test_begin", "TestOthers::test_others"]
+    )
+    def test_end(self):
+        pass
+
+
 @pytest.mark.order(5)
 @pytest.mark.dependency(
     depends=[

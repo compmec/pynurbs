@@ -126,7 +126,17 @@ class BaseCurve(Intface_BaseCurve):
 
     @weights.setter
     def weights(self, value: Tuple[float]):
-        self.__weights = value
+        if value is None:
+            self.__weights = None
+            return
+        array = np.array(value, dtype="float64")
+        if not np.all(array > 0):
+            raise ValueError("All weights must be > 0")
+        if array.shape != (self.npts, ):
+            error_msg = "Weights must be a 1D array with "
+            error_msg += f"{self.npts} points"
+            raise ValueError(error_msg)
+        self.__weights = tuple(value)
 
     @ctrlpoints.setter
     def ctrlpoints(self, value: np.ndarray):
@@ -147,7 +157,7 @@ class BaseCurve(Intface_BaseCurve):
             1.0 * value[0] - 1.5 * value[0] + 3.1 * value[0]
         except Exception:
             error_msg = "For each control point P, it's needed operations"
-            error_msg = "with floats like 1.0*P - 1.5*P + 3.1*P"
+            error_msg += "with floats like 1.0*P - 1.5*P + 3.1*P"
             raise ValueError(error_msg)
         self.__ctrlpoints = value
 

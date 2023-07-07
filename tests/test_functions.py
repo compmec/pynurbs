@@ -724,6 +724,9 @@ class TestOthers:
         assert bezier != "Asd"
         assert bezier != [0, 0, 1, 1]
 
+        assert bezier.knots[0] == 0
+        assert bezier.knots[1] == 1
+
     @pytest.mark.order(3)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_creation"])
