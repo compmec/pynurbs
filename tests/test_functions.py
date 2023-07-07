@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from compmec.nurbs import Function
+from compmec.nurbs.heavy import binom
 from compmec.nurbs.knotspace import GeneratorKnotVector
 
 
@@ -11,618 +12,713 @@ def test_begin():
     pass
 
 
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_begin"])
-def test_CreationSplineFunction():
-    N = Function([0, 0, 1, 1])
-    assert callable(N)
-    assert N.degree == 1
-    assert N.npts == 2
-    N = Function([0, 0, 0.5, 1, 1])
-    assert callable(N)
-    assert N.degree == 1
-    assert N.npts == 3
-    N = Function([0, 0, 0, 1, 1, 1])
-    assert callable(N)
-    assert N.degree == 2
-    assert N.npts == 3
-    N = Function([0, 0, 0, 0.5, 1, 1, 1])
-    assert callable(N)
-    assert N.degree == 2
-    assert N.npts == 4
+class TestBezier:
+    @pytest.mark.order(3)
+    @pytest.mark.dependency(depends=["test_begin"])
+    def test_begin(self):
+        pass
 
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(1)
+    @pytest.mark.dependency(depends=["TestBezier::test_begin"])
+    def test_creation(self):
+        bezier = Function([0, 0, 1, 1])
+        assert callable(bezier)
+        assert bezier.degree == 1
+        assert bezier.npts == 2
+        bezier = Function([0, 0, 0, 1, 1, 1])
+        assert callable(bezier)
+        assert bezier.degree == 2
+        assert bezier.npts == 3
 
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_CreationSplineFunction"])
-def test_SplineEvaluationFunctions_p1n2():
-    knotvector = [0, 0, 1, 1]  # degree = 1, npts = 2
-    N = Function(knotvector)
-    N[0, 0]
-    N[1, 0]
-    N[0, 1]
-    N[1, 1]
-    N[:, 0]
-    N[:, 1]
-    N[:]
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(1)
+    @pytest.mark.dependency(depends=["TestBezier::test_creation"])
+    def test_random_creation(self):
+        for degree in range(1, 6):
+            knotvector = GeneratorKnotVector.bezier(degree)
+            bezier = Function(knotvector)
+            assert callable(bezier)
+            assert bezier.degree == degree
+            assert bezier.npts == degree + 1
 
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestBezier::test_random_creation"])
+    def test_evalfuncs_degree1(self):
+        bezier = Function([0, 0, 1, 1])
+        assert bezier.degree == 1
+        assert bezier.npts == 2
+        assert callable(bezier[0, 0])
+        assert callable(bezier[1, 0])
+        assert callable(bezier[0, 1])
+        assert callable(bezier[1, 1])
+        assert callable(bezier[:, 0])
+        assert callable(bezier[:, 1])
+        assert callable(bezier[:])
 
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_SplineEvaluationFunctions_p1n2"])
-def test_SplineEvaluationFunctions_p1n3():
-    knotvector = [0, 0, 0.5, 1, 1]  # degree = 1, npts = 3
-    N = Function(knotvector)
-    N[0, 0]
-    N[1, 0]
-    N[2, 0]
-    N[0, 1]
-    N[1, 1]
-    N[2, 1]
-    N[:, 0]
-    N[:, 1]
-    N[:]
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestBezier::test_random_creation"])
+    def test_evalfuncs_degree2(self):
+        bezier = Function([0, 0, 0, 1, 1, 1])
+        assert bezier.degree == 2
+        assert bezier.npts == 3
+        assert callable(bezier[0, 0])
+        assert callable(bezier[1, 0])
+        assert callable(bezier[2, 0])
+        assert callable(bezier[0, 1])
+        assert callable(bezier[1, 1])
+        assert callable(bezier[2, 1])
+        assert callable(bezier[0, 2])
+        assert callable(bezier[1, 2])
+        assert callable(bezier[2, 2])
+        assert callable(bezier[:, 0])
+        assert callable(bezier[:, 1])
+        assert callable(bezier[:, 2])
+        assert callable(bezier[:])
 
-
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_SplineEvaluationFunctions_p1n2"])
-def test_somesinglevalues_p1n2():
-    knotvector = [0, 0, 1, 1]  # degree = 1, npts = 2
-    N = Function(knotvector)
-    assert N[0, 0](0.0) == 0
-    assert N[0, 0](0.5) == 0
-    assert N[0, 0](1.0) == 0
-    assert N[1, 0](0.0) == 1
-    assert N[1, 0](0.5) == 1
-    assert N[1, 0](1.0) == 1
-    assert N[0, 1](0.0) == 1
-    assert N[0, 1](0.5) == 0.5
-    assert N[0, 1](1.0) == 0
-    assert N[1, 1](0.0) == 0
-    assert N[1, 1](0.5) == 0.5
-    assert N[1, 1](1.0) == 1
-
-
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_somesinglevalues_p1n2"])
-def test_somesinglevalues_p2n3():
-    knotvector = [0, 0, 0, 1, 1, 1]  # degree = 2, npts = 3
-    N = Function(knotvector)
-    assert N[0, 0](0.0) == 0
-    assert N[0, 0](0.5) == 0
-    assert N[0, 0](1.0) == 0
-    assert N[1, 0](0.0) == 0
-    assert N[1, 0](0.5) == 0
-    assert N[1, 0](1.0) == 0
-    assert N[2, 0](0.0) == 1
-    assert N[2, 0](0.5) == 1
-    assert N[2, 0](1.0) == 1
-    assert N[0, 1](0.0) == 0
-    assert N[0, 1](0.5) == 0
-    assert N[0, 1](1.0) == 0
-    assert N[1, 1](0.0) == 1
-    assert N[1, 1](0.5) == 0.5
-    assert N[1, 1](1.0) == 0
-    assert N[2, 1](0.0) == 0
-    assert N[2, 1](0.5) == 0.5
-    assert N[2, 1](1.0) == 1
-    assert N[0, 2](0.0) == 1
-    assert N[0, 2](0.5) == 0.25
-    assert N[0, 2](1.0) == 0
-    assert N[1, 2](0.0) == 0
-    assert N[1, 2](0.5) == 0.5
-    assert N[1, 2](1.0) == 0
-    assert N[2, 2](0.0) == 0
-    assert N[2, 2](0.5) == 0.25
-    assert N[2, 2](1.0) == 1
-
-
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_somesinglevalues_p1n2"])
-def test_tablevalues_p1n2():
-    knotvector = [0, 0, 1, 1]  # degree = 1, npts = 2
-    utest = np.linspace(0, 1, 11)
-    N = Function(knotvector)
-    N0 = N[:, 0]
-    N1 = N[:, 1]
-    M0test = N0(utest)
-    M0good = np.array([[0] * 11, [1] * 11])
-    np.testing.assert_allclose(M0test, M0good)
-    M1test = N1(utest)
-    M1good = np.array([np.linspace(1, 0, 11), np.linspace(0, 1, 11)])
-    np.testing.assert_allclose(M1test, M1good)
-
-
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_tablevalues_p1n2"])
-def test_tablevalues_p1n3():
-    knotvector = [0, 0, 0.5, 1, 1]  # degree = 1, npts = 3
-    utest = np.linspace(0, 1, 11)
-    N = Function(knotvector)
-    N0 = N[:, 0]
-    N1 = N[:, 1]
-    M0test = N0(utest)
-    M0good = [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
-    ]
-    np.testing.assert_allclose(M0test, M0good)
-    M1test = N1(utest)
-    M1good = [
-        [1.0, 0.8, 0.6, 0.4, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.2, 0.0],
-        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
-    ]
-    np.testing.assert_allclose(M1test, M1good)
-
-
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_tablevalues_p1n2", "test_somesinglevalues_p2n3"])
-def test_tablevalues_p2n3():
-    knotvector = [0, 0, 0, 1, 1, 1]  # degree = 2, npts = 3
-    utest = np.linspace(0, 1, 11)
-    N = Function(knotvector)
-    N0 = N[:, 0]
-    N1 = N[:, 1]
-    N2 = N[:, 2]
-    M0test = N0(utest)
-    M0good = np.array([[0] * 11, [0] * 11, [1] * 11])
-    np.testing.assert_allclose(M0test, M0good)
-    M1test = N1(utest)
-    M1good = np.array([[0] * 11, np.linspace(1, 0, 11), np.linspace(0, 1, 11)])
-    np.testing.assert_allclose(M1test, M1good)
-    M2test = N2(utest)
-    M2good = np.array(
-        [
-            [1.0, 0.81, 0.64, 0.49, 0.36, 0.25, 0.16, 0.09, 0.04, 0.01, 0.0],
-            [0.0, 0.18, 0.32, 0.42, 0.48, 0.50, 0.48, 0.42, 0.32, 0.18, 0.0],
-            [0.0, 0.01, 0.04, 0.09, 0.16, 0.25, 0.36, 0.49, 0.64, 0.81, 1.0],
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(
+        depends=[
+            "TestBezier::test_evalfuncs_degree1",
+            "TestBezier::test_evalfuncs_degree2",
         ]
     )
-    np.testing.assert_allclose(M2test, M2good)
+    def test_shape_calls(self):
+        for degree in range(1, 6):
+            npts = degree + 1
+            vector = GeneratorKnotVector.bezier(degree)
+            bezier = Function(vector)
+            assert bezier.degree == degree
+            assert bezier.npts == npts
+
+            npts_sample = 33
+            nodes_test = np.linspace(vector[0], vector[-1], npts_sample)
+            for j in range(degree + 1):
+                for i in range(npts):
+                    for node in nodes_test:
+                        value = bezier[i, j](node)
+                        float(value)  # Verify if it's a float value
+                for node in nodes_test:
+                    values = bezier[:, j](node)
+                    values = np.array(values, dtype="float64")
+                    assert values.shape == (npts,)
+                matrix = bezier[:, j](nodes_test)
+                matrix = np.array(matrix, dtype="float64")
+                assert matrix.shape == (npts, npts_sample)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestBezier::test_shape_calls"])
+    def test_sum_equal_to_1(self):
+        for degree in range(1, 6):
+            npts = degree + 1
+            vector = GeneratorKnotVector.bezier(degree)
+            bezier = Function(vector)
+            assert bezier.degree == degree
+            assert bezier.npts == npts
+
+            npts_sample = 33
+            nodes_test = np.linspace(vector[0], vector[-1], npts_sample)
+            for j in range(degree + 1):
+                matrix = bezier[:, j](nodes_test)
+                matrix = np.array(matrix, dtype="float64")
+                assert matrix.shape == (npts, npts_sample)
+                assert np.all(matrix >= 0)
+                for k in range(npts_sample):
+                    assert abs(np.sum(matrix[:, k]) - 1) < 1e-9
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestBezier::test_shape_calls"])
+    def test_standard_index(self):
+        for degree in range(1, 6):
+            npts = degree + 1
+            vector = GeneratorKnotVector.bezier(degree)
+            bezier = Function(vector)
+            assert bezier.degree == degree
+            assert bezier.npts == npts
+
+            npts_sample = 33
+            nodes_test = np.linspace(vector[0], vector[-1], npts_sample)
+            matrix_dire = bezier(nodes_test)
+            matrix_none = bezier[:](nodes_test)
+            matrix_degr = bezier[:, degree](nodes_test)
+            np.testing.assert_allclose(matrix_dire, matrix_degr)
+            np.testing.assert_allclose(matrix_none, matrix_degr)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestBezier::test_evalfuncs_degree1"])
+    def test_singlevalues_degree1(self):
+        knotvector = [0, 0, 1, 1]  # degree = 1, npts = 2
+        bezier = Function(knotvector)
+        assert bezier[0, 0](0.0) == 0
+        assert bezier[0, 0](0.5) == 0
+        assert bezier[0, 0](1.0) == 0
+        assert bezier[1, 0](0.0) == 1
+        assert bezier[1, 0](0.5) == 1
+        assert bezier[1, 0](1.0) == 1
+        assert bezier[0, 1](0.0) == 1
+        assert bezier[0, 1](0.5) == 0.5
+        assert bezier[0, 1](1.0) == 0
+        assert bezier[1, 1](0.0) == 0
+        assert bezier[1, 1](0.5) == 0.5
+        assert bezier[1, 1](1.0) == 1
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(
+        depends=[
+            "TestBezier::test_evalfuncs_degree2",
+            "TestBezier::test_singlevalues_degree1",
+        ]
+    )
+    def test_singlevalues_degree2(self):
+        knotvector = [0, 0, 0, 1, 1, 1]  # degree = 2, npts = 3
+        bezier = Function(knotvector)
+        assert bezier[0, 0](0.0) == 0
+        assert bezier[0, 0](0.5) == 0
+        assert bezier[0, 0](1.0) == 0
+        assert bezier[1, 0](0.0) == 0
+        assert bezier[1, 0](0.5) == 0
+        assert bezier[1, 0](1.0) == 0
+        assert bezier[2, 0](0.0) == 1
+        assert bezier[2, 0](0.5) == 1
+        assert bezier[2, 0](1.0) == 1
+        assert bezier[0, 1](0.0) == 0
+        assert bezier[0, 1](0.5) == 0
+        assert bezier[0, 1](1.0) == 0
+        assert bezier[1, 1](0.0) == 1
+        assert bezier[1, 1](0.5) == 0.5
+        assert bezier[1, 1](1.0) == 0
+        assert bezier[2, 1](0.0) == 0
+        assert bezier[2, 1](0.5) == 0.5
+        assert bezier[2, 1](1.0) == 1
+        assert bezier[0, 2](0.0) == 1
+        assert bezier[0, 2](0.5) == 0.25
+        assert bezier[0, 2](1.0) == 0
+        assert bezier[1, 2](0.0) == 0
+        assert bezier[1, 2](0.5) == 0.5
+        assert bezier[1, 2](1.0) == 0
+        assert bezier[2, 2](0.0) == 0
+        assert bezier[2, 2](0.5) == 0.25
+        assert bezier[2, 2](1.0) == 1
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(
+        depends=[
+            "TestBezier::test_singlevalues_degree1",
+            "TestBezier::test_shape_calls",
+        ]
+    )
+    def test_tablevalues_degree1(self):
+        bezier = Function([0, 0, 1, 1])
+        assert bezier.degree == 1
+        assert bezier.npts == 2
+        nodes_test = np.linspace(0, 1, 11)
+
+        matrix_test = bezier[:, 0](nodes_test)
+        matrix_good = [[0] * 11, [1] * 11]
+        np.testing.assert_allclose(matrix_test, matrix_good)
+
+        matrix_test = bezier[:, 1](nodes_test)
+        matrix_good = [np.linspace(1, 0, 11), np.linspace(0, 1, 11)]
+        np.testing.assert_allclose(matrix_test, matrix_good)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(
+        depends=[
+            "TestBezier::test_singlevalues_degree2",
+            "TestBezier::test_tablevalues_degree1",
+        ]
+    )
+    def test_tablevalues_degree2(self):
+        bezier = Function([0, 0, 0, 1, 1, 1])
+        assert bezier.degree == 2
+        assert bezier.npts == 3
+        nodes_test = np.linspace(0, 1, 11)
+
+        matrix_test = bezier[:, 0](nodes_test)
+        matrix_good = np.array([[0] * 11, [0] * 11, [1] * 11])
+        np.testing.assert_allclose(matrix_test, matrix_good)
+
+        matrix_test = bezier[:, 1](nodes_test)
+        matrix_good = [[0] * 11, np.linspace(1, 0, 11), np.linspace(0, 1, 11)]
+        np.testing.assert_allclose(matrix_test, matrix_good)
+
+        matrix_test = bezier[:, 2](nodes_test)
+        matrix_good = np.array(
+            [
+                [1.0, 0.81, 0.64, 0.49, 0.36, 0.25, 0.16, 0.09, 0.04, 0.01, 0.0],
+                [0.0, 0.18, 0.32, 0.42, 0.48, 0.50, 0.48, 0.42, 0.32, 0.18, 0.0],
+                [0.0, 0.01, 0.04, 0.09, 0.16, 0.25, 0.36, 0.49, 0.64, 0.81, 1.0],
+            ]
+        )
+        np.testing.assert_allclose(matrix_test, matrix_good)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(
+        depends=[
+            "TestBezier::test_tablevalues_degree1",
+            "TestBezier::test_tablevalues_degree2",
+        ]
+    )
+    def test_tablevalues_random_degree(self):
+        for degree in range(1, 6):
+            knotvector = GeneratorKnotVector.bezier(degree)
+            bezier = Function(knotvector)
+            assert bezier.degree == degree
+            assert bezier.npts == degree + 1
+
+            nodestest = np.linspace(0, 1, 11)
+            matrix_test = bezier[:, degree](nodestest)
+            matrix_good = np.zeros((degree + 1, len(nodestest)))
+            for i, node in enumerate(nodestest):
+                for j in range(degree + 1):
+                    value = binom(degree, j) * (1 - node) ** (degree - j) * node**j
+                    matrix_good[j, i] = value
+            np.testing.assert_allclose(matrix_test, matrix_good)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestBezier::test_tablevalues_random_degree"])
+    def test_shifted_scaled_bezier(self):
+        for degree in range(1, 6):
+            knotvector = GeneratorKnotVector.bezier(degree)
+            shiftval = np.random.uniform(-1, 1)
+            scaleval = np.exp(np.random.uniform(-1, 1))
+            knotvector.shift(shiftval)
+            knotvector.scale(scaleval)
+            bezier = Function(knotvector)
+            assert bezier.degree == degree
+            assert bezier.npts == degree + 1
+
+            nodesgood = np.linspace(0, 1, 11)
+            nodestest = np.linspace(knotvector[0], knotvector[-1], 11)
+            matrix_test = bezier[:, degree](nodestest)
+            matrix_good = np.zeros((degree + 1, len(nodestest)))
+            for i, node in enumerate(nodesgood):
+                for j in range(degree + 1):
+                    value = binom(degree, j) * (1 - node) ** (degree - j) * node**j
+                    matrix_good[j, i] = value
+            np.testing.assert_allclose(matrix_test, matrix_good)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestBezier::test_shifted_scaled_bezier"])
+    def test_degree_operations(self):
+        knotvector = GeneratorKnotVector.bezier(3)
+        bezier = Function(knotvector)
+        assert bezier.degree == 3
+        assert bezier.npts == 4
+        bezier.degree = 2
+        assert bezier.degree == 2
+        assert bezier.npts == 3
+        bezier.degree -= 1
+        assert bezier.degree == 1
+        assert bezier.npts == 2
+
+    @pytest.mark.order(3)
+    @pytest.mark.dependency(
+        depends=[
+            "TestBezier::test_begin",
+            "TestBezier::test_creation",
+            "TestBezier::test_random_creation",
+            "TestBezier::test_evalfuncs_degree1",
+            "TestBezier::test_evalfuncs_degree2",
+            "TestBezier::test_shape_calls",
+            "TestBezier::test_sum_equal_to_1",
+            "TestBezier::test_standard_index",
+            "TestBezier::test_singlevalues_degree1",
+            "TestBezier::test_singlevalues_degree2",
+            "TestBezier::test_tablevalues_degree1",
+            "TestBezier::test_tablevalues_degree2",
+            "TestBezier::test_tablevalues_random_degree",
+            "TestBezier::test_shifted_scaled_bezier",
+            "TestBezier::test_degree_operations",
+        ]
+    )
+    def test_end(self):
+        pass
 
 
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_tablevalues_p2n3"])
-def test_tablevalues_p2n4():
-    knotvector = [0, 0, 0, 0.5, 1, 1, 1]  # degree = 2, npts = 4
-    utest = np.linspace(0, 1, 11)
-    N = Function(knotvector)
-    N0 = N[:, 0]
-    N1 = N[:, 1]
-    N2 = N[:, 2]
-    M0test = N0(utest)
-    M0good = np.array(
-        [
+class TestSpline:
+    @pytest.mark.order(3)
+    @pytest.mark.dependency(depends=["TestBezier::test_end"])
+    def test_begin(self):
+        pass
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(1)
+    @pytest.mark.dependency(depends=["TestSpline::test_begin"])
+    def test_creation(self):
+        spline = Function([0, 0, 1, 1])
+        assert callable(spline)
+        assert spline.degree == 1
+        assert spline.npts == 2
+        spline = Function([0, 0, 0.5, 1, 1])
+        assert callable(spline)
+        assert spline.degree == 1
+        assert spline.npts == 3
+        spline = Function([0, 0, 0, 1, 1, 1])
+        assert callable(spline)
+        assert spline.degree == 2
+        assert spline.npts == 3
+        spline = Function([0, 0, 0, 0.5, 1, 1, 1])
+        assert callable(spline)
+        assert spline.degree == 2
+        assert spline.npts == 4
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(1)
+    @pytest.mark.dependency(depends=["TestSpline::test_creation"])
+    def test_random_creation(self):
+        for degree in range(1, 6):
+            npts = np.random.randint(degree + 1, degree + 9)
+            knotvector = GeneratorKnotVector.random(degree, npts)
+            spline = Function(knotvector)
+            assert callable(spline)
+            assert spline.degree == degree
+            assert spline.npts == npts
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(1)
+    @pytest.mark.dependency(depends=["TestSpline::test_random_creation"])
+    def test_evalfuncs_degree1npts3(self):
+        spline = Function([0, 0, 0.5, 1, 1])
+        assert spline.degree == 1
+        assert spline.npts == 3
+        assert callable(spline[0, 0])
+        assert callable(spline[1, 0])
+        assert callable(spline[2, 0])
+        assert callable(spline[0, 1])
+        assert callable(spline[1, 1])
+        assert callable(spline[2, 1])
+        assert callable(spline[:, 0])
+        assert callable(spline[:, 1])
+        assert callable(spline[:])
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestSpline::test_evalfuncs_degree1npts3"])
+    def test_tablevalues_degree1npts3(self):
+        spline = Function([0, 0, 0.5, 1, 1])
+        assert spline.degree == 1
+        assert spline.npts == 3
+        nodes_test = np.linspace(0, 1, 11)
+
+        matrix_test = spline[:, 0](nodes_test)
+        matrix_good = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+        ]
+        np.testing.assert_allclose(matrix_test, matrix_good)
+
+        matrix_test = spline[:, 1](nodes_test)
+        matrix_good = [
+            [1.0, 0.8, 0.6, 0.4, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.2, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+        ]
+        np.testing.assert_allclose(matrix_test, matrix_good)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestSpline::test_tablevalues_degree1npts3"])
+    def test_tablevalues_degree2npts4(self):
+        spline = Function([0, 0, 0, 0.5, 1, 1, 1])
+        assert spline.degree == 2
+        assert spline.npts == 4
+        nodes_test = np.linspace(0, 1, 11)
+
+        matrix_test = spline[:, 0](nodes_test)
+        matrix_good = [
             [0] * 11,
             [0] * 11,
             [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
         ]
-    )
-    np.testing.assert_allclose(M0test, M0good)
-    M1test = N1(utest)
-    M1good = np.array(
-        [
+        np.testing.assert_allclose(matrix_test, matrix_good)
+
+        matrix_test = spline[:, 1](nodes_test)
+        matrix_good = [
             [0] * 11,
             [1.0, 0.8, 0.6, 0.4, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.2, 0.0],
             [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
         ]
-    )
-    np.testing.assert_allclose(M1test, M1good)
-    M2test = N2(utest)
-    M2good = np.array(
-        [
+        np.testing.assert_allclose(matrix_test, matrix_good)
+
+        matrix_test = spline[:, 2](nodes_test)
+        matrix_good = [
             [1, 0.64, 0.36, 0.16, 0.04, 0.0, 0.00, 0.00, 0.00, 0.00, 0],
             [0, 0.34, 0.56, 0.66, 0.64, 0.5, 0.32, 0.18, 0.08, 0.02, 0],
             [0, 0.02, 0.08, 0.18, 0.32, 0.5, 0.64, 0.66, 0.56, 0.34, 0],
             [0, 0.00, 0.00, 0.00, 0.00, 0.0, 0.04, 0.16, 0.36, 0.64, 1],
         ]
-    )
-    np.testing.assert_allclose(M2test, M2good)
+        np.testing.assert_allclose(matrix_test, matrix_good)
 
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestSpline::test_tablevalues_degree2npts4"])
+    def test_tablevalues_degree3npts5(self):
+        knotvector = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]
+        spline = Function(knotvector)
+        assert spline.degree == 3
+        assert spline.npts == 5
+        nodes_test = np.linspace(0, 1, 11)
 
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_tablevalues_p2n3"])
-def test_tablevalues_p3n4():
-    knotvector = [0, 0, 0, 0, 1, 1, 1, 1]  # degree = 3, npts = 4
-    utest = np.linspace(0, 1, 11)
-    N = Function(knotvector)
-    N0 = N[:, 0]
-    N1 = N[:, 1]
-    N2 = N[:, 2]
-    N3 = N[:, 3]
-    M0test = N0(utest)
-    M0good = np.array([[0] * 11, [0] * 11, [0] * 11, [1] * 11])
-    np.testing.assert_allclose(M0test, M0good)
-    M1test = N1(utest)
-    M1good = np.array(
-        [[0] * 11, [0] * 11, np.linspace(1, 0, 11), np.linspace(0, 1, 11)]
-    )
-    np.testing.assert_allclose(M1test, M1good)
-    M2test = N2(utest)
-    M2good = np.array(
-        [
-            [0] * 11,
-            [1.0, 0.81, 0.64, 0.49, 0.36, 0.25, 0.16, 0.09, 0.04, 0.01, 0.0],
-            [0.0, 0.18, 0.32, 0.42, 0.48, 0.50, 0.48, 0.42, 0.32, 0.18, 0.0],
-            [0.0, 0.01, 0.04, 0.09, 0.16, 0.25, 0.36, 0.49, 0.64, 0.81, 1.0],
-        ]
-    )
-    np.testing.assert_allclose(M2test, M2good)
-    M3test = N3(utest)
-    M3good = np.array(
-        [
-            [1, 0.729, 0.512, 0.343, 0.216, 0.125, 0.064, 0.027, 0.008, 0.001, 0],
-            [0, 0.243, 0.384, 0.441, 0.432, 0.375, 0.288, 0.189, 0.096, 0.027, 0],
-            [0, 0.027, 0.096, 0.189, 0.288, 0.375, 0.432, 0.441, 0.384, 0.243, 0],
-            [0, 0.001, 0.008, 0.027, 0.064, 0.125, 0.216, 0.343, 0.512, 0.729, 1],
-        ]
-    )
-    np.testing.assert_allclose(M3test, M3good)
-
-
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_tablevalues_p2n3", "test_tablevalues_p3n4"])
-def test_tablevalues_p3n5():
-    knotvector = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # degree = 3, npts = 5
-    utest = np.linspace(0, 1, 11)
-    N = Function(knotvector)
-    N0 = N[:, 0]
-    N1 = N[:, 1]
-    N2 = N[:, 2]
-    N3 = N[:, 3]
-    M0test = N0(utest)
-    M0good = np.array(
-        [
+        matrix_test = spline[:, 0](nodes_test)
+        matrix_good = [
             [0] * 11,
             [0] * 11,
             [0] * 11,
             [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
         ]
-    )
-    np.testing.assert_allclose(M0test, M0good)
-    M1test = N1(utest)
-    M1good = np.array(
-        [
+        np.testing.assert_allclose(matrix_test, matrix_good)
+
+        matrix_test = spline[:, 1](nodes_test)
+        matrix_good = [
             [0] * 11,
             [0] * 11,
             [1.0, 0.8, 0.6, 0.4, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.2, 0.0],
             [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
         ]
-    )
-    np.testing.assert_allclose(M1test, M1good)
-    M2test = N2(utest)
-    M2good = np.array(
-        [
+        np.testing.assert_allclose(matrix_test, matrix_good)
+
+        matrix_test = spline[:, 2](nodes_test)
+        matrix_good = [
             [0] * 11,
             [1, 0.64, 0.36, 0.16, 0.04, 0.0, 0.00, 0.00, 0.00, 0.00, 0],
             [0, 0.34, 0.56, 0.66, 0.64, 0.5, 0.32, 0.18, 0.08, 0.02, 0],
             [0, 0.02, 0.08, 0.18, 0.32, 0.5, 0.64, 0.66, 0.56, 0.34, 0],
             [0, 0.00, 0.00, 0.00, 0.00, 0.0, 0.04, 0.16, 0.36, 0.64, 1],
         ]
-    )
-    np.testing.assert_allclose(M2test, M2good)
-    M3test = N3(utest)
-    M3good = np.array(
-        [
+        np.testing.assert_allclose(matrix_test, matrix_good)
+
+        matrix_test = spline[:, 3](nodes_test)
+        matrix_good = [
             [1, 0.512, 0.216, 0.064, 0.008, 0.000, 0.000, 0.000, 0.000, 0.000, 0],
             [0, 0.434, 0.592, 0.558, 0.416, 0.250, 0.128, 0.054, 0.016, 0.002, 0],
             [0, 0.052, 0.176, 0.324, 0.448, 0.500, 0.448, 0.324, 0.176, 0.052, 0],
             [0, 0.002, 0.016, 0.054, 0.128, 0.250, 0.416, 0.558, 0.592, 0.434, 0],
             [0, 0.000, 0.000, 0.000, 0.000, 0.000, 0.008, 0.064, 0.216, 0.512, 1],
         ]
+        np.testing.assert_allclose(matrix_test, matrix_good)
+
+    @pytest.mark.order(3)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSpline::test_tablevalues_degree3npts5",
+        ]
     )
-    np.testing.assert_allclose(M3test, M3good)
+    def test_degree_operation(self):
+        spline = Function([0, 0, 0, 0, 1, 2, 2, 2, 2])
+        assert spline.degree == 3
+        assert spline.npts == 5
+        spline.degree = 2
+        assert spline.degree == 2
+        assert spline.npts == 3
+        assert spline.knotvector == [0, 0, 0, 2, 2, 2]
+
+        spline = Function([0, 0, 0, 1, 2, 3, 3, 3])
+        assert spline.degree == 2
+        assert spline.npts == 5
+        spline.degree -= 1
+        assert spline.degree == 1
+        assert spline.npts == 2
+        assert spline.knotvector == [0, 0, 3, 3]
+
+        spline = Function([0, 0, 0, 1, 1, 2, 2, 2])
+        assert spline.degree == 2
+        assert spline.npts == 5
+        spline.degree -= 1
+        assert spline.degree == 1
+        assert spline.npts == 3
+        assert spline.knotvector == [0, 0, 1, 2, 2]
+
+        spline = Function([0, 0, 0, 1, 1, 2, 3, 3, 3])
+        assert spline.degree == 2
+        assert spline.npts == 6
+        spline.degree += 1
+        assert spline.degree == 3
+        assert spline.npts == 9
+        assert spline.knotvector == [0, 0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 3, 3]
+
+    @pytest.mark.order(3)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSpline::test_begin",
+            "TestSpline::test_creation",
+            "TestSpline::test_random_creation",
+            "TestSpline::test_evalfuncs_degree1npts3",
+            "TestSpline::test_tablevalues_degree1npts3",
+            "TestSpline::test_tablevalues_degree2npts4",
+            "TestSpline::test_tablevalues_degree3npts5",
+            "TestSpline::test_degree_operation",
+        ]
+    )
+    def test_end(self):
+        pass
 
 
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_tablevalues_p3n5"])
-def test_tableUuniform_sum1():
-    ntests = 10
-    for i in range(ntests):
-        degree = np.random.randint(1, 6)
-        npts = np.random.randint(degree + 1, degree + 21)
-        knotvector = GeneratorKnotVector.uniform(degree, npts)
-        u = np.random.rand(11)
-        N = Function(knotvector)
-        for j in range(degree + 1):
-            M = N[:, j](u)
-            assert np.all(M >= 0)
-            for k in range(len(u)):
-                np.testing.assert_almost_equal(np.sum(M[:, k]), 1)
+class TestRational:
+    @pytest.mark.order(3)
+    @pytest.mark.dependency(depends=["TestSpline::test_end"])
+    def test_begin(self):
+        pass
 
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(1)
+    @pytest.mark.dependency(depends=["TestRational::test_begin"])
+    def test_creation(self):
+        for degree in range(1, 6):
+            npts = np.random.randint(degree + 1, degree + 9)
+            knotvector = GeneratorKnotVector.random(degree, npts)
+            rational = Function(knotvector)
+            rational.weights = np.random.uniform(0.1, 1, npts)
+            assert callable(rational)
+            assert rational.degree == degree
+            assert rational.npts == npts
 
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_tableUuniform_sum1"])
-def test_tableUrandom_sum1():
-    ntests = 10
-    for i in range(ntests):
-        degree = np.random.randint(1, 6)
-        npts = np.random.randint(degree + 1, degree + 21)
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(1)
+    @pytest.mark.dependency(depends=["TestRational::test_creation"])
+    def test_fail_creation(self):
+        degree, npts = 3, 7
         knotvector = GeneratorKnotVector.random(degree, npts)
-        u = np.random.rand(11)
-        N = Function(knotvector)
-        for j in range(degree + 1):
-            M = N[:, j](u)
-            assert np.all(M >= 0)
-            for k in range(len(u)):
-                np.testing.assert_almost_equal(np.sum(M[:, k]), 1)
+        rational = Function(knotvector)
+        with pytest.raises(ValueError):
+            rational.weights = 1
+        with pytest.raises(ValueError):
+            rational.weights = 1 * np.ones(degree)
+        with pytest.raises(ValueError):
+            rational.weights = -1 * np.ones(npts)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(1)
+    @pytest.mark.dependency(depends=["TestRational::test_begin"])
+    def test_compare_spline(self):
+        knotvector = [0, 0, 0, 1, 2, 2, 2]
+        spline = Function(knotvector)
+        rational = spline.deepcopy()
+        rational.weights = np.ones(rational.npts)
+
+        assert rational == spline
+
+        rational = Function([0, 0, 0, 2, 4, 4, 4])
+        rational.weights = np.ones(rational.npts)
+        assert rational != spline
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(1)
+    @pytest.mark.dependency(depends=["TestRational::test_begin"])
+    def test_values_rational_equal_spline(self):
+        knotvector = [0, 0, 0, 1, 2, 2, 2]
+        spline = Function(knotvector)
+        rational = spline.deepcopy()
+        rational.weights = np.ones(rational.npts)
+
+        nodes_sample = np.linspace(0, 2, 33)
+        for node in nodes_sample:
+            assert np.all(rational(node) == spline(node))
+
+    @pytest.mark.order(3)
+    @pytest.mark.dependency(
+        depends=[
+            "TestRational::test_begin",
+            "TestRational::test_creation",
+            "TestRational::test_fail_creation",
+            "TestRational::test_compare_spline",
+            "TestRational::test_values_rational_equal_spline",
+        ]
+    )
+    def test_end(self):
+        pass
+
+
+class TestOthers:
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(1)
+    @pytest.mark.dependency(
+        depends=[
+            "TestBezier::test_creation",
+            "TestSpline::test_creation",
+            "TestRational::test_creation",
+        ]
+    )
+    def test_print(self):
+        vector_bezier = GeneratorKnotVector.bezier(3)
+        vector_spline = GeneratorKnotVector.uniform(3, 5)
+        vector_rational = vector_spline.deepcopy()
+        weights = np.random.uniform(1, 2, 5)
+        bezier = Function(vector_bezier)
+        spline = Function(vector_spline)
+        rational = Function(vector_rational)
+        rational.weights = weights
+
+        bezier.__str__()
+        spline.__str__()
+        rational.__str__()
+        bezier.__repr__()
+        spline.__repr__()
+        rational.__repr__()
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestBezier::test_creation"])
+    def test_specific_cases(self):
+        bezier = Function([0, 0, 1, 1])
+        assert bezier != 1
+        assert bezier != "Asd"
+        assert bezier != [0, 0, 1, 1]
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestBezier::test_creation"])
+    def test_fail_getitem_index(self):
+        bezier = Function([0, 0, 1, 1])
+        with pytest.raises(IndexError):
+            bezier[0, -1]
+        with pytest.raises(IndexError):
+            bezier[bezier.npts, 0]
+        with pytest.raises(IndexError):
+            bezier[bezier.npts, 0, 0]
+        with pytest.raises(TypeError):
+            bezier["asd", 0]
+        with pytest.raises(TypeError):
+            bezier[0, "asd"]
+
+    @pytest.mark.order(3)
+    @pytest.mark.dependency(
+        depends=[
+            "TestOthers::test_print",
+            "TestOthers::test_specific_cases",
+            "TestOthers::test_fail_getitem_index",
+        ]
+    )
+    def test_end(self):
+        pass
 
 
 @pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_begin"])
-def test_CreationRationalFunction():
-    R = Function([0, 0, 1, 1])
-    assert callable(R)
-    assert R.degree == 1
-    assert R.npts == 2
-    R = Function([0, 0, 0.5, 1, 1])
-    assert callable(R)
-    assert R.degree == 1
-    assert R.npts == 3
-    R = Function([0, 0, 0, 1, 1, 1])
-    assert callable(R)
-    assert R.degree == 2
-    assert R.npts == 3
-    R = Function([0, 0, 0, 0.5, 1, 1, 1])
-    assert callable(R)
-    assert R.degree == 2
-    assert R.npts == 4
-
-
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_CreationRationalFunction"])
-def test_RationalEvaluationFunctions_p1n2():
-    knotvector = [0, 0, 1, 1]  # degree = 1, npts = 2
-    R = Function(knotvector)
-    R[0, 0]
-    R[1, 0]
-    R[0, 1]
-    R[1, 1]
-    R[:, 0]
-    R[:, 1]
-    R[:]
-
-
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_RationalEvaluationFunctions_p1n2"])
-def test_rational_somesinglevalues_p1n2():
-    knotvector = [0, 0, 1, 1]  # degree = 1, npts = 2
-    R = Function(knotvector)
-    assert R[0, 0](0.0) == 0
-    assert R[0, 0](0.5) == 0
-    assert R[0, 0](1.0) == 0
-    assert R[1, 0](0.0) == 1
-    assert R[1, 0](0.5) == 1
-    assert R[1, 0](1.0) == 1
-    assert R[0, 1](0.0) == 1
-    assert R[0, 1](0.5) == 0.5
-    assert R[0, 1](1.0) == 0
-    assert R[1, 1](0.0) == 0
-    assert R[1, 1](0.5) == 0.5
-    assert R[1, 1](1.0) == 1
-
-
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_rational_somesinglevalues_p1n2"])
-def test_rational_tableUuniform_sum1():
-    ntests = 10
-    for i in range(ntests):
-        degree = np.random.randint(1, 6)
-        npts = np.random.randint(degree + 1, degree + 21)
-        knotvector = GeneratorKnotVector.uniform(degree, npts)
-        u = np.random.rand(11)
-        R = Function(knotvector)
-        for j in range(degree + 1):
-            M = R[:, j](u)
-            assert np.all(M >= 0)
-            for k in range(len(u)):
-                np.testing.assert_almost_equal(np.sum(M[:, k]), 1)
-
-
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(
-    depends=["test_CreationSplineFunction", "test_CreationRationalFunction"]
-)
-def test_basefunction_fails():
-    degree, npts = 4, 6
-    knotvector = GeneratorKnotVector.uniform(degree, npts)
-    N = Function(knotvector)
-    with pytest.raises(ValueError):
-        N(1.1)
-    with pytest.raises(TypeError):
-        N["asd"]
-    with pytest.raises(TypeError):
-        N["1"]
-    with pytest.raises(TypeError):
-        N[{1: 1}]
-    with pytest.raises(IndexError):
-        N[npts]
-    with pytest.raises(IndexError):
-        N[npts + 1]
-    with pytest.raises(IndexError):
-        N[3, degree + 1]
-    with pytest.raises(IndexError):
-        N[:, degree + 1]
-    N[-1, degree]
-    N[-npts, degree]
-    with pytest.raises(IndexError):
-        N[-npts - 1, degree]
-    with pytest.raises(IndexError):
-        N[-npts - 1, degree]
-    with pytest.raises(TypeError):
-        N[0, "1"]
-    with pytest.raises(TypeError):
-        N[0, "asd"]
-    with pytest.raises(TypeError):
-        N[0, {1: 1}]
-    N[0, 0]
-    with pytest.raises(IndexError):
-        N[0, -1]
-    with pytest.raises(IndexError):
-        N[0, degree, 0]
-
-    R = Function(knotvector)
-    with pytest.raises(ValueError):
-        w = np.linspace(-1, 1, npts)
-        R.weights = w
-
-    R1 = Function(knotvector)
-    R1.weights = np.random.uniform(0.5, 1.5, npts)
-    R2 = Function(knotvector)
-    R2.weights = np.random.uniform(0.5, 1.5, npts)
-    knotvector = GeneratorKnotVector.random(degree, npts)
-    with pytest.raises(ValueError):
-        R1.weights = "asd"
-    with pytest.raises(ValueError):
-        R1.weights = np.random.uniform(1, 2, npts - 1)
-    with pytest.raises(ValueError):
-        R1.weights = np.random.uniform(1, 2, npts + 1)
-    with pytest.raises(ValueError):
-        R1.weights = np.random.uniform(1, 2, size=(npts, 2))
-
-
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(
-    depends=["test_CreationSplineFunction", "test_CreationRationalFunction"]
-)
-def test_comparation():
-    Uorg = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # degree = 3, npts = 5
-    Udif = [0, 0, 0, 0, 0.3, 1, 1, 1, 1]  # degree = 3, npts = 5
-    worg = np.random.uniform(1, 2, 5)
-    wdif = np.random.uniform(1, 2, 5)
-    N1 = Function(Uorg)
-    N2 = Function(Uorg)
-    N3 = Function(Udif)
-    R1 = Function(Uorg)
-    R1.weights = worg
-    R2 = Function(Uorg)
-    R2.weights = worg
-    R3 = Function(Uorg)
-    R3.weights = wdif
-    R4 = Function(Udif)
-    R4.weights = wdif
-    R5 = Function(Udif)
-    R5.weights = worg
-
-    assert N1 == N2
-    assert R1 == R2
-    assert N1 != N3
-    assert R1 != R3
-    assert R3 != R4
-    assert R2 != R5
-    assert R4 != R5
-
-    N1.derivate()
-    assert N1 != N2
-    assert N1 != "asd"
-    assert N1 != 1
-
-    N1 = Function(Uorg)
-    R1 = Function(Uorg)
-    R1.weights = np.ones(5)
-    assert N1 == R1
-
-    assert np.all(N1(0.5) == R1(0.5))
-
-
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(depends=["test_comparation"])
-def test_insert_remove_knot():
-    Uorg = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # degree = 3, npts = 5
-    weights = np.random.uniform(1, 2, 5)
-    N1 = Function(Uorg)
-    N2 = Function(Uorg)
-    R1 = Function(Uorg)
-    R1.weights = weights
-    R2 = Function(Uorg)
-    R2.weights = weights
-
-    assert N1 == N2
-    assert R1 == R2
-    N1.knot_insert(0.5)
-    R1.knot_insert(0.5)
-    assert N1 != N2
-    assert R1 != R2
-    N1.knot_remove(0.5)
-    R1.knot_remove(0.5)
-    assert N1 == N2
-    assert R1 == R2
-
-
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(
-    depends=["test_CreationSplineFunction", "test_CreationRationalFunction"]
-)
-def test_derivate_functions():
-    knotvector = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # degree = 3, npts = 5
-    weights = np.random.uniform(1, 2, 5)
-    N = Function(knotvector)
-    R = Function(knotvector)
-    R.weights = weights
-
-    N.derivate()
-    R.derivate()
-
-
-@pytest.mark.order(3)
-@pytest.mark.timeout(5)
-@pytest.mark.dependency(
-    depends=["test_CreationSplineFunction", "test_CreationRationalFunction"]
-)
-def test_print():
-    knotvector = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]  # degree = 3, npts = 5
-    weights = np.random.uniform(1, 2, 5)
-    B = Function([0, 0, 1, 1])
-    N = Function(knotvector)
-    R = Function(knotvector)
-    R.weights = weights
-
-    B.__str__()
-    N.__str__()
-    R.__str__()
-    B.__repr__()
-    N.__repr__()
-    R.__repr__()
-
-
-@pytest.mark.order(3)
+@pytest.mark.skip(reason="Finish reorganize")
 @pytest.mark.dependency(
     depends=[
         "test_begin",
-        "test_tableUuniform_sum1",
-        "test_tableUrandom_sum1",
-        "test_CreationRationalFunction",
-        "test_RationalEvaluationFunctions_p1n2",
-        "test_rational_somesinglevalues_p1n2",
-        "test_rational_tableUuniform_sum1",
-        "test_basefunction_fails",
-        "test_insert_remove_knot",
-        "test_print",
+        "TestBezier::test_end",
+        "TestSpline::test_end",
+        "TestRational::test_end",
+        "TestOthers::test_end",
     ]
 )
 def test_end():

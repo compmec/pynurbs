@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Optional, Tuple, Union
+from typing import Tuple, Union
 
 import numpy as np
 
@@ -73,26 +73,6 @@ class Intface_BaseFunction_BaseCurve(abc.ABC):
     def npts(self) -> int:
         raise NotImplementedError
 
-    @abc.abstractproperty
-    def knots(self) -> int:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def knot_insert(self, knot: float, times: Optional[int] = 1):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def knot_remove(self, knot: float, times: Optional[int] = 1):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def degree_increase(self, times: Optional[int] = 1):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def degree_decrease(self, times: Optional[int] = 1):
-        raise NotImplementedError
-
 
 class Intface_BaseFunction(Intface_BaseFunction_BaseCurve):
     @abc.abstractmethod
@@ -100,7 +80,11 @@ class Intface_BaseFunction(Intface_BaseFunction_BaseCurve):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def __getitem__(self, tup: Any) -> Union[float, np.ndarray]:
+    def evalf(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def __getitem__(self, index) -> Intface_Evaluator:
         raise NotImplementedError
 
 

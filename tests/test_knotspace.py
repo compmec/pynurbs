@@ -590,7 +590,6 @@ def test_others():
 
 
 @pytest.mark.order(2)
-@pytest.mark.skip(reason="Needs adaption to new knotvector structure")
 @pytest.mark.dependency(
     depends=[
         "test_begin",

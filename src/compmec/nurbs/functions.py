@@ -1,5 +1,6 @@
-import abc
-from typing import Optional, Tuple, Union
+from __future__ import annotations
+
+from typing import Tuple, Union
 
 import numpy as np
 
@@ -10,14 +11,11 @@ from compmec.nurbs.knotspace import KnotVector
 
 class BaseFunction(Intface_BaseFunction):
     def __init__(self, knotvector: KnotVector):
-        self.__knotvector = KnotVector(knotvector)
+        self.knotvector = knotvector
         self.weights = None
-        self.__degree = self.knotvector.degree
 
     def __eq__(self, other: Intface_BaseFunction) -> bool:
         if not isinstance(other, Intface_BaseFunction):
-            return False
-        if self.degree != other.degree:
             return False
         if self.knotvector != other.knotvector:
             return False
@@ -30,25 +28,33 @@ class BaseFunction(Intface_BaseFunction):
     def __ne__(self, other: Intface_BaseFunction) -> bool:
         return not self.__eq__(other)
 
+    def __call__(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+        return self.evalf(nodes)
+
     @property
     def knotvector(self) -> KnotVector:
         return self.__knotvector
 
     @property
     def degree(self) -> int:
-        return self.__degree
+        return self.knotvector.degree
 
     @property
     def npts(self) -> int:
         return self.knotvector.npts
 
     @property
-    def knots(self) -> Tuple[float]:
-        return self.knotvector.knots
-
-    @property
     def weights(self) -> Union[Tuple[float], None]:
         return self.__weights
+
+    @degree.setter
+    def degree(self, value: int):
+        value = int(value)
+        self.knotvector.degree = value
+
+    @knotvector.setter
+    def knotvector(self, value: KnotVector):
+        self.__knotvector = KnotVector(value)
 
     @weights.setter
     def weights(self, value: Tuple[float]):
@@ -64,28 +70,10 @@ class BaseFunction(Intface_BaseFunction):
             raise ValueError(error_msg)
         self.__weights = value
 
-    @degree.setter
-    def degree(self, value: int):
-        self.__degree = int(value)
-
-    def knot_insert(self, knot: float, times: Optional[int] = 1):
-        self.knotvector.knot_insert(knot, times)
-
-    def knot_remove(self, knot: float, times: Optional[int] = 1):
-        self.knotvector.knot_remove(knot, times)
-
-    def degree_increase(self, times: Optional[int] = 1):
-        pass
-
-    def degree_decrease(self, times: Optional[int] = 1):
-        pass
-
-    @abc.abstractmethod
-    def evalf(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
-        raise NotImplementedError
-
-    def __call__(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
-        return self.evalf(nodes)
+    def deepcopy(self) -> BaseFunction:
+        newfunc = self.__class__(self.knotvector)
+        newfunc.weights = self.weights
+        return newfunc
 
 
 class FunctionEvaluator(Intface_Evaluator):
@@ -131,10 +119,7 @@ class FunctionEvaluator(Intface_Evaluator):
 
     def __evalf(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         """
-        If i is integer, u is float -> float
-        If i is integer, u is np.ndarray, ndim = k -> np.ndarray, ndim = k
-        If i is slice, u is float -> 1D np.ndarray
-        if i is slice, u is np.ndarray, ndim = k -> np.ndarray, ndim = k+1
+        Private and unprotected method of evalf
         """
         nodes = np.array(nodes, dtype="float64")
         flat_nodes = nodes.flatten()
@@ -177,7 +162,7 @@ class IndexableFunction(BaseFunction):
             error_msg += f"must be in [0, {self.degree}]"
             raise IndexError(error_msg)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> FunctionEvaluator:
         if isinstance(index, tuple):
             if len(index) > 2:
                 raise IndexError
@@ -188,39 +173,12 @@ class IndexableFunction(BaseFunction):
         self.__valid_second_index(j)
         return FunctionEvaluator(self, i, j)
 
-
-class DerivableFunction(IndexableFunction):
-    def __init__(self, knotvector: KnotVector):
-        super().__init__(knotvector)
-        self.__matrix = np.eye(self.npts, dtype="float64")
-
-    @property
-    def matrix(self) -> np.ndarray:
-        return np.copy(self.__matrix)
-
-    def derivate(self):
-        """
-        Derivates the function once. If you want more, call it in a loop
-        """
-        avals = np.zeros(self.npts)
-        for i in range(self.npts):
-            diff = (
-                self.knotvector[i + self.degree] - self.knotvector[i]
-            )  # Maybe it's wrong
-            if diff != 0:
-                avals[i] = self.degree / diff
-        newA = np.diag(avals)
-        for i in range(self.npts - 1):
-            newA[i, i + 1] = -avals[i + 1]
-        self.__matrix = self.__matrix @ newA
-        self.degree -= 1
-
-    def evalf(self, nodes: np.ndarray) -> np.ndarray:
+    def evalf(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         evaluator = self[:, self.degree]
-        return self.matrix @ evaluator(nodes)
+        return evaluator(nodes)
 
 
-class Function(DerivableFunction):
+class Function(IndexableFunction):
     def __doc__(self):
         """
         Spline and rational base function
