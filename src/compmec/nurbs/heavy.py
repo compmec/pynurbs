@@ -1,8 +1,6 @@
-from typing import List, Tuple
+from typing import Tuple
 
 import numpy as np
-
-# from compmec.nurbs.functions import SplineFunction
 
 
 def N(i: int, j: int, k: int, u: float, U: Tuple[float]) -> float:
@@ -198,6 +196,27 @@ class LeastSquare:
 
 class KnotVector:
     @staticmethod
+    def is_valid_vector(knotvector: Tuple[float]) -> bool:
+        lenght = len(knotvector)
+        for i in range(lenght - 1):
+            if knotvector[i] > knotvector[i + 1]:
+                return False
+        knots = []
+        mults = []
+        for knot in knotvector:
+            if knot not in knots:
+                knots.append(knot)
+                mults.append(0)
+            ind = knots.index(knot)
+            mults[ind] += 1
+        if mults[0] != mults[-1]:
+            return False
+        for mult in mults:
+            if mult > mults[0]:
+                return False
+        return True
+
+    @staticmethod
     def find_degree(knotvector: Tuple[float]) -> int:
         degree = 0
         while knotvector[degree] == knotvector[degree + 1]:
@@ -230,14 +249,11 @@ class KnotVector:
     def find_mult(node: float, knotvector: Tuple[float]) -> int:
         """
         #### Algorithm A2.1
-            Determine the knot span index
+            Returns how many times a knot is in knotvector
         #### Input:
-            ``npts``: int -- number of DOFs
-            ``degree``: int -- degree
-            ``u``: float -- knot value
-            ``U``: Tuple[float] -- knot vector
+            ``knotvector``: Tuple[float] -- knot vector
         #### Output:
-            ``s``: int -- Multiplicity of the knot
+            ``m``: int -- Multiplicity of the knot
         """
         mult = 0
         for knot in knotvector:
@@ -248,8 +264,8 @@ class KnotVector:
     @staticmethod
     def find_knots(knotvector: Tuple[float]) -> Tuple[float]:
         """
-        #### Algorithm A2.1
-            Determine the knot span index
+        ####
+            Returns a tuple with non repeted knots
         #### Input:
             ``npts``: int -- number of DOFs
             ``degree``: int -- degree
@@ -264,16 +280,43 @@ class KnotVector:
                 knots.append(knot)
         return knots
 
-    def add_knot(node: float, knotvector: Tuple[float]):
+    @staticmethod
+    def insert_knots(knotvector: Tuple[float], addknots: Tuple[float]) -> Tuple[float]:
         """
-        Add the node inside the knotvector
+        Returns a new knotvector which contains the previous and new knots.
+        This function don't do the validation
         """
-        span = KnotVector.find_span(node, knotvector)
-        knotvector = list(knotvector)
-        knotvector.insert(span, node)
-        return tuple(knotvector)
+        newknotvector = list(knotvector) + list(addknots)
+        newknotvector.sort()
+        return tuple(newknotvector)
 
-    def split(knotvector: Tuple[float], nodes: Tuple[float]) -> List[Tuple[float]]:
+    @staticmethod
+    def remove_knots(knotvector: Tuple[float], subknots: Tuple[float]) -> Tuple[float]:
+        newknotvector = list(knotvector)
+        for knot in subknots:
+            newknotvector.remove(knot)
+        return tuple(newknotvector)
+
+    @staticmethod
+    def degree_increase(knotvector: Tuple[float]) -> Tuple[float]:
+        """
+        Returns a new knotvector which contains the previous and new knots.
+        This function don't do the validation
+        """
+        addknots = knotvector.find_knots(knotvector)
+        return KnotVector.insert_knots(knotvector, addknots)
+
+    @staticmethod
+    def degree_decrease(knotvector: Tuple[float]) -> Tuple[float]:
+        """
+        Returns a new knotvector which contains the previous and new knots.
+        This function don't do the validation
+        """
+        addknots = knotvector.find_knots(knotvector)
+        return KnotVector.remove_knots(knotvector, addknots)
+
+    @staticmethod
+    def split(knotvector: Tuple[float], nodes: Tuple[float]) -> Tuple[Tuple[float]]:
         """
         It splits the knotvector at nodes.
         You may put initial and final values.
@@ -301,4 +344,4 @@ class KnotVector:
             middle = list(knotvector[(a < knotvector) * (knotvector < b)])
             newknotvect = (degree + 1) * [a] + middle + (degree + 1) * [b]
             retorno.append(newknotvect)
-        return retorno
+        return tuple(retorno)

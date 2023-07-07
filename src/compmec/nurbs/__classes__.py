@@ -13,24 +13,12 @@ class Intface_KnotVector(abc.ABC):
     def npts(self) -> int:
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def verify_input_init(self, knotvector: Tuple[float]):
+    @abc.abstractproperty
+    def knots(self) -> Tuple[float]:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def verify_valid_span(self, u: Tuple[float]):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def span(self, knot: np.ndarray) -> np.ndarray:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def insert_knot(self, knot: float, times: Optional[int] = 1):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def remove_knot(self, knot: float, times: Optional[int] = 1):
+    def __iter__(self):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -39,6 +27,18 @@ class Intface_KnotVector(abc.ABC):
 
     @abc.abstractmethod
     def __ne__(self, obj: object) -> bool:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def shift(self, value: float):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def span(self, nodes: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def mult(self, nodes: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
         raise NotImplementedError
 
 

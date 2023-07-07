@@ -2,7 +2,7 @@ from typing import Optional, Tuple, Union
 
 import numpy as np
 
-from compmec.nurbs import algorithms as algo
+from compmec.nurbs import heavy
 from compmec.nurbs.__classes__ import Intface_BaseCurve
 from compmec.nurbs.functions import Function
 from compmec.nurbs.knotspace import KnotVector
@@ -174,7 +174,7 @@ class BaseCurve(Intface_BaseCurve):
         newknotvector.extend(nodes)
         newknotvector.sort()
         newknotvector = KnotVector(newknotvector)
-        T, _ = algo.LeastSquare.spline(self.knotvector, newknotvector)
+        T, _ = heavy.LeastSquare.spline(self.knotvector, newknotvector)
         newcontrolpoints = T @ self.ctrlpoints
         self.__knotvector = KnotVector(newknotvector)
         self.ctrlpoints = newcontrolpoints
@@ -200,7 +200,7 @@ class BaseCurve(Intface_BaseCurve):
             for i in range(times):
                 newknotvector.remove(node)
         newknotvector = KnotVector(newknotvector)
-        T, E = algo.LeastSquare.spline(self.knotvector, newknotvector)
+        T, E = heavy.LeastSquare.spline(self.knotvector, newknotvector)
         error = np.moveaxis(self.ctrlpoints, 0, -1) @ E @ self.ctrlpoints
         error = np.max(np.abs(error))
         if error > tolerance:
@@ -228,7 +228,7 @@ class BaseCurve(Intface_BaseCurve):
     def __degree_increase(self, times: int):
         newknotvector = list(self.knotvector) + times * list(self.knots)
         newknotvector.sort()
-        T, _ = algo.LeastSquare.spline(self.knotvector, newknotvector)
+        T, _ = heavy.LeastSquare.spline(self.knotvector, newknotvector)
         newctrlpoints = T @ self.ctrlpoints
         self.__knotvector = KnotVector(newknotvector)
         self.ctrlpoints = newctrlpoints
@@ -239,7 +239,7 @@ class BaseCurve(Intface_BaseCurve):
             mult = min(times, self.knotvector.mult(knot))
             for i in range(mult):
                 newknotvector.remove(knot)
-        T, E = algo.LeastSquare.spline(self.knotvector, newknotvector)
+        T, E = heavy.LeastSquare.spline(self.knotvector, newknotvector)
         error = np.moveaxis(self.ctrlpoints, 0, -1) @ E @ self.ctrlpoints
         error = np.max(np.abs(error))
         if error > tolerance:
@@ -296,7 +296,7 @@ class BaseCurve(Intface_BaseCurve):
             mult = self.knotvector.mult(node)
             copycurve.knot_insert((self.degree - mult) * [node])
 
-        allknotvec = algo.KnotVector.split(self.knotvector, nodes)
+        allknotvec = heavy.KnotVector.split(self.knotvector, nodes)
         listcurves = [0] * len(allknotvec)
         for i, newknotvec in enumerate(allknotvec):
             nodeinf, nodesup = nodes[i], nodes[i + 1]

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from compmec.nurbs.algorithms import LeastSquare
+from compmec.nurbs.heavy import LeastSquare
 
 
 @pytest.mark.order(1)

@@ -1,10 +1,10 @@
 import abc
-from typing import Any, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 
+from compmec.nurbs import heavy
 from compmec.nurbs.__classes__ import Intface_BaseFunction, Intface_Evaluator
-from compmec.nurbs.algorithms import N, R
 from compmec.nurbs.knotspace import KnotVector
 
 
@@ -99,8 +99,8 @@ class FunctionEvaluator(Intface_Evaluator):
         j = self.__second_index
         U = tuple(self.__knotvector)
         if self.__weights is None:
-            return N(i, j, span, node, U)
-        return R(i, j, span, node, U, self.__weights)
+            return heavy.N(i, j, span, node, U)
+        return heavy.R(i, j, span, node, U, self.__weights)
 
     def compute_vector(self, node: float, span: int) -> np.ndarray:
         """
@@ -177,13 +177,13 @@ class IndexableFunction(BaseFunction):
             error_msg += f"must be in [0, {self.degree}]"
             raise IndexError(error_msg)
 
-    def __getitem__(self, tup: Any):
-        if isinstance(tup, tuple):
-            if len(tup) > 2:
+    def __getitem__(self, index):
+        if isinstance(index, tuple):
+            if len(index) > 2:
                 raise IndexError
-            i, j = tup
+            i, j = index
         else:
-            i, j = tup, self.degree
+            i, j = index, self.degree
         self.__valid_first_index(i)
         self.__valid_second_index(j)
         return FunctionEvaluator(self, i, j)

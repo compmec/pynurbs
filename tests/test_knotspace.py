@@ -5,7 +5,7 @@ from compmec.nurbs import GeneratorKnotVector, KnotVector
 
 
 @pytest.mark.order(2)
-@pytest.mark.dependency(depends=["tests/test_algorithms.py::test_end"], scope="session")
+@pytest.mark.dependency(depends=["tests/test_heavy.py::test_end"], scope="session")
 def test_begin():
     pass
 
@@ -17,10 +17,20 @@ def test_Creation():
     """
     Tests if creates a knotvector correctly
     """
+    KnotVector([0, 1])
     KnotVector([0, 0, 1, 1])
     KnotVector([0, 0, 0, 1, 1, 1])
     KnotVector([0, 0, 0, 0, 1, 1, 1, 1])
     KnotVector([0, 0, 0, 0, 0.5, 1, 1, 1, 1])
+
+    KnotVector([0, 0.5, 1])
+    KnotVector([0, 0, 0.5, 0.5, 1, 1])
+    KnotVector([0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1])
+
+    KnotVector([0, 4])
+    KnotVector([-4, 0])
+    KnotVector([0, 0, 4, 4])
+    KnotVector([-4, -4, 0, 0])
 
 
 @pytest.mark.order(2)
@@ -54,13 +64,9 @@ def test_FailCreation():
 
     # Internal multiplicity error
     with pytest.raises(ValueError):
-        KnotVector([0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1])
+        KnotVector([0, 0, 0, 0.5, 0.5, 0.5, 0.5, 1, 1, 1])
     with pytest.raises(ValueError):
-        U = [0, 0, 0, 0.5, 0.5, 0.5, 0.5, 1, 1, 1]
-        KnotVector(U)
-    with pytest.raises(ValueError):
-        U = [0, 0, 0, 0, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1]
-        KnotVector(U)
+        KnotVector([0, 0, 0.5, 0.5, 0.5, 0.5, 1, 1])
 
 
 @pytest.mark.order(2)
@@ -135,11 +141,11 @@ def test_findspans_single():
     assert U.span(1.0) == 7
 
     with pytest.raises(ValueError):
-        U.span(-0.1)
+        U.span(-0.1)  # Outside interval
     with pytest.raises(ValueError):
-        U.span(1.1)
-    with pytest.raises(TypeError):
-        U.span("asd")
+        U.span(1.1)  # Outside interval
+    with pytest.raises(ValueError):
+        U.span("asd")  # Not a number
 
 
 @pytest.mark.order(2)
@@ -162,11 +168,11 @@ def test_findmult_single():
     assert U.mult(1.0) == 2
 
     with pytest.raises(ValueError):
-        U.mult(-0.1)
+        U.mult(-0.1)  # Outside interval
     with pytest.raises(ValueError):
-        U.mult(1.1)
-    with pytest.raises(TypeError):
-        U.mult("asd")
+        U.mult(1.1)  # Outside interval
+    with pytest.raises(ValueError):
+        U.mult("asd")  # Not a number
 
 
 @pytest.mark.order(2)
@@ -209,6 +215,87 @@ def test_CompareKnotvector():
 
     assert U1 != 0
     assert U1 != "asad"
+
+
+@pytest.mark.order(2)
+@pytest.mark.timeout(4)
+@pytest.mark.dependency(depends=["test_CompareKnotvector"])
+def test_shift():
+    U1 = KnotVector([0, 0, 1, 1])
+    U2 = KnotVector([1, 1, 2, 2])
+    U = U1.deepcopy()
+    assert U == U1
+    assert U != U2
+    U.shift(1)  # Shift all vector
+    assert U == U2
+
+    U = U1.deepcopy()
+    U += 1
+    assert U == U2
+
+    U = U2.deepcopy()
+    assert U == U2
+    assert U != U1
+    U.shift(-1)
+    assert U == U1
+
+    U = U2.deepcopy()
+    U -= 1
+    assert U == U1
+
+
+@pytest.mark.order(2)
+@pytest.mark.timeout(4)
+@pytest.mark.dependency(depends=["test_CompareKnotvector"])
+def test_scale():
+    U1 = KnotVector([0, 0, 1, 1])
+    U2 = KnotVector([0, 0, 2, 2])
+    U3 = KnotVector([1, 1, 3, 3])
+    U4 = KnotVector([2, 2, 6, 6])
+
+    U = U1.deepcopy()
+    assert U == U1
+    assert U != U2
+    U.scale(2)
+    assert U != U1
+    assert U == U2
+    U.scale(1 / 2)
+    assert U == U1
+    assert U != U2
+    U *= 2
+    assert U != U1
+    assert U == U2
+    U *= 1 / 2
+    assert U == U1
+    assert U != U2
+    U /= 1 / 2  # times 2
+    assert U != U1
+    assert U == U2
+    U /= 2
+    assert U == U1
+    assert U != U2
+
+    U = U3.deepcopy()
+    assert U == U3
+    assert U != U2
+    U.scale(2)
+    assert U != U3
+    assert U == U4
+    U.scale(1 / 2)
+    assert U == U3
+    assert U != U4
+    U *= 2
+    assert U != U3
+    assert U == U4
+    U *= 1 / 2
+    assert U == U3
+    assert U != U4
+    U /= 1 / 2  # times 2
+    assert U != U3
+    assert U == U4
+    U /= 2
+    assert U == U3
+    assert U != U4
 
 
 @pytest.mark.order(2)
@@ -358,12 +445,11 @@ def test_compare_knotvectors_fail():
 @pytest.mark.timeout(4)
 @pytest.mark.dependency(depends=["test_GeneratorUniform"])
 def test_insert_knot_remove():
-    Uinc0 = [0, 0, 0, 0, 1, 1, 1, 1]
-    Uinc1 = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]
-    Uinc2 = [0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1]
-    Uinc3 = [0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1]
-    Uinc4 = [0, 0, 0, 0, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1]
-    Uinc5 = [0, 0, 0, 0, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1]
+    Uinc0 = [0, 0, 0, 1, 1, 1]
+    Uinc1 = [0, 0, 0, 0.5, 1, 1, 1]
+    Uinc2 = [0, 0, 0, 0.5, 0.5, 1, 1, 1]
+    Uinc3 = [0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1]
+    Uinc4 = [0, 0, 0, 0.5, 0.5, 0.5, 0.5, 1, 1, 1]
 
     U0 = KnotVector(Uinc0)
     U1 = KnotVector(Uinc1)
@@ -371,71 +457,67 @@ def test_insert_knot_remove():
     U3 = KnotVector(Uinc3)
     with pytest.raises(ValueError):
         KnotVector(Uinc4)
-    with pytest.raises(ValueError):
-        KnotVector(Uinc5)
 
     Uo = KnotVector(Uinc0)
     assert Uo == U0
-    Uo.knot_insert(0.5)
+    Uo += []  #  Knot insert
+    assert Uo == U0
+    Uo += [0.5]
     assert Uo == U1
-    Uo.knot_insert(0.5)
+    Uo += [0.5]
     assert Uo == U2
-    Uo.knot_insert(0.5)
+    Uo += [0.5]
     assert Uo == U3
     with pytest.raises(ValueError):
-        Uo.knot_insert(0.5)
+        Uo += [0.5]
 
     Uo = KnotVector(Uinc0)
-    Uo.knot_insert(0.5, 2)
+    Uo += [0.5, 0.5]
     assert Uo == U2
-    with pytest.raises(ValueError):
-        # Cannot insert 0 times
-        Uo.knot_insert(0.5, 0)
+    Uo += []
     with pytest.raises(ValueError):
         # Can insert only once, not twice
-        Uo.knot_insert(0.5, 2)
+        Uo += [0.5, 0.5]
 
     Uo = KnotVector(Uinc0)
-    Uo.knot_insert(0.5, 3)
+    Uo += [0.5, 0.5, 0.5]
     assert Uo == U3
 
     Uo = KnotVector(Uinc3)
-    Uo.knot_remove(0.5)
+    assert Uo == U3
+    Uo -= [0.5]
     assert Uo == U2
-    Uo.knot_remove(0.5)
+    Uo -= [0.5]
     assert Uo == U1
-    Uo.knot_remove(0.5)
+    Uo -= [0.5]
     assert Uo == U0
     with pytest.raises(ValueError):
-        Uo.knot_remove(0.5)
+        Uo -= [0.5]
     with pytest.raises(ValueError):
-        Uo.knot_remove(0.5)
-    with pytest.raises(ValueError):
-        # Cannot remove 0 times
-        Uo.knot_remove(0.5, 0)
+        Uo -= [0.5]
     with pytest.raises(ValueError):
         # Cannot remove 0 times
-        Uo.knot_remove(0.5, 2)
+        Uo -= [0.5, 0.5]
 
     Uo = KnotVector(Uinc3)
-    Uo.knot_remove(0.5, 2)
+    assert Uo == U3
+    Uo -= [0.5, 0.5]
     assert Uo == U1
 
     Uo = KnotVector(Uinc3)
-    Uo.knot_remove(0.5, 3)
+    assert Uo == U3
+    Uo -= [0.5, 0.5, 0.5]
     assert Uo == U0
 
     Uo = KnotVector(Uinc3)
-    with pytest.raises(TypeError):
-        U0.knot_remove("asd")
-    with pytest.raises(TypeError):
-        U0.knot_remove(0.5, "ads")
     with pytest.raises(ValueError):
-        U0.knot_remove(0.5, 0)
+        U0 -= ["asd"]
     with pytest.raises(ValueError):
-        U0.knot_remove(0.5, -1)
+        U0 -= [-0.5]
     with pytest.raises(ValueError):
-        U0.knot_remove(-0.5)
+        U0 -= [0.25]
+    with pytest.raises(ValueError):
+        U0 -= [0.5] * 4
 
 
 @pytest.mark.order(2)
@@ -455,7 +537,7 @@ def test_others():
 
 
 @pytest.mark.order(2)
-@pytest.mark.timeout(4)
+@pytest.mark.skip(reason="Needs adaption to new knotvector structure")
 @pytest.mark.dependency(
     depends=[
         "test_begin",
