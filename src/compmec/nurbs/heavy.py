@@ -298,24 +298,6 @@ class KnotVector:
         return tuple(newknotvector)
 
     @staticmethod
-    def degree_increase(knotvector: Tuple[float]) -> Tuple[float]:
-        """
-        Returns a new knotvector which contains the previous and new knots.
-        This function don't do the validation
-        """
-        addknots = knotvector.find_knots(knotvector)
-        return KnotVector.insert_knots(knotvector, addknots)
-
-    @staticmethod
-    def degree_decrease(knotvector: Tuple[float]) -> Tuple[float]:
-        """
-        Returns a new knotvector which contains the previous and new knots.
-        This function don't do the validation
-        """
-        addknots = knotvector.find_knots(knotvector)
-        return KnotVector.remove_knots(knotvector, addknots)
-
-    @staticmethod
     def split(knotvector: Tuple[float], nodes: Tuple[float]) -> Tuple[Tuple[float]]:
         """
         It splits the knotvector at nodes.

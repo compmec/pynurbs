@@ -633,6 +633,46 @@ class TestRational:
             assert np.all(rational(node) == spline(node))
 
     @pytest.mark.order(3)
+    @pytest.mark.timeout(1)
+    @pytest.mark.dependency(depends=["TestRational::test_begin"])
+    def test_quarter_circle_standard(self):
+        knotvector = [0, 0, 0, 1, 1, 1]
+        rational = Function(knotvector)
+        weights = [1, 1, 2]
+        rational.weights = weights
+
+        nodes_sample = np.linspace(0, 1, 129)
+        good_matrix = [
+            (1 - nodes_sample) ** 2,
+            2 * nodes_sample * (1 - nodes_sample),
+            2 * nodes_sample**2,
+        ]
+        good_matrix = np.array(good_matrix) / (1 + nodes_sample**2)
+        test_matrix = rational(nodes_sample)
+        np.testing.assert_allclose(test_matrix, good_matrix)
+
+    @pytest.mark.order(3)
+    @pytest.mark.timeout(1)
+    @pytest.mark.dependency(depends=["TestRational::test_quarter_circle_standard"])
+    def test_quarter_circle_symmetric(self):
+        knotvector = [0, 0, 0, 1, 1, 1]
+        rational = Function(knotvector)
+        weights = [2, np.sqrt(2), 2]
+        rational.weights = weights
+
+        nodes_sample = np.linspace(0, 1, 129)
+        good_matrix = [
+            2 * (1 - nodes_sample) ** 2,
+            2 * np.sqrt(2) * nodes_sample * (1 - nodes_sample),
+            2 * nodes_sample**2,
+        ]
+        denomin = 2 * (1 - 2 * nodes_sample + 2 * nodes_sample**2)
+        denomin += 2 * np.sqrt(2) * nodes_sample * (1 - nodes_sample)
+        good_matrix = np.array(good_matrix) / denomin
+        test_matrix = rational(nodes_sample)
+        np.testing.assert_allclose(test_matrix, good_matrix)
+
+    @pytest.mark.order(3)
     @pytest.mark.dependency(
         depends=[
             "TestRational::test_begin",
@@ -640,6 +680,8 @@ class TestRational:
             "TestRational::test_fail_creation",
             "TestRational::test_compare_spline",
             "TestRational::test_values_rational_equal_spline",
+            "TestRational::test_quarter_circle_standard",
+            "TestRational::test_quarter_circle_symmetric",
         ]
     )
     def test_end(self):
