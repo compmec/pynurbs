@@ -52,11 +52,7 @@ class BaseCurve(Intface_BaseCurve):
             raise TypeError(error_msg)
         if self.knotvector != obj.knotvector:
             raise ValueError("The knotvectors of curves are not the same!")
-        print("wau")
         newP = [poi + qoi for poi, qoi in zip(self.ctrlpoints, obj.ctrlpoints)]
-        print("self.knotvector.npts = ", self.knotvector.npts)
-        print("newP = ")
-        print(newP)
 
         return self.__class__(self.knotvector, newP)
 
@@ -149,8 +145,6 @@ class BaseCurve(Intface_BaseCurve):
             iter(value)
         except Exception:
             raise ValueError
-        print("-----")
-        print(value)
         if len(value) != self.npts:
             error_msg = "The number of control points must be the same as"
             error_msg += " degrees of freedom of KnotVector.\n"

@@ -393,9 +393,7 @@ class TestSumSubtract:
             C2 = Curve(knotvector, P2)
             Cadd = Curve(knotvector, P1 + P2)
             Csub = Curve(knotvector, P1 - P2)
-            print("What")
             assert (C1 + C2) == Cadd
-            print("hehhe")
             assert (C1 - C2) == Csub
 
     @pytest.mark.order(4)
@@ -418,9 +416,7 @@ class TestSumSubtract:
             C2 = Curve(knotvector, P2)
             Cadd = Curve(knotvector, P1 + P2)
             Csub = Curve(knotvector, P1 - P2)
-            print("What")
             assert (C1 + C2) == Cadd
-            print("hehhe")
             assert (C1 - C2) == Csub
 
     @pytest.mark.order(4)
