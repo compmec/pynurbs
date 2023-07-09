@@ -31,9 +31,9 @@ class BaseCurve(Intface_BaseCurve):
         selfcopy.knotvector = newknotvec
         othercopy = other.deepcopy()
         othercopy.knotvector = newknotvec
-        diffctrlpoints = selfcopy.ctrlpoints - othercopy.ctrlpoints
-        if np.any(np.abs(diffctrlpoints) > 1e-9):
-            return False
+        for poi, qoi in zip(self.ctrlpoints, othercopy.ctrlpoints):
+            if np.linalg.norm(poi - qoi) > 1e-9:
+                return False
         return True
 
     def __ne__(self, obj: object):
@@ -41,7 +41,8 @@ class BaseCurve(Intface_BaseCurve):
 
     def __neg__(self):
         newcurve = self.deepcopy()
-        newcurve.ctrlpoints *= -1
+        newctrlpoints = [-1 * ctrlpt for ctrlpt in newcurve.ctrlpoints]
+        newcurve.ctrlpoints = newctrlpoints
         return newcurve
 
     def __add__(self, obj: object):
@@ -51,9 +52,12 @@ class BaseCurve(Intface_BaseCurve):
             raise TypeError(error_msg)
         if self.knotvector != obj.knotvector:
             raise ValueError("The knotvectors of curves are not the same!")
-        if self.ctrlpoints.shape != obj.ctrlpoints.shape:
-            raise ValueError("The shape of control points are not the same!")
-        newP = np.copy(self.ctrlpoints) + obj.ctrlpoints
+        print("wau")
+        newP = [poi + qoi for poi, qoi in zip(self.ctrlpoints, obj.ctrlpoints)]
+        print("self.knotvector.npts = ", self.knotvector.npts)
+        print("newP = ")
+        print(newP)
+
         return self.__class__(self.knotvector, newP)
 
     def __sub__(self, obj: object):
@@ -79,13 +83,11 @@ class BaseCurve(Intface_BaseCurve):
         othercopy.degree = maxdegree
         npts0 = selfcopy.npts
         npts1 = othercopy.npts
-        newknotvector = np.empty(maxdegree + npts0 + npts1, dtype="float64")
-        newknotvector.fill(np.nan)
+        newknotvector = [0] * (maxdegree + npts0 + npts1)
         newknotvector[:npts0] = selfcopy.knotvector[:npts0]
         newknotvector[npts0:] = othercopy.knotvector[1:]
         newknotvector = KnotVector(newknotvector)
-        newshape = [npts0 + npts1 - 1] + list(self.ctrlpoints.shape[1:])
-        newctrlpoints = np.zeros(newshape, dtype="float64")
+        newctrlpoints = [0] * (npts0 + npts1 - 1)
         newctrlpoints[:npts0] = selfcopy.ctrlpoints[:npts0]
         newctrlpoints[npts0:] = othercopy.ctrlpoints[1:]
         return self.__class__(newknotvector, newctrlpoints)
@@ -147,6 +149,8 @@ class BaseCurve(Intface_BaseCurve):
             iter(value)
         except Exception:
             raise ValueError
+        print("-----")
+        print(value)
         if len(value) != self.npts:
             error_msg = "The number of control points must be the same as"
             error_msg += " degrees of freedom of KnotVector.\n"
@@ -159,7 +163,7 @@ class BaseCurve(Intface_BaseCurve):
             error_msg = "For each control point P, it's needed operations"
             error_msg += "with floats like 1.0*P - 1.5*P + 3.1*P"
             raise ValueError(error_msg)
-        self.__ctrlpoints = value
+        self.__ctrlpoints = list(value)
 
     def deepcopy(self) -> Curve:
         curve = self.__class__(self.knotvector)
