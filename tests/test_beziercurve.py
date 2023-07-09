@@ -92,6 +92,7 @@ class TestInitCurve:
         assert hasattr(curve, "knot_insert")
         assert hasattr(curve, "knot_remove")
         assert hasattr(curve, "knot_clean")
+        assert hasattr(curve, "__str__")
         assert callable(curve)
 
     @pytest.mark.order(4)
@@ -128,6 +129,16 @@ class TestInitCurve:
         assert C1 != C4
 
     @pytest.mark.order(4)
+    @pytest.mark.timeout(15)
+    @pytest.mark.dependency(depends=["TestInitCurve::test_build_scalar"])
+    def test_print(self):
+        knotvector = GeneratorKnotVector.bezier(3)
+        bezier = Curve(knotvector)
+        str(bezier)
+        bezier.ctrlpoints = [2, 4, 3, 1]
+        str(bezier)
+
+    @pytest.mark.order(4)
     @pytest.mark.dependency(
         depends=[
             "TestInitCurve::test_begin",
@@ -136,6 +147,7 @@ class TestInitCurve:
             "TestInitCurve::test_atributesgood",
             "TestInitCurve::test_functions",
             "TestInitCurve::test_compare_two_curves",
+            "TestInitCurve::test_print",
         ]
     )
     def test_end(self):

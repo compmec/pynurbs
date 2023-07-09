@@ -196,6 +196,24 @@ class Curve(BaseCurve):
         self.ctrlpoints = ctrlpoints
         self.weights = weights
 
+    def __str__(self) -> str:
+        if self.npts == self.degree + 1:
+            msg = "Bezier"
+        elif self.weights is None:
+            msg = "Spline"
+        else:
+            msg = "Rational Spline"
+        msg += f" curve of degree {self.degree}"
+        msg += f" and {self.npts} control points\n"
+        msg += f"KnotVector = {self.knotvector}\n"
+        if self.ctrlpoints is None:
+            return msg
+        msg += "ControlPoints = [\n"
+        for point in self.ctrlpoints:
+            msg += str(point) + "\n"
+        msg += "]\n"
+        return msg
+
     def eval(self, nodes: np.ndarray) -> np.ndarray:
         if self.ctrlpoints is None:
             error_msg = "Cannot evaluate: There are no control points"

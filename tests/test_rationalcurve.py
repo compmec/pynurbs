@@ -27,7 +27,7 @@ class TestBuild:
 
     @pytest.mark.order(6)
     @pytest.mark.timeout(1)
-    @pytest.mark.dependency(depends=["TestCircle::test_begin"])
+    @pytest.mark.dependency(depends=["TestBuild::test_begin"])
     def test_failbuild(self):
         for degree in range(1, 6):
             npts = np.random.randint(degree + 1, degree + 9)
@@ -41,13 +41,21 @@ class TestBuild:
                 curve.weights = "asd"
 
     @pytest.mark.order(6)
+    @pytest.mark.timeout(15)
+    @pytest.mark.dependency(depends=["TestBuild::test_failbuild"])
+    def test_print(self):
+        knotvector = GeneratorKnotVector.uniform(2, 4)
+        spline = Curve(knotvector)
+        str(spline)
+        spline.ctrlpoints = [2, 4, 3, 1]
+        str(spline)
+
+    @pytest.mark.order(6)
     @pytest.mark.dependency(
         depends=[
-            "TestCircle::test_begin",
-            "TestCircle::test_quarter_circle_standard",
-            "TestCircle::test_quarter_circle_symmetric",
-            "TestCircle::test_half_circle",
-            "TestCircle::test_full_circle",
+            "TestBuild::test_begin",
+            "TestBuild::test_failbuild",
+            "TestBuild::test_print",
         ]
     )
     def test_end(self):
@@ -56,7 +64,7 @@ class TestBuild:
 
 class TestCircle:
     @pytest.mark.order(6)
-    @pytest.mark.dependency(depends=["test_begin"])
+    @pytest.mark.dependency(depends=["TestBuild::test_end"])
     def test_begin(self):
         pass
 
