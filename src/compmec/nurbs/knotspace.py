@@ -155,6 +155,10 @@ class KnotVector(Intface_KnotVector):
     def knots(self) -> Tuple[float]:
         return heavy.KnotVector.find_knots(tuple(self))
 
+    @property
+    def limits(self) -> Tuple[float]:
+        return (self[0], self[-1])
+
     @degree.setter
     def degree(self, value: int):
         value = int(value)

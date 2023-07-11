@@ -1,3 +1,4 @@
+from compmec.nurbs import advanced
 from compmec.nurbs.curves import Curve
 from compmec.nurbs.functions import Function
 from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
