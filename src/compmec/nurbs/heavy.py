@@ -151,40 +151,42 @@ class LeastSquare:
         return np.einsum("ij->j", matrix) / npts
 
     @staticmethod
-    def spline(knotvect0: Tuple[float], knotvect1: Tuple[float]) -> Tuple[np.ndarray]:
+    def spline2spline(
+        oldknotvect: Tuple[float], newknotvect: Tuple[float]
+    ) -> Tuple[np.ndarray]:
         """ """
-        knotvect0 = tuple(knotvect0)
-        knotvect1 = tuple(knotvect1)
-        degree0 = KnotVector.find_degree(knotvect0)
-        degree1 = KnotVector.find_degree(knotvect1)
-        npts0 = KnotVector.find_npts(knotvect0)
-        npts1 = KnotVector.find_npts(knotvect1)
-        knotes0 = KnotVector.find_knots(knotvect0)
-        knotes1 = KnotVector.find_knots(knotvect1)
-        allknots = list(set(knotes0 + knotes1))
+        oldknotvect = tuple(oldknotvect)
+        newknotvect = tuple(newknotvect)
+        olddegree = KnotVector.find_degree(oldknotvect)
+        newdegree = KnotVector.find_degree(newknotvect)
+        oldnpts = KnotVector.find_npts(oldknotvect)
+        newnpts = KnotVector.find_npts(newknotvect)
+        oldknots = KnotVector.find_knots(oldknotvect)
+        newknots = KnotVector.find_knots(newknotvect)
+        allknots = list(set(oldknots + newknots))
         allknots.sort()
-        nptsinteg = degree0 + degree1 + 3  # Number integration points
+        nptsinteg = olddegree + newdegree + 3  # Number integration points
         integrator = LeastSquare.integrator_array(nptsinteg)
 
         # Here we will store the values of N and M
         # for a certain interval [a, b], which will change
-        Nvalues = np.empty((npts0, nptsinteg), dtype="float64")
-        Mvalues = np.empty((npts1, nptsinteg), dtype="float64")
+        Nvalues = np.empty((oldnpts, nptsinteg), dtype="float64")
+        Mvalues = np.empty((newnpts, nptsinteg), dtype="float64")
 
-        A = np.zeros((npts0, npts0), dtype="float64")  # N*N
-        B = np.zeros((npts0, npts1), dtype="float64")  # N*M
-        C = np.zeros((npts1, npts1), dtype="float64")  # M*M
+        A = np.zeros((oldnpts, oldnpts), dtype="float64")  # N*N
+        B = np.zeros((oldnpts, newnpts), dtype="float64")  # N*M
+        C = np.zeros((newnpts, newnpts), dtype="float64")  # M*M
         for a, b in zip(allknots[:-1], allknots[1:]):
             chebynodes = LeastSquare.chebyshev_nodes(nptsinteg, a, b)
             # Integral of the functions in the interval [a, b]
-            k0 = KnotVector.find_span(a, knotvect0)
-            k1 = KnotVector.find_span(a, knotvect1)
-            for i in range(npts0):
+            k0 = KnotVector.find_span(a, oldknotvect)
+            k1 = KnotVector.find_span(a, newknotvect)
+            for i in range(oldnpts):
                 for j, uj in enumerate(chebynodes):
-                    Nvalues[i, j] = N(i, degree0, k0, uj, knotvect0)
-            for i in range(npts1):
+                    Nvalues[i, j] = N(i, olddegree, k0, uj, oldknotvect)
+            for i in range(newnpts):
                 for j, uj in enumerate(chebynodes):
-                    Mvalues[i, j] = N(i, degree1, k1, uj, knotvect1)
+                    Mvalues[i, j] = N(i, newdegree, k1, uj, newknotvect)
             A += np.einsum("k,ik,jk->ij", integrator, Nvalues, Nvalues)
             B += np.einsum("k,ik,jk->ij", integrator, Nvalues, Mvalues)
             C += np.einsum("k,ik,jk->ij", integrator, Mvalues, Mvalues)

@@ -58,17 +58,17 @@ class TestLeastSquare:
     def test_leastsquarespline_identity(self):
         U0 = [0, 0, 1, 1]
         U1 = [0, 0, 1, 1]
-        T, _ = LeastSquare.spline(U0, U1)
+        T, _ = LeastSquare.spline2spline(U0, U1)
         np.testing.assert_almost_equal(T, np.eye(2))
 
         U0 = [0, 0, 0, 1, 1, 1]
         U1 = [0, 0, 0, 1, 1, 1]
-        T, _ = LeastSquare.spline(U0, U1)
+        T, _ = LeastSquare.spline2spline(U0, U1)
         np.testing.assert_almost_equal(T, np.eye(3))
 
         U0 = [0, 0, 0, 0.5, 1, 1, 1]
         U1 = [0, 0, 0, 0.5, 1, 1, 1]
-        T, _ = LeastSquare.spline(U0, U1)
+        T, _ = LeastSquare.spline2spline(U0, U1)
         np.testing.assert_almost_equal(T, np.eye(4))
 
     @pytest.mark.order(1)
@@ -76,29 +76,29 @@ class TestLeastSquare:
     def test_leastsquarespline_error(self):
         U0 = [0, 0, 1, 1]
         U1 = [0, 0, 1, 1]  # Same curve
-        _, E = LeastSquare.spline(U0, U1)
+        _, E = LeastSquare.spline2spline(U0, U1)
         assert np.all(np.abs(E) < 1e-9)
 
         U0 = [0, 0, 0, 1, 1, 1]
         U1 = [0, 0, 0, 1, 1, 1]
-        _, E = LeastSquare.spline(U0, U1)
+        _, E = LeastSquare.spline2spline(U0, U1)
         assert np.all(np.abs(E) < 1e-9)
 
         U0 = [0, 0, 0, 0.5, 1, 1, 1]
         U1 = [0, 0, 0, 0.5, 1, 1, 1]
-        _, E = LeastSquare.spline(U0, U1)
+        _, E = LeastSquare.spline2spline(U0, U1)
         assert np.all(np.abs(E) < 1e-9)
 
         # knot insertion
         U0 = [0, 0, 0, 1, 1, 1]
         U1 = [0, 0, 0, 0.5, 1, 1, 1]
-        _, E = LeastSquare.spline(U0, U1)
+        _, E = LeastSquare.spline2spline(U0, U1)
         assert np.all(np.abs(E) < 1e-9)
 
         # degree elevate
         U0 = [0, 0, 1, 1]
         U1 = [0, 0, 0, 1, 1, 1]
-        _, E = LeastSquare.spline(U0, U1)
+        _, E = LeastSquare.spline2spline(U0, U1)
         assert np.all(np.abs(E) < 1e-9)
 
     @pytest.mark.order(1)

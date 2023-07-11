@@ -173,7 +173,7 @@ class BaseCurve(Intface_BaseCurve):
             self.__knotvector = newvector
             return
         oldvec, newvec = tuple(self.knotvector), tuple(newvector)
-        T, E = heavy.LeastSquare.spline(oldvec, newvec)
+        T, E = heavy.LeastSquare.spline2spline(oldvec, newvec)
         error = np.moveaxis(self.ctrlpoints, 0, -1) @ E @ self.ctrlpoints
         error = np.max(np.abs(error))
         if tolerance and error > tolerance:
