@@ -183,6 +183,8 @@ class BaseCurve(Intface_BaseCurve):
         newctrlpoints = T @ self.ctrlpoints
         self.__knotvector = newvector
         self.ctrlpoints = newctrlpoints
+        if self.weights is not None:
+            self.weights = T @ self.weights
 
 
 class Curve(BaseCurve):
