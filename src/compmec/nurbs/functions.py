@@ -86,6 +86,12 @@ class FunctionEvaluator(Intface_Evaluator):
         self.__weights = func.weights
         self.__first_index = i
         self.__second_index = j
+        self.__matrix = heavy.speval_matrix(tuple(self.__knotvector), j)
+        self.__knots = heavy.KnotVector.find_knots(tuple(self.__knotvector))
+        self.__spans = np.zeros(len(self.__knots), dtype="int16")
+        for k, knot in enumerate(self.__knots):
+            self.__spans[k] = heavy.KnotVector.find_span(knot, tuple(self.__knotvector))
+        self.__spans = tuple(self.__spans)
 
     def compute_one_value(self, i: int, node: float, span: int) -> float:
         j = self.__second_index

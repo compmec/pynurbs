@@ -1,3 +1,4 @@
+from functools import cache
 from typing import Tuple
 
 import numpy as np
@@ -8,33 +9,23 @@ def N(i: int, j: int, k: int, u: float, U: Tuple[float]) -> float:
     Returns the value of N_{ij}(u) in the interval [u_{k}, u_{k+1}]
     Remember that N_{i, j}(u) = 0   if  ( u not in [U[i], U[i+j+1]] )
     """
-
-    npts = KnotVector.find_npts(U)
-
-    if k < i:
+    knots = KnotVector.find_knots(U)
+    spans = [KnotVector.find_span(knot, U) for knot in knots]
+    z = 0
+    while spans[z] != k:
+        z += 1
+    if z == len(spans) - 1:
+        z -= 1
+    coefs = get_coefs(U, i, j, z)
+    if np.all(coefs == 0):
         return 0
-    if j == 0:
-        if i == k:
-            return 1
-        if i + 1 == npts and k == npts:
-            return 1
-        return 0
-    if i + j < k:
-        return 0
-
-    if U[i] == U[i + j]:
-        factor1 = 0
-    else:
-        factor1 = (u - U[i]) / (U[i + j] - U[i])
-
-    if U[i + j + 1] == U[i + 1]:
-        factor2 = 0
-    else:
-        factor2 = (U[i + j + 1] - u) / (U[i + j + 1] - U[i + 1])
-
-    result = factor1 * N(i, j - 1, k, u, U)
-    result += factor2 * N(i + 1, j - 1, k, u, U)
-    return result
+    q = (u - knots[z]) / (knots[z + 1] - knots[z])
+    # Horner's method
+    soma = 0
+    for k, ck in enumerate(coefs[::-1]):
+        soma *= q
+        soma += ck
+    return soma
 
 
 def R(i: int, j: int, k: int, u: float, U: Tuple[float], w: Tuple[float]) -> float:
@@ -62,6 +53,65 @@ def binom(n: int, i: int):
     for j in range(i):
         prod *= (n - j) / (i - j)
     return int(prod)
+
+
+def get_coefs(knotvector: Tuple[float], i: int, j: int, z: int):
+    knots = KnotVector.find_knots(knotvector)
+    spans = [KnotVector.find_span(knot, knotvector) for knot in knots]
+    y = i + j - spans[z]
+    if y < 0 or j < y:
+        return np.zeros((j + 1), dtype="float64")
+    return speval_matrix(knotvector, j)[z, y]
+
+
+@cache
+def speval_matrix(knotvector: Tuple[float], reqdegree: int):
+    """
+    Given a knotvector, it has properties like
+        - number of points: npts
+        - polynomial degree: degree
+        - knots: A list of non-repeted knots
+        - spans: The span of each knot
+    This function returns a matrix of size
+        (m) x (j+1) x (j+1)
+    which
+        - m is the number of segments: len(knots)-1
+        - j is the requested degree
+    """
+    npts = KnotVector.find_npts(knotvector)
+    knots = KnotVector.find_knots(knotvector)
+    spans = np.zeros(len(knots), dtype="int16")
+    for i, knot in enumerate(knots):
+        spans[i] = KnotVector.find_span(knot, knotvector)
+    spans = tuple(spans)
+    j = reqdegree
+
+    ninter = len(knots) - 1
+    matrix = np.zeros((ninter, j + 1, j + 1), dtype="float64")
+    if j == 0:
+        matrix.fill(1)
+        return matrix
+    matrix_less1 = speval_matrix(knotvector, j - 1)
+    for z, sz in enumerate(spans[:-1]):
+        for y in range(j + 1):
+            i = y + sz - j
+
+            denoa = knotvector[i + j] - knotvector[i]
+            if denoa and y > 0:
+                coefsNij = matrix_less1[z, y - 1, :]
+                a0 = knots[z] - knotvector[i]
+                a1 = knots[z + 1] - knots[z]
+                matrix[z, y, :-1] += a0 * coefsNij / denoa
+                matrix[z, y, 1:] += a1 * coefsNij / denoa
+
+            denob = knotvector[i + j + 1] - knotvector[i + 1]
+            if denob and y < j:
+                coefsNij = matrix_less1[z, y, :]
+                b0 = knotvector[i + j + 1] - knots[z]
+                b1 = knots[z] - knots[z + 1]
+                matrix[z, y, :-1] += b0 * coefsNij / denob
+                matrix[z, y, 1:] += b1 * coefsNij / denob
+    return matrix
 
 
 class LeastSquare:
