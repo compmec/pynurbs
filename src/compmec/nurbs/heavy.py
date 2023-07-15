@@ -11,21 +11,13 @@ def N(i: int, j: int, k: int, u: float, U: Tuple[float]) -> float:
     """
     knots = KnotVector.find_knots(U)
     spans = [KnotVector.find_span(knot, U) for knot in knots]
-    z = 0
-    while spans[z] != k:
-        z += 1
-    if z == len(spans) - 1:
-        z -= 1
+    z = spans.index(k)
     coefs = get_coefs(U, i, j, z)
     if np.all(coefs == 0):
         return 0
     q = (u - knots[z]) / (knots[z + 1] - knots[z])
     # Horner's method
-    soma = 0
-    for k, ck in enumerate(coefs[::-1]):
-        soma *= q
-        soma += ck
-    return soma
+    return BasisFunction.horner_method(coefs, q)
 
 
 def binom(n: int, i: int):
@@ -47,55 +39,7 @@ def get_coefs(knotvector: Tuple[float], i: int, j: int, z: int):
     y = i + j - spans[z]
     if y < 0 or j < y:
         return np.zeros((j + 1), dtype="float64")
-    return speval_matrix(knotvector, j)[z, y]
-
-
-@cache
-def speval_matrix(knotvector: Tuple[float], reqdegree: int):
-    """
-    Given a knotvector, it has properties like
-        - number of points: npts
-        - polynomial degree: degree
-        - knots: A list of non-repeted knots
-        - spans: The span of each knot
-    This function returns a matrix of size
-        (m) x (j+1) x (j+1)
-    which
-        - m is the number of segments: len(knots)-1
-        - j is the requested degree
-    """
-    npts = KnotVector.find_npts(knotvector)
-    knots = KnotVector.find_knots(knotvector)
-    spans = np.zeros(len(knots), dtype="int16")
-    for i, knot in enumerate(knots):
-        spans[i] = KnotVector.find_span(knot, knotvector)
-    spans = tuple(spans)
-    j = reqdegree
-
-    ninter = len(knots) - 1
-    matrix = np.zeros((ninter, j + 1, j + 1), dtype="float64")
-    if j == 0:
-        matrix.fill(1)
-        return matrix
-    matrix_less1 = speval_matrix(knotvector, j - 1)
-    for y in range(j):
-        for z, sz in enumerate(spans[:-1]):
-            i = y + sz - j + 1
-            denom = knotvector[i + j] - knotvector[i]
-            if not denom:
-                continue
-
-            b0 = knotvector[i + j] - knots[z]
-            b1 = knots[z] - knots[z + 1]
-            matrix[z, y, :-1] += b0 * matrix_less1[z, y] / denom
-            matrix[z, y, 1:] += b1 * matrix_less1[z, y] / denom
-
-            a0 = knots[z] - knotvector[i]
-            a1 = knots[z + 1] - knots[z]
-            matrix[z, y + 1, :-1] += a0 * matrix_less1[z, y] / denom
-            matrix[z, y + 1, 1:] += a1 * matrix_less1[z, y] / denom
-
-    return matrix
+    return BasisFunction.speval_matrix(knotvector, j)[z, y]
 
 
 class LeastSquare:
@@ -215,10 +159,14 @@ class LeastSquare:
             # Integral of the functions in the interval [a, b]
             k0 = KnotVector.find_span(a, oldknotvect)
             k1 = KnotVector.find_span(a, newknotvect)
-            for i in range(oldnpts):
+            Nvalues.fill(0)
+            Mvalues.fill(0)
+            for y in range(olddegree + 1):
+                i = y + k0 - olddegree
                 for j, uj in enumerate(chebynodes):
                     Nvalues[i, j] = N(i, olddegree, k0, uj, oldknotvect)
-            for i in range(newnpts):
+            for y in range(newdegree + 1):
+                i = y + k1 - newdegree
                 for j, uj in enumerate(chebynodes):
                     Mvalues[i, j] = N(i, newdegree, k1, uj, newknotvect)
             A += np.einsum("k,ik,jk->ij", integrator, Nvalues, Nvalues)
@@ -295,7 +243,7 @@ class KnotVector:
         for knot in knotvector:
             if abs(knot - node) < 1e-9:
                 mult += 1
-        return mult
+        return int(mult)
 
     @staticmethod
     def find_knots(knotvector: Tuple[float]) -> Tuple[float]:
@@ -397,3 +345,60 @@ class KnotVector:
             newknotvect = (degree + 1) * [a] + middle + (degree + 1) * [b]
             retorno.append(newknotvect)
         return tuple(retorno)
+
+
+class BasisFunction:
+    @staticmethod
+    def horner_method(coefs: Tuple[float], value: float) -> float:
+        soma = 0
+        for ck in coefs[::-1]:
+            soma *= value
+            soma += ck
+        return soma
+
+    @staticmethod
+    def speval_matrix(knotvector: Tuple[float], reqdegree: int):
+        """
+        Given a knotvector, it has properties like
+            - number of points: npts
+            - polynomial degree: degree
+            - knots: A list of non-repeted knots
+            - spans: The span of each knot
+        This function returns a matrix of size
+            (m) x (j+1) x (j+1)
+        which
+            - m is the number of segments: len(knots)-1
+            - j is the requested degree
+        """
+        knots = KnotVector.find_knots(knotvector)
+        spans = np.zeros(len(knots), dtype="int16")
+        for i, knot in enumerate(knots):
+            spans[i] = KnotVector.find_span(knot, knotvector)
+        spans = tuple(spans)
+        j = reqdegree
+
+        ninter = len(knots) - 1
+        matrix = np.zeros((ninter, j + 1, j + 1), dtype="float64")
+        if j == 0:
+            matrix.fill(1)
+            return matrix
+        matrix_less1 = BasisFunction.speval_matrix(knotvector, j - 1)
+        for y in range(j):
+            for z, sz in enumerate(spans[:-1]):
+                i = y + sz - j + 1
+                denom = knotvector[i + j] - knotvector[i]
+                if not denom:
+                    continue
+                for k in range(j):
+                    matrix_less1[z][y][k] /= denom
+
+                a0 = knots[z] - knotvector[i]
+                a1 = knots[z + 1] - knots[z]
+                b0 = knotvector[i + j] - knots[z]
+                b1 = knots[z] - knots[z + 1]
+                for k in range(j):
+                    matrix[z][y][k] += b0 * matrix_less1[z][y][k]
+                    matrix[z][y][k + 1] += b1 * matrix_less1[z][y][k]
+                    matrix[z][y + 1][k] += a0 * matrix_less1[z][y][k]
+                    matrix[z][y + 1][k + 1] += a1 * matrix_less1[z][y][k]
+        return matrix

@@ -146,12 +146,18 @@ class TestBezier:
             matrix_dire = bezier(nodes_test)
             matrix_none = bezier[:](nodes_test)
             matrix_degr = bezier[:, degree](nodes_test)
+
             np.testing.assert_allclose(matrix_dire, matrix_degr)
             np.testing.assert_allclose(matrix_none, matrix_degr)
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(5)
-    @pytest.mark.dependency(depends=["TestBezier::test_evalfuncs_degree1"])
+    @pytest.mark.dependency(
+        depends=[
+            "TestBezier::test_evalfuncs_degree1",
+            "TestBezier::test_standard_index",
+        ]
+    )
     def test_singlevalues_degree1(self):
         knotvector = [0, 0, 1, 1]  # degree = 1, npts = 2
         bezier = Function(knotvector)
