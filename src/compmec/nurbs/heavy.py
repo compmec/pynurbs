@@ -130,17 +130,21 @@ class LeastSquare:
 
     @staticmethod
     def spline2spline(
-        oldknotvect: Tuple[float], newknotvect: Tuple[float]
+        oldvector: Tuple[float], newvector: Tuple[float]
     ) -> Tuple[np.ndarray]:
         """ """
-        oldknotvect = tuple(oldknotvect)
-        newknotvect = tuple(newknotvect)
-        olddegree = KnotVector.find_degree(oldknotvect)
-        newdegree = KnotVector.find_degree(newknotvect)
-        oldnpts = KnotVector.find_npts(oldknotvect)
-        newnpts = KnotVector.find_npts(newknotvect)
-        oldknots = KnotVector.find_knots(oldknotvect)
-        newknots = KnotVector.find_knots(newknotvect)
+        oldvector = tuple(oldvector)
+        olddegree = KnotVector.find_degree(oldvector)
+        oldnpts = KnotVector.find_npts(oldvector)
+        oldknots = KnotVector.find_knots(oldvector)
+        oldspans = [KnotVector.find_span(knot, oldvector) for knot in oldknots]
+
+        newvector = tuple(newvector)
+        newdegree = KnotVector.find_degree(newvector)
+        newnpts = KnotVector.find_npts(newvector)
+        newknots = KnotVector.find_knots(newvector)
+        newspans = [KnotVector.find_span(knot, newvector) for knot in newknots]
+
         allknots = list(set(oldknots + newknots))
         allknots.sort()
         nptsinteg = olddegree + newdegree + 3  # Number integration points
@@ -157,18 +161,30 @@ class LeastSquare:
         for a, b in zip(allknots[:-1], allknots[1:]):
             chebynodes = LeastSquare.chebyshev_nodes(nptsinteg, a, b)
             # Integral of the functions in the interval [a, b]
-            k0 = KnotVector.find_span(a, oldknotvect)
-            k1 = KnotVector.find_span(a, newknotvect)
+            span0 = KnotVector.find_span(a, oldvector)
+            span1 = KnotVector.find_span(a, newvector)
+            z0 = oldspans.index(span0)
+            z1 = newspans.index(span1)
+            oldmatrix = BasisFunction.speval_matrix(oldvector, olddegree)
+            newmatrix = BasisFunction.speval_matrix(newvector, newdegree)
             Nvalues.fill(0)
             Mvalues.fill(0)
+            chebynodes0to1 = LeastSquare.chebyshev_nodes(nptsinteg, 0, 1)
             for y in range(olddegree + 1):
-                i = y + k0 - olddegree
-                for j, uj in enumerate(chebynodes):
-                    Nvalues[i, j] = N(i, olddegree, k0, uj, oldknotvect)
+                i = y + span0 - olddegree
+                coefs = oldmatrix[z0, y]
+                for j, nodej in enumerate(chebynodes):
+                    nodej = (nodej - oldknots[z0]) / (oldknots[z0 + 1] - oldknots[z0])
+                    value = BasisFunction.horner_method(coefs, nodej)
+                    Nvalues[i, j] = value
+            chebynodes = LeastSquare.chebyshev_nodes(nptsinteg, a, b)
             for y in range(newdegree + 1):
-                i = y + k1 - newdegree
-                for j, uj in enumerate(chebynodes):
-                    Mvalues[i, j] = N(i, newdegree, k1, uj, newknotvect)
+                i = y + span1 - newdegree
+                coefs = newmatrix[z1, y]
+                for j, nodej in enumerate(chebynodes):
+                    nodej = (nodej - newknots[z1]) / (newknots[z1 + 1] - newknots[z1])
+                    value = BasisFunction.horner_method(coefs, nodej)
+                    Mvalues[i, j] = value
             A += np.einsum("k,ik,jk->ij", integrator, Nvalues, Nvalues)
             B += np.einsum("k,ik,jk->ij", integrator, Nvalues, Mvalues)
             C += np.einsum("k,ik,jk->ij", integrator, Mvalues, Mvalues)
