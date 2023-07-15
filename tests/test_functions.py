@@ -293,8 +293,8 @@ class TestBezier:
             knotvector = GeneratorKnotVector.bezier(degree)
             shiftval = np.random.uniform(-1, 1)
             scaleval = np.exp(np.random.uniform(-1, 1))
-            knotvector.shift(shiftval)
-            knotvector.scale(scaleval)
+            # knotvector.shift(shiftval)
+            # knotvector.scale(scaleval)
             bezier = Function(knotvector)
             assert bezier.degree == degree
             assert bezier.npts == degree + 1

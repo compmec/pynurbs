@@ -93,24 +93,31 @@ class FunctionEvaluator(Intface_Evaluator):
             self.__spans[k] = heavy.KnotVector.find_span(knot, tuple(self.__knotvector))
         self.__spans = tuple(self.__spans)
 
-    def compute_one_value(self, i: int, node: float, span: int) -> float:
-        j = self.__second_index
-        U = tuple(self.__knotvector)
-        if self.__weights is None:
-            return heavy.N(i, j, span, node, U)
-        return heavy.R(i, j, span, node, U, self.__weights)
+    def __compute_vector_spline(self, node: float, span: int) -> np.ndarray:
+        """
+        Given a 'u' float, it returns the vector with all Spline Basis Functions:
+        compute_vector(u, span) = [N_{0j}(u), N_{1j}(u), ..., N_{npts-1,j}(u)]
+        """
+        npts = self.__knotvector.npts
+        result = np.zeros(npts, dtype="float64")
+        z = self.__spans.index(span)
+        shifnode = (node - self.__knots[z]) / (self.__knots[z + 1] - self.__knots[z])
+        for y in range(self.__second_index + 1):
+            i = y + span - self.__second_index
+            for k in range(self.__second_index, -1, -1):
+                result[i] *= shifnode
+                result[i] += self.__matrix[z, y, k]
+        return result
 
     def compute_vector(self, node: float, span: int) -> np.ndarray:
         """
         Given a 'u' float, it returns the vector with all BasicFunctions:
         compute_vector(u, span) = [F_{0j}(u), F_{1j}(u), ..., F_{npts-1,j}(u)]
         """
-        npts = self.__knotvector.npts
-        result = np.zeros(npts, dtype="float64")
-        # for i in range(span, span+self.second_index):
-        for i in range(npts):
-            result[i] = self.compute_one_value(i, node, span)
-        return result
+        result = self.__compute_vector_spline(node, span)
+        if self.__weights is None:
+            return result
+        return self.__weights * result / np.inner(self.__weights, result)
 
     def compute_matrix(
         self, nodes: Tuple[float], spans: Union[int, np.ndarray]

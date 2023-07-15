@@ -28,20 +28,6 @@ def N(i: int, j: int, k: int, u: float, U: Tuple[float]) -> float:
     return soma
 
 
-def R(i: int, j: int, k: int, u: float, U: Tuple[float], w: Tuple[float]) -> float:
-    """
-    Returns the value of R_{ij}(u) in the interval [u_{k}, u_{k+1}]
-    """
-    Niju = N(i, j, k, u, U)
-    if Niju == 0:
-        return 0
-    npts = len(w)
-    soma = 0
-    for z in range(npts):
-        soma += w[z] * N(z, j, k, u, U)
-    return w[i] * Niju / soma
-
-
 def binom(n: int, i: int):
     """
     Returns binomial (n, i)
@@ -92,25 +78,23 @@ def speval_matrix(knotvector: Tuple[float], reqdegree: int):
         matrix.fill(1)
         return matrix
     matrix_less1 = speval_matrix(knotvector, j - 1)
-    for z, sz in enumerate(spans[:-1]):
-        for y in range(j + 1):
-            i = y + sz - j
+    for y in range(j):
+        for z, sz in enumerate(spans[:-1]):
+            i = y + sz - j + 1
+            denom = knotvector[i + j] - knotvector[i]
+            if not denom:
+                continue
 
-            denoa = knotvector[i + j] - knotvector[i]
-            if denoa and y > 0:
-                coefsNij = matrix_less1[z, y - 1, :]
-                a0 = knots[z] - knotvector[i]
-                a1 = knots[z + 1] - knots[z]
-                matrix[z, y, :-1] += a0 * coefsNij / denoa
-                matrix[z, y, 1:] += a1 * coefsNij / denoa
+            b0 = knotvector[i + j] - knots[z]
+            b1 = knots[z] - knots[z + 1]
+            matrix[z, y, :-1] += b0 * matrix_less1[z, y] / denom
+            matrix[z, y, 1:] += b1 * matrix_less1[z, y] / denom
 
-            denob = knotvector[i + j + 1] - knotvector[i + 1]
-            if denob and y < j:
-                coefsNij = matrix_less1[z, y, :]
-                b0 = knotvector[i + j + 1] - knots[z]
-                b1 = knots[z] - knots[z + 1]
-                matrix[z, y, :-1] += b0 * coefsNij / denob
-                matrix[z, y, 1:] += b1 * coefsNij / denob
+            a0 = knots[z] - knotvector[i]
+            a1 = knots[z + 1] - knots[z]
+            matrix[z, y + 1, :-1] += a0 * matrix_less1[z, y] / denom
+            matrix[z, y + 1, 1:] += a1 * matrix_less1[z, y] / denom
+
     return matrix
 
 
@@ -285,7 +269,7 @@ class KnotVector:
         n = KnotVector.find_npts(knotvector) - 1
         degree = KnotVector.find_degree(knotvector)
         if node == knotvector[n + 1]:  # Special case
-            return n + 1
+            return n
         low, high = degree, n + 1  # Do binary search
         mid = (low + high) // 2
         while True:
