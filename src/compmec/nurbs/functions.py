@@ -99,7 +99,7 @@ class FunctionEvaluator(Intface_Evaluator):
         compute_vector(u, span) = [N_{0j}(u), N_{1j}(u), ..., N_{npts-1,j}(u)]
         """
         npts = self.__knotvector.npts
-        result = [0] * npts
+        result = [0 * node] * npts
         z = self.__spans.index(span)
         denom = self.__knots[z + 1] - self.__knots[z]
         shifnode = (node - self.__knots[z]) / denom
@@ -107,7 +107,7 @@ class FunctionEvaluator(Intface_Evaluator):
             i = y + span - self.__second_index
             for k in range(self.__second_index, -1, -1):
                 result[i] *= shifnode
-                result[i] += self.__matrix[z, y, k]
+                result[i] += self.__matrix[z][y][k]
         return result
 
     def __compute_vector(self, node: float, span: int) -> np.ndarray:
@@ -166,7 +166,8 @@ class FunctionEvaluator(Intface_Evaluator):
         If i is slice, u is float -> 1D np.ndarray
         if i is slice, u is np.ndarray, ndim = k -> np.ndarray, ndim = k+1
         """
-        return self.__eval(nodes)[self.__first_index]
+        result = self.__eval(nodes)[self.__first_index]
+        return result
 
     def __call__(self, nodes: np.ndarray) -> np.ndarray:
         return self.eval(nodes)

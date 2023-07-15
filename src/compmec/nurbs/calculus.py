@@ -41,7 +41,7 @@ def difference_matrix(knotvector: Tuple[float]) -> np.ndarray:
 def derivate_curve(curve: Curve) -> Curve:
     if curve.degree == 0:
         knots = curve.knots
-        newknotvector = [knots[0], knots[-1]]
+        newknotvector = curve.knotvector.limits
         anypoint = curve.ctrlpoints[0]
         newctrlpoints = [0 * anypoint]
         return Curve(newknotvector, newctrlpoints)

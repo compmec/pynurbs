@@ -43,10 +43,12 @@ class TestBuild:
     @pytest.mark.dependency(depends=["TestBuild::test_failbuild"])
     def test_print(self):
         knotvector = GeneratorKnotVector.uniform(2, 4)
-        spline = Curve(knotvector)
-        str(spline)
-        spline.ctrlpoints = [2, 4, 3, 1]
-        str(spline)
+        rational = Curve(knotvector)
+        str(rational)
+        rational.ctrlpoints = [2, 4, 3, 1]
+        str(rational)
+        rational.weights = (2, 3, 1, 4)
+        str(rational)
 
     @pytest.mark.order(6)
     @pytest.mark.dependency(

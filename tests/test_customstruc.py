@@ -181,7 +181,7 @@ class TestBasisFunctions:
 
     @pytest.mark.order(7)
     @pytest.mark.timeout(1)
-    @pytest.mark.skip(reason="Needs correction")
+    # @pytest.mark.skip(reason="Needs correction")
     @pytest.mark.dependency(depends=["TestKnotVector::test_begin"])
     def test_creation(self):
         a, b = CustomFloat(0), CustomFloat(1)

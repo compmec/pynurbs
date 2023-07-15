@@ -4,22 +4,6 @@ from typing import Tuple
 import numpy as np
 
 
-def N(i: int, j: int, k: int, u: float, U: Tuple[float]) -> float:
-    """
-    Returns the value of N_{ij}(u) in the interval [u_{k}, u_{k+1}]
-    Remember that N_{i, j}(u) = 0   if  ( u not in [U[i], U[i+j+1]] )
-    """
-    knots = KnotVector.find_knots(U)
-    spans = [KnotVector.find_span(knot, U) for knot in knots]
-    z = spans.index(k)
-    coefs = get_coefs(U, i, j, z)
-    if np.all(coefs == 0):
-        return 0
-    q = (u - knots[z]) / (knots[z + 1] - knots[z])
-    # Horner's method
-    return BasisFunction.horner_method(coefs, q)
-
-
 def binom(n: int, i: int):
     """
     Returns binomial (n, i)
@@ -31,15 +15,6 @@ def binom(n: int, i: int):
     for j in range(i):
         prod *= (n - j) / (i - j)
     return int(prod)
-
-
-def get_coefs(knotvector: Tuple[float], i: int, j: int, z: int):
-    knots = KnotVector.find_knots(knotvector)
-    spans = [KnotVector.find_span(knot, knotvector) for knot in knots]
-    y = i + j - spans[z]
-    if y < 0 or j < y:
-        return np.zeros((j + 1), dtype="float64")
-    return BasisFunction.speval_matrix(knotvector, j)[z, y]
 
 
 class LeastSquare:
@@ -394,7 +369,8 @@ class BasisFunction:
         j = reqdegree
 
         ninter = len(knots) - 1
-        matrix = np.zeros((ninter, j + 1, j + 1), dtype="float64")
+        matrix = [[[0 * knots[0]] * (j + 1)] * (j + 1)] * ninter
+        matrix = np.array(matrix, dtype="object")
         if j == 0:
             matrix.fill(1)
             return matrix
@@ -403,8 +379,6 @@ class BasisFunction:
             for z, sz in enumerate(spans[:-1]):
                 i = y + sz - j + 1
                 denom = knotvector[i + j] - knotvector[i]
-                if not denom:
-                    continue
                 for k in range(j):
                     matrix_less1[z][y][k] /= denom
 

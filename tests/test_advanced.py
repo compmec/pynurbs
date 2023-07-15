@@ -17,7 +17,6 @@ from compmec.nurbs.curves import Curve
         "tests/test_functions.py::test_end",
         "tests/test_beziercurve.py::test_end",
         "tests/test_splinecurve.py::test_end",
-        "tests/test_rationalcurve.py::test_end",
         "tests/test_calculus.py::test_end",
     ],
     scope="session",
@@ -80,7 +79,6 @@ class TestProjection:
 
 class TestIntersection:
     @pytest.mark.order(8)
-    @pytest.mark.skip(reason="Needs correction of rational least square")
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
@@ -116,6 +114,7 @@ class TestIntersection:
 
     @pytest.mark.order(8)
     @pytest.mark.timeout(4)
+    @pytest.mark.skip(reason="Needs correction of rational least square")
     @pytest.mark.dependency(depends=["TestIntersection::test_begin"])
     def test_circle_and_circle(self):
         circlea = Curve([0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1])
@@ -124,10 +123,7 @@ class TestIntersection:
             (1, 0),
             (1, 2),
             (-1, 2),
-            (
-                -1,
-                0,
-            ),
+            (-1, 0),
             (-1, -2),
             (1, -2),
             (1, 0),
@@ -140,8 +136,6 @@ class TestIntersection:
         circleb.ctrlpoints = newctrlpoints
 
         inters = Intersection.curve_and_curve(circlea, circleb)
-        print("inrerst = ")
-        print(inters)
         assert inters == [(0, 0.5), (1, 0.5)]
 
     @pytest.mark.order(8)
