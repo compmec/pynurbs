@@ -108,8 +108,6 @@ def test_derivative_curve():
     basisfunc = Function(newknotvector)
 
     test_curve = calculus.derivate_curve(curve)
-    print(test_curve.knotvector)
-    print(test_curve.ctrlpoints)
 
 
 @pytest.mark.order(7)

@@ -609,7 +609,7 @@ class TestKnotOperations:
         knotvector = GeneratorKnotVector.random(degree, npts)
         ctrlpoints = np.random.uniform(-1, 1, npts)
         C = Curve(knotvector, ctrlpoints)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             C.knot_insert(["asd", 3, None])
         with pytest.raises(ValueError):
             C.knot_remove(0.5)

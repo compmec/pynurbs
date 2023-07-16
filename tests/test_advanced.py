@@ -101,9 +101,9 @@ class TestIntersection:
     @pytest.mark.dependency(depends=["TestIntersection::test_begin"])
     def test_curve_and_curve(self):
         beziera = Curve([0, 0, 1, 1])
-        beziera.ctrlpoints = np.array([(0, 0), (1, 1)])
+        beziera.ctrlpoints = np.array([(0, 0), (1, 1)], dtype="float64")
         bezierb = Curve([0, 0, 1, 1])
-        bezierb.ctrlpoints = np.array([(0, 1), (1, 0)])
+        bezierb.ctrlpoints = np.array([(0, 1), (1, 0)], dtype="float64")
 
         beziera.knot_insert([0.2])
         bezierb.knot_insert([0.7])

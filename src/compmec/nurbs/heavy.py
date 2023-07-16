@@ -392,3 +392,57 @@ class BasisFunction:
                     matrix[z][y + 1][k] += a0 * matrix_less1[z][y][k]
                     matrix[z][y + 1][k + 1] += a1 * matrix_less1[z][y][k]
         return matrix
+
+
+class Operations:
+    """
+    Contains algorithms to
+    * knot insertion,
+    * knot removal,
+    * degree increase
+    * degree decrease
+    """
+
+    def knot_increase_single(vector: Tuple[float], node: float, times: int) -> "Matrix":
+        oldnpts = KnotVector.find_npts(vector)
+        degree = KnotVector.find_degree(vector)
+        oldspan = KnotVector.find_span(node, vector)
+        oldmult = KnotVector.find_mult(node, vector)
+        one = node / node
+        newnpts = oldnpts + times
+        T = np.zeros((newnpts, oldnpts), dtype="object")
+        for i in range(oldspan - degree + 1):
+            T[i][i] = one
+        for i in range(oldspan - oldmult, oldnpts):
+            T[i + times][i] = one
+        if times != 1:
+            raise ValueError("We don't know yet")
+        for i in range(oldspan - degree + 1, oldspan + 1):
+            alpha = node - vector[i]
+            alpha /= vector[i + degree] - vector[i]
+            T[i][i] = alpha
+            T[i][i - 1] = 1 - alpha
+        return T
+
+    def knot_increase(vector: Tuple[float], nodes: Tuple[float]) -> "Matrix":
+        """
+        Returns the matrix T such Q = T @ P
+        """
+        setnodes = list(set(nodes))
+        setnodes.sort()
+        setnodes = tuple(setnodes)
+        oldnpts = KnotVector.find_npts(vector)
+        newnpts = oldnpts + len(nodes)
+        T = np.zeros((oldnpts, oldnpts), dtype="object")
+        for i in range(oldnpts):
+            T[i, i] = 1
+        for node in setnodes:
+            times = setnodes.count(node)
+            for i in range(times):
+                incT = Operations.knot_increase_single(vector, node, 1)
+                T = incT @ T
+        T = T.tolist()
+        for i in range(newnpts):
+            T[i] = tuple(T[i])
+        T = tuple(T)
+        return T

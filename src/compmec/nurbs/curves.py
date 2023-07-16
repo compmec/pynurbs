@@ -155,7 +155,7 @@ class BaseCurve(Intface_BaseCurve):
             error_msg = "For each control point P, it's needed operations"
             error_msg += "with floats like 1.0*P - 1.5*P + 3.1*P"
             raise ValueError(error_msg)
-        self.__ctrlpoints = list(value)
+        self.__ctrlpoints = tuple(value)
 
     def deepcopy(self) -> Curve:
         curve = self.__class__(self.knotvector)
@@ -168,8 +168,7 @@ class BaseCurve(Intface_BaseCurve):
         if newvector == self.knotvector:
             return
         if self.ctrlpoints is None:
-            self.__knotvector = newvector
-            return
+            return self.set_knotvector(newvector)
         oldvec, newvec = tuple(self.knotvector), tuple(newvector)
         T, E = heavy.LeastSquare.spline2spline(oldvec, newvec)
         error = np.moveaxis(self.ctrlpoints, 0, -1) @ E @ self.ctrlpoints
@@ -178,11 +177,28 @@ class BaseCurve(Intface_BaseCurve):
             error_msg = "Cannot update knotvector cause error is "
             error_msg += f" {error} > {tolerance}"
             raise ValueError(error_msg)
-        newctrlpoints = T @ self.ctrlpoints
-        self.__knotvector = newvector
-        self.ctrlpoints = newctrlpoints
+        self.set_knotvector(newvec)
+        self.apply_lineartrans(T)
+
+    def apply_lineartrans(self, matrix: np.ndarray):
+        matrix = np.array(matrix, dtype="object")
+        if self.ctrlpoints is not None:
+            newctrlpoints = []
+            for i, line in enumerate(matrix):
+                newctrlpoints.append(0 * self.ctrlpoints[0])
+                for j, point in enumerate(self.ctrlpoints):
+                    newctrlpoints[i] += line[j] * point
+            self.ctrlpoints = newctrlpoints
         if self.weights is not None:
-            self.weights = T @ self.weights
+            newweights = []
+            for i, line in enumerate(matrix):
+                newweights.append(0 * self.weights[0])
+                for j, weight in enumerate(self.weights):
+                    newweights[i] += line[j] * weight
+            self.weights = newweights
+
+    def set_knotvector(self, newknotvector: KnotVector):
+        self.__knotvector = KnotVector(newknotvector)
 
 
 class Curve(BaseCurve):
@@ -224,9 +240,12 @@ class Curve(BaseCurve):
         return np.moveaxis(matrix, 0, -1) @ self.ctrlpoints
 
     def knot_insert(self, nodes: Union[float, Tuple[float]]) -> None:
-        nodes = np.array(nodes, dtype="float64").flatten()
-        newknotvec = self.knotvector.deepcopy() + tuple(nodes)
-        self.update_knotvector(newknotvec)
+        nodes = np.array(nodes, dtype="object").flatten()
+        oldvector = tuple(self.knotvector)
+        newvector = tuple(self.knotvector.deepcopy() + tuple(nodes))
+        matrix = heavy.Operations.knot_increase(oldvector, nodes)
+        self.set_knotvector(newvector)
+        self.apply_lineartrans(matrix)
 
     def knot_remove(
         self, nodes: Union[float, Tuple[float]], tolerance: float = 1e-9
