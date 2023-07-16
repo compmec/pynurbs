@@ -182,20 +182,28 @@ class BaseCurve(Intface_BaseCurve):
 
     def apply_lineartrans(self, matrix: np.ndarray):
         matrix = np.array(matrix, dtype="object")
-        if self.ctrlpoints is not None:
-            newctrlpoints = []
+        oldweights = self.weights
+        if self.weights is None:
+            oldweights = [1] * len(matrix[0])
+            newweights = [1] * len(matrix)
+        else:
+            newweights = [0 * self.weights[0]] * len(matrix)
             for i, line in enumerate(matrix):
-                newctrlpoints.append(0 * self.ctrlpoints[0])
-                for j, point in enumerate(self.ctrlpoints):
-                    newctrlpoints[i] += line[j] * point
-            self.ctrlpoints = newctrlpoints
-        if self.weights is not None:
-            newweights = []
-            for i, line in enumerate(matrix):
-                newweights.append(0 * self.weights[0])
                 for j, weight in enumerate(self.weights):
                     newweights[i] += line[j] * weight
             self.weights = newweights
+        if self.ctrlpoints is not None:
+            newctrlpoints = []
+            oldctrlpoints = tuple(
+                [weight * point for point, weight in zip(self.ctrlpoints, oldweights)]
+            )
+            for i in range(len(matrix)):
+                newctrlpoints.append(0 * self.ctrlpoints[0])
+            for j, point in enumerate(oldctrlpoints):
+                for i, line in enumerate(matrix):
+                    newctrlpoints[i] += line[j] * point / newweights[i]
+
+            self.ctrlpoints = newctrlpoints
 
     def set_knotvector(self, newknotvector: KnotVector):
         self.__knotvector = KnotVector(newknotvector)

@@ -440,6 +440,7 @@ class Operations:
             for i in range(times):
                 incT = Operations.knot_increase_once(vector, node)
                 T = incT @ T
+                vector = KnotVector.insert_knots(vector, [node])
         T = T.tolist()
         for i in range(newnpts):
             T[i] = tuple(T[i])

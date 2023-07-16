@@ -154,7 +154,7 @@ class TestCircle:
 
 class TestInsKnotCircle:
     @pytest.mark.order(6)
-    @pytest.mark.skip(reason="Needs knot insertion correction")
+    # @pytest.mark.skip(reason="Needs knot insertion correction")
     @pytest.mark.dependency(depends=["TestCircle::test_end"])
     def test_begin(self):
         pass
@@ -167,8 +167,8 @@ class TestInsKnotCircle:
         ctrlpoints = [(1, 0), (1, 1), (0, 1)]
         weights = [1, 1, 2]
         curve = Curve(knotvector)
-        curve.ctrlpoints = np.array(ctrlpoints)
-        curve.weights = weights
+        curve.ctrlpoints = np.array(ctrlpoints, dtype="float64")
+        curve.weights = np.array(weights, dtype="float64")
 
         newcurve = curve.deepcopy()
         newcurve.knot_insert([0.5])
@@ -187,8 +187,8 @@ class TestInsKnotCircle:
         ctrlpoints = [(1, 0), (1, 1), (0, 1)]
         weights = [2, np.sqrt(2), 2]
         curve = Curve(knotvector)
-        curve.ctrlpoints = np.array(ctrlpoints)
-        curve.weights = weights
+        curve.ctrlpoints = np.array(ctrlpoints, dtype="float64")
+        curve.weights = np.array(weights, dtype="float64")
 
         newcurve = curve.deepcopy()
         newcurve.knot_insert([0.5])
@@ -212,8 +212,8 @@ class TestInsKnotCircle:
         ctrlpoints = [(1, 0), (1, 2), (-1, 2), (-1, 0)]
         weights = [3, 1, 1, 3]
         curve = Curve(knotvector)
-        curve.ctrlpoints = np.array(ctrlpoints)
-        curve.weights = weights
+        curve.ctrlpoints = np.array(ctrlpoints, dtype="float64")
+        curve.weights = np.array(weights, dtype="float64")
 
         newcurve = curve.deepcopy()
         newcurve.knot_insert([0.5])
@@ -237,8 +237,8 @@ class TestInsKnotCircle:
         ctrlpoints = [(1, 0), (1, 2), (-1, 2), (-1, 0), (-1, -2), (1, -2), (1, 0)]
         weights = [3, 1, 1, 3, 1, 1, 3]
         curve = Curve(knotvector)
-        curve.ctrlpoints = np.array(ctrlpoints)
-        curve.weights = weights
+        curve.ctrlpoints = np.array(ctrlpoints, dtype="float64")
+        curve.weights = np.array(weights, dtype="float64")
 
         newcurve = curve.deepcopy()
         newcurve.knot_insert([0.25, 0.75])
