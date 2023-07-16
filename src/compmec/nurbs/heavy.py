@@ -403,7 +403,8 @@ class Operations:
     * degree decrease
     """
 
-    def knot_increase_single(vector: Tuple[float], node: float, times: int) -> "Matrix":
+    def knot_increase_once(vector: Tuple[float], node: float) -> "Matrix":
+        times = 1
         oldnpts = KnotVector.find_npts(vector)
         degree = KnotVector.find_degree(vector)
         oldspan = KnotVector.find_span(node, vector)
@@ -415,8 +416,6 @@ class Operations:
             T[i][i] = one
         for i in range(oldspan - oldmult, oldnpts):
             T[i + times][i] = one
-        if times != 1:
-            raise ValueError("We don't know yet")
         for i in range(oldspan - degree + 1, oldspan + 1):
             alpha = node - vector[i]
             alpha /= vector[i + degree] - vector[i]
@@ -439,7 +438,7 @@ class Operations:
         for node in setnodes:
             times = setnodes.count(node)
             for i in range(times):
-                incT = Operations.knot_increase_single(vector, node, 1)
+                incT = Operations.knot_increase_once(vector, node)
                 T = incT @ T
         T = T.tolist()
         for i in range(newnpts):
