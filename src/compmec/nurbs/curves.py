@@ -273,8 +273,7 @@ class Curve(BaseCurve):
         """
         if nodes is None:
             nodes = self.knotvector.knots
-        umin, umax = self.knotvector[0], self.knotvector[1]
-        nodes = tuple(set(nodes) - set((umin, umax)))
+        nodes = tuple(set(nodes) - set(self.knotvector.limits))
         for knot in nodes:
             try:
                 while True:
@@ -290,6 +289,26 @@ class Curve(BaseCurve):
         newknotvec = self.knotvector.deepcopy()
         newknotvec.degree += times
         self.update_knotvector(newknotvec)
+
+    def clean(self, tolerance: float = 1e-9):
+        self.degree_clean(tolerance=tolerance)
+        self.knot_clean(tolerance=tolerance)
+        if self.weights is None:
+            return
+        # Try to reduce to spline
+        knotvector = tuple(self.knotvector)
+        weights = tuple(self.weights)
+        ctrlpoints = tuple(self.ctrlpoints)
+        T, E = heavy.LeastSquare.func2func(
+            knotvector, weights, knotvector, [1] * self.npts
+        )
+        currctrlpoints = [pti for wi, pti in zip(weights, ctrlpoints)]
+        error = currctrlpoints @ E @ currctrlpoints
+        newctrlpoints = T @ ctrlpoints
+        if error < tolerance:
+            self.ctrlpoints = T @ currctrlpoints
+            self.weights = None
+            self.clean(tolerance)
 
     def degree_decrease(
         self, times: Optional[int] = 1, tolerance: Optional[float] = 1e-9

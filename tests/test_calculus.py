@@ -15,11 +15,11 @@ from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
 @pytest.mark.order(7)
 @pytest.mark.dependency(
     depends=[
-        # "tests/test_knotspace.py::test_end",
-        # "tests/test_functions.py::test_end",
-        # "tests/test_beziercurve.py::test_end",
-        # "tests/test_splinecurve.py::test_end",
-        # "tests/test_rationalcurve.py::test_end",
+        "tests/test_knotspace.py::test_end",
+        "tests/test_functions.py::test_end",
+        "tests/test_beziercurve.py::test_end",
+        "tests/test_splinecurve.py::test_end",
+        "tests/test_rationalcurve.py::test_end",
     ],
     scope="session",
 )
@@ -81,6 +81,7 @@ class TestBezier:
     @pytest.mark.order(7)
     @pytest.mark.dependency(
         depends=[
+            "TestBezier::test_begin",
             "TestBezier::test_derivative_bezier_degree1",
             "TestBezier::test_derivative_bezier_degree2",
             "TestBezier::test_derivative_bezier_degree3",
@@ -111,6 +112,74 @@ def test_derivative_curve():
 
 
 @pytest.mark.order(7)
-@pytest.mark.dependency(depends=["test_begin", "test_derivative_curve"])
+@pytest.mark.dependency(depends=["test_begin"])
+def test_multcurve():
+    knotvector = [0, 0, 1, 1]
+    curve = Curve(knotvector)
+    curve.ctrlpoints = [1, 0]  # curve(u) = 1-u
+
+    goodknotvector = [0, 0, 0, 1, 1, 1]
+    goodcurve = Curve(goodknotvector)
+    goodcurve.ctrlpoints = [1, 0, 0]  # curve(u) = (1-u)^2
+
+    testcurve = calculus.MathOperations.mult_spline(curve, curve)
+    assert testcurve == goodcurve
+
+    knotvectora = [0, 0, 0, 1, 1, 1]
+    knotvectorb = [0, 0, 1, 1]
+    curvea = Curve(knotvectora)
+    curveb = Curve(knotvectorb)
+    curvea.ctrlpoints = [1, 0, 0]  # curvea(u) = (1-u)^2
+    curveb.ctrlpoints = [1, 0]  # curveb(u) = 1-u
+
+    goodknotvector = [0, 0, 0, 0, 1, 1, 1, 1]
+    goodcurve = Curve(goodknotvector)
+    goodcurve.ctrlpoints = [1, 0, 0, 0]  # curve(u) = (1-u)^3
+
+    testcurve = calculus.MathOperations.mult_spline(curvea, curveb)
+    assert testcurve == goodcurve
+
+
+@pytest.mark.order(7)
+@pytest.mark.dependency(depends=["test_begin"])
+def test_divcurve():
+    knotvectora = [0, 0, 0, 1, 1, 1]
+    ctrlpointsa = [1, 0, 0]
+    knotvectorb = [0, 0, 0, 1, 1, 1]
+    ctrlpointsb = [1, 1, 2]
+    curvea = Curve(knotvectora, ctrlpointsa)
+    curveb = Curve(knotvectorb, ctrlpointsb)
+
+    goodcurve = Curve([0, 0, 0, 1, 1, 1])
+    goodcurve.ctrlpoints = ctrlpointsa
+    goodcurve.weights = ctrlpointsb
+
+    testcurve = calculus.MathOperations.div_spline(curvea, curveb, False)
+    assert testcurve == goodcurve
+
+    knotvectora = [0, 0, 0, 1, 1, 1]
+    curvea = Curve(knotvectora)
+    curvea.ctrlpoints = [1, 0, 0]  # curve(u) = (1-u)^2
+
+    knotvectorb = [0, 0, 1, 1]
+    curveb = Curve(knotvectorb)
+    curveb.ctrlpoints = [1, 0]  # curve(u) = (1-u)
+
+    goodcurve = curveb.deepcopy()
+    testcurve = calculus.MathOperations.div_spline(curvea, curveb)
+
+    assert testcurve == goodcurve
+
+
+@pytest.mark.order(7)
+@pytest.mark.dependency(
+    depends=[
+        "test_begin",
+        "TestBezier::test_end",
+        "test_derivative_curve",
+        "test_multcurve",
+        "test_divcurve",
+    ]
+)
 def test_end():
     pass

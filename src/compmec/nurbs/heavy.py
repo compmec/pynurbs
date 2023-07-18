@@ -17,6 +17,43 @@ def binom(n: int, i: int):
     return int(prod)
 
 
+def eval_spline_nodes(knotvector: Tuple[float], nodes: Tuple[float]):
+    """
+    Returns a matrix M of which M_{ij} = N_{i,p}(node_j)
+    """
+    degree = KnotVector.find_degree(knotvector)
+    npts = KnotVector.find_npts(knotvector)
+    knots = KnotVector.find_knots(knotvector)
+    spans = [KnotVector.find_span(knot, knotvector) for knot in knots]
+    result = np.zeros((npts, len(nodes)), dtype="float64")
+    matrix3d = BasisFunction.speval_matrix(knotvector, degree)
+    for j, node in enumerate(nodes):
+        span = KnotVector.find_span(node, knotvector)
+        ind = spans.index(span)
+        shifnode = node - knots[ind]
+        shifnode /= knots[ind + 1] - knots[ind]
+        for y in range(degree + 1):
+            i = y + span - degree
+            coefs = matrix3d[ind, y]
+            value = BasisFunction.horner_method(coefs, shifnode)
+            result[i, j] = value
+    return result
+
+
+def eval_rational_nodes(
+    knotvector: Tuple[float], weights: Tuple[float], nodes: Tuple[float]
+):
+    """
+    Returns a matrix M of which M_{ij} = N_{i,p}(node_j)
+    """
+    rationalvals = eval_spline_nodes(knotvector, nodes)
+    for j, node in enumerate(nodes):
+        denom = np.inner(rationalvals[:, j], weights)
+        for i, weight in enumerate(weights):
+            rationalvals[i, j] *= weight / denom
+    return rationalvals
+
+
 class LeastSquare:
     """
     Given two hypotetic curves C0 and C1, which are associated
@@ -107,62 +144,45 @@ class LeastSquare:
     def spline2spline(
         oldvector: Tuple[float], newvector: Tuple[float]
     ) -> Tuple[np.ndarray]:
+        oldnpts = KnotVector.find_npts(oldvector)
+        newnpts = KnotVector.find_npts(newvector)
+        return LeastSquare.func2func(oldvector, [1] * oldnpts, newvector, [1] * newnpts)
+
+    @staticmethod
+    def func2func(
+        oldvector: Tuple[float],
+        oldweights: Tuple[float],
+        newvector: Tuple[float],
+        newweights: Tuple[float],
+    ) -> Tuple[np.ndarray]:
         """ """
         oldvector = tuple(oldvector)
         olddegree = KnotVector.find_degree(oldvector)
         oldnpts = KnotVector.find_npts(oldvector)
         oldknots = KnotVector.find_knots(oldvector)
-        oldspans = [KnotVector.find_span(knot, oldvector) for knot in oldknots]
 
         newvector = tuple(newvector)
         newdegree = KnotVector.find_degree(newvector)
         newnpts = KnotVector.find_npts(newvector)
         newknots = KnotVector.find_knots(newvector)
-        newspans = [KnotVector.find_span(knot, newvector) for knot in newknots]
 
         allknots = list(set(oldknots + newknots))
         allknots.sort()
         nptsinteg = olddegree + newdegree + 3  # Number integration points
         integrator = LeastSquare.integrator_array(nptsinteg)
 
-        # Here we will store the values of N and M
-        # for a certain interval [a, b], which will change
-        Nvalues = np.empty((oldnpts, nptsinteg), dtype="float64")
-        Mvalues = np.empty((newnpts, nptsinteg), dtype="float64")
-
-        A = np.zeros((oldnpts, oldnpts), dtype="float64")  # N*N
-        B = np.zeros((oldnpts, newnpts), dtype="float64")  # N*M
-        C = np.zeros((newnpts, newnpts), dtype="float64")  # M*M
-        for a, b in zip(allknots[:-1], allknots[1:]):
-            chebynodes = LeastSquare.chebyshev_nodes(nptsinteg, a, b)
+        A = np.zeros((oldnpts, oldnpts), dtype="float64")  # F*F
+        B = np.zeros((oldnpts, newnpts), dtype="float64")  # F*G
+        C = np.zeros((newnpts, newnpts), dtype="float64")  # G*G
+        chebynodes0to1 = LeastSquare.chebyshev_nodes(nptsinteg)
+        for start, end in zip(allknots[:-1], allknots[1:]):
+            chebynodes = start + (end - start) * chebynodes0to1
             # Integral of the functions in the interval [a, b]
-            span0 = KnotVector.find_span(a, oldvector)
-            span1 = KnotVector.find_span(a, newvector)
-            z0 = oldspans.index(span0)
-            z1 = newspans.index(span1)
-            oldmatrix = BasisFunction.speval_matrix(oldvector, olddegree)
-            newmatrix = BasisFunction.speval_matrix(newvector, newdegree)
-            Nvalues.fill(0)
-            Mvalues.fill(0)
-            chebynodes0to1 = LeastSquare.chebyshev_nodes(nptsinteg, 0, 1)
-            for y in range(olddegree + 1):
-                i = y + span0 - olddegree
-                coefs = oldmatrix[z0, y]
-                for j, nodej in enumerate(chebynodes):
-                    nodej = (nodej - oldknots[z0]) / (oldknots[z0 + 1] - oldknots[z0])
-                    value = BasisFunction.horner_method(coefs, nodej)
-                    Nvalues[i, j] = value
-            chebynodes = LeastSquare.chebyshev_nodes(nptsinteg, a, b)
-            for y in range(newdegree + 1):
-                i = y + span1 - newdegree
-                coefs = newmatrix[z1, y]
-                for j, nodej in enumerate(chebynodes):
-                    nodej = (nodej - newknots[z1]) / (newknots[z1 + 1] - newknots[z1])
-                    value = BasisFunction.horner_method(coefs, nodej)
-                    Mvalues[i, j] = value
-            A += np.einsum("k,ik,jk->ij", integrator, Nvalues, Nvalues)
-            B += np.einsum("k,ik,jk->ij", integrator, Nvalues, Mvalues)
-            C += np.einsum("k,ik,jk->ij", integrator, Mvalues, Mvalues)
+            Fvalues = eval_rational_nodes(oldvector, oldweights, chebynodes)
+            Gvalues = eval_rational_nodes(newvector, newweights, chebynodes)
+            A += np.einsum("k,ik,jk->ij", integrator, Fvalues, Fvalues)
+            B += np.einsum("k,ik,jk->ij", integrator, Fvalues, Gvalues)
+            C += np.einsum("k,ik,jk->ij", integrator, Gvalues, Gvalues)
 
         T = np.linalg.solve(C, B.T)
         E = A - B @ T
