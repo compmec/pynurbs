@@ -38,9 +38,9 @@ def difference_matrix(knotvector: Tuple[float]) -> np.ndarray:
     return matrix
 
 
-def derivate_curve(curve: Curve) -> Curve:
+def derivate_spline_curve(curve: Curve) -> Curve:
+    assert curve.weights is None
     if curve.degree == 0:
-        knots = curve.knots
         newknotvector = curve.knotvector.limits
         anypoint = curve.ctrlpoints[0]
         newctrlpoints = [0 * anypoint]
@@ -55,8 +55,25 @@ def derivate_curve(curve: Curve) -> Curve:
     return newcurve
 
 
+def derivate_curve(curve: Curve) -> Curve:
+    if curve.weights is None:
+        return derivate_spline_curve(curve)
+    numer = curve.deepcopy()
+    numer.ctrlpoints = [pt / wi for pt, wi in zip(curve.ctrlpoints, curve.weights)]
+    numer.weights = None
+    denom = Curve(curve.knotvector)
+    denom.ctrlpoints = curve.weights
+
+    result_pt0 = derivate_spline_curve(numer)
+    result_pt0 = MathOperations.div_spline(result_pt0, denom)
+    result_pt1 = derivate_spline_curve(denom)
+    result_pt1 = MathOperations.mult_spline(result_pt1, numer)
+    result_pt1 = MathOperations.div_spline(result_pt1, denom)
+    return MathOperations.add_rationals(result_pt0, -result_pt1)
+
+
 class MathOperations:
-    def sum_spline(curvea: Curve, curveb: Curve, simplify: bool = True) -> Curve:
+    def add_spline(curvea: Curve, curveb: Curve, simplify: bool = True) -> Curve:
         knotvectc = curvea.knotvector | curveb.knotvector
         curveacopy = curvea.deepcopy()
         curveacopy.update_knotvector(knotvectc)
@@ -143,3 +160,66 @@ class MathOperations:
         if simplify:
             curveacopy.clean()
         return curveacopy
+
+    def add_rationals(curvea: Curve, curveb: Curve, simplify: bool = True) -> Curve:
+        if curvea.weights is None and curveb.weights is None:
+            return MathOperations.add_spline(curvea, curveb, simplify)
+        numa = curvea.deepcopy()
+        numb = curveb.deepcopy()
+        if curvea.weights is None:
+            dena = Curve([0, 1], [1])
+        else:
+            numa.ctrlpoints = [
+                pt * wi for pt, wi in zip(curvea.ctrlpoints, curvea.weights)
+            ]
+            numa.weights = None
+            dena = Curve(curvea.knotvector)
+            dena.ctrlpoints = curvea.weights
+        if curveb.weights is None:
+            denb = Curve([0, 1], [1])
+        else:
+            numb.ctrlpoints = [
+                pt * wi for pt, wi in zip(curveb.ctrlpoints, curveb.weights)
+            ]
+            numb.weights = None
+            denb = Curve(curveb.knotvector)
+            denb.ctrlpoints = curveb.weights
+
+        num_pt0 = MathOperations.mult_spline(numa, denb)
+        num_pt1 = MathOperations.mult_spline(numb, dena)
+        numerat = MathOperations.add_spline(num_pt0, num_pt1)
+        denomin = MathOperations.mult_spline(dena, denb)
+        result = MathOperations.div_spline(numerat, denomin)
+        if simplify:
+            result.clean()
+        return result
+
+    def mult_rationals(curvea: Curve, curveb: Curve, simplify: bool = True) -> Curve:
+        if curvea.weights is None and curveb.weights is None:
+            return MathOperations.div_spline(curvea, curveb, simplify)
+        numa = curvea.deepcopy()
+        if curvea.weights is None:
+            dena = Curve([0, 1], [1])
+        if curveb.weights is None:
+            curveb.weights = [1] * curveb.npts
+        numa = curvea.deepcopy()
+        numa.ctrlpoints = tuple(
+            [wi * pti for wi, pti in zip(curvea.weights, curvea.ctrlpoints)]
+        )
+        numa.weights = None
+        numb = curveb.deepcopy()
+        numb.ctrlpoints = tuple(
+            [wi * pti for wi, pti in zip(curveb.weights, curveb.ctrlpoints)]
+        )
+        numb.weights = None
+        dena = Curve(curvea.knotvector)
+        dena.ctrlpoints = curvea.weights
+        denb = Curve(curveb.knotvector)
+        denb.ctrlpoints = curveb.weights
+
+        multnumanumb = MathOperations.mult_spline(numa, numb)
+        multdenadenb = MathOperations.mult_spline(dena, denb)
+        result = MathOperations.div_spline(multnumanumb, multdenadenb)
+        if simplify:
+            result.clean()
+        return result
