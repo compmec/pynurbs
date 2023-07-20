@@ -144,8 +144,8 @@ class BaseCurve(Intface_BaseCurve):
         except Exception:
             raise ValueError
         if len(value) != self.npts:
-            error_msg = "The number of control points must be the same as"
-            error_msg += " degrees of freedom of KnotVector.\n"
+            error_msg = f"The number of control points ({len(value)}) must be "
+            error_msg += f"the same as npts of KnotVector ({self.knotvector.npts})\n"
             error_msg += f"  knotvector.npts = {self.npts}"
             error_msg += f"  len(ctrlpoints) = {len(value)}"
             raise ValueError(error_msg)
@@ -201,7 +201,9 @@ class BaseCurve(Intface_BaseCurve):
                 newctrlpoints.append(0 * self.ctrlpoints[0])
             for j, point in enumerate(oldctrlpoints):
                 for i, line in enumerate(matrix):
-                    newctrlpoints[i] += line[j] * point / newweights[i]
+                    newpoint = line[j] * point
+                    newpoint /= newweights[i]
+                    newctrlpoints[i] += newpoint
 
             self.ctrlpoints = newctrlpoints
 
@@ -346,19 +348,19 @@ class Curve(BaseCurve):
         nodes |= set([self.knotvector[0], self.knotvector[-1]])
         nodes = list(nodes)
         nodes.sort()
-        newvector = self.knotvector.deepcopy()
+        newknots = []
         for node in nodes[1:-1]:
-            mult = newvector.mult(node)
-            newvector += (self.degree - mult) * [node]
+            mult = self.knotvector.mult(node)
+            newknots += (self.degree - mult + 1) * [node]
         copycurve = self.deepcopy()
-        copycurve.update_knotvector(newvector)
+        copycurve.knot_insert(newknots)
         allknotvec = heavy.KnotVector.split(tuple(self.knotvector), nodes)
         listcurves = [0] * len(allknotvec)
         for i, newknotvec in enumerate(allknotvec):
             lowerind = copycurve.knotvector.span(nodes[i]) - self.degree
             upperind = lowerind + len(newknotvec) - self.degree - 1
-            newctrlpts = copycurve.ctrlpoints[lowerind:upperind]
-            newcurve = self.__class__(newknotvec, newctrlpts)
+            newcurve = self.__class__(newknotvec)
+            newcurve.ctrlpoints = copycurve.ctrlpoints[lowerind:upperind]
             newcurve.knot_clean()
             listcurves[i] = newcurve
         del copycurve

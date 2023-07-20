@@ -447,6 +447,7 @@ class Operations:
         """
         Returns the matrix T such Q = T @ P
         """
+        nodes = tuple(nodes)
         setnodes = list(set(nodes))
         setnodes.sort()
         setnodes = tuple(setnodes)
@@ -456,7 +457,7 @@ class Operations:
         for i in range(oldnpts):
             T[i, i] = 1
         for node in setnodes:
-            times = setnodes.count(node)
+            times = nodes.count(node)
             for i in range(times):
                 incT = Operations.knot_increase_once(vector, node)
                 T = incT @ T
