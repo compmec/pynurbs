@@ -181,30 +181,27 @@ class BaseCurve(Intface_BaseCurve):
         self.apply_lineartrans(T)
 
     def apply_lineartrans(self, matrix: np.ndarray):
-        matrix = np.array(matrix, dtype="object")
-        oldweights = self.weights
+        """ """
+        if matrix is None:
+            raise ValueError
+        matrix = np.array(matrix)
         if self.weights is None:
-            oldweights = [1] * len(matrix[0])
-            newweights = [1] * len(matrix)
-        else:
-            newweights = [0 * self.weights[0]] * len(matrix)
-            for i, line in enumerate(matrix):
-                for j, weight in enumerate(self.weights):
-                    newweights[i] += line[j] * weight
-            self.weights = newweights
-        if self.ctrlpoints is not None:
-            newctrlpoints = []
-            oldctrlpoints = tuple(
-                [weight * point for point, weight in zip(self.ctrlpoints, oldweights)]
-            )
-            for i in range(len(matrix)):
-                newctrlpoints.append(0 * self.ctrlpoints[0])
-            for j, point in enumerate(oldctrlpoints):
-                for i, line in enumerate(matrix):
-                    newpoint = line[j] * point
-                    newpoint /= newweights[i]
-                    newctrlpoints[i] += newpoint
+            self.ctrlpoints = matrix @ self.ctrlpoints
+            return
+        oldweights = self.weights
+        self.weights = matrix @ oldweights
 
+        if self.ctrlpoints is not None:
+            oldctrlpoints = [point for point in self.ctrlpoints]
+            for i, weight in enumerate(oldweights):
+                oldctrlpoints[i] *= weight
+            newctrlpoints = []
+            for i, line in enumerate(matrix):
+                newctrlpoints.append(0 * self.ctrlpoints[0])
+                for j, point in enumerate(oldctrlpoints):
+                    newpoint = line[j] * point
+                    newpoint /= self.weights[i]
+                    newctrlpoints[i] += newpoint
             self.ctrlpoints = newctrlpoints
 
     def set_knotvector(self, newknotvector: KnotVector):
@@ -252,7 +249,7 @@ class Curve(BaseCurve):
     def knot_insert(self, nodes: Tuple[float]) -> None:
         nodes = tuple(nodes)
         oldvector = tuple(self.knotvector)
-        newvector = tuple(self.knotvector.deepcopy() + tuple(nodes))
+        newvector = tuple(self.knotvector + tuple(nodes))
         matrix = heavy.Operations.knot_insert(oldvector, nodes)
         self.set_knotvector(newvector)
         self.apply_lineartrans(matrix)
@@ -284,11 +281,14 @@ class Curve(BaseCurve):
     def degree_increase(self, times: Optional[int] = 1):
         """
         The same as mycurve.degree += times
-        But this function forces the degree reductions without looking the error
         """
-        newknotvec = self.knotvector.deepcopy()
-        newknotvec.degree += times
-        self.update_knotvector(newknotvec)
+        oldvector = tuple(self.knotvector)
+        matrix = heavy.Operations.degree_increase(oldvector, times)
+        nodes = self.knotvector.knots
+        newnodes = times * nodes
+        newvector = heavy.KnotVector.insert_knots(oldvector, newnodes)
+        self.set_knotvector(newvector)
+        self.apply_lineartrans(matrix)
 
     def clean(self, tolerance: float = 1e-9):
         self.degree_clean(tolerance=tolerance)
@@ -340,12 +340,7 @@ class Curve(BaseCurve):
         if nodes is None:
             nodes = self.knotvector.knots
         nodes = tuple(nodes)
-        print("spliting nodes = ")
-        print(nodes)
         matrices = heavy.Operations.split_curve(vector, nodes)
-        print("matrices = ")
-        for matrix in matrices:
-            print(matrix)
         newvectors = heavy.KnotVector.split(vector, nodes)
         newcurves = []
         for newvector, matrix in zip(newvectors, matrices):

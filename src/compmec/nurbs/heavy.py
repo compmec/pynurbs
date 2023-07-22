@@ -143,7 +143,7 @@ class LeastSquare:
     @staticmethod
     def spline2spline(
         oldvector: Tuple[float], newvector: Tuple[float]
-    ) -> Tuple[np.ndarray]:
+    ) -> Tuple["Matrix2D"]:
         oldnpts = KnotVector.find_npts(oldvector)
         newnpts = KnotVector.find_npts(newvector)
         return LeastSquare.func2func(oldvector, [1] * oldnpts, newvector, [1] * newnpts)
@@ -463,7 +463,7 @@ class Operations:
             matrices.append(newmatrix)
         return matrices
 
-    def knot_insert_once(vector: Tuple[float], node: float) -> "Matrix":
+    def knot_insert_once(vector: Tuple[float], node: float) -> "Matrix2D":
         """
         Given the knotvector and a node to be inserted, this function
         returns a matrix of transformation T of control points
@@ -482,19 +482,24 @@ class Operations:
         oldmult = KnotVector.find_mult(node, vector)
         one = node / node
         newnpts = oldnpts + times
-        T = np.zeros((newnpts, oldnpts), dtype="object")
+        matrix = np.zeros((newnpts, oldnpts), dtype="object")
         for i in range(oldspan - degree + 1):
-            T[i][i] = one
+            matrix[i, i] = one
         for i in range(oldspan - oldmult, oldnpts):
-            T[i + times][i] = one
+            matrix[i + times, i] = one
         for i in range(oldspan - degree + 1, oldspan + 1):
             alpha = node - vector[i]
             alpha /= vector[i + degree] - vector[i]
-            T[i][i] = alpha
-            T[i][i - 1] = 1 - alpha
-        return T
+            matrix[i, i] = alpha
+            matrix[i, i - 1] = 1 - alpha
 
-    def knot_insert(vector: Tuple[float], nodes: Tuple[float]) -> "Matrix":
+        matrix = matrix.tolist()
+        for i, line in enumerate(matrix):
+            matrix[i] = tuple(line)
+        matrix = tuple(matrix)
+        return matrix
+
+    def knot_insert(vector: Tuple[float], nodes: Tuple[float]) -> "Matrix2D":
         """
         Given the knotvector and a node to be inserted, this function
         returns a matrix of transformation T of control points
@@ -507,32 +512,123 @@ class Operations:
             [Q] = [T] @ [P]
         """
         nodes = tuple(nodes)
-        setnodes = list(set(nodes))
-        setnodes.sort()
-        setnodes = tuple(setnodes)
+        setnodes = tuple(sorted(set(nodes)))
         oldnpts = KnotVector.find_npts(vector)
         newnpts = oldnpts + len(nodes)
-        T = np.zeros((oldnpts, oldnpts), dtype="object")
-        for i in range(oldnpts):
-            T[i, i] = 1
+        matrix = np.eye(oldnpts, dtype="object")
         for node in setnodes:
             times = nodes.count(node)
             for i in range(times):
                 incT = Operations.knot_insert_once(vector, node)
-                T = incT @ T
+                matrix = incT @ matrix
                 vector = KnotVector.insert_knots(vector, [node])
-        T = T.tolist()
-        for i in range(newnpts):
-            T[i] = tuple(T[i])
-        T = tuple(T)
-        return T
+
+        matrix = matrix.tolist()
+        for i, line in enumerate(matrix):
+            matrix[i] = tuple(matrix[i])
+        matrix = tuple(matrix)
+        return matrix
+
+    def knot_remove(vector: Tuple[float], nodes: Tuple[float]) -> "Matrix2D":
+        """ """
+        nodes = tuple(nodes)
+        newvector = KnotVector.remove_knots(vector, nodes)
+        matrix, _ = LeastSquare.spline2spline(vector, newvector)
+
+        matrix = matrix.tolist()
+        for i, line in enumerate(matrix):
+            matrix[i] = tuple(line)
+        matrix = tuple(matrix)
+        return matrix
+
+    def degree_increase_bezier(vector: Tuple[float], times: int) -> "Matrix2D":
+        """
+        Given a bezier curve A(u) of degree p, we want a new bezier curve B(u)
+        of degree (p+t) such B(u) = A(u) for every u
+        Then, this function returns the matrix of transformation T
+            [Q] = [T] @ [P]
+            A(u) = sum_{i=0}^{p} B_{i,p}(u) * P_i
+            B(u) = sum_{i=0}^{p+t} B_{i,p+t}(u) * Q_i
+        """
+        degree = KnotVector.find_degree(vector)
+        if times > 1:
+            matrix = np.eye(degree + 1, dtype="object")
+            for i in range(times):
+                elevateonce = Operations.degree_increase_bezier(vector, 1)
+                matrix = elevateonce @ matrix
+                vector = KnotVector.insert_knots(vector, [vector[0], vector[-1]])
+            return matrix
+        matrix = np.zeros((degree + 2, degree + 1), dtype="object")
+        matrix[0, 0] = 1
+        for i in range(1, degree + 1):
+            alpha = i / (degree + 1)
+            matrix[i, i - 1] = alpha
+            matrix[i, i] = 1 - alpha
+        matrix[degree + 1, degree] = 1
+
+        matrix = matrix.tolist()
+        for i, line in enumerate(matrix):
+            matrix[i] = tuple(line)
+        matrix = tuple(matrix)
+        return matrix
+
+    def degree_increase(vector: Tuple[float], times: int) -> "Matrix2D":
+        """
+        Given a curve A(u) associated with control points P, we want
+        to do a degree elevation
+        """
+        degree = KnotVector.find_degree(vector)
+        nodes = KnotVector.find_knots(vector)
+        newvectors = KnotVector.split(vector, nodes)
+        matrices = Operations.split_curve(vector, nodes)
+
+        bigmatrix = []
+        for splitedvector, splitedmatrix in zip(newvectors, matrices):
+            splitedmatrix = np.array(splitedmatrix)
+            elevatedmatrix = Operations.degree_increase_bezier(splitedvector, times)
+            newmatrix = elevatedmatrix @ splitedmatrix
+            for linemat in newmatrix:
+                bigmatrix.append(linemat)
+        bigmatrix = np.array(bigmatrix)
+
+        insertednodes = []
+        for node in nodes:
+            mult = KnotVector.find_mult(node, vector)
+            insertednodes += (degree + 1 - mult) * [node]
+        bigvector = KnotVector.insert_knots(vector, insertednodes)
+        incbigvector = KnotVector.insert_knots(bigvector, times * nodes)
+        removematrix = Operations.knot_remove(incbigvector, insertednodes)
+
+        bigmatrix = np.array(bigmatrix)
+        removematrix = np.array(removematrix)
+        finalmatrix = removematrix @ bigmatrix
+
+        finalmatrix = finalmatrix.tolist()
+        for i, line in enumerate(finalmatrix):
+            finalmatrix[i] = tuple(line)
+        finalmatrix = tuple(finalmatrix)
+        return finalmatrix
+
+    def matrix_transformation(vectora: Tuple[float], vectorb: Tuple[float]):
+        """
+        Given two curve A(u) and B(u), associated with controlpoints P and Q
+        this function returns the transformation matrix T such
+            [P] = [T] @ [Q]
+        It's only possible when the vectorB is a transformation of vectorA
+        by using knot_insertion and degree_increase
+
+        # Caution
+            - We suppose the limits of vectors are the same
+            - We suppose degreeB >= degreeA
+        """
+        pass
 
 
 class MathOperations:
     @staticmethod
     def sum_spline_curve(
         vectora: Tuple[float], vectorb: Tuple[float]
-    ) -> Tuple["Matrix"]:
+    ) -> Tuple["Matrix2D"]:
         """
         Given two spline curves, A(u) and B(u), such
             A(u) = sum_{i=0}^{n} N_i(u) * P_i
