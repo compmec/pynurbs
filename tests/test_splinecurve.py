@@ -952,6 +952,41 @@ class TestOthers:
         curve.knot_remove([1.5], None)  # No tolerance
 
     @pytest.mark.order(5)
+    @pytest.mark.timeout(10)
+    @pytest.mark.dependency(depends=["TestOthers::test_begin"])
+    def test_fractions(self):
+        from fractions import Fraction as frac
+
+        knotvector = GeneratorKnotVector.uniform(3, 10, frac)
+        curve = Curve(knotvector)
+
+        denmax = 100000
+        ctrlpoints = []
+        for i in range(curve.npts):
+            newpoint = frac(np.random.randint(denmax)) / denmax
+            ctrlpoints.append(newpoint)
+        curve.ctrlpoints = ctrlpoints
+
+        nsample = 100
+        usample = [frac(i, nsample) for i in range(nsample + 1)]
+        curvevalues = curve(usample)
+        for value in curvevalues:
+            assert type(value) is frac
+
+        ninserts = 5
+        for i in range(ninserts):
+            knots = curve.knotvector.knots
+            while True:
+                newknot = frac(np.random.randint(denmax + 1)) / denmax
+                if newknot not in knots:
+                    break
+            curve.knot_insert([newknot])
+            for i, ui in enumerate(usample):
+                value = curve(ui)
+                assert type(value) is frac
+                assert value == curvevalues[i]
+
+    @pytest.mark.order(5)
     @pytest.mark.dependency(
         depends=["TestOthers::test_begin", "TestOthers::test_others"]
     )

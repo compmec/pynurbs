@@ -157,7 +157,7 @@ class BaseCurve(Intface_BaseCurve):
             error_msg += f"  knotvector.npts = {self.npts}"
             error_msg += f"  len(ctrlpoints) = {len(newpoints)}"
             raise ValueError(error_msg)
-        
+
         self.__ctrlpoints = tuple(newpoints)
 
     def deepcopy(self) -> Curve:
