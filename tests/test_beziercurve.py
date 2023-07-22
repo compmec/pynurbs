@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from fractions import Fraction as frac
+
 import numpy as np
 import pytest
 

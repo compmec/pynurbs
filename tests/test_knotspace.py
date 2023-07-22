@@ -144,7 +144,7 @@ def test_findspans_single():
         U.span(-0.1)  # Outside interval
     with pytest.raises(ValueError):
         U.span(1.1)  # Outside interval
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         U.span("asd")  # Not a number
 
 
@@ -171,7 +171,7 @@ def test_findmult_single():
         U.mult(-0.1)  # Outside interval
     with pytest.raises(ValueError):
         U.mult(1.1)  # Outside interval
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         U.mult("asd")  # Not a number
 
 
@@ -634,6 +634,8 @@ def test_fractions():
 
     knotvect = [frac(0), frac(1, 5), frac(2, 5), frac(3, 5), frac(4, 5), frac(1)]
     knotvect = KnotVector(knotvect)
+    assert knotvect.degree == 0
+    assert knotvect.npts == 5
     for i, knot in enumerate(knotvect):
         assert type(knot) is frac
     assert knotvect[0] == 0
@@ -642,6 +644,12 @@ def test_fractions():
     assert float(knotvect[3]) == 0.6
     assert float(knotvect[4]) == 0.8
     assert knotvect[5] == 1
+
+    knotvect = GeneratorKnotVector.uniform(1, 5, frac)
+    assert knotvect.degree == 1
+    assert knotvect.npts == 5
+    for knot in knotvect:
+        assert type(knot) is frac
 
 
 @pytest.mark.order(2)

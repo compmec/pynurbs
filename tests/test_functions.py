@@ -750,11 +750,29 @@ class TestOthers:
             bezier[0, "asd"]
 
     @pytest.mark.order(3)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(depends=["TestBezier::test_creation"])
+    def test_fractions(self):
+        from fractions import Fraction as frac
+
+        bezier = Function([frac(0), frac(0), frac(1), frac(1)])
+
+        assert type(bezier[0](0)) is frac
+        assert type(bezier[1](0)) is frac
+        assert type(bezier[0](1)) is frac
+        assert type(bezier[1](1)) is frac
+        assert type(bezier[0](frac(1, 2))) is frac
+        assert type(bezier[1](frac(1, 2))) is frac
+        assert type(bezier[0](0.5)) is float
+        assert type(bezier[1](0.5)) is float
+
+    @pytest.mark.order(3)
     @pytest.mark.dependency(
         depends=[
             "TestOthers::test_print",
             "TestOthers::test_specific_cases",
             "TestOthers::test_fail_getitem_index",
+            "TestOthers::test_fractions",
         ]
     )
     def test_end(self):

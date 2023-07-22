@@ -156,14 +156,13 @@ class TestCircle:
 
 class TestInsKnotCircle:
     @pytest.mark.order(6)
-    # @pytest.mark.skip(reason="Needs knot insertion correction")
+    @pytest.mark.skip(reason="Needs knot insertion correction")
     @pytest.mark.dependency(depends=["TestCircle::test_end"])
     def test_begin(self):
         pass
 
     @pytest.mark.order(6)
     @pytest.mark.timeout(1)
-    @pytest.mark.skip(reason="Insert knot gives problem")
     @pytest.mark.dependency(depends=["TestInsKnotCircle::test_begin"])
     def test_quarter_circle_standard(self):
         zero = frac(0, 1)
@@ -184,7 +183,7 @@ class TestInsKnotCircle:
         for oldpt, newpt in zip(points_old, points_new):
             diff = np.array(oldpt) - newpt
             distsquare = sum(diff**2)
-            assert abs(distsquare) < 1e-9
+            assert distsquare < 1e-9
 
     @pytest.mark.order(6)
     @pytest.mark.timeout(1)

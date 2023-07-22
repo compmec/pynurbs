@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 
@@ -196,7 +196,7 @@ class KnotVector(Intface_KnotVector):
         """
         Moves every knot by an amount `value`
         """
-        value = float(value)
+        float(value)  # Verify if it's a number
         newvector = tuple([knoti + value for knoti in self])
         return self.__update_vector(newvector)
 
@@ -204,7 +204,7 @@ class KnotVector(Intface_KnotVector):
         """
         Multiply every knot by amount `value`
         """
-        value = float(value)
+        float(value)  # Verify if it's a number
         newvector = tuple([knoti * value for knoti in self])
         return self.__update_vector(newvector)
 
@@ -216,44 +216,94 @@ class KnotVector(Intface_KnotVector):
         self.scale(1 / self[-1])
         return self
 
-    def span(self, nodes: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
+    def __validate_node(self, node: float):
+        """
+        Private method of to verify if a node is
+        - Is a number
+        - inside the interval
+        """
+        if isinstance(node, (str, tuple, list)):
+            raise TypeError
+        float(node)  # Verify if it's a number
+        if node < self[0] or self[-1] < node:
+            msg = f"{node} outside interval [{self[0]}, {self[-1]}]"
+            raise ValueError(msg)
+
+    def __span(self, nodes: Tuple[float]) -> Tuple[int]:
+        """
+        Private method of self.span, doesn't raise errors
+        """
+        spans = []
+        vector = tuple(self)
+        for node in nodes:
+            newspan = heavy.KnotVector.find_span(node, vector)
+            spans.append(newspan)
+        return tuple(spans)
+
+    def span(self, nodes: Union[float, Tuple[float]]) -> Union[int, Tuple[int]]:
         """
         Finds the index position of
         """
-        nodes = np.array(nodes, dtype="float64")
-        if np.any(nodes < self[0]) or np.any(self[-1] < nodes):
-            raise ValueError("Nodes outside interval knotvector")
-        flatnodes = nodes.flatten()
-        flatspans = np.empty(flatnodes.shape, dtype="int16")
-        for i, node in enumerate(flatnodes):
-            flatspans[i] = heavy.KnotVector.find_span(node, tuple(self))
-        return flatspans.reshape(nodes.shape)
+        onevalue = True
+        try:
+            iter(nodes)
+            onevalue = False
+        except TypeError:
+            nodes = (nodes,)
+        for node in nodes:
+            self.__validate_node(node)  # may raise error
+        spans = self.__span(nodes)
+        return spans[0] if onevalue else spans
 
-    def mult(self, nodes: Union[float, np.ndarray]) -> Union[int, np.ndarray]:
+    def __mult(self, nodes: Tuple[float]) -> Tuple[int]:
+        mults = []
+        vector = tuple(self)
+        for node in nodes:
+            newmult = heavy.KnotVector.find_mult(node, vector)
+            mults.append(newmult)
+        return tuple(mults)
+
+    def mult(self, nodes: Union[float, Tuple[float]]) -> Union[int, Tuple[int]]:
         """
         Counts how many times a node is inside the knotvector
         """
-        nodes = np.array(nodes, dtype="float64")
-        if np.any(nodes < self[0]) or np.any(self[-1] < nodes):
-            raise ValueError("Nodes outside interval knotvector")
-        flatnodes = nodes.flatten()
-        flatspans = np.empty(flatnodes.shape, dtype="int16")
-        for i, node in enumerate(flatnodes):
-            flatspans[i] = heavy.KnotVector.find_mult(node, tuple(self))
-        return flatspans.reshape(nodes.shape)
+        onevalue = True
+        try:
+            iter(nodes)
+            onevalue = False
+        except TypeError:
+            nodes = (nodes,)
+        for node in nodes:
+            self.__validate_node(node)  # may raise error
+        mults = self.__mult(nodes)
+        return mults[0] if onevalue else mults
 
 
 class GeneratorKnotVector:
     @staticmethod
-    def bezier(degree: int) -> KnotVector:
+    def bezier(degree: int, cls: Optional[type] = None) -> KnotVector:
+        """
+        Returns a knotvector for a bezier curve.
+        The parameter ```cls``` is good if you want your knotvector
+        to be of a certain type
+        """
         ValidationKnotVector.degree_npts(degree, degree + 1)
-        return KnotVector((degree + 1) * [0] + (degree + 1) * [1])
+        cls = cls if cls else int
+        knotvector = (degree + 1) * [cls(0)] + (degree + 1) * [cls(1)]
+        return KnotVector(knotvector)
 
     @staticmethod
-    def uniform(degree: int, npts: int) -> KnotVector:
+    def uniform(degree: int, npts: int, cls: Optional[type] = None) -> KnotVector:
+        """
+        Creates a equally distributed knotvector between [0, 1]
+        """
         ValidationKnotVector.degree_npts(degree, npts)
-        weights = np.ones(npts - degree)
-        knotvector = GeneratorKnotVector.weight(degree, weights)
+        cls = cls if cls else int
+        nintknots = npts - degree - 1
+        knotvector = degree * [cls(0)]
+        knotvector += [cls(i) for i in range(nintknots + 2)]
+        knotvector += degree * [cls(nintknots + 1)]
+        knotvector = KnotVector(knotvector)
         knotvector.normalize()
         return knotvector
 
@@ -281,4 +331,6 @@ class GeneratorKnotVector:
         ValidationKnotVector.degree_npts(degree, npts)
         listknots = list(np.cumsum(weights))
         knotvector = (degree + 1) * [0] + listknots + degree * [listknots[-1]]
-        return KnotVector(knotvector)
+        knotvector = KnotVector(knotvector)
+        knotvector.normalize()
+        return knotvector

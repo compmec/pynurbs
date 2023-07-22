@@ -121,55 +121,58 @@ class FunctionEvaluator(Intface_Evaluator):
         return self.__weights * result / np.inner(self.__weights, result)
 
     def __compute_matrix(
-        self, nodes: Tuple[float], spans: Union[int, np.ndarray]
+        self, nodes: Tuple[float], spans: Tuple[int]
     ) -> Tuple[Tuple[float]]:
         """
         Receives an 1D array of nodes, and returns a 2D array.
         nodes.shape = (len(nodes), )
         result.shape = (npts, len(nodes))
         """
+        nodes = tuple(nodes)
         npts = self.__knotvector.npts
-        if isinstance(nodes[0], (int, float, np.floating)):
-            result = np.empty((npts, len(nodes)), dtype="float64")
-        else:
-            result = [[0] * len(nodes)] * npts
+        matrix = np.empty((npts, len(nodes)), dtype="object")
         for j, (nodej, spanj) in enumerate(zip(nodes, spans)):
             values = self.__compute_vector(nodej, spanj)
             for i in range(npts):
-                result[i][j] = values[i]
-        for i in range(npts):
-            result[i] = tuple(result[i])
-        return tuple(result)
+                matrix[i][j] = values[i]
+        matrix = matrix.tolist()
+        for i, line in enumerate(matrix):
+            matrix[i] = tuple(line)
+        return tuple(matrix)
 
-    def __eval(self, nodes: Union[float, Tuple[float]]) -> np.ndarray:
+    def __eval(self, nodes: Tuple[float]) -> Tuple[Tuple[float]]:
         """
         Private and unprotected method of eval
         """
-        nodes = np.array(nodes, dtype="object")
-        flat_nodes = tuple(nodes.flatten())
-        if isinstance(flat_nodes[0], (int, float, np.floating)):
-            nodes = np.array(nodes, dtype="float64")
-            flat_nodes = np.array(flat_nodes, dtype="float64")
-        flat_spans = self.__knotvector.span(flat_nodes)
-        flat_spans = tuple(flat_spans)
-        result = self.__compute_matrix(flat_nodes, flat_spans)
-        newshape = [self.__knotvector.npts] + list(np.array(nodes).shape)
-        result = np.reshape(result, newshape)
-        if not isinstance(flat_nodes[0], (int, float, np.floating)):
-            return result
-        return np.array(result, dtype="float64")
+        nodes = tuple(nodes)
+        spans = self.__knotvector.span(nodes)
+        matrix = self.__compute_matrix(nodes, spans)
+        return matrix
 
-    def eval(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+    def eval(
+        self, nodes: Union[float, Tuple[float]]
+    ) -> Union[float, Tuple[float], Tuple[Tuple[float]]]:
         """
         If i is integer, u is float -> float
-        If i is integer, u is np.ndarray, ndim = k -> np.ndarray, ndim = k
-        If i is slice, u is float -> 1D np.ndarray
-        if i is slice, u is np.ndarray, ndim = k -> np.ndarray, ndim = k+1
+        If i is integer, u is Tuple[float], ndim = k -> np.ndarray, ndim = k
+        If i is slice, u is float -> Tuple[float]
+        if i is slice, u is Tuple[float], ndim = k -> Tuple[Tuple[float]], ndim = k+1
         """
-        result = self.__eval(nodes)[self.__first_index]
+        singlenode = True
+        try:
+            iter(nodes)
+            singlenode = False
+        except TypeError:
+            nodes = (nodes,)
+        matrix = self.__eval(nodes)
+        if singlenode:
+            matrix = tuple([ri[0] for ri in matrix])
+        result = matrix[self.__first_index]
         return result
 
-    def __call__(self, nodes: np.ndarray) -> np.ndarray:
+    def __call__(
+        self, nodes: Union[float, Tuple[float]]
+    ) -> Union[float, Tuple[float], Tuple[Tuple[float]]]:
         return self.eval(nodes)
 
 
