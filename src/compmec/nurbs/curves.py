@@ -249,18 +249,16 @@ class Curve(BaseCurve):
         matrix = tempfunction(nodes)
         return np.moveaxis(matrix, 0, -1) @ self.ctrlpoints
 
-    def knot_insert(self, nodes: Union[float, Tuple[float]]) -> None:
-        nodes = np.array(nodes, dtype="object").flatten()
+    def knot_insert(self, nodes: Tuple[float]) -> None:
+        nodes = tuple(nodes)
         oldvector = tuple(self.knotvector)
         newvector = tuple(self.knotvector.deepcopy() + tuple(nodes))
-        matrix = heavy.Operations.knot_increase(oldvector, nodes)
+        matrix = heavy.Operations.knot_insert(oldvector, nodes)
         self.set_knotvector(newvector)
         self.apply_lineartrans(matrix)
 
-    def knot_remove(
-        self, nodes: Union[float, Tuple[float]], tolerance: float = 1e-9
-    ) -> None:
-        nodes = np.array(nodes, dtype="float64").flatten()
+    def knot_remove(self, nodes: Tuple[float], tolerance: float = 1e-9) -> None:
+        nodes = tuple(nodes)
         newknotvec = self.knotvector.deepcopy() - tuple(nodes)
         self.update_knotvector(newknotvec, tolerance)
 
@@ -270,8 +268,8 @@ class Curve(BaseCurve):
         """
         Remove all unnecessary knots.
         If no nodes are given, it tries to remove all internal knots
-        If removing the knot the error is bigger than the tolerance,
-        nothing happens
+        Nothing happens if removing error by removing certain knot is
+        bigger than the tolerance.
         """
         if nodes is None:
             nodes = self.knotvector.knots
@@ -279,7 +277,7 @@ class Curve(BaseCurve):
         for knot in nodes:
             try:
                 while True:
-                    self.knot_remove(knot, tolerance)
+                    self.knot_remove((knot,), tolerance)
             except ValueError:
                 pass
 
@@ -304,11 +302,9 @@ class Curve(BaseCurve):
         T, E = heavy.LeastSquare.func2func(
             knotvector, weights, knotvector, [1] * self.npts
         )
-        currctrlpoints = [pti for wi, pti in zip(weights, ctrlpoints)]
-        error = currctrlpoints @ E @ currctrlpoints
-        newctrlpoints = T @ ctrlpoints
+        error = ctrlpoints @ E @ ctrlpoints
         if error < tolerance:
-            self.ctrlpoints = T @ currctrlpoints
+            self.ctrlpoints = T @ ctrlpoints
             self.weights = None
             self.clean(tolerance)
 
@@ -326,7 +322,7 @@ class Curve(BaseCurve):
     def degree_clean(self, tolerance: float = 1e-9):
         """
         Reduces au maximum the degree of the curve received the tolerance.
-        If the reduced degree error is bigger than the tolerance, nothing happen
+        If the reduced degree error is bigger than the tolerance, nothing happens
         """
         try:
             while True:
@@ -334,34 +330,29 @@ class Curve(BaseCurve):
         except ValueError:
             pass
 
-    def split(self, nodes: Optional[Union[float, np.ndarray]] = None) -> Tuple[Curve]:
+    def split(self, nodes: Optional[Tuple[float]] = None) -> Tuple[Curve]:
         """
         Separate the current spline at specified knots
         If no arguments are given, it splits at every knot and
             returns a list of bezier curves
         """
-        if nodes is None:  # split into beziers
-            if self.degree + 1 == self.npts:  # already bezier
-                return (self.deepcopy(),)
-            return self.split(self.knots)
-        nodes = set(np.array(nodes, dtype="float64").flatten())
-        nodes |= set([self.knotvector[0], self.knotvector[-1]])
-        nodes = list(nodes)
-        nodes.sort()
-        newknots = []
-        for node in nodes[1:-1]:
-            mult = self.knotvector.mult(node)
-            newknots += (self.degree - mult + 1) * [node]
-        copycurve = self.deepcopy()
-        copycurve.knot_insert(newknots)
-        allknotvec = heavy.KnotVector.split(tuple(self.knotvector), nodes)
-        listcurves = [0] * len(allknotvec)
-        for i, newknotvec in enumerate(allknotvec):
-            lowerind = copycurve.knotvector.span(nodes[i]) - self.degree
-            upperind = lowerind + len(newknotvec) - self.degree - 1
-            newcurve = self.__class__(newknotvec)
-            newcurve.ctrlpoints = copycurve.ctrlpoints[lowerind:upperind]
-            newcurve.knot_clean()
-            listcurves[i] = newcurve
-        del copycurve
-        return tuple(listcurves)
+        vector = tuple(self.knotvector)
+        if nodes is None:
+            nodes = self.knotvector.knots
+        nodes = tuple(nodes)
+        print("spliting nodes = ")
+        print(nodes)
+        matrices = heavy.Operations.split_curve(vector, nodes)
+        print("matrices = ")
+        for matrix in matrices:
+            print(matrix)
+        newvectors = heavy.KnotVector.split(vector, nodes)
+        newcurves = []
+        for newvector, matrix in zip(newvectors, matrices):
+            matrix = np.array(matrix)
+            newcurve = Curve(newvector)
+            newcurve.ctrlpoints = matrix @ self.ctrlpoints
+            if self.weights is not None:
+                newcurve.weights = matrix @ self.weights
+            newcurves.append(newcurve)
+        return tuple(newcurves)

@@ -481,7 +481,7 @@ class TestKnotOperations:
         Corig = Curve(Uorig, P)
         assert Corig.degree == degree
         assert Corig.npts == npts
-        Corig.knot_insert(knot)
+        Corig.knot_insert([knot])
         assert Corig.degree == degree
         assert Corig.npts == npts + 1
 
@@ -520,7 +520,7 @@ class TestKnotOperations:
         Corig = Curve(Uorig, P)
         assert Corig.degree == degree
         assert Corig.npts == npts
-        Corig.knot_remove(knot)
+        Corig.knot_remove([knot])
         assert Corig.degree == degree
         assert Corig.npts == npts - 1
 
@@ -547,8 +547,8 @@ class TestKnotOperations:
 
             umin, umax = knotvector[0], knotvector[-1]
             knot = np.random.uniform(umin, umax)
-            curve.knot_insert(knot)
-            curve.knot_remove(knot)
+            curve.knot_insert([knot])
+            curve.knot_remove([knot])
 
             assert curve == Curve(knotvector, ctrlpoints)
 
@@ -566,7 +566,7 @@ class TestKnotOperations:
         assert U.npts == 4
         P = np.random.uniform(-1, 1, (4, 2))
         curve = Curve(U, P)
-        curve.knot_insert(0.5)
+        curve.knot_insert([0.5])
         curve.knot_clean()
         assert curve.knotvector == U
 
@@ -587,7 +587,7 @@ class TestKnotOperations:
             curve = Curve(knotvector, P)
             umin, umax = knotvector[0], knotvector[-1]
             knot = np.random.uniform(umin, umax)
-            curve.knot_insert(knot)
+            curve.knot_insert([knot])
             curve.knot_clean()
             assert curve.knotvector == knotvector
 
@@ -611,7 +611,7 @@ class TestKnotOperations:
         C = Curve(knotvector, ctrlpoints)
         with pytest.raises(TypeError):
             C.knot_insert(["asd", 3, None])
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             C.knot_remove(0.5)
 
         U = [0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1]  # deg=3, npt=7
@@ -659,8 +659,8 @@ class TestSplitUnite:
         P = np.random.uniform(-1, 1, U.npts)
         C = Curve(U, P)
         assert len(C.split()) == 2
-        assert len(C.split(0.5)) == 2
-        assert len(C.split(0.25)) == 2
+        assert len(C.split([0.5])) == 2
+        assert len(C.split([0.25])) == 2
         assert len(C.split([0.25, 0.75])) == 3
         assert C == Curve(U, P)
 
@@ -668,8 +668,8 @@ class TestSplitUnite:
         P = np.random.uniform(-1, 1, U.npts)
         C = Curve(U, P)
         assert len(C.split()) == 4
-        assert len(C.split(0.5)) == 2
-        assert len(C.split(0.25)) == 2
+        assert len(C.split([0.5])) == 2
+        assert len(C.split([0.25])) == 2
         assert len(C.split([0.25, 0.75])) == 3
         assert C == Curve(U, P)
 
@@ -783,7 +783,7 @@ class TestSplitUnite:
         curve1 = Curve(U1, P1)
 
         newcurve = curve0 | curve1  # Concatenate
-        curves = newcurve.split(0.5)
+        curves = newcurve.split([0.5])
         assert curves[0] == curve0
         assert curves[1] == curve1
 
@@ -941,11 +941,15 @@ class TestOthers:
         curve.ctrlpoints = np.random.uniform(-1, 1, curve.npts)
         curve.degree_increase(1)
         curve.degree_decrease(1)
-        curve.knot_insert(1.5)
-        curve.knot_remove(1.5)
-        with pytest.raises(ValueError):
+        curve.knot_insert([1.5])
+        curve.knot_remove([1.5])
+        with pytest.raises(TypeError):
+            curve.knot_insert(1.5)
+        with pytest.raises(TypeError):
             curve.knot_remove(1.5)
-        curve.knot_remove(1.5, None)  # No tolerance
+        with pytest.raises(ValueError):
+            curve.knot_remove([1.5])
+        curve.knot_remove([1.5], None)  # No tolerance
 
     @pytest.mark.order(5)
     @pytest.mark.dependency(
@@ -965,6 +969,7 @@ class TestOthers:
         "TestSplitUnite::test_end",
         "TestDegreeOperations::test_end",
         "TestSumSubtract::test_end",
+        "TestOthers::test_others",
     ]
 )
 def test_end():

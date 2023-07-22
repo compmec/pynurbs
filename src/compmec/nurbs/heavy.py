@@ -423,7 +423,58 @@ class Operations:
     * degree decrease
     """
 
-    def knot_increase_once(vector: Tuple[float], node: float) -> "Matrix":
+    def split_curve(vector: Tuple[float], nodes: Tuple[float]):
+        """
+        Breaks curves in the nodes
+
+        Given a curve A(u) defined in a interval [a, b] and
+        associated with control points P, this function breaks
+        A(u) into m curves A_{0}, ..., A_{m}, which m is the
+        number of nodes.
+
+        # INPUT
+            - vector: The knotvector
+            - nodes: The places to split the curves
+
+        # OUTPUT
+            - matrices: (m+1) transformation matrix
+
+        # Cautions:
+            - If the extremities are in nodes, they are ignored
+            - Repeted nodes are ignored, [0.5, 0.5] is the same as [0.5]
+        """
+        degree = KnotVector.find_degree(vector)
+        nodes = set(nodes)  # Remove repeted nodes
+        nodes -= set([vector[0], vector[-1]])  # Take out extremities
+        nodes = tuple(nodes)
+        manynodes = []
+        for node in nodes:
+            mult = KnotVector.find_mult(node, vector)
+            manynodes += [node] * (degree + 1 - mult)
+        bigvector = KnotVector.insert_knots(vector, manynodes)
+        bigmatrix = Operations.knot_insert(vector, manynodes)
+        newvectors = KnotVector.split(vector, nodes)
+        matrices = []
+        for newvector in newvectors:
+            span = KnotVector.find_span(newvector[0], bigvector)
+            lowerind = span - degree
+            upperind = lowerind + len(newvector) - degree - 1
+            newmatrix = bigmatrix[lowerind:upperind]
+            matrices.append(newmatrix)
+        return matrices
+
+    def knot_insert_once(vector: Tuple[float], node: float) -> "Matrix":
+        """
+        Given the knotvector and a node to be inserted, this function
+        returns a matrix of transformation T of control points
+
+        Let
+            A(u) = sum_i N_i(u) * P_i
+            B(u) = sum_j N_j(u) * Q_j
+
+        This function returns T such
+            [Q] = [T] @ [P]
+        """
         times = 1
         oldnpts = KnotVector.find_npts(vector)
         degree = KnotVector.find_degree(vector)
@@ -443,9 +494,17 @@ class Operations:
             T[i][i - 1] = 1 - alpha
         return T
 
-    def knot_increase(vector: Tuple[float], nodes: Tuple[float]) -> "Matrix":
+    def knot_insert(vector: Tuple[float], nodes: Tuple[float]) -> "Matrix":
         """
-        Returns the matrix T such Q = T @ P
+        Given the knotvector and a node to be inserted, this function
+        returns a matrix of transformation T of control points
+
+        Let
+            A(u) = sum_i N_i(u) * P_i
+            B(u) = sum_j N_j(u) * Q_j
+
+        This function returns T such
+            [Q] = [T] @ [P]
         """
         nodes = tuple(nodes)
         setnodes = list(set(nodes))
@@ -459,7 +518,7 @@ class Operations:
         for node in setnodes:
             times = nodes.count(node)
             for i in range(times):
-                incT = Operations.knot_increase_once(vector, node)
+                incT = Operations.knot_insert_once(vector, node)
                 T = incT @ T
                 vector = KnotVector.insert_knots(vector, [node])
         T = T.tolist()
@@ -467,3 +526,34 @@ class Operations:
             T[i] = tuple(T[i])
         T = tuple(T)
         return T
+
+
+class MathOperations:
+    @staticmethod
+    def sum_spline_curve(
+        vectora: Tuple[float], vectorb: Tuple[float]
+    ) -> Tuple["Matrix"]:
+        """
+        Given two spline curves, A(u) and B(u), such
+            A(u) = sum_{i=0}^{n} N_i(u) * P_i
+            B(u) = sum_{j=0}^{m} N_j(u) * Q_j
+        It's wantted the curve C(u) such
+            C(u) = A(u) + B(u) forall u
+        It means, computing the new knotvector and newcontrol points
+            C(u) = sum_{k=0}^{k} N_{k} * R_k
+        But instead, we return matrix [Ma] and [Mb] such
+            [R] = [Ma] * [P] + [Mb] * [Q]
+
+        # INPUT
+            - vectora: The knotvector of curve A
+            - vectorb: The knotvector of curve B
+
+        # OUTPUT
+            - matrixa: Matrix of transformation of points A
+            - matrixb: Matrix of transformation of points B
+
+        # Caution:
+            - We suppose the vectora and vectorb limits are equal
+            - We suppose the curves has same degree
+        """
+        vectorc = KnotVector.unite_vectors(vectora, vectorb)
