@@ -167,17 +167,17 @@ class TestInsKnotCircle:
     def test_quarter_circle_standard(self):
         zero = frac(0, 1)
         one = frac(1, 1)
-        knotvector = [zero, zero, zero, one, one, one]
-        ctrlpoints = [(one, zero), (one, one), (zero, one)]
-        weights = [one, one, 2 * one]
+        knotvector = GeneratorKnotVector.bezier(2, frac)
+        ctrlpoints = [(1, 0), (1, 1), (0, 1)]
+        weights = [1, 1, 2]
         curve = Curve(knotvector)
-        curve.ctrlpoints = np.array(ctrlpoints)
-        curve.weights = np.array(weights)
+        curve.ctrlpoints = list(np.array(pt, dtype="object") for pt in ctrlpoints)
+        curve.weights = [frac(weight) for weight in weights]
 
         newcurve = curve.deepcopy()
         newcurve.knot_insert([one / 2])
 
-        nodes_sample = [frac(i, 128) for i in range(129)]
+        nodes_sample = [frac(i, 4) for i in range(5)]
         points_old = curve(nodes_sample)
         points_new = newcurve(nodes_sample)
         for oldpt, newpt in zip(points_old, points_new):

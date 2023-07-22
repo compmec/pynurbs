@@ -52,11 +52,11 @@ class TestInitCurve:
         ctrlpoints = np.random.uniform(-1, 1, npts + 1)
         with pytest.raises(ValueError):
             Curve(knotvector, ctrlpoints)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             Curve(knotvector, "asd")
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             Curve(knotvector, "asdefghjk")
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             Curve(knotvector, 1)
 
     @pytest.mark.order(5)

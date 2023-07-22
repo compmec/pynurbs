@@ -135,27 +135,30 @@ class BaseCurve(Intface_BaseCurve):
         self.__weights = tuple(value)
 
     @ctrlpoints.setter
-    def ctrlpoints(self, value: np.ndarray):
-        if value is None:
+    def ctrlpoints(self, newpoints: np.ndarray):
+        if newpoints is None:
             self.__ctrlpoints = None
             return
+        if isinstance(newpoints, str):
+            raise TypeError
         try:
-            iter(value)
+            iter(newpoints)
         except Exception:
-            raise ValueError
-        if len(value) != self.npts:
-            error_msg = f"The number of control points ({len(value)}) must be "
+            raise TypeError
+        for point in newpoints:  # Verify if operations are valid for each node
+            for knot in self.knotvector.knots:
+                knot * point
+            for otherpoint in newpoints:
+                point + otherpoint  # Verify if we can sum every point, same type
+
+        if len(newpoints) != self.npts:
+            error_msg = f"The number of control points ({len(newpoints)}) must be "
             error_msg += f"the same as npts of KnotVector ({self.knotvector.npts})\n"
             error_msg += f"  knotvector.npts = {self.npts}"
-            error_msg += f"  len(ctrlpoints) = {len(value)}"
+            error_msg += f"  len(ctrlpoints) = {len(newpoints)}"
             raise ValueError(error_msg)
-        try:
-            1.0 * value[0] - 1.5 * value[0] + 3.1 * value[0]
-        except Exception:
-            error_msg = "For each control point P, it's needed operations"
-            error_msg += "with floats like 1.0*P - 1.5*P + 3.1*P"
-            raise ValueError(error_msg)
-        self.__ctrlpoints = tuple(value)
+        
+        self.__ctrlpoints = tuple(newpoints)
 
     def deepcopy(self) -> Curve:
         curve = self.__class__(self.knotvector)
