@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Optional, Tuple, Union
 
 import numpy as np
@@ -106,11 +107,15 @@ class BaseCurve(Intface_BaseCurve):
 
     @property
     def weights(self):
-        return self.__weights
+        if self.__weights is None:
+            return None
+        return tuple(self.__weights)
 
     @property
     def ctrlpoints(self):
-        return self.__ctrlpoints
+        if self.__ctrlpoints is None:
+            return None
+        return tuple(self.__ctrlpoints)
 
     @knotvector.setter
     def knotvector(self, value: KnotVector):
@@ -161,9 +166,11 @@ class BaseCurve(Intface_BaseCurve):
         self.__ctrlpoints = tuple(newpoints)
 
     def deepcopy(self) -> Curve:
-        curve = self.__class__(self.knotvector)
-        curve.ctrlpoints = self.ctrlpoints
-        curve.weights = self.weights
+        curve = self.__class__(tuple(self.knotvector))
+        if self.ctrlpoints is not None:
+            curve.ctrlpoints = [deepcopy(point) for point in self.ctrlpoints]
+        if self.weights is not None:
+            curve.weights = [deepcopy(weight) for weight in self.weights]
         return curve
 
     def update_knotvector(self, newvector: KnotVector, tolerance: float = 1e-9):
@@ -185,8 +192,6 @@ class BaseCurve(Intface_BaseCurve):
 
     def apply_lineartrans(self, matrix: np.ndarray):
         """ """
-        if matrix is None:
-            raise ValueError
         matrix = np.array(matrix)
         if self.weights is None:
             self.ctrlpoints = matrix @ self.ctrlpoints
@@ -247,7 +252,8 @@ class Curve(BaseCurve):
         tempfunction = Function(self.knotvector)
         tempfunction.weights = self.weights
         matrix = tempfunction(nodes)
-        return np.moveaxis(matrix, 0, -1) @ self.ctrlpoints
+        result = np.moveaxis(matrix, 0, -1) @ self.ctrlpoints
+        return result
 
     def knot_insert(self, nodes: Tuple[float]) -> None:
         nodes = tuple(nodes)

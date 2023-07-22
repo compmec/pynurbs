@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Tuple, Union
 
 import numpy as np
@@ -75,8 +76,9 @@ class BaseFunction(Intface_BaseFunction):
         self.__weights = value
 
     def deepcopy(self) -> BaseFunction:
-        newfunc = self.__class__(self.knotvector)
-        newfunc.weights = self.weights
+        newfunc = self.__class__([deepcopy(knot) for knot in self.knotvector])
+        if self.weights is not None:
+            newfunc.weights = [deepcopy(weight) for weight in self.weights]
         return newfunc
 
 

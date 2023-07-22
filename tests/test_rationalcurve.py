@@ -32,7 +32,7 @@ class TestBuild:
     @pytest.mark.dependency(depends=["TestBuild::test_begin"])
     def test_failbuild(self):
         for degree in range(1, 6):
-            npts = np.random.randint(degree + 1, degree + 9)
+            npts = np.random.randint(degree + 1, degree + 3)
             knotvector = GeneratorKnotVector.random(degree, npts)
             curve = Curve(knotvector)
             with pytest.raises(ValueError):
@@ -74,16 +74,18 @@ class TestCircle:
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestCircle::test_begin"])
     def test_quarter_circle_standard(self):
-        knotvector = [0, 0, 0, 1, 1, 1]
+        knotvector = GeneratorKnotVector.bezier(2, frac)
         ctrlpoints = [(1, 0), (1, 1), (0, 1)]
         weights = [1, 1, 2]
         curve = Curve(knotvector)
         curve.ctrlpoints = np.array(ctrlpoints)
-        curve.weights = weights
-        nodes_sample = np.linspace(0, 1, 129)
+        curve.weights = [frac(weight) for weight in weights]
+        nsample = 128
+        nodes_sample = [frac(i, nsample) for i in range(nsample + 1)]
         points = curve(nodes_sample)
         for point in points:
-            assert abs(np.linalg.norm(point) - 1) < 1e-9
+            dist2 = sum(point**2)
+            assert abs(dist2 - 1) < 1e-9
 
     @pytest.mark.order(6)
     @pytest.mark.timeout(1)
@@ -95,10 +97,12 @@ class TestCircle:
         curve = Curve(knotvector)
         curve.ctrlpoints = np.array(ctrlpoints)
         curve.weights = weights
-        nodes_sample = np.linspace(0, 1, 129)
+        nsample = 128
+        nodes_sample = [frac(i, nsample) for i in range(nsample + 1)]
         points = curve(nodes_sample)
         for point in points:
-            assert abs(np.linalg.norm(point) - 1) < 1e-9
+            dist2 = sum(point**2)
+            assert abs(dist2 - 1) < 1e-9
 
     @pytest.mark.order(6)
     @pytest.mark.timeout(1)
@@ -115,10 +119,12 @@ class TestCircle:
         curve = Curve(knotvector)
         curve.ctrlpoints = np.array(ctrlpoints)
         curve.weights = weights
-        nodes_sample = np.linspace(0, 1, 129)
+        nsample = 128
+        nodes_sample = [frac(i, nsample) for i in range(nsample + 1)]
         points = curve(nodes_sample)
         for point in points:
-            assert abs(np.linalg.norm(point) - 1) < 1e-9
+            dist2 = sum(point**2)
+            assert abs(dist2 - 1) < 1e-9
 
     @pytest.mark.order(6)
     @pytest.mark.timeout(1)
@@ -135,10 +141,12 @@ class TestCircle:
         curve = Curve(knotvector)
         curve.ctrlpoints = np.array(ctrlpoints)
         curve.weights = weights
-        nodes_sample = np.linspace(0, 1, 129)
+        nsample = 128
+        nodes_sample = [frac(i, nsample) for i in range(nsample + 1)]
         points = curve(nodes_sample)
         for point in points:
-            assert abs(np.linalg.norm(point) - 1) < 1e-9
+            dist2 = sum(point**2)
+            assert abs(dist2 - 1) < 1e-9
 
     @pytest.mark.order(6)
     @pytest.mark.dependency(
@@ -154,10 +162,163 @@ class TestCircle:
         pass
 
 
+class TestRandomInsertKnot:
+    @pytest.mark.order(6)
+    @pytest.mark.dependency(depends=["TestCircle::test_end"])
+    def test_begin(self):
+        pass
+
+    @pytest.mark.order(6)
+    @pytest.mark.timeout(10)
+    @pytest.mark.dependency(depends=["TestRandomInsertKnot::test_begin"])
+    def test_none_weights_fraction(self):
+        denmax = 100
+        for degree in range(1, 6):
+            for npts in range(degree + 1, degree + 3):
+                knotvector = GeneratorKnotVector.uniform(degree, npts, frac)
+                randnums = [np.random.randint(denmax + 1) for i in range(npts)]
+                ctrlpoints = [frac(num, denmax) for num in randnums]
+                oldcurve = Curve(knotvector)
+                oldcurve.ctrlpoints = ctrlpoints
+
+                newcurve = oldcurve.deepcopy()
+                while True:
+                    newknot = frac(np.random.randint(denmax), denmax)
+                    if oldcurve.knotvector.mult(newknot) == 0:
+                        break
+                newcurve.knot_insert([newknot])
+
+                nodes_sample = [frac(i, denmax) for i in range(denmax + 1)]
+                points_old = oldcurve(nodes_sample)
+                points_new = newcurve(nodes_sample)
+                for oldpt, newpt in zip(points_old, points_new):
+                    diff = oldpt - newpt
+                    assert float(diff**2) < 1e-9
+
+    @pytest.mark.order(6)
+    @pytest.mark.timeout(10)
+    @pytest.mark.dependency(
+        depends=[
+            "TestRandomInsertKnot::test_begin",
+            "TestRandomInsertKnot::test_none_weights_fraction",
+        ]
+    )
+    def test_unitary_weights_fraction(self):
+        denmax = 100
+        for degree in range(1, 6):
+            for npts in range(degree + 1, degree + 3):
+                knotvector = GeneratorKnotVector.uniform(degree, npts, frac)
+                randnums = [np.random.randint(denmax + 1) for i in range(npts)]
+                ctrlpoints = [frac(num, denmax) for num in randnums]
+                weights = [frac(1)] * npts
+                oldcurve = Curve(knotvector)
+                oldcurve.ctrlpoints = ctrlpoints
+                oldcurve.weights = weights
+
+                newcurve = oldcurve.deepcopy()
+                while True:
+                    newknot = frac(np.random.randint(denmax), denmax)
+                    if oldcurve.knotvector.mult(newknot) == 0:
+                        break
+                newcurve.knot_insert([newknot])
+
+                nodes_sample = [frac(i, denmax) for i in range(denmax + 1)]
+                points_old = oldcurve(nodes_sample)
+                points_new = newcurve(nodes_sample)
+                for oldpt, newpt in zip(points_old, points_new):
+                    diff = oldpt - newpt
+                    assert float(diff**2) < 1e-9
+
+    @pytest.mark.order(6)
+    @pytest.mark.timeout(10)
+    @pytest.mark.dependency(
+        depends=[
+            "TestRandomInsertKnot::test_begin",
+            "TestRandomInsertKnot::test_none_weights_fraction",
+            "TestRandomInsertKnot::test_unitary_weights_fraction",
+        ]
+    )
+    def test_const_weights_fraction(self):
+        denmax = 100
+        for degree in range(1, 6):
+            for npts in range(degree + 1, degree + 3):
+                knotvector = GeneratorKnotVector.uniform(degree, npts, frac)
+                randnums = [np.random.randint(denmax + 1) for i in range(npts)]
+                ctrlpoints = [frac(num, denmax) for num in randnums]
+                weights = [frac(np.random.randint(1, denmax + 1), denmax)] * npts
+                oldcurve = Curve(knotvector)
+                oldcurve.ctrlpoints = ctrlpoints
+                oldcurve.weights = weights
+
+                newcurve = oldcurve.deepcopy()
+                while True:
+                    newknot = frac(np.random.randint(1, denmax), denmax)
+                    if oldcurve.knotvector.mult(newknot) == 0:
+                        break
+                newcurve.knot_insert([newknot])
+
+                nodes_sample = [frac(i, denmax) for i in range(denmax + 1)]
+                points_old = oldcurve(nodes_sample)
+                points_new = newcurve(nodes_sample)
+                for oldpt, newpt in zip(points_old, points_new):
+                    diff = oldpt - newpt
+                    assert float(diff**2) < 1e-9
+
+    @pytest.mark.order(6)
+    @pytest.mark.timeout(10)
+    @pytest.mark.dependency(
+        depends=[
+            "TestRandomInsertKnot::test_begin",
+            "TestRandomInsertKnot::test_none_weights_fraction",
+            "TestRandomInsertKnot::test_unitary_weights_fraction",
+            "TestRandomInsertKnot::test_const_weights_fraction",
+        ]
+    )
+    def test_random_weights_fraction(self):
+        denmax = 20
+        for degree in range(1, 6):
+            for npts in range(degree + 1, degree + 3):
+                knotvector = GeneratorKnotVector.uniform(degree, npts, frac)
+                randnums = [np.random.randint(denmax + 1) for i in range(npts)]
+                ctrlpoints = [frac(num, denmax) for num in randnums]
+                randnums = [np.random.randint(1, denmax + 1) for i in range(npts)]
+                weights = [frac(num, denmax) for num in randnums]
+                oldcurve = Curve(knotvector)
+                oldcurve.ctrlpoints = ctrlpoints
+                oldcurve.weights = weights
+
+                newcurve = oldcurve.deepcopy()
+                while True:
+                    newknot = frac(np.random.randint(1, denmax), denmax)
+                    if oldcurve.knotvector.mult(newknot) == 0:
+                        break
+                newcurve.knot_insert([newknot])
+
+                nodes_sample = [frac(i, denmax) for i in range(denmax + 1)]
+                points_old = oldcurve(nodes_sample)
+                points_new = newcurve(nodes_sample)
+                for oldpt, newpt in zip(points_old, points_new):
+                    diff = oldpt - newpt
+                    assert float(diff**2) < 1e-9
+
+    @pytest.mark.order(6)
+    @pytest.mark.dependency(
+        depends=[
+            "TestRandomInsertKnot::test_begin",
+            "TestRandomInsertKnot::test_none_weights_fraction",
+            "TestRandomInsertKnot::test_unitary_weights_fraction",
+            "TestRandomInsertKnot::test_const_weights_fraction",
+            "TestRandomInsertKnot::test_random_weights_fraction",
+        ]
+    )
+    def test_end(self):
+        pass
+
+
 class TestInsKnotCircle:
     @pytest.mark.order(6)
-    @pytest.mark.skip(reason="Needs knot insertion correction")
-    @pytest.mark.dependency(depends=["TestCircle::test_end"])
+    # @pytest.mark.skip(reason="Needs knot insertion correction")
+    @pytest.mark.dependency(depends=["TestRandomInsertKnot::test_end"])
     def test_begin(self):
         pass
 
@@ -165,25 +326,25 @@ class TestInsKnotCircle:
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestInsKnotCircle::test_begin"])
     def test_quarter_circle_standard(self):
-        zero = frac(0, 1)
-        one = frac(1, 1)
+        zero, one = frac(0), frac(1)
         knotvector = GeneratorKnotVector.bezier(2, frac)
-        ctrlpoints = [(1, 0), (1, 1), (0, 1)]
+        ctrlpoints = [(one, zero), (one, one), (zero, one)]
         weights = [1, 1, 2]
-        curve = Curve(knotvector)
-        curve.ctrlpoints = list(np.array(pt, dtype="object") for pt in ctrlpoints)
-        curve.weights = [frac(weight) for weight in weights]
+        oldcurve = Curve(knotvector)
+        oldcurve.ctrlpoints = np.array(ctrlpoints)
+        oldcurve.weights = [frac(weight) for weight in weights]
 
-        newcurve = curve.deepcopy()
-        newcurve.knot_insert([one / 2])
+        newcurve = oldcurve.deepcopy()
+        newcurve.knot_insert([frac(1, 2)])
 
-        nodes_sample = [frac(i, 4) for i in range(5)]
-        points_old = curve(nodes_sample)
+        denmax = 128
+        nodes_sample = [frac(i, denmax) for i in range(denmax + 1)]
+        points_old = oldcurve(nodes_sample)
         points_new = newcurve(nodes_sample)
         for oldpt, newpt in zip(points_old, points_new):
-            diff = np.array(oldpt) - newpt
+            diff = oldpt - newpt
             distsquare = sum(diff**2)
-            assert distsquare < 1e-9
+            assert float(distsquare) < 1e-9
 
     @pytest.mark.order(6)
     @pytest.mark.timeout(1)

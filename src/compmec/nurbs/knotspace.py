@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Optional, Tuple, Union
 
 import numpy as np
@@ -190,7 +191,7 @@ class KnotVector(Intface_KnotVector):
         """
         Returns a exact object, but with different ID
         """
-        return self.__class__(self.__internal_vector)
+        return self.__class__([deepcopy(knot) for knot in self.__internal_vector])
 
     def shift(self, value: float):
         """
