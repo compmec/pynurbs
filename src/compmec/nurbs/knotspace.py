@@ -34,7 +34,7 @@ class ValidationKnotVector(object):
         knotvector = np.array(knotvector, dtype="float64")
         knotvector = tuple(knotvector)
         if not heavy.KnotVector.is_valid_vector(knotvector):
-            error_msg = f"Knot Vector is invalid: {knotvector}"
+            error_msg = f"KnotVector is invalid: {knotvector}"
             raise ValueError(error_msg)
 
 

@@ -623,6 +623,28 @@ def test_others():
 
 
 @pytest.mark.order(2)
+@pytest.mark.timeout(4)
+@pytest.mark.dependency(
+    depends=[
+        "test_begin",
+    ]
+)
+def test_fractions():
+    from fractions import Fraction as frac
+
+    knotvect = [frac(0), frac(1, 5), frac(2, 5), frac(3, 5), frac(4, 5), frac(1)]
+    knotvect = KnotVector(knotvect)
+    for i, knot in enumerate(knotvect):
+        assert type(knot) is frac
+    assert knotvect[0] == 0
+    assert float(knotvect[1]) == 0.2
+    assert float(knotvect[2]) == 0.4
+    assert float(knotvect[3]) == 0.6
+    assert float(knotvect[4]) == 0.8
+    assert knotvect[5] == 1
+
+
+@pytest.mark.order(2)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
@@ -637,6 +659,7 @@ def test_others():
         "test_degree_change",
         "test_or_and",
         "test_others",
+        "test_fractions",
     ]
 )
 def test_end():
