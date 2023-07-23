@@ -113,8 +113,8 @@ class TestIntersection:
         np.testing.assert_allclose(inters[0], (0.5, 0.5))
 
     @pytest.mark.order(8)
-    @pytest.mark.timeout(4)
-    @pytest.mark.skip(reason="Needs correction of rational derivative")
+    @pytest.mark.skip(reason="Needs correction, don't know where yet")
+    @pytest.mark.timeout(40)
     @pytest.mark.dependency(depends=["TestIntersection::test_begin"])
     def test_circle_and_circle(self):
         circlea = Curve([0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1])

@@ -28,6 +28,18 @@ def difference_matrix(knotvector: Tuple[float]) -> np.ndarray:
     return matrix
 
 
+def derivate_nonrational_bezier(curve: Curve) -> Curve:
+    assert curve.degree + 1 == curve.npts
+    if curve.weights is not None:
+        return derivate_rational_bezier(curve)
+
+
+def derivate_rational_bezier(curve: Curve) -> Curve:
+    assert curve.degree + 1 == curve.npts
+    if curve.weights is None:
+        return derivate_nonrational_bezier(curve)
+
+
 def derivate_spline_curve(curve: Curve) -> Curve:
     assert curve.weights is None
     if curve.degree == 0:

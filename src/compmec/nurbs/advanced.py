@@ -6,6 +6,7 @@ from typing import Set, Tuple
 
 import numpy as np
 
+from compmec.nurbs import heavy
 from compmec.nurbs.calculus import derivate_curve
 from compmec.nurbs.curves import Curve
 
@@ -102,6 +103,21 @@ class Intersection:
         return filteredpairs
 
     @staticmethod
+    def pairs_min_distance(
+        pairs: Tuple[float], curvea: Curve, curveb: Curve, tolerance: float = 1e-9
+    ):
+        pairs = heavy.totuple(pairs)
+        distances = np.empty(len(pairs), dtype="float64")
+        for k, (ti, uj) in enumerate(pairs):
+            pointati = curvea.eval(ti)
+            pointbuj = curveb.eval(uj)
+            distances[k] = np.linalg.norm(pointati - pointbuj)
+        distances = np.abs(distances)
+        matchs = np.abs(distances - np.min(distances)) < tolerance
+        pairs = np.array(pairs, dtype="float64")[matchs]
+        return heavy.totuple(pairs)
+
+    @staticmethod
     def __newton_bcurve_and_bcurve(
         pair: Tuple[float],
         curvesa: Tuple[Curve],
@@ -113,7 +129,7 @@ class Intersection:
         """
         tmin, tmax = limits[0]
         umin, umax = limits[1]
-        while True:
+        for niter in range(10):
             diff = curvesa[0].eval(pair[0])
             dati = curvesa[1].eval(pair[0])
             ddati = curvesa[2].eval(pair[0])
@@ -133,12 +149,21 @@ class Intersection:
                 return tuple()  # no convergence
             deltapair = np.linalg.solve(ggrad, grad)
             pair -= deltapair
-            if pair[0] < tmin or tmax < pair[0]:
-                return tuple()  # No solution
-            if pair[1] < umin or umax < pair[1]:
-                return tuple()  # No solution
+            if pair[0] < tmin:
+                pair[0] = tmin
+            elif tmax < pair[0]:
+                pair[0] = tmax
+            if pair[1] < umin:
+                pair[1] = umin
+            elif umax < pair[1]:
+                pair[1] = umax
             if np.linalg.norm(deltapair) < 1e-9:
-                return tuple(pair)
+                return tuple(pair)  # convergence
+        if pair[0] < tmin or tmax < pair[0]:
+            return tuple()  # No solution
+        if pair[1] < umin or umax < pair[1]:
+            return tuple()  # No solution
+        return tuple(pair)
 
     @staticmethod
     def bcurve_and_bcurve(beziera: Curve, bezierb: Curve) -> Tuple[float, float]:
@@ -159,8 +184,8 @@ class Intersection:
         curvesb.append(derivate_curve(curvesb[0]))
         curvesb.append(derivate_curve(curvesb[1]))
         limits = np.array([beziera.knotvector.limits, bezierb.knotvector.limits])
-        tsample = np.linspace(limits[0, 0], limits[0, 1], 9)
-        usample = np.linspace(limits[1, 0], limits[1, 1], 9)
+        tsample = np.linspace(limits[0, 0], limits[0, 1], 2)
+        usample = np.linspace(limits[1, 0], limits[1, 1], 2)
         pairs = set()
         for ti in tsample:
             for uj in usample:
@@ -171,15 +196,12 @@ class Intersection:
                 )
                 if len(pair):
                     pairs |= set((pair,))
+        if len(pairs) == 0:
+            return tuple()
         pairs = tuple(pairs)
-        distances = np.empty(len(pairs), dtype="float64")
-        for k, (ti, uj) in enumerate(pairs):
-            pointati = curvesa[0].eval(ti)
-            pointbuj = curvesb[0].eval(uj)
-            distances[k] = np.linalg.norm(pointati - pointbuj)
-        pairs = np.array(pairs, dtype="float64")
-        pairs = pairs[np.abs(distances - np.min(distances)) < 1e-9]
-        return Intersection.filter_pairs(tuple(pairs))
+        pairs = Intersection.filter_pairs(pairs)
+        pairs = Intersection.pairs_min_distance(pairs, curvesa[0], curvesb[0])
+        return heavy.totuple(pairs)
 
     @staticmethod
     def curve_and_curve(curvea: Curve, curveb: Curve) -> Tuple[Curve]:
@@ -200,4 +222,7 @@ class Intersection:
             for bezierb in beziersb:
                 newpair = Intersection.bcurve_and_bcurve(beziera, bezierb)
                 pairs |= set(newpair)
-        return Intersection.filter_pairs(tuple(pairs))
+        pairs = tuple(pairs)
+        pairs = Intersection.filter_pairs(pairs)
+        pairs = Intersection.pairs_min_distance(pairs, curvea, curveb)
+        return pairs

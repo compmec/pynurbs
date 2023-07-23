@@ -91,7 +91,9 @@ class BaseCurve(Intface_BaseCurve):
             ctrlpoints = []
             for i, matrix in enumerate(matrix3d):
                 matrix = np.array(matrix)
-                newpoint = self.ctrlpoints @ matrix @ other.ctrlpoints
+                newpoint = (
+                    np.moveaxis(self.ctrlpoints, 0, -1) @ matrix @ other.ctrlpoints
+                )
                 ctrlpoints.append(newpoint)
             curve = Curve(vectmul, ctrlpoints)
             return curve
@@ -114,14 +116,18 @@ class BaseCurve(Intface_BaseCurve):
             copy = self.deepcopy()
             copy.ctrlpoints = [point / other for point in copy.ctrlpoints]
             return copy
+        if self.knotvector.limits != other.knotvector.limits:
+            raise ValueError
         if self.weights is None and other.weights is None:
-            assert self.knotvector == other.knotvector
-            vectorc = self.knotvector | other.knotvector
-            weights = [deepcopy(point) for point in other.ctrlpoints]
-            ctrlpts = [deepcopy(pti) for pti in self.ctrlpoints]
+            vectora, vectorb = tuple(self.knotvector), tuple(other.knotvector)
+            vectorc = tuple(self.knotvector | other.knotvector)
+            transctrlpts = heavy.Operations.matrix_transformation(vectora, vectorc)
+            transweights = heavy.Operations.matrix_transformation(vectorb, vectorc)
+            weights = np.array(transweights) @ other.ctrlpoints
+            ctrlpts = np.array(transctrlpts) @ self.ctrlpoints
             ctrlpts = [pti / wi for pti, wi in zip(ctrlpts, weights)]
-            curve = self.__class__(vectorc, ctrlpts, weights)
-            return curve
+            return self.__class__(vectorc, ctrlpts, weights)
+
         numa, dena = self.fraction()
         numb, denb = other.fraction()
         return (numa * denb) / (dena * numb)
