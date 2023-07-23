@@ -27,6 +27,9 @@ class CustomFloat:
     def __str__(self) -> str:
         return str(self.internal)
 
+    def __repr__(self) -> str:
+        return f"CustomFloat({str(self)})"
+
     def __float__(self) -> float:
         return float(self.internal)
 
@@ -162,8 +165,7 @@ class TestKnotVector:
         assert type(vector[1]) is CustomFloat
         assert type(vector[2]) is CustomFloat
         assert type(vector[3]) is CustomFloat
-
-        tupled = tuple(vector)
+        tuple(vector)
 
     @pytest.mark.order(7)
     @pytest.mark.dependency(
@@ -182,7 +184,7 @@ class TestBasisFunctions:
     @pytest.mark.order(7)
     @pytest.mark.timeout(1)
     # @pytest.mark.skip(reason="Needs correction")
-    @pytest.mark.dependency(depends=["TestKnotVector::test_begin"])
+    @pytest.mark.dependency(depends=["TestBasisFunctions::test_begin"])
     def test_creation(self):
         a, b = CustomFloat(0), CustomFloat(1)
         vector = KnotVector([a, a, b, b])

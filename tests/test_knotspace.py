@@ -32,6 +32,11 @@ def test_Creation():
     KnotVector([0, 0, 4, 4])
     KnotVector([-4, -4, 0, 0])
 
+    KnotVector([0, 0, 0.25, 0.5, 0.75, 1, 1])
+    KnotVector([0, 0, 0.5, 0.5, 1, 1])
+    KnotVector([0.0, 0.0, 0.25, 0.5, 0.75, 1.0, 1.0])
+    KnotVector([0.0, 0.0, 0.5, 0.5, 1.0, 1.0])
+
 
 @pytest.mark.order(2)
 @pytest.mark.timeout(2)
@@ -584,15 +589,15 @@ def test_or_and():
     U2 = KnotVector([0, 0, 1, 2, 2, 3, 3])
     with pytest.raises(ValueError):
         U1 | U2
-    assert U1 & U2 == [0, 0, 1, 2, 2]
-    assert U2 & U1 == [0, 0, 1, 2, 2]
+    with pytest.raises(ValueError):
+        U1 & U2
 
     U1 = KnotVector([0, 0, 0, 1, 1, 2, 2, 2])
     U2 = KnotVector([0, 0, 0, 1, 2, 2, 3, 3, 3])
-    assert U1 | U2 == U2 | U1
-    assert U1 | U2 == [0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 3]
     with pytest.raises(ValueError):
-        print(U1 & U2)
+        U1 | U2
+    with pytest.raises(ValueError):
+        U1 & U2
 
 
 @pytest.mark.order(2)
@@ -627,6 +632,8 @@ def test_others():
 @pytest.mark.dependency(
     depends=[
         "test_begin",
+        "test_Creation",
+        "test_FailCreation",
     ]
 )
 def test_fractions():
@@ -656,6 +663,12 @@ def test_fractions():
 @pytest.mark.dependency(
     depends=[
         "test_begin",
+        "test_Creation",
+        "test_FailCreation",
+        "test_ValuesDegree",
+        "test_ValuesNumberPoints",
+        "test_findspans_single",
+        "test_findmult_single",
         "test_findspans_array",
         "test_findmult_array",
         "test_GeneratorBezier",

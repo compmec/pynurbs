@@ -40,14 +40,18 @@ def eval_spline_nodes(
     """
     assert isinstance(knotvector, (tuple, list))
     assert isinstance(nodes, (tuple, list))
-    if degree is None:
-        degree = KnotVector.find_degree(knotvector)
+    maxdegree = KnotVector.find_degree(knotvector)
+    degree = maxdegree if (degree is None) else degree
     assert isinstance(degree, int)
+    assert 0 <= degree
+    assert degree <= maxdegree
+
     npts = KnotVector.find_npts(knotvector)
     knots = KnotVector.find_knots(knotvector)
     spans = [KnotVector.find_span(knot, knotvector) for knot in knots]
     result = np.zeros((npts, len(nodes)), dtype="float64")
     matrix3d = BasisFunction.speval_matrix(knotvector, degree)
+    matrix3d = np.array(matrix3d)
     for j, node in enumerate(nodes):
         span = KnotVector.find_span(node, knotvector)
         ind = spans.index(span)
@@ -73,6 +77,12 @@ def eval_rational_nodes(
     assert isinstance(knotvector, (tuple, list))
     assert isinstance(weights, (tuple, list))
     assert isinstance(nodes, (tuple, list))
+    maxdegree = KnotVector.find_degree(knotvector)
+    degree = maxdegree if (degree is None) else degree
+    assert isinstance(degree, int)
+    assert 0 <= degree
+    assert degree <= maxdegree
+
     rationalvals = eval_spline_nodes(knotvector, nodes, degree)
     rationalvals = np.array(rationalvals)
     for j, node in enumerate(nodes):
@@ -113,6 +123,10 @@ class LeastSquare:
         for integration purpose.
         """
         assert isinstance(npts, int)
+        assert npts > 0
+        float(a)
+        float(b)
+
         k = np.arange(0, npts)
         nodes = np.cos(np.pi * (2 * k + 1) / (2 * npts))
         nodes *= (b - a) / 2
@@ -137,6 +151,7 @@ class LeastSquare:
         The return is the inverse of the matrix
         """
         assert isinstance(npts, int)
+        assert npts > 0
         z = npts - 1
         chebyshev0to1 = LeastSquare.chebyshev_nodes(npts)
         matrixbezier = np.zeros((npts, npts), dtype="float64")
@@ -176,14 +191,14 @@ class LeastSquare:
     def spline2spline(
         oldvector: Tuple[float], newvector: Tuple[float]
     ) -> Tuple["Matrix2D"]:
-        assert isinstance(oldvector, (tuple, list))
-        assert isinstance(newvector, (tuple, list))
+        assert KnotVector.is_valid_vector(oldvector)
+        assert KnotVector.is_valid_vector(newvector)
         oldnpts = KnotVector.find_npts(oldvector)
         newnpts = KnotVector.find_npts(newvector)
         oldweights = [1] * oldnpts
         newweights = [1] * newnpts
         result = LeastSquare.func2func(oldvector, oldweights, newvector, newweights)
-        return result
+        return totuple(result)
 
     @staticmethod
     def func2func(
@@ -227,7 +242,7 @@ class LeastSquare:
 
         T = np.linalg.solve(C, B.T)
         E = A - B @ T
-        return T, E
+        return totuple(T), totuple(E)
 
 
 class KnotVector:
@@ -236,34 +251,26 @@ class KnotVector:
         if isinstance(knotvector, (dict, str)):
             return False
         try:
-            iter(knotvector)
-        except TypeError:
-            return False
-        knotvector = tuple(knotvector)
-        try:
+            knotvector = tuple(knotvector)
             for knot in knotvector:
                 float(knot)
+            assert knotvector[0] != knotvector[-1]
+            for i in range(len(knotvector) - 1):
+                assert knotvector[i] <= knotvector[i + 1]
+            degree = 0
+            while knotvector[degree] == knotvector[degree + 1]:
+                degree += 1
+            for knot in sorted(knotvector):
+                count = knotvector.count(knot)
+                assert count <= degree + 1
+            assert count == degree + 1
+            return True
         except TypeError:
             return False
-        lenght = len(knotvector)
-        assert lenght > 1
-        for i in range(lenght - 1):
-            if knotvector[i] > knotvector[i + 1]:
-                return False
-        knots = []
-        mults = []
-        for knot in knotvector:
-            if knot not in knots:
-                knots.append(knot)
-                mults.append(0)
-            ind = knots.index(knot)
-            mults[ind] += 1
-        if mults[0] != mults[-1]:
+        except IndexError:
             return False
-        for mult in mults:
-            if mult > mults[0]:
-                return False
-        return True
+        except AssertionError:
+            return False
 
     @staticmethod
     def find_degree(knotvector: Tuple[float]) -> int:
@@ -336,7 +343,7 @@ class KnotVector:
         for knot in knotvector:
             if knot not in knots:
                 knots.append(knot)
-        return knots
+        return tuple(knots)
 
     @staticmethod
     def insert_knots(knotvector: Tuple[float], nodes: Tuple[float]) -> Tuple[float]:
@@ -347,6 +354,7 @@ class KnotVector:
         assert KnotVector.is_valid_vector(knotvector)
         assert isinstance(nodes, (tuple, list))
         for node in nodes:
+            float(node)
             assert knotvector[0] <= node
             assert node <= knotvector[-1]
         newknotvector = tuple(sorted(list(knotvector) + list(nodes)))
@@ -358,6 +366,7 @@ class KnotVector:
         assert KnotVector.is_valid_vector(knotvector)
         assert isinstance(nodes, (tuple, list))
         for node in nodes:
+            float(node)
             assert knotvector[0] <= node
             assert node <= knotvector[-1]
         newknotvector = list(knotvector)
@@ -368,15 +377,18 @@ class KnotVector:
         return newknotvector
 
     @staticmethod
-    def unite_vectors(vector0: Tuple[float], vector1: Tuple[float]) -> Tuple[float]:
+    def unite_vectors(vectora: Tuple[float], vectorb: Tuple[float]) -> Tuple[float]:
         """
-        Given two knotvectors of
+        Given two vectors with equal limits, returns a valid knotvector such
+        it's the union of the given vectors
         """
-        assert KnotVector.is_valid_vector(vector0)
-        assert KnotVector.is_valid_vector(vector1)
-        all_knots = list(set(vector0) | set(vector1))
+        assert KnotVector.is_valid_vector(vectora)
+        assert KnotVector.is_valid_vector(vectorb)
+        assert vectora[0] == vectorb[0]
+        assert vectora[-1] == vectorb[-1]
+        all_knots = list(set(vectora) | set(vectorb))
         all_mults = [0] * len(all_knots)
-        for vector in [vector0, vector1]:
+        for vector in [vectora, vectorb]:
             for knot in vector:
                 index = all_knots.index(knot)
                 mult = KnotVector.find_mult(knot, vector)
@@ -390,11 +402,18 @@ class KnotVector:
         return final_vector
 
     @staticmethod
-    def intersect_vectors(vector0: Tuple[float], vector1: Tuple[float]) -> Tuple[float]:
-        """ """
-        all_knots = list(set(vector0) & set(vector1))
+    def intersect_vectors(vectora: Tuple[float], vectorb: Tuple[float]) -> Tuple[float]:
+        """
+        Given two vectors with equal limits, returns a knotvector such
+        it's the intersection of the given vectors
+        """
+        assert KnotVector.is_valid_vector(vectora)
+        assert KnotVector.is_valid_vector(vectorb)
+        assert vectora[0] == vectorb[0]
+        assert vectora[-1] == vectorb[-1]
+        all_knots = tuple(sorted(set(vectora) & set(vectorb)))
         all_mults = [9999] * len(all_knots)
-        for vector in [vector0, vector1]:
+        for vector in [vectora, vectorb]:
             for knot in vector:
                 if knot not in all_knots:
                     continue
@@ -427,6 +446,12 @@ class KnotVector:
              [0.25, 0.25, 0.5, 0.75, 0.75],
              [0.75, 0.75, 1, 1]]
         """
+        assert KnotVector.is_valid_vector(knotvector)
+        assert isinstance(nodes, (tuple, list))
+        for node in nodes:
+            float(node)
+            assert knotvector[0] <= node
+            assert node <= knotvector[-1]
         retorno = []
         knotvector = np.array(knotvector)
         minu, maxu = min(knotvector), max(knotvector)
@@ -464,6 +489,11 @@ class BasisFunction:
             - m is the number of segments: len(knots)-1
             - j is the requested degree
         """
+        assert KnotVector.is_valid_vector(knotvector)
+        assert isinstance(reqdegree, int)
+        assert 0 <= reqdegree
+        maxdegree = KnotVector.find_degree(knotvector)
+        assert reqdegree <= maxdegree
         knots = KnotVector.find_knots(knotvector)
         spans = np.zeros(len(knots), dtype="int16")
         for i, knot in enumerate(knots):
@@ -478,6 +508,7 @@ class BasisFunction:
             matrix.fill(1)
             return matrix
         matrix_less1 = BasisFunction.speval_matrix(knotvector, j - 1)
+        matrix_less1 = np.array(matrix_less1).tolist()
         for y in range(j):
             for z, sz in enumerate(spans[:-1]):
                 i = y + sz - j + 1
@@ -494,7 +525,7 @@ class BasisFunction:
                     matrix[z][y][k + 1] += b1 * matrix_less1[z][y][k]
                     matrix[z][y + 1][k] += a0 * matrix_less1[z][y][k]
                     matrix[z][y + 1][k + 1] += a1 * matrix_less1[z][y][k]
-        return matrix
+        return totuple(matrix)
 
 
 class Operations:
@@ -526,6 +557,12 @@ class Operations:
             - If the extremities are in nodes, they are ignored
             - Repeted nodes are ignored, [0.5, 0.5] is the same as [0.5]
         """
+        assert KnotVector.is_valid_vector(vector)
+        assert isinstance(nodes, (tuple, list))
+        for node in nodes:
+            float(node)
+            assert vector[0] <= node
+            assert node <= vector[-1]
         degree = KnotVector.find_degree(vector)
         nodes = set(nodes)  # Remove repeted nodes
         nodes -= set([vector[0], vector[-1]])  # Take out extremities
@@ -546,7 +583,7 @@ class Operations:
             matrices.append(newmatrix)
         return matrices
 
-    def knot_insert_once(vector: Tuple[float], node: float) -> "Matrix2D":
+    def one_knot_insert_once(vector: Tuple[float], node: float) -> "Matrix2D":
         """
         Given the knotvector and a node to be inserted, this function
         returns a matrix of transformation T of control points
@@ -558,24 +595,52 @@ class Operations:
         This function returns T such
             [Q] = [T] @ [P]
         """
-        times = 1
+        assert KnotVector.is_valid_vector(vector)
+        float(node)
+        assert vector[0] <= node
+        assert node <= vector[-1]
+
         oldnpts = KnotVector.find_npts(vector)
         degree = KnotVector.find_degree(vector)
         oldspan = KnotVector.find_span(node, vector)
         oldmult = KnotVector.find_mult(node, vector)
         one = node / node
-        newnpts = oldnpts + times
-        matrix = np.zeros((newnpts, oldnpts), dtype="object")
+        matrix = np.zeros((oldnpts + 1, oldnpts), dtype="object")
         for i in range(oldspan - degree + 1):
             matrix[i, i] = one
         for i in range(oldspan - oldmult, oldnpts):
-            matrix[i + times, i] = one
+            matrix[i + 1, i] = one
         for i in range(oldspan - degree + 1, oldspan + 1):
             alpha = node - vector[i]
             alpha /= vector[i + degree] - vector[i]
             matrix[i, i] = alpha
             matrix[i, i - 1] = 1 - alpha
+        return totuple(matrix)
 
+    def one_knot_insert(vector: Tuple[float], node: float, times: int) -> "Matrix2D":
+        """
+        Given the knotvector and a node to be inserted, this function
+        returns a matrix of transformation T of control points
+
+        Let
+            A(u) = sum_i N_i(u) * P_i
+            B(u) = sum_j N_j(u) * Q_j
+
+        This function returns T such
+            [Q] = [T] @ [P]
+        """
+        assert KnotVector.is_valid_vector(vector)
+        float(node)
+        assert vector[0] <= node
+        assert node <= vector[-1]
+        assert isinstance(times, int)
+        assert 0 < times
+        oldnpts = KnotVector.find_npts(vector)
+        matrix = np.eye(oldnpts, dtype="object")
+        for i in range(times):
+            incmatrix = Operations.one_knot_insert_once(vector, node)
+            matrix = incmatrix @ matrix
+            vector = KnotVector.insert_knots(vector, [node])
         return totuple(matrix)
 
     def knot_insert(vector: Tuple[float], nodes: Tuple[float]) -> "Matrix2D":
@@ -593,30 +658,49 @@ class Operations:
         # Caution:
             - Nodes in extremities are not considered
         """
-        nodes = list(nodes)
-        while vector[0] in nodes:
-            nodes.remove(vector[0])
-        while vector[-1] in nodes:
-            nodes.remove(vector[-1])
-        setnodes = tuple(sorted(set(nodes)))
+
+        assert KnotVector.is_valid_vector(vector)
+        assert isinstance(nodes, (tuple, list))
+        for node in nodes:
+            float(node)
+            assert vector[0] <= node
+            assert node <= vector[-1]
+        nodes = tuple(nodes)
+        setnodes = tuple(sorted(set(nodes) - set([vector[0], vector[-1]])))
         oldnpts = KnotVector.find_npts(vector)
         matrix = np.eye(oldnpts, dtype="object")
         if len(nodes) == 0:
             return totuple(matrix)
         for node in setnodes:
             times = nodes.count(node)
-            for i in range(times):
-                incT = Operations.knot_insert_once(vector, node)
-                matrix = incT @ matrix
-                vector = KnotVector.insert_knots(vector, [node])
-
+            incmatrix = Operations.one_knot_insert(vector, node, times)
+            matrix = incmatrix @ matrix
+            vector = KnotVector.insert_knots(vector, [node] * times)
         return totuple(matrix)
 
     def knot_remove(vector: Tuple[float], nodes: Tuple[float]) -> "Matrix2D":
         """ """
+        assert KnotVector.is_valid_vector(vector)
+        assert isinstance(nodes, (tuple, list))
+        for node in nodes:
+            float(node)
+            assert vector[0] <= node
+            assert node <= vector[-1]
         nodes = tuple(nodes)
         newvector = KnotVector.remove_knots(vector, nodes)
         matrix, _ = LeastSquare.spline2spline(vector, newvector)
+        return totuple(matrix)
+
+    def degree_increase_bezier_once(vector: Tuple[float]) -> "Matrix2D":
+        assert KnotVector.is_valid_vector(vector)
+        degree = KnotVector.find_degree(vector)
+        matrix = np.zeros((degree + 2, degree + 1), dtype="object")
+        matrix[0, 0] = 1
+        for i in range(1, degree + 1):
+            alpha = i / (degree + 1)
+            matrix[i, i - 1] = alpha
+            matrix[i, i] = 1 - alpha
+        matrix[degree + 1, degree] = 1
         return totuple(matrix)
 
     def degree_increase_bezier(vector: Tuple[float], times: int) -> "Matrix2D":
@@ -628,26 +712,15 @@ class Operations:
             A(u) = sum_{i=0}^{p} B_{i,p}(u) * P_i
             B(u) = sum_{i=0}^{p+t} B_{i,p+t}(u) * Q_i
         """
-        assert isinstance(vector, (tuple, list))
+        assert KnotVector.is_valid_vector(vector)
         assert isinstance(times, int)
         assert times >= 0
         degree = KnotVector.find_degree(vector)
-        if times == 0:
-            return totuple(np.eye(degree + 1, dtype="object"))
-        if times > 1:
-            matrix = np.eye(degree + 1, dtype="object")
-            for i in range(times):
-                elevateonce = Operations.degree_increase_bezier(vector, 1)
-                matrix = elevateonce @ matrix
-                vector = KnotVector.insert_knots(vector, [vector[0], vector[-1]])
-            return matrix
-        matrix = np.zeros((degree + 2, degree + 1), dtype="object")
-        matrix[0, 0] = 1
-        for i in range(1, degree + 1):
-            alpha = i / (degree + 1)
-            matrix[i, i - 1] = alpha
-            matrix[i, i] = 1 - alpha
-        matrix[degree + 1, degree] = 1
+        matrix = np.eye(degree + 1, dtype="object")
+        for i in range(times):
+            elevateonce = Operations.degree_increase_bezier_once(vector)
+            matrix = elevateonce @ matrix
+            vector = KnotVector.insert_knots(vector, [vector[0], vector[-1]])
         return totuple(matrix)
 
     def degree_increase(vector: Tuple[float], times: int) -> "Matrix2D":
@@ -655,14 +728,15 @@ class Operations:
         Given a curve A(u) associated with control points P, we want
         to do a degree elevation
         """
-        assert isinstance(vector, (tuple, list))
+        assert KnotVector.is_valid_vector(vector)
         assert isinstance(times, int)
         assert times >= 0
-        if times == 0:
-            npts = KnotVector.find_npts(vector)
-            matrix = np.eye(npts, dtype="object")
-            return totuple(matrix)
         degree = KnotVector.find_degree(vector)
+        npts = KnotVector.find_npts(vector)
+        if times == 0:
+            return totuple(np.eye(npts, dtype="object"))
+        if degree + 1 == npts:
+            return Operations.degree_increase_bezier(vector, times)
         nodes = KnotVector.find_knots(vector)
         newvectors = KnotVector.split(vector, nodes)
         matrices = Operations.split_curve(vector, nodes)
@@ -701,6 +775,8 @@ class Operations:
             - We suppose the limits of vectors are the same
             - We suppose degreeB >= degreeA
         """
+        assert KnotVector.is_valid_vector(vectora)
+        assert KnotVector.is_valid_vector(vectorb)
         raise NotImplementedError
 
 
@@ -732,8 +808,9 @@ class MathOperations:
             - We suppose the vectora and vectorb limits are equal
             - We suppose the curves has same degree
         """
-        assert isinstance(vectora, (tuple, list))
-        assert isinstance(vectorb, (tuple, list))
+        assert KnotVector.is_valid_vector(vectora)
+        assert KnotVector.is_valid_vector(vectorb)
+
         degreea = KnotVector.find_degree(vectora)
         degreeb = KnotVector.find_degree(vectorb)
         knotsa = KnotVector.find_knots(vectora)
@@ -770,6 +847,8 @@ class MathOperations:
     def sub_spline_curve(
         vectora: Tuple[float], vectorb: Tuple[float]
     ) -> Tuple["Matrix2D"]:
+        assert KnotVector.is_valid_vector(vectora)
+        assert KnotVector.is_valid_vector(vectorb)
         matrixa, matrixb = MathOperations.add_spline_curve(vectora, vectorb)
         nlinesb, ncolumnsb = len(matrixb), len(matrixb[0])
         newmatrixb = [[0] * ncolumnsb] * nlinesb
