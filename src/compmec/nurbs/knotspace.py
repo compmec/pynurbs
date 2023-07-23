@@ -148,9 +148,7 @@ class KnotVector(Intface_KnotVector):
             self += diff * knots
 
     def __insert_knots(self, nodes: Tuple[float]):
-        nodes = tuple(nodes)
-        for node in nodes:
-            self.__validate_node(node)
+        self.valid_nodes(nodes)
         try:
             newvector = heavy.KnotVector.insert_knots(tuple(self), nodes)
         except AssertionError:
@@ -159,9 +157,7 @@ class KnotVector(Intface_KnotVector):
         return self.__safe_init(newvector)
 
     def __remove_knots(self, nodes: Tuple[float]):
-        nodes = tuple(nodes)
-        for node in nodes:
-            self.__validate_node(node)
+        self.valid_nodes(nodes)
         try:
             newvector = heavy.KnotVector.remove_knots(tuple(self), nodes)
         except AssertionError:
@@ -200,9 +196,13 @@ class KnotVector(Intface_KnotVector):
         self.scale(1 / self[-1])
         return self
 
-    def __validate_node(self, node: float):
+    def valid_nodes(self, nodes: Tuple[float]):
+        for node in nodes:
+            self.__valid_node(node)
+
+    def __valid_node(self, node: float):
         """
-        Private method of to verify if a node is
+        Method of to verify if a node is
         - Is a number
         - inside the interval
         """
@@ -235,7 +235,7 @@ class KnotVector(Intface_KnotVector):
         except TypeError:
             nodes = (nodes,)
         for node in nodes:
-            self.__validate_node(node)  # may raise error
+            self.__valid_node(node)  # may raise error
         spans = self.__span(nodes)
         return spans[0] if onevalue else spans
 
@@ -258,7 +258,7 @@ class KnotVector(Intface_KnotVector):
         except TypeError:
             nodes = (nodes,)
         for node in nodes:
-            self.__validate_node(node)  # may raise error
+            self.__valid_node(node)  # may raise error
         mults = self.__mult(nodes)
         return mults[0] if onevalue else mults
 
@@ -301,9 +301,10 @@ class GeneratorKnotVector:
         assert isinstance(npts, int)
         assert degree >= 0
         assert npts > degree
-        weights = np.random.rand(npts - degree)
+        weights = np.random.randint(1, 1000, npts - degree)
         knotvector = GeneratorKnotVector.weight(degree, weights)
         knotvector.shift(np.random.uniform(-1, 1))
+        knotvector.scale(np.random.uniform(1, 2))
         return knotvector
 
     @staticmethod

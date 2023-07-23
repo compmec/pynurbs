@@ -601,13 +601,12 @@ class TestAddSubMulDiv:
 
     @pytest.mark.order(4)
     @pytest.mark.dependency(depends=["TestAddSubMulDiv::test_begin"])
-    def test_addsub(self):
+    def test_addsub_curves(self):
         """
         If the knotvectors are different, it's not possible to sum
         It's expected a ValueError
         """
         degree = 1
-        maxdenom = 100
         knotvector = GeneratorKnotVector.bezier(degree)
         ctrlpts0 = np.random.uniform(-1, 1, knotvector.npts)
         ctrlpts1 = np.random.uniform(-1, 1, knotvector.npts)
@@ -620,8 +619,8 @@ class TestAddSubMulDiv:
         curve_sub1 = curve1 - curve0
 
         usample = np.linspace(knotvector[0], knotvector[-1], 129)
-        points0 = curve0(usample)
-        points1 = curve1(usample)
+        points0 = np.array(curve0(usample))
+        points1 = np.array(curve1(usample))
         ptsadd0 = curve_add0(usample)
         ptsadd1 = curve_add1(usample)
         ptssub0 = curve_sub0(usample)
@@ -632,10 +631,115 @@ class TestAddSubMulDiv:
         np.testing.assert_allclose(points1 - points0, ptssub1)
 
     @pytest.mark.order(4)
+    @pytest.mark.dependency(depends=["TestAddSubMulDiv::test_addsub_curves"])
+    def test_muldiv_curves(self):
+        """
+        If the knotvectors are different, it's not possible to sum
+        It's expected a ValueError
+        """
+        degree, npts = 1, 2
+        denmax = 2
+        knotvector = GeneratorKnotVector.uniform(degree, npts, frac)
+        randinters = [np.random.randint(0, denmax + 1) for i in range(npts)]
+        ctrlpts0 = [1 + frac(nb, denmax) for nb in randinters]
+        randinters = [np.random.randint(0, denmax + 1) for i in range(npts)]
+        ctrlpts1 = [1 + frac(nb, denmax) for nb in randinters]
+
+        # knotvector = np.array(knotvector, dtype="float64")
+        # ctrlpts0 = np.array(ctrlpts0, dtype="float64")
+        # ctrlpts1 = np.array(ctrlpts1, dtype="float64")
+
+        curve0 = Curve(knotvector, ctrlpts0)
+        curve1 = Curve(knotvector, ctrlpts1)
+        curve_mul0 = curve0 * curve1
+        curve_mul1 = curve1 * curve0
+        curve_div0 = curve0 / curve1
+        curve_div1 = curve1 / curve0
+
+        denmax = 4
+        usample = [frac(i, denmax) for i in range(denmax + 1)]
+        points0 = curve0(usample)
+        points1 = curve1(usample)
+        ptsmul0 = curve_mul0(usample)
+        ptsmul1 = curve_mul1(usample)
+        ptsdiv0 = curve_div0(usample)
+        ptsdiv1 = curve_div1(usample)
+
+        ptsmul0 = np.array(ptsmul0, dtype="float64")
+        ptsmul1 = np.array(ptsmul1, dtype="float64")
+        ptsdiv0 = np.array(ptsdiv0, dtype="float64")
+        ptsdiv1 = np.array(ptsdiv1, dtype="float64")
+        points0 = np.array(points0, dtype="float64")
+        points1 = np.array(points1, dtype="float64")
+
+        np.testing.assert_allclose(points0 * points1, ptsmul0)
+        np.testing.assert_allclose(points1 * points0, ptsmul1)
+        np.testing.assert_allclose(points0 / points1, ptsdiv0)
+        np.testing.assert_allclose(points1 / points0, ptsdiv1)
+
+    @pytest.mark.order(4)
+    @pytest.mark.dependency(depends=["TestAddSubMulDiv::test_begin"])
+    def test_addsub_scalar(self):
+        """
+        If the knotvectors are different, it's not possible to sum
+        It's expected a ValueError
+        """
+        degree = 1
+        knotvector = GeneratorKnotVector.bezier(degree)
+        ctrlpts = np.random.uniform(-1, 1, knotvector.npts)
+        a, b, c, d = np.random.uniform(-1, 1, 4)
+
+        curve = Curve(knotvector, ctrlpts)
+        curve_add0 = curve + a
+        curve_add1 = b + curve
+        curve_sub0 = curve - c
+        curve_sub1 = d - curve
+
+        usample = np.linspace(knotvector[0], knotvector[-1], 129)
+        points = np.array(curve(usample))
+        ptsadd0 = curve_add0(usample)
+        ptsadd1 = curve_add1(usample)
+        ptssub0 = curve_sub0(usample)
+        ptssub1 = curve_sub1(usample)
+        np.testing.assert_allclose(points + a, ptsadd0)
+        np.testing.assert_allclose(b + points, ptsadd1)
+        np.testing.assert_allclose(points - c, ptssub0)
+        np.testing.assert_allclose(d - points, ptssub1)
+
+    @pytest.mark.order(4)
+    @pytest.mark.dependency(depends=["TestAddSubMulDiv::test_begin"])
+    def test_muldiv_scalar(self):
+        """
+        If the knotvectors are different, it's not possible to sum
+        It's expected a ValueError
+        """
+        degree = 1
+        knotvector = GeneratorKnotVector.bezier(degree)
+        ctrlpts = np.random.uniform(-1, 1, knotvector.npts)
+        a, b, c, d = np.random.uniform(-1, 1, 4)
+
+        curve = Curve(knotvector, ctrlpts)
+        curve_mul0 = curve * a
+        curve_mul1 = b * curve
+        curve_div0 = curve / c
+
+        usample = np.linspace(knotvector[0], knotvector[-1], 129)
+        points = np.array(curve(usample))
+        ptsmul0 = curve_mul0(usample)
+        ptsmul1 = curve_mul1(usample)
+        ptsdiv0 = curve_div0(usample)
+        np.testing.assert_allclose(points * a, ptsmul0)
+        np.testing.assert_allclose(b * points, ptsmul1)
+        np.testing.assert_allclose(points / c, ptsdiv0)
+
+    @pytest.mark.order(4)
     @pytest.mark.dependency(
         depends=[
             "TestAddSubMulDiv::test_begin",
-            "TestAddSubMulDiv::test_addsub",
+            "TestAddSubMulDiv::test_addsub_curves",
+            "TestAddSubMulDiv::test_muldiv_curves",
+            "TestAddSubMulDiv::test_addsub_scalar",
+            "TestAddSubMulDiv::test_muldiv_scalar",
         ]
     )
     def test_end(self):

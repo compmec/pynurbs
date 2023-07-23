@@ -433,8 +433,6 @@ class TestSumSubtract:
         ctrlpoints = np.random.uniform(-1, 1, 7)
         curve = Curve(knotvector, ctrlpoints)
         with pytest.raises(TypeError):
-            curve + 1
-        with pytest.raises(TypeError):
             curve + "asd"
 
     @pytest.mark.order(5)
@@ -444,6 +442,7 @@ class TestSumSubtract:
             "TestSumSubtract::test_sumsub_scalar",
             "TestSumSubtract::test_sumsub_vector",
             "TestSumSubtract::test_somefails",
+            "TestSumSubtract::test_sumsub_failknotvector",
         ]
     )
     def test_end(self):

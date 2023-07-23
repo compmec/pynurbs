@@ -7,7 +7,6 @@ import numpy as np
 
 from compmec.nurbs import heavy
 from compmec.nurbs.__classes__ import Intface_BaseCurve
-from compmec.nurbs.functions import Function
 from compmec.nurbs.knotspace import KnotVector
 
 
@@ -46,39 +45,101 @@ class BaseCurve(Intface_BaseCurve):
         newcurve.ctrlpoints = newctrlpoints
         return newcurve
 
-    def __iadd__(self, other: object):
-        if not isinstance(other, BaseCurve):
-            raise TypeError
-        vecta = tuple(self.knotvector)
-        vectb = tuple(other.knotvector)
-        if vecta[0] != vectb[0] or vecta[-1] != vectb[-1]:
+    def __add__(self, other: object):
+        if self.ctrlpoints is None:
             raise ValueError
-        if self.ctrlpoints is None or other.ctrlpoints is None:
+        if not isinstance(other, self.__class__):
+            copy = self.deepcopy()
+            copy.ctrlpoints = [other + point for point in self.ctrlpoints]
+            return copy
+        if self.knotvector.limits != other.knotvector.limits:
             raise ValueError
         if self.weights is None and other.weights is None:
-            adder = heavy.MathOperations.add_spline_curve
-        else:
-            adder = heavy.MathOperations.add_rational_curve
-            weightsa = self.weights if self.weights else [1] * self.npts
-            weightsb = other.weights if other.weights else [1] * other.npts
+            assert self.knotvector == other.knotvector
+            vectadd = self.knotvector | other.knotvector
+            vecta, vectb = tuple(self.knotvector), tuple(other.knotvector)
+            matra, matrb = heavy.MathOperations.add_spline_curve(vecta, vectb)
+            curve = Curve(vectadd)
+            ctrlpoints = np.array(matra) @ self.ctrlpoints
+            ctrlpoints += np.array(matrb) @ other.ctrlpoints
+            curve.ctrlpoints = ctrlpoints
+            return curve
+        numa, dena = self.fraction()
+        numb, denb = other.fraction()
+        return (numa * denb + numb * dena) / (dena * denb)
 
-        vectc = heavy.KnotVector.unite_vectors(vecta, vectb)
-        matrixa, matrixb = adder(vecta, vectb)
-        matrixa = np.array(matrixa)
-        matrixb = np.array(matrixb)
-        newctrlpoints = matrixa @ self.ctrlpoints
-        newctrlpoints += matrixb @ other.ctrlpoints
-        self.knotvector = vectc
-        self.ctrlpoints = newctrlpoints
-        return self
-
-    def __add__(self, other: object):
-        copyself = self.deepcopy()
-        copyself += other
-        return copyself
+    def __radd__(self, other: object):
+        return self.__add__(other)
 
     def __sub__(self, other: object):
         return self + (-other)
+
+    def __rsub__(self, other: object):
+        return other + (-self)
+
+    def __mul__(self, other: object):
+        if self.ctrlpoints is None:
+            raise ValueError
+        if not isinstance(other, self.__class__):
+            copy = self.deepcopy()
+            copy.ctrlpoints = [point * other for point in copy.ctrlpoints]
+            return copy
+        if self.knotvector.limits != other.knotvector.limits:
+            raise ValueError
+        if self.weights is None and other.weights is None:
+            assert self.knotvector == other.knotvector
+            vecta, vectb = tuple(self.knotvector), tuple(other.knotvector)
+            vectmul = heavy.MathOperations.knotvector_mul(vecta, vectb)
+            matrix3d = heavy.MathOperations.mul_spline_curve(vecta, vectb)
+            ctrlpoints = []
+            for i, matrix in enumerate(matrix3d):
+                matrix = np.array(matrix)
+                newpoint = self.ctrlpoints @ matrix @ other.ctrlpoints
+                ctrlpoints.append(newpoint)
+            curve = Curve(vectmul, ctrlpoints)
+            return curve
+        numa, dena = self.fraction()
+        numb, denb = other.fraction()
+        return (numa * numb) / (dena * denb)
+
+    def __rmul__(self, other: object):
+        if self.ctrlpoints is None:
+            raise ValueError
+        assert not isinstance(other, self.__class__)
+        copy = self.deepcopy()
+        copy.ctrlpoints = [other * point for point in copy.ctrlpoints]
+        return copy
+
+    def __truediv__(self, other: object):
+        if self.ctrlpoints is None:
+            raise ValueError
+        if not isinstance(other, self.__class__):
+            copy = self.deepcopy()
+            copy.ctrlpoints = [point / other for point in copy.ctrlpoints]
+            return copy
+        if self.weights is None and other.weights is None:
+            assert self.knotvector == other.knotvector
+            vectorc = self.knotvector | other.knotvector
+            weights = [deepcopy(point) for point in other.ctrlpoints]
+            ctrlpts = [deepcopy(pti) for pti in self.ctrlpoints]
+            ctrlpts = [pti / wi for pti, wi in zip(ctrlpts, weights)]
+            curve = self.__class__(vectorc, ctrlpts, weights)
+            return curve
+        numa, dena = self.fraction()
+        numb, denb = other.fraction()
+        return (numa * denb) / (dena * numb)
+
+    def __rtruediv__(self, other: object):
+        """
+        Example: 1/curve
+        """
+        if self.ctrlpoints is None:
+            raise ValueError
+        assert not isinstance(other, self.__class__)
+        for point in self.ctrlpoints:
+            float(point)
+        num, den = self.fraction()
+        return other * (den / num)
 
     def __or__(self, other: object):
         umaxleft = self.knotvector[-1]
@@ -200,6 +261,22 @@ class BaseCurve(Intface_BaseCurve):
             curve.weights = [deepcopy(weight) for weight in self.weights]
         return curve
 
+    def fraction(self) -> Tuple[BaseCurve]:
+        """
+        Returns the current curve into the form Spline/Spline
+        If it's rational, then returns [Spline, Spline]
+        If it's spline, then returns [Spline, 1]
+        """
+        if self.weights is None:
+            numerator = self.deepcopy()
+            return numerator, 1
+        ctrlpoints = [deepcopy(point) for point in self.ctrlpoints]
+        numerator = self.__class__(self.knotvector.deepcopy)
+        denominator = self.__class__(self.knotvector.deepcopy)
+        numerator.ctrlpoints = [wi * pt for wi, pt in zip(self.weights, ctrlpoints)]
+        denominator.ctrlpoints = self.weights
+        return numerator, denominator
+
     def update_knotvector(self, newvector: KnotVector, tolerance: float = 1e-9):
         newvector = KnotVector(newvector)
         if newvector == self.knotvector:
@@ -272,15 +349,33 @@ class Curve(BaseCurve):
         msg += "]\n"
         return msg
 
-    def eval(self, nodes: np.ndarray) -> np.ndarray:
+    def __eval(self, nodes: Tuple[float]) -> Tuple["Point"]:
+        """
+        Private method fto evaluate points in the curve
+        """
+        vector = tuple(self.knotvector)
+        nodes = tuple(nodes)
+        if self.weights is None:
+            matrix = heavy.eval_spline_nodes(vector, nodes)
+        else:
+            weights = tuple(self.weights)
+            matrix = heavy.eval_rational_nodes(vector, weights, nodes)
+        result = np.moveaxis(matrix, 0, -1) @ self.ctrlpoints
+        return tuple(result)
+
+    def eval(self, nodes: Union[float, Tuple[float]]) -> Union["Point", Tuple["Point"]]:
         if self.ctrlpoints is None:
             error_msg = "Cannot evaluate: There are no control points"
             raise ValueError(error_msg)
-        tempfunction = Function(self.knotvector)
-        tempfunction.weights = self.weights
-        matrix = tempfunction(nodes)
-        result = np.moveaxis(matrix, 0, -1) @ self.ctrlpoints
-        return result
+        try:
+            nodes = tuple(nodes)
+            onevalue = False
+        except TypeError:
+            nodes = (nodes,)
+            onevalue = True
+        self.knotvector.valid_nodes(nodes)
+        result = self.__eval(nodes)
+        return result[0] if onevalue else result
 
     def knot_insert(self, nodes: Tuple[float]) -> None:
         nodes = tuple(nodes)

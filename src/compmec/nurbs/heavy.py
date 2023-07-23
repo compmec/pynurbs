@@ -1,7 +1,63 @@
-from functools import cache
+import math
+from fractions import Fraction
 from typing import Tuple
 
 import numpy as np
+
+
+def invert_integer_matrix(
+    matrix: Tuple[Tuple[int]],
+) -> Tuple[Tuple[int], Tuple[Tuple[int]]]:
+    """
+    Given a matrix with integer entries, this function computes the
+    inverse of this matrix, returning a matrix of integers and their diagonal
+        inverse @ matrix = diag(diagonal)
+    """
+    side = len(matrix)
+    inverse = np.eye(side, dtype="int64")
+    matrix = np.column_stack((matrix, inverse))
+    for k in range(side):
+        # Search biggest pivo
+        absline = np.abs(matrix[k:, k])
+        biggest = np.max(absline)
+        index = k + np.where(absline == biggest)[0][0]
+        # Switch lines
+        copyline = np.copy(matrix[k, :])
+        matrix[k, :] = matrix[index, :]
+        matrix[index, :] = copyline[:]
+        # Gaussian elimination
+        for i in range(k + 1, side):
+            matrix[i] = matrix[i] * matrix[k, k] - matrix[k] * matrix[i, k]
+            gdcline = math.gcd(*matrix[i])
+            if gdcline != 1:
+                matrix[i] = matrix[i] / gdcline
+    for k in range(side - 1, 0, -1):
+        for i in range(k - 1, -1, -1):
+            matrix[i] = matrix[i] * matrix[k, k] - matrix[k] * matrix[i, k]
+            gdcline = math.gcd(*matrix[i])
+            if gdcline != 1:
+                matrix[i] = matrix[i] / gdcline
+    diagonal = np.diag(matrix[:, :side])
+    inverse = matrix[:, side:]
+    return totuple(diagonal), totuple(inverse)
+
+
+def invert_fraction_matrix(matrix: Tuple[Tuple[Fraction]]) -> Tuple[Tuple[Fraction]]:
+    matrix = np.array(matrix, dtype="object")
+    side = len(matrix)
+    intdiag = [1] * side
+    for i, line in enumerate(matrix):
+        denoms = [frac.denominator for frac in line]
+        intdiag[i] = math.lcm(*denoms)
+        matrix[i] *= intdiag[i]
+    intdiag = np.array(intdiag, dtype="int64")
+    integermatrix = np.array(matrix, dtype="int64")
+    diag, inverseintegermat = invert_integer_matrix(integermatrix)
+    inverse = np.array(inverseintegermat, dtype="object")
+    for i, line in enumerate(inverseintegermat):
+        for j, elem in enumerate(line):
+            inverse[i, j] = Fraction(elem * intdiag[j], diag[i])
+    return inverse
 
 
 def totuple(array):
@@ -49,7 +105,7 @@ def eval_spline_nodes(
     npts = KnotVector.find_npts(knotvector)
     knots = KnotVector.find_knots(knotvector)
     spans = [KnotVector.find_span(knot, knotvector) for knot in knots]
-    result = np.zeros((npts, len(nodes)), dtype="float64")
+    result = np.zeros((npts, len(nodes)), dtype="object")
     matrix3d = BasisFunction.speval_matrix(knotvector, degree)
     matrix3d = np.array(matrix3d)
     for j, node in enumerate(nodes):
@@ -148,7 +204,7 @@ class LeastSquare:
         assert a < b
 
         one = (b - a) / (b - a)
-        nodes = [(one + 2 * i * one) / npts for i in range(npts)]
+        nodes = [(one + 2 * i * one) / (2 * npts) for i in range(npts)]
         nodes = [a + (b - a) * node for node in nodes]
         return totuple(nodes)
 
@@ -800,6 +856,38 @@ class Operations:
 
 class MathOperations:
     @staticmethod
+    def knotvector_add(vectora: Tuple[float], vectorb: Tuple[float]) -> Tuple[float]:
+        assert KnotVector.is_valid_vector(vectora)
+        assert KnotVector.is_valid_vector(vectorb)
+        assert vectora[0] == vectorb[0]
+        assert vectora[-1] == vectorb[-1]
+
+        vectorc = KnotVector.unite_vectors(vectora, vectorb)
+        return tuple(vectorc)
+
+    @staticmethod
+    def knotvector_mul(vectora: Tuple[float], vectorb: Tuple[float]) -> Tuple[float]:
+        assert KnotVector.is_valid_vector(vectora)
+        assert KnotVector.is_valid_vector(vectorb)
+        assert vectora[0] == vectorb[0]
+        assert vectora[-1] == vectorb[-1]
+
+        degreea = KnotVector.find_degree(vectora)
+        degreeb = KnotVector.find_degree(vectorb)
+        allknots = tuple(sorted(set(vectora) | set(vectorb)))
+        classes = [0] * len(allknots)
+        for i, knot in enumerate(allknots):
+            multa = KnotVector.find_mult(knot, vectora)
+            multb = KnotVector.find_mult(knot, vectorb)
+            classes[i] = min(degreea - multa, degreeb - multb)
+        degreec = degreea + degreeb
+        vectorc = [vectora[0]] * (degreec + 1)
+        for knot, classe in zip(allknots[1:-1], classes):
+            vectorc += [knot] * (degreec - classe)
+        vectorc += [vectora[-1]] * (degreec + 1)
+        return tuple(vectorc)
+
+    @staticmethod
     def add_spline_curve(
         vectora: Tuple[float], vectorb: Tuple[float]
     ) -> Tuple["Matrix2D"]:
@@ -831,11 +919,13 @@ class MathOperations:
         assert vectora[0] == vectorb[0]
         assert vectora[-1] == vectorb[-1]
 
+        vectorc = MathOperations.knotvector_add(vectora, vectorb)
         degreea = KnotVector.find_degree(vectora)
         degreeb = KnotVector.find_degree(vectorb)
+        degreec = KnotVector.find_degree(vectorc)
         knotsa = KnotVector.find_knots(vectora)
         knotsb = KnotVector.find_knots(vectorb)
-        degreec = max(degreea, degreeb)
+        knotsc = KnotVector.find_knots(vectorc)
         timesa = degreec - degreea
         timesb = degreec - degreeb
         matrix_deginca = Operations.degree_increase(vectora, timesa)
@@ -845,23 +935,20 @@ class MathOperations:
 
         insknotsa = []
         insknotsb = []
-        for knot in knotsa:
+        for knot in knotsc:
+            multc = KnotVector.find_mult(knot, vectorc)
             multa = KnotVector.find_mult(knot, vectora)
             multb = KnotVector.find_mult(knot, vectorb)
-            if multa > multb:
-                insknotsb += (multa - multb) * [knot]
-        for knot in knotsb:
-            multa = KnotVector.find_mult(knot, vectora)
-            multb = KnotVector.find_mult(knot, vectorb)
-            if multb > multa:
-                insknotsa += (multb - multa) * [knot]
+            if multa < multc:
+                insknotsa += (multc - multa) * [knot]
+            if multb < multc:
+                insknotsb += (multc - multb) * [knot]
 
         matrix_knotinsa = Operations.knot_insert(vectora, insknotsa)
         matrix_knotinsb = Operations.knot_insert(vectorb, insknotsb)
-
         matrixa = np.array(matrix_knotinsa) @ matrix_deginca
         matrixb = np.array(matrix_knotinsb) @ matrix_degincb
-        return matrixa, matrixb
+        return totuple(matrixa), totuple(matrixb)
 
     @staticmethod
     def sub_spline_curve(
@@ -879,7 +966,7 @@ class MathOperations:
     @staticmethod
     def mul_spline_curve(
         vectora: Tuple[float], vectorb: Tuple[float]
-    ) -> Tuple["Matrix2D"]:
+    ) -> Tuple["Matrix3D"]:
         """
         Given two spline curves, called A(u) and B(u), it computes and returns
         a new curve C(u) such C(u) = A(u) * B(u) for every u
@@ -892,57 +979,40 @@ class MathOperations:
         assert vectora[0] == vectorb[0]
         assert vectora[-1] == vectorb[-1]
 
-        degreea = KnotVector.find_degree(vectora)
-        degreeb = KnotVector.find_npts(vectorb)
-        nptsa = KnotVector.find_degree(vectora)
+        vectorc = MathOperations.knotvector_mul(vectora, vectorb)
+        degreec = KnotVector.find_degree(vectorc)
+        nptsa = KnotVector.find_npts(vectora)
         nptsb = KnotVector.find_npts(vectorb)
-        allknots = tuple(sorted(set(vectora) + set(vectorb)))
-        classes = [0] * len(allknots)
-        for i, knot in enumerate(allknots):
-            multa = KnotVector.find_mult(knot, vectora)
-            multb = KnotVector.find_mult(knot, vectorb)
-            classes[i] = min(degreea - multa, degreeb - multb)
-        degreec = degreea + degreeb
-        vectorc = [vectora[0]] * (degreec + 1)
-        for knot, classe in zip(allknots[1:-1], classes):
-            vectorc += [knot] * (degreec - classe)
-        vectorc += [vectora[-1]] * (degreec + 1)
-        vectorc = KnotVector(vectorc)
         nptsc = KnotVector.find_npts(vectorc)
+        allknots = KnotVector.find_knots(vectorc)
 
-        nptseval = degreec + 1
+        nptseval = 2 * (degreec + 1)
         nptstotal = nptseval * (len(allknots) - 1)
         allevalnodes = np.empty(nptstotal, dtype="object")
-        avals = np.zeros((nptsa, nptstotal), dtype="float64")
-        bvals = np.zeros((nptsb, nptstotal), dtype="float64")
-        cvals = np.zeros((nptsc, nptstotal), dtype="float64")
-
         for i in range(len(allknots) - 1):
             start, end = allknots[i : i + 2]
             chebynodes = LeastSquare.uniform_nodes(nptseval, start, end)
             allevalnodes[i * nptseval : (i + 1) * nptseval] = chebynodes
+        allevalnodes = tuple(allevalnodes)
+
         avals = eval_spline_nodes(vectora, allevalnodes)
         bvals = eval_spline_nodes(vectorb, allevalnodes)
         cvals = eval_spline_nodes(vectorc, allevalnodes)
-        matrix2d = np.einsum("il,jl->ij", cvals, cvals)
-        invmatrix2d = np.linalg.inv(matrix2d)
-        matrix3d = np.einsum("il,lz,jz,kz->ijk", invmatrix2d, cvals, avals, bvals)
+        avals = np.array(avals)
+        bvals = np.array(bvals)
+        cvals = np.array(cvals)
+
+        if isinstance(cvals[0, 0], Fraction):
+            matrix2d = cvals @ np.transpose(cvals)
+            invmatrix2d = invert_fraction_matrix(matrix2d)
+            lstsqmat = invmatrix2d @ cvals
+        else:
+            lstsqmat = np.linalg.solve(cvals @ cvals.T, cvals)
+
+        matrix3d = np.empty((nptsc, nptsa, nptsb), dtype="object")
+        # matrix3d = np.einsum("iz,jz,kz->ijk", lstsqmat, avals, bvals)
+        for i, linei in enumerate(lstsqmat):
+            for j, linej in enumerate(avals):
+                for k, linek in enumerate(bvals):
+                    matrix3d[i, j, k] = np.sum(linei * linej * linek)
         return totuple(matrix3d)
-
-    @staticmethod
-    def div_spline_curve(
-        vectora: Tuple[float], vectorb: Tuple[float]
-    ) -> Tuple["Matrix2D"]:
-        """
-        Given two spline curves, called A(u) and B(u), it computes and returns
-        a new curve C(u) such C(u) = A(u) * B(u) for every u
-        Restrictions: The limits of B(u) must be the same as the limits of A(u)
-        The parameter `simplify` shows if the function try to reduce at maximum
-        the degree and the knots inside.
-        """
-        assert KnotVector.is_valid_vector(vectora)
-        assert KnotVector.is_valid_vector(vectorb)
-        assert vectora[0] == vectorb[0]
-        assert vectora[-1] == vectorb[-1]
-
-        raise NotImplementedError
