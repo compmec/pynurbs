@@ -50,7 +50,7 @@ class TestLeastSquare:
         chebynodes = LeastSquare.chebyshev_nodes(npts)
         fvals = [func(xi) for xi in chebynodes]
         integrator = LeastSquare.integrator_array(npts)
-        numeintegral = integrator @ fvals
+        numeintegral = np.array(integrator) @ fvals
         assert np.abs(symbintegral - numeintegral) < 1e-9
 
     @pytest.mark.order(1)

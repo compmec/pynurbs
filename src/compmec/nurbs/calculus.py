@@ -122,11 +122,9 @@ class MathOperations:
         bvals = np.zeros((nptsb, nptstotal), dtype="float64")
         cvals = np.zeros((nptsc, nptstotal), dtype="float64")
 
-        cheby0to1 = heavy.LeastSquare.chebyshev_nodes(nptseval)
         for i in range(len(allknots) - 1):
-            start = allknots[i]
-            end = allknots[i + 1]
-            chebynodes = start + (end - start) * cheby0to1
+            start, end = allknots[i : i + 2]
+            chebynodes = heavy.LeastSquare.chebyshev_nodes(nptseval, start, end)
             avals[i * nptseval : (i + 1) * nptseval] = basisfunca(chebynodes)
             bvals[i * nptseval : (i + 1) * nptseval] = basisfuncb(chebynodes)
             cvals[i * nptseval : (i + 1) * nptseval] = basisfuncc(chebynodes)

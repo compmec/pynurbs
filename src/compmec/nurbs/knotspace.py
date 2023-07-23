@@ -9,43 +9,16 @@ from compmec.nurbs import heavy
 from compmec.nurbs.__classes__ import Intface_KnotVector
 
 
-class ValidationKnotVector(object):
-    @staticmethod
-    def array1D(knotvector: Tuple[float]):
-        knotvector = np.array(knotvector, "float64")
-        if knotvector.ndim != 1:
-            error_msg = "Argument must be a 1D array.\n"
-            error_msg += f"Received shape = {knotvector.shape}"
-            raise ValueError(error_msg)
-
-    @staticmethod
-    def degree_npts(degree: int, npts: int):
-        if not isinstance(degree, int):
-            raise TypeError("Degree must be an integer")
-        if not isinstance(npts, int):
-            raise TypeError("Number of points must be integer")
-        if degree < 0:
-            raise ValueError("Degree must be >= 0")
-        if not (npts > degree):
-            raise ValueError("Must have npts > degree")
-
-    @staticmethod
-    def all(knotvector: Tuple[float]) -> None:
-        ValidationKnotVector.array1D(knotvector)
-        knotvector = np.array(knotvector, dtype="float64")
-        knotvector = tuple(knotvector)
-        if not heavy.KnotVector.is_valid_vector(knotvector):
-            error_msg = f"KnotVector is invalid: {knotvector}"
-            raise ValueError(error_msg)
-
-
 class KnotVector(Intface_KnotVector):
     def __init__(self, knotvector: Tuple[float]):
-        if not isinstance(knotvector, self.__class__):
-            ValidationKnotVector.all(knotvector)
-        self.__update_vector(knotvector)
+        if isinstance(knotvector, self.__class__):
+            self.__safe_init(knotvector)
+        elif not heavy.KnotVector.is_valid_vector(knotvector):
+            msg = f"Invalid KnotVector of type {type(knotvector)} = {knotvector}"
+            raise ValueError(msg)
+        self.__safe_init(knotvector)
 
-    def __update_vector(self, newvector: Tuple[float]):
+    def __safe_init(self, newvector: Tuple[float]):
         """
         Unprotected private function to set newvector
         """
@@ -89,16 +62,20 @@ class KnotVector(Intface_KnotVector):
         return self.scale(1 / other)
 
     def __ior__(self, other: KnotVector) -> KnotVector:
-        newvector = heavy.KnotVector.unite_vectors(tuple(self), tuple(other))
-        if not heavy.KnotVector.is_valid_vector(newvector):
-            raise ValueError("Cannot use __or__ in this case")
-        return self.__update_vector(newvector)
+        try:
+            newvector = heavy.KnotVector.unite_vectors(tuple(self), tuple(other))
+        except AssertionError:
+            error_msg = f"Cannot use __or__ between {self} and {other}"
+            raise ValueError(error_msg)
+        return self.__safe_init(newvector)
 
     def __iand__(self, other: KnotVector) -> KnotVector:
-        newvector = heavy.KnotVector.intersect_vectors(tuple(self), tuple(other))
-        if not heavy.KnotVector.is_valid_vector(newvector):
-            raise ValueError("Cannot use __and__ in this case")
-        return self.__update_vector(newvector)
+        try:
+            newvector = heavy.KnotVector.intersect_vectors(tuple(self), tuple(other))
+        except AssertionError:
+            error_msg = f"Cannot use __and__ between {self} and {other}"
+            raise ValueError(error_msg)
+        return self.__safe_init(newvector)
 
     def __add__(self, other: Union[float, Tuple[float]]):
         return self.deepcopy().__iadd__(other)
@@ -143,13 +120,13 @@ class KnotVector(Intface_KnotVector):
     @property
     def degree(self) -> int:
         if self.__degree is None:
-            self.__degree = heavy.KnotVector.find_degree(self)
+            self.__degree = heavy.KnotVector.find_degree(tuple(self))
         return int(self.__degree)
 
     @property
     def npts(self) -> int:
         if self.__npts is None:
-            self.__npts = heavy.KnotVector.find_npts(self)
+            self.__npts = heavy.KnotVector.find_npts(tuple(self))
         return int(self.__npts)
 
     @property
@@ -170,22 +147,27 @@ class KnotVector(Intface_KnotVector):
         if 0 < diff:  # Increase degree
             self += diff * knots
 
-    def __insert_knots(self, knots: Tuple[float]):
-        newvector = heavy.KnotVector.insert_knots(tuple(self), knots)
-        if not heavy.KnotVector.is_valid_vector(newvector):
-            error_msg = f"Cannot insert knots {knots} in knotvector {self}"
-            raise ValueError(error_msg)
-        return self.__update_vector(newvector)
-
-    def __remove_knots(self, knots: Tuple[float]):
+    def __insert_knots(self, nodes: Tuple[float]):
+        nodes = tuple(nodes)
+        for node in nodes:
+            self.__validate_node(node)
         try:
-            newvector = heavy.KnotVector.remove_knots(tuple(self), knots)
-            if not heavy.KnotVector.is_valid_vector(newvector):
-                raise ValueError
-        except ValueError:
-            error_msg = f"Cannot remove knots {knots} in knotvector {self}"
+            newvector = heavy.KnotVector.insert_knots(tuple(self), nodes)
+        except AssertionError:
+            error_msg = f"Cannot insert nodes {nodes} in knotvector {self}"
             raise ValueError(error_msg)
-        return self.__update_vector(newvector)
+        return self.__safe_init(newvector)
+
+    def __remove_knots(self, nodes: Tuple[float]):
+        nodes = tuple(nodes)
+        for node in nodes:
+            self.__validate_node(node)
+        try:
+            newvector = heavy.KnotVector.remove_knots(tuple(self), nodes)
+        except AssertionError:
+            error_msg = f"Cannot remove nodes {nodes} in knotvector {self}"
+            raise ValueError(error_msg)
+        return self.__safe_init(newvector)
 
     def deepcopy(self) -> KnotVector:
         """
@@ -200,7 +182,7 @@ class KnotVector(Intface_KnotVector):
         """
         float(value)  # Verify if it's a number
         newvector = tuple([knoti + value for knoti in self])
-        return self.__update_vector(newvector)
+        return self.__safe_init(newvector)
 
     def scale(self, value: float) -> KnotVector:
         """
@@ -208,7 +190,7 @@ class KnotVector(Intface_KnotVector):
         """
         float(value)  # Verify if it's a number
         newvector = tuple([knoti * value for knoti in self])
-        return self.__update_vector(newvector)
+        return self.__safe_init(newvector)
 
     def normalize(self) -> KnotVector:
         """
@@ -224,7 +206,7 @@ class KnotVector(Intface_KnotVector):
         - Is a number
         - inside the interval
         """
-        if isinstance(node, (str, tuple, list)):
+        if isinstance(node, (str, dict, tuple, list)):
             raise TypeError
         float(node)  # Verify if it's a number
         if node < self[0] or self[-1] < node:
@@ -289,7 +271,8 @@ class GeneratorKnotVector:
         The parameter ```cls``` is good if you want your knotvector
         to be of a certain type
         """
-        ValidationKnotVector.degree_npts(degree, degree + 1)
+        assert isinstance(degree, int)
+        assert degree >= 0
         cls = cls if cls else int
         knotvector = (degree + 1) * [cls(0)] + (degree + 1) * [cls(1)]
         return KnotVector(knotvector)
@@ -299,7 +282,10 @@ class GeneratorKnotVector:
         """
         Creates a equally distributed knotvector between [0, 1]
         """
-        ValidationKnotVector.degree_npts(degree, npts)
+        assert isinstance(degree, int)
+        assert isinstance(npts, int)
+        assert degree >= 0
+        assert npts > degree
         cls = cls if cls else int
         nintknots = npts - degree - 1
         knotvector = degree * [cls(0)]
@@ -311,7 +297,10 @@ class GeneratorKnotVector:
 
     @staticmethod
     def random(degree: int, npts: int) -> KnotVector:
-        ValidationKnotVector.degree_npts(degree, npts)
+        assert isinstance(degree, int)
+        assert isinstance(npts, int)
+        assert degree >= 0
+        assert npts > degree
         weights = np.random.rand(npts - degree)
         knotvector = GeneratorKnotVector.weight(degree, weights)
         knotvector.shift(np.random.uniform(-1, 1))
@@ -328,9 +317,11 @@ class GeneratorKnotVector:
         degree = 1 and weights = [1, 1] -> [0, 0, 0.5, 1, 1]
         degree = 1 and weights = [1, 1, 2] -> [0, 0.25, 0.5, 1, 1]
         """
-        ValidationKnotVector.array1D(weights)
-        npts = len(weights) + degree
-        ValidationKnotVector.degree_npts(degree, npts)
+        assert isinstance(degree, int)
+        assert degree >= 0
+        weights = tuple(weights)
+        if len(weights) == 0:
+            return GeneratorKnotVector.bezier(degree)
         listknots = list(np.cumsum(weights))
         knotvector = (degree + 1) * [0] + listknots + degree * [listknots[-1]]
         knotvector = KnotVector(knotvector)

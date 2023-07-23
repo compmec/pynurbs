@@ -42,7 +42,7 @@ def test_FailCreation():
     """
     with pytest.raises(ValueError):
         KnotVector(-1)
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         KnotVector({1: 1})
     with pytest.raises(ValueError):
         KnotVector(["asd", {1.1: 1}])
@@ -384,33 +384,33 @@ def test_GeneratorRandom():
     ]
 )
 def test_GeneratorKnotVectorFails():
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         GeneratorKnotVector.bezier(degree=-1)
     for degree in range(1, 6):
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             GeneratorKnotVector.uniform(degree, npts=degree)
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             GeneratorKnotVector.uniform(degree, npts=degree - 1)
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             GeneratorKnotVector.random(degree, npts=degree)
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             GeneratorKnotVector.random(degree, npts=degree - 1)
 
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         GeneratorKnotVector.bezier(degree="asd")
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         GeneratorKnotVector.bezier(degree={1: 1})
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         GeneratorKnotVector.uniform(degree=2, npts=3.0)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         GeneratorKnotVector.uniform(degree=2.0, npts=3)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         GeneratorKnotVector.uniform(degree=2, npts="3")
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         GeneratorKnotVector.uniform(degree="2", npts=3)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         GeneratorKnotVector.random(degree=2, npts=3.0)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         GeneratorKnotVector.random(degree=2.0, npts=3)
 
 
@@ -510,7 +510,7 @@ def test_insert_knot_remove():
     assert Uo == U0
 
     Uo = KnotVector(Uinc3)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         U0 -= ["asd"]
     with pytest.raises(ValueError):
         U0 -= [-0.5]

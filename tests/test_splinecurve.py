@@ -969,8 +969,8 @@ class TestOthers:
 
         nsample = 100
         usample = [frac(i, nsample) for i in range(nsample + 1)]
-        curvevalues = curve(usample)
-        for value in curvevalues:
+        goodvalues = curve(usample)
+        for value in goodvalues:
             assert type(value) is frac
 
         ninserts = 5
@@ -981,10 +981,10 @@ class TestOthers:
                 if newknot not in knots:
                     break
             curve.knot_insert([newknot])
-            for i, ui in enumerate(usample):
-                value = curve(ui)
-                assert type(value) is frac
-                assert value == curvevalues[i]
+            testvalues = curve(usample)
+            for tval, gval in zip(testvalues, goodvalues):
+                assert type(tval) is frac
+                assert tval == gval
 
     @pytest.mark.order(5)
     @pytest.mark.dependency(

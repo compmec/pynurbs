@@ -46,19 +46,39 @@ class BaseCurve(Intface_BaseCurve):
         newcurve.ctrlpoints = newctrlpoints
         return newcurve
 
-    def __add__(self, obj: object):
-        if type(self) != type(obj):
-            error_msg = f"Cannot sum a {type(obj)} object with"
-            error_msg += f" a {self.__class__} object"
-            raise TypeError(error_msg)
-        if self.knotvector != obj.knotvector:
-            raise ValueError("The knotvectors of curves are not the same!")
-        newP = [poi + qoi for poi, qoi in zip(self.ctrlpoints, obj.ctrlpoints)]
+    def __iadd__(self, other: object):
+        if not isinstance(other, BaseCurve):
+            raise TypeError
+        vecta = tuple(self.knotvector)
+        vectb = tuple(other.knotvector)
+        if vecta[0] != vectb[0] or vecta[-1] != vectb[-1]:
+            raise ValueError
+        if self.ctrlpoints is None or other.ctrlpoints is None:
+            raise ValueError
+        if self.weights is None and other.weights is None:
+            adder = heavy.MathOperations.add_spline_curve
+        else:
+            adder = heavy.MathOperations.add_rational_curve
+            weightsa = self.weights if self.weights else [1] * self.npts
+            weightsb = other.weights if other.weights else [1] * other.npts
 
-        return self.__class__(self.knotvector, newP)
+        vectc = heavy.KnotVector.unite_vectors(vecta, vectb)
+        matrixa, matrixb = adder(vecta, vectb)
+        matrixa = np.array(matrixa)
+        matrixb = np.array(matrixb)
+        newctrlpoints = matrixa @ self.ctrlpoints
+        newctrlpoints += matrixb @ other.ctrlpoints
+        self.knotvector = vectc
+        self.ctrlpoints = newctrlpoints
+        return self
 
-    def __sub__(self, obj: object):
-        return self + (-obj)
+    def __add__(self, other: object):
+        copyself = self.deepcopy()
+        copyself += other
+        return copyself
+
+    def __sub__(self, other: object):
+        return self + (-other)
 
     def __or__(self, other: object):
         umaxleft = self.knotvector[-1]
@@ -119,6 +139,9 @@ class BaseCurve(Intface_BaseCurve):
 
     @knotvector.setter
     def knotvector(self, value: KnotVector):
+        value = KnotVector(value)
+        if self.knotvector == value:
+            return
         self.update_knotvector(value)
 
     @degree.setter
@@ -248,17 +271,6 @@ class Curve(BaseCurve):
             msg += str(point) + "\n"
         msg += "]\n"
         return msg
-
-    def __iadd__(self, other):
-        if not isinstance(other, BaseCurve):
-            raise TypeError
-        if self.knotvector.limits != other.knotvector.limits:
-            raise ValueError
-        if self.weights is None and other.weights is None:
-            adder = heavy.MathOperations.add_spline_curve
-        else:
-            raise NotImplementedError
-        matrixa, matrixb = adder(self.knotvector, other.knotvector)
 
     def eval(self, nodes: np.ndarray) -> np.ndarray:
         if self.ctrlpoints is None:
