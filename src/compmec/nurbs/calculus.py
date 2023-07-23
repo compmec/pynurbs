@@ -58,18 +58,16 @@ def derivate_spline_curve(curve: Curve) -> Curve:
 def derivate_curve(curve: Curve) -> Curve:
     if curve.weights is None:
         return derivate_spline_curve(curve)
-    numer = curve.deepcopy()
-    numer.ctrlpoints = [pt / wi for pt, wi in zip(curve.ctrlpoints, curve.weights)]
-    numer.weights = None
+    numer = Curve(curve.knotvector)
+    numer.ctrlpoints = [wi * pt for pt, wi in zip(curve.ctrlpoints, curve.weights)]
     denom = Curve(curve.knotvector)
     denom.ctrlpoints = curve.weights
 
-    result_pt0 = derivate_spline_curve(numer)
-    result_pt0 = MathOperations.div_spline(result_pt0, denom)
-    result_pt1 = derivate_spline_curve(denom)
-    result_pt1 = MathOperations.mult_spline(result_pt1, numer)
-    result_pt1 = MathOperations.div_spline(result_pt1, denom)
-    return MathOperations.add_rationals(result_pt0, -result_pt1)
+    dnumer = derivate_spline_curve(numer)
+    ddenom = derivate_spline_curve(denom)
+    deriva = (dnumer * denom - numer * ddenom) / (ddenom * ddenom)
+    deriva.clean()
+    return deriva
 
 
 class MathOperations:
