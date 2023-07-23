@@ -191,7 +191,8 @@ class KnotVector(Intface_KnotVector):
         """
         Returns a exact object, but with different ID
         """
-        return self.__class__([deepcopy(knot) for knot in self.__internal_vector])
+        knotvector = [deepcopy(knot) for knot in self]
+        return self.__class__(knotvector)
 
     def shift(self, value: float):
         """

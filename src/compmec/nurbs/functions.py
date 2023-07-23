@@ -76,7 +76,11 @@ class BaseFunction(Intface_BaseFunction):
         self.__weights = value
 
     def deepcopy(self) -> BaseFunction:
-        newfunc = self.__class__([deepcopy(knot) for knot in self.knotvector])
+        """
+        Returns a copy with all the internal elements
+        """
+        knotvector = [deepcopy(knot) for knot in self.knotvector]
+        newfunc = self.__class__(knotvector)
         if self.weights is not None:
             newfunc.weights = [deepcopy(weight) for weight in self.weights]
         return newfunc

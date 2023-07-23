@@ -166,7 +166,11 @@ class BaseCurve(Intface_BaseCurve):
         self.__ctrlpoints = tuple(newpoints)
 
     def deepcopy(self) -> Curve:
-        curve = self.__class__(tuple(self.knotvector))
+        """
+        Returns a copy with all the internal elements
+        """
+        knotvector = [deepcopy(knot) for knot in self.knotvector]
+        curve = self.__class__(knotvector)
         if self.ctrlpoints is not None:
             curve.ctrlpoints = [deepcopy(point) for point in self.ctrlpoints]
         if self.weights is not None:
@@ -244,6 +248,17 @@ class Curve(BaseCurve):
             msg += str(point) + "\n"
         msg += "]\n"
         return msg
+
+    def __iadd__(self, other):
+        if not isinstance(other, BaseCurve):
+            raise TypeError
+        if self.knotvector.limits != other.knotvector.limits:
+            raise ValueError
+        if self.weights is None and other.weights is None:
+            adder = heavy.MathOperations.add_spline_curve
+        else:
+            raise NotImplementedError
+        matrixa, matrixb = adder(self.knotvector, other.knotvector)
 
     def eval(self, nodes: np.ndarray) -> np.ndarray:
         if self.ctrlpoints is None:

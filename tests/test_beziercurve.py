@@ -362,104 +362,6 @@ class TestCallShape:
         pass
 
 
-class TestSumSubtract:
-    @pytest.mark.order(4)
-    @pytest.mark.dependency(
-        depends=["TestCompare::test_end", "TestCallShape::test_end"]
-    )
-    def test_begin(self):
-        pass
-
-    @pytest.mark.order(4)
-    @pytest.mark.dependency(depends=["TestSumSubtract::test_begin"])
-    def test_sumsub_failknotvector(self):
-        """
-        If the knotvectors are different, it's not possible to sum
-        It's expected a ValueError
-        """
-        for degree in range(1, 5):
-            npts = degree + 1
-            U1 = GeneratorKnotVector.bezier(degree)
-            U2 = KnotVector(np.array(U1) + 0.5)
-            P1 = np.random.uniform(-1, 1, npts)
-            P2 = np.random.uniform(-1, 1, npts)
-            C1 = Curve(U1, P1)
-            C2 = Curve(U2, P2)
-            with pytest.raises(ValueError):
-                C1 + C2
-            with pytest.raises(ValueError):
-                C1 - C2
-
-    @pytest.mark.order(4)
-    @pytest.mark.timeout(15)
-    @pytest.mark.dependency(depends=["TestSumSubtract::test_begin"])
-    def test_sumsub_scalar(self):
-        """
-        Tests if the sum of two curves is equal to the new
-        curve obtained by summing the control points
-        """
-        for degree in range(1, 5):
-            npts = degree + 1
-            knotvector = GeneratorKnotVector.bezier(degree)
-            P1 = np.random.uniform(-1, 1, npts)
-            P2 = np.random.uniform(-1, 1, npts)
-            C1 = Curve(knotvector, P1)
-            C2 = Curve(knotvector, P2)
-            Cadd = Curve(knotvector, P1 + P2)
-            Csub = Curve(knotvector, P1 - P2)
-            assert (C1 + C2) == Cadd
-            assert (C1 - C2) == Csub
-
-    @pytest.mark.order(4)
-    @pytest.mark.timeout(15)
-    @pytest.mark.dependency(
-        depends=[
-            "TestSumSubtract::test_begin",
-            "TestSumSubtract::test_sumsub_failknotvector",
-            "TestSumSubtract::test_sumsub_scalar",
-        ]
-    )
-    def test_sumsub_vector(self):
-        for degree in range(1, 5):
-            npts = degree + 1
-            ndim = np.random.randint(1, 4)
-            knotvector = GeneratorKnotVector.bezier(degree)
-            P1 = np.random.uniform(-1, 1, (npts, ndim))
-            P2 = np.random.uniform(-1, 1, (npts, ndim))
-            C1 = Curve(knotvector, P1)
-            C2 = Curve(knotvector, P2)
-            Cadd = Curve(knotvector, P1 + P2)
-            Csub = Curve(knotvector, P1 - P2)
-            assert (C1 + C2) == Cadd
-            assert (C1 - C2) == Csub
-
-    @pytest.mark.order(4)
-    @pytest.mark.dependency(
-        depends=["TestSumSubtract::test_begin", "TestSumSubtract::test_sumsub_vector"]
-    )
-    def test_somefails(self):
-        degree, npts = 3, 4
-        knotvector = GeneratorKnotVector.bezier(degree)
-        ctrlpoints = np.random.uniform(-1, 1, npts)
-        curve = Curve(knotvector, ctrlpoints)
-        with pytest.raises(TypeError):
-            curve + 1
-        with pytest.raises(TypeError):
-            curve + "asd"
-
-    @pytest.mark.order(4)
-    @pytest.mark.dependency(
-        depends=[
-            "TestSumSubtract::test_begin",
-            "TestSumSubtract::test_sumsub_scalar",
-            "TestSumSubtract::test_sumsub_vector",
-            "TestSumSubtract::test_somefails",
-        ]
-    )
-    def test_end(self):
-        pass
-
-
 class TestDegreeOperations:
     @pytest.mark.order(4)
     @pytest.mark.timeout(15)
@@ -467,7 +369,6 @@ class TestDegreeOperations:
         depends=[
             "TestCompare::test_end",
             "TestCallShape::test_end",
-            "TestSumSubtract::test_end",
         ]
     )
     def test_begin(self):
@@ -686,14 +587,69 @@ class TestDegreeOperations:
         pass
 
 
+class TestAddSubMulDiv:
+    @pytest.mark.order(4)
+    @pytest.mark.dependency(
+        depends=[
+            "TestCompare::test_end",
+            "TestCallShape::test_end",
+            "TestDegreeOperations::test_end",
+        ]
+    )
+    def test_begin(self):
+        pass
+
+    @pytest.mark.order(4)
+    @pytest.mark.dependency(depends=["TestAddSubMulDiv::test_begin"])
+    def test_addsub(self):
+        """
+        If the knotvectors are different, it's not possible to sum
+        It's expected a ValueError
+        """
+        degree = 1
+        maxdenom = 100
+        knotvector = GeneratorKnotVector.bezier(degree)
+        ctrlpts0 = np.random.uniform(-1, 1, knotvector.npts)
+        ctrlpts1 = np.random.uniform(-1, 1, knotvector.npts)
+
+        curve0 = Curve(knotvector, ctrlpts0)
+        curve1 = Curve(knotvector, ctrlpts1)
+        curve_add0 = curve0 + curve1
+        curve_add1 = curve1 + curve0
+        curve_sub0 = curve0 - curve1
+        curve_sub1 = curve1 - curve0
+
+        usample = np.linspace(knotvector[0], knotvector[-1], 129)
+        points0 = curve0(usample)
+        points1 = curve1(usample)
+        ptsadd0 = curve_add0(usample)
+        ptsadd1 = curve_add1(usample)
+        ptssub0 = curve_sub0(usample)
+        ptssub1 = curve_sub1(usample)
+        np.testing.assert_allclose(points0 + points1, ptsadd0)
+        np.testing.assert_allclose(points1 + points0, ptsadd1)
+        np.testing.assert_allclose(points0 - points1, ptssub0)
+        np.testing.assert_allclose(points1 - points0, ptssub1)
+
+    @pytest.mark.order(4)
+    @pytest.mark.dependency(
+        depends=[
+            "TestAddSubMulDiv::test_begin",
+            "TestAddSubMulDiv::test_addsub",
+        ]
+    )
+    def test_end(self):
+        pass
+
+
 @pytest.mark.order(4)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
         "TestInitCurve::test_end",
         "TestCallShape::test_end",
-        "TestSumSubtract::test_end",
         "TestDegreeOperations::test_end",
+        "TestAddSubMulDiv::test_end",
     ]
 )
 def test_end():

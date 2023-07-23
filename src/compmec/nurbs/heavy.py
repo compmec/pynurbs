@@ -4,6 +4,17 @@ from typing import Tuple
 import numpy as np
 
 
+def totuple(array):
+    try:
+        iter(array[0])
+        newtuple = []
+        for subarray in array:
+            newtuple.append(tuple(subarray))
+        return tuple(newtuple)
+    except TypeError:  # Cannot iterate
+        return tuple(array)
+
+
 def binom(n: int, i: int):
     """
     Returns binomial (n, i)
@@ -17,11 +28,14 @@ def binom(n: int, i: int):
     return int(prod)
 
 
-def eval_spline_nodes(knotvector: Tuple[float], nodes: Tuple[float]):
+def eval_spline_nodes(
+    knotvector: Tuple[float], nodes: Tuple[float], degree: int = None
+):
     """
     Returns a matrix M of which M_{ij} = N_{i,p}(node_j)
     """
-    degree = KnotVector.find_degree(knotvector)
+    if degree is None:
+        degree = KnotVector.find_degree(knotvector)
     npts = KnotVector.find_npts(knotvector)
     knots = KnotVector.find_knots(knotvector)
     spans = [KnotVector.find_span(knot, knotvector) for knot in knots]
@@ -294,6 +308,9 @@ class KnotVector:
 
     @staticmethod
     def unite_vectors(vector0: Tuple[float], vector1: Tuple[float]) -> Tuple[float]:
+        """
+        Given two knotvectors of
+        """
         all_knots = list(set(vector0) | set(vector1))
         all_mults = [0] * len(all_knots)
         for vector in [vector0, vector1]:
@@ -493,11 +510,7 @@ class Operations:
             matrix[i, i] = alpha
             matrix[i, i - 1] = 1 - alpha
 
-        matrix = matrix.tolist()
-        for i, line in enumerate(matrix):
-            matrix[i] = tuple(line)
-        matrix = tuple(matrix)
-        return matrix
+        return totuple(matrix)
 
     def knot_insert(vector: Tuple[float], nodes: Tuple[float]) -> "Matrix2D":
         """
@@ -510,12 +523,20 @@ class Operations:
 
         This function returns T such
             [Q] = [T] @ [P]
+
+        # Caution:
+            - Nodes in extremities are not considered
         """
-        nodes = tuple(nodes)
+        nodes = list(nodes)
+        while vector[0] in nodes:
+            nodes.remove(vector[0])
+        while vector[-1] in nodes:
+            nodes.remove(vector[-1])
         setnodes = tuple(sorted(set(nodes)))
         oldnpts = KnotVector.find_npts(vector)
-        newnpts = oldnpts + len(nodes)
         matrix = np.eye(oldnpts, dtype="object")
+        if len(nodes) == 0:
+            return totuple(matrix)
         for node in setnodes:
             times = nodes.count(node)
             for i in range(times):
@@ -523,23 +544,14 @@ class Operations:
                 matrix = incT @ matrix
                 vector = KnotVector.insert_knots(vector, [node])
 
-        matrix = matrix.tolist()
-        for i, line in enumerate(matrix):
-            matrix[i] = tuple(matrix[i])
-        matrix = tuple(matrix)
-        return matrix
+        return totuple(matrix)
 
     def knot_remove(vector: Tuple[float], nodes: Tuple[float]) -> "Matrix2D":
         """ """
         nodes = tuple(nodes)
         newvector = KnotVector.remove_knots(vector, nodes)
         matrix, _ = LeastSquare.spline2spline(vector, newvector)
-
-        matrix = matrix.tolist()
-        for i, line in enumerate(matrix):
-            matrix[i] = tuple(line)
-        matrix = tuple(matrix)
-        return matrix
+        return totuple(matrix)
 
     def degree_increase_bezier(vector: Tuple[float], times: int) -> "Matrix2D":
         """
@@ -565,18 +577,17 @@ class Operations:
             matrix[i, i - 1] = alpha
             matrix[i, i] = 1 - alpha
         matrix[degree + 1, degree] = 1
-
-        matrix = matrix.tolist()
-        for i, line in enumerate(matrix):
-            matrix[i] = tuple(line)
-        matrix = tuple(matrix)
-        return matrix
+        return totuple(matrix)
 
     def degree_increase(vector: Tuple[float], times: int) -> "Matrix2D":
         """
         Given a curve A(u) associated with control points P, we want
         to do a degree elevation
         """
+        if times == 0:
+            npts = KnotVector.find_npts(vector)
+            matrix = np.eye(npts, dtype="object")
+            return totuple(matrix)
         degree = KnotVector.find_degree(vector)
         nodes = KnotVector.find_knots(vector)
         newvectors = KnotVector.split(vector, nodes)
@@ -602,12 +613,7 @@ class Operations:
         bigmatrix = np.array(bigmatrix)
         removematrix = np.array(removematrix)
         finalmatrix = removematrix @ bigmatrix
-
-        finalmatrix = finalmatrix.tolist()
-        for i, line in enumerate(finalmatrix):
-            finalmatrix[i] = tuple(line)
-        finalmatrix = tuple(finalmatrix)
-        return finalmatrix
+        return totuple(finalmatrix)
 
     def matrix_transformation(vectora: Tuple[float], vectorb: Tuple[float]):
         """
@@ -626,7 +632,7 @@ class Operations:
 
 class MathOperations:
     @staticmethod
-    def sum_spline_curve(
+    def add_spline_curve(
         vectora: Tuple[float], vectorb: Tuple[float]
     ) -> Tuple["Matrix2D"]:
         """
@@ -652,4 +658,46 @@ class MathOperations:
             - We suppose the vectora and vectorb limits are equal
             - We suppose the curves has same degree
         """
-        vectorc = KnotVector.unite_vectors(vectora, vectorb)
+        degreea = KnotVector.find_degree(vectora)
+        degreeb = KnotVector.find_degree(vectorb)
+        knotsa = KnotVector.find_knots(vectora)
+        knotsb = KnotVector.find_knots(vectorb)
+        degreec = max(degreea, degreeb)
+        timesa = degreec - degreea
+        timesb = degreec - degreeb
+        deg_inc_mata = Operations.degree_increase(vectora, timesa)
+        deg_inc_matb = Operations.degree_increase(vectorb, timesb)
+        vectora = KnotVector.unite_vectors(vectora, timesa * knotsa)
+        vectorb = KnotVector.unite_vectors(vectorb, timesb * knotsb)
+
+        insknotsa = []
+        insknotsb = []
+        for knot in knotsa:
+            multa = KnotVector.find_mult(knot, vectora)
+            multb = KnotVector.find_mult(knot, vectorb)
+            if multa > multb:
+                insknotsb += (multa - multb) * [knot]
+        for knot in knotsb:
+            multa = KnotVector.find_mult(knot, vectora)
+            multb = KnotVector.find_mult(knot, vectorb)
+            if multb > multa:
+                insknotsa += (multb - multa) * [knot]
+
+        knot_ins_mata = Operations.knot_insert(vectora, insknotsa)
+        knot_ins_matb = Operations.knot_insert(vectorb, insknotsb)
+
+        matrixa = np.array(knot_ins_mata) @ deg_inc_mata
+        matrixb = np.array(knot_ins_matb) @ deg_inc_matb
+        return matrixa, matrixb
+
+    @staticmethod
+    def sub_spline_curve(
+        vectora: Tuple[float], vectorb: Tuple[float]
+    ) -> Tuple["Matrix2D"]:
+        matrixa, matrixb = MathOperations.add_spline_curve(vectora, vectorb)
+        nlinesb, ncolumnsb = len(matrixb), len(matrixb[0])
+        newmatrixb = [[0] * ncolumnsb] * nlinesb
+        for i in range(nlinesb):
+            for j in range(ncolumnsb):
+                newmatrixb[i][j] = -matrixb[i][j]
+        return matrixa, totuple(newmatrixb)
