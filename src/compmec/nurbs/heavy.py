@@ -126,12 +126,30 @@ class LeastSquare:
         assert npts > 0
         float(a)
         float(b)
+        assert a < b
 
         k = np.arange(0, npts)
         nodes = np.cos(np.pi * (2 * k + 1) / (2 * npts))
         nodes *= (b - a) / 2
         nodes += (a + b) / 2
         nodes.sort()
+        return totuple(nodes)
+
+    @staticmethod
+    def uniform_nodes(npts: int, a: float = 0, b: float = 1) -> Tuple[float]:
+        """
+        Returns a list of floats which are equally spaced in [a, b]
+        This function doesn't return the extremities
+        """
+        assert isinstance(npts, int)
+        assert npts > 0
+        float(a)
+        float(b)
+        assert a < b
+
+        one = (b - a) / (b - a)
+        nodes = [(one + 2 * i * one) / npts for i in range(npts)]
+        nodes = [a + (b - a) * node for node in nodes]
         return totuple(nodes)
 
     @staticmethod
@@ -810,6 +828,8 @@ class MathOperations:
         """
         assert KnotVector.is_valid_vector(vectora)
         assert KnotVector.is_valid_vector(vectorb)
+        assert vectora[0] == vectorb[0]
+        assert vectora[-1] == vectorb[-1]
 
         degreea = KnotVector.find_degree(vectora)
         degreeb = KnotVector.find_degree(vectorb)
@@ -849,20 +869,80 @@ class MathOperations:
     ) -> Tuple["Matrix2D"]:
         assert KnotVector.is_valid_vector(vectora)
         assert KnotVector.is_valid_vector(vectorb)
+        assert vectora[0] == vectorb[0]
+        assert vectora[-1] == vectorb[-1]
+
         matrixa, matrixb = MathOperations.add_spline_curve(vectora, vectorb)
-        nlinesb, ncolumnsb = len(matrixb), len(matrixb[0])
-        newmatrixb = [[0] * ncolumnsb] * nlinesb
-        for i in range(nlinesb):
-            for j in range(ncolumnsb):
-                newmatrixb[i][j] = -matrixb[i][j]
-        return matrixa, totuple(newmatrixb)
+        matrixb = -np.array(matrixb, dtype="object")
+        return matrixa, totuple(matrixb)
 
     @staticmethod
-    def add_rational_curve(
-        vectora: Tuple[float],
-        weightsa: Tuple[float],
-        vectorb: Tuple[float],
-        weightsb: Tuple[float],
+    def mul_spline_curve(
+        vectora: Tuple[float], vectorb: Tuple[float]
     ) -> Tuple["Matrix2D"]:
-        """ """
+        """
+        Given two spline curves, called A(u) and B(u), it computes and returns
+        a new curve C(u) such C(u) = A(u) * B(u) for every u
+        Restrictions: The limits of B(u) must be the same as the limits of A(u)
+        The parameter `simplify` shows if the function try to reduce at maximum
+        the degree and the knots inside.
+        """
+        assert KnotVector.is_valid_vector(vectora)
+        assert KnotVector.is_valid_vector(vectorb)
+        assert vectora[0] == vectorb[0]
+        assert vectora[-1] == vectorb[-1]
+
+        degreea = KnotVector.find_degree(vectora)
+        degreeb = KnotVector.find_npts(vectorb)
+        nptsa = KnotVector.find_degree(vectora)
+        nptsb = KnotVector.find_npts(vectorb)
+        allknots = tuple(sorted(set(vectora) + set(vectorb)))
+        classes = [0] * len(allknots)
+        for i, knot in enumerate(allknots):
+            multa = KnotVector.find_mult(knot, vectora)
+            multb = KnotVector.find_mult(knot, vectorb)
+            classes[i] = min(degreea - multa, degreeb - multb)
+        degreec = degreea + degreeb
+        vectorc = [vectora[0]] * (degreec + 1)
+        for knot, classe in zip(allknots[1:-1], classes):
+            vectorc += [knot] * (degreec - classe)
+        vectorc += [vectora[-1]] * (degreec + 1)
+        vectorc = KnotVector(vectorc)
+        nptsc = KnotVector.find_npts(vectorc)
+
+        nptseval = degreec + 1
+        nptstotal = nptseval * (len(allknots) - 1)
+        allevalnodes = np.empty(nptstotal, dtype="object")
+        avals = np.zeros((nptsa, nptstotal), dtype="float64")
+        bvals = np.zeros((nptsb, nptstotal), dtype="float64")
+        cvals = np.zeros((nptsc, nptstotal), dtype="float64")
+
+        for i in range(len(allknots) - 1):
+            start, end = allknots[i : i + 2]
+            chebynodes = LeastSquare.uniform_nodes(nptseval, start, end)
+            allevalnodes[i * nptseval : (i + 1) * nptseval] = chebynodes
+        avals = eval_spline_nodes(vectora, allevalnodes)
+        bvals = eval_spline_nodes(vectorb, allevalnodes)
+        cvals = eval_spline_nodes(vectorc, allevalnodes)
+        matrix2d = np.einsum("il,jl->ij", cvals, cvals)
+        invmatrix2d = np.linalg.inv(matrix2d)
+        matrix3d = np.einsum("il,lz,jz,kz->ijk", invmatrix2d, cvals, avals, bvals)
+        return totuple(matrix3d)
+
+    @staticmethod
+    def div_spline_curve(
+        vectora: Tuple[float], vectorb: Tuple[float]
+    ) -> Tuple["Matrix2D"]:
+        """
+        Given two spline curves, called A(u) and B(u), it computes and returns
+        a new curve C(u) such C(u) = A(u) * B(u) for every u
+        Restrictions: The limits of B(u) must be the same as the limits of A(u)
+        The parameter `simplify` shows if the function try to reduce at maximum
+        the degree and the knots inside.
+        """
+        assert KnotVector.is_valid_vector(vectora)
+        assert KnotVector.is_valid_vector(vectorb)
+        assert vectora[0] == vectorb[0]
+        assert vectora[-1] == vectorb[-1]
+
         raise NotImplementedError
