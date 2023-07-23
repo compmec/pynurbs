@@ -562,6 +562,25 @@ class KnotVector:
             nodes += [knot] * (multb - multa)
         return tuple(nodes)
 
+    @staticmethod
+    def derivate(vector: Tuple[float]) -> Tuple[float]:
+        """
+        Returns the new vector of derivative of spline
+        """
+        assert KnotVector.is_valid_vector(vector)
+        degree = KnotVector.find_degree(vector)
+        knots = KnotVector.find_knots(vector)
+        if degree == 0:
+            return (vector[0], vector[-1])
+        vector = list(vector)
+        for knot in knots:
+            mult = vector.count(knot)
+            if mult == degree + 1:
+                vector.remove(knot)
+        vector = tuple(vector)
+        assert KnotVector.is_valid_vector(vector)
+        return vector
+
 
 class BasisFunction:
     @staticmethod

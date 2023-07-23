@@ -8,16 +8,6 @@ from compmec.nurbs.functions import Function
 from compmec.nurbs.knotspace import KnotVector
 
 
-def knotvector_derivated(knotvector: Tuple[float]) -> Tuple[float]:
-    degree = heavy.KnotVector.find_degree(knotvector)
-    knots = heavy.KnotVector.find_knots(knotvector)
-    for knot in knots:
-        mult = heavy.KnotVector.find_mult(knot, knotvector)
-        if mult == degree + 1:
-            knotvector = heavy.KnotVector.remove_knots(knotvector, [knot])
-    return knotvector
-
-
 def difference_vector(knotvector: Tuple[float]) -> Tuple[float]:
     degree = heavy.KnotVector.find_degree(knotvector)
     npts = heavy.KnotVector.find_npts(knotvector)
@@ -48,7 +38,7 @@ def derivate_spline_curve(curve: Curve) -> Curve:
     knotvector = tuple(curve.knotvector)
     matrix = difference_matrix(knotvector)
 
-    newvector = knotvector_derivated(knotvector)
+    newvector = heavy.KnotVector.derivate(knotvector)
     newcurve = Curve(newvector)
     newctrlpoints = np.transpose(matrix) @ curve.ctrlpoints
     newcurve.ctrlpoints = newctrlpoints[1:]

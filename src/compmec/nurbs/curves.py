@@ -281,15 +281,19 @@ class BaseCurve(Intface_BaseCurve):
         if self.ctrlpoints is None:
             return self.set_knotvector(newvector)
         oldvec, newvec = tuple(self.knotvector), tuple(newvector)
-        T, E = heavy.LeastSquare.spline2spline(oldvec, newvec)
-        error = np.moveaxis(self.ctrlpoints, 0, -1) @ E @ self.ctrlpoints
+        mattrans, materror = heavy.LeastSquare.spline2spline(oldvec, newvec)
+
+        materror = np.array(materror)
+        error = np.moveaxis(self.ctrlpoints, 0, -1) @ materror @ tuple(self.ctrlpoints)
         error = np.max(np.abs(error))
+        if self.weights is not None:
+            error += tuple(self.weights) @ materror @ tuple(self.ctrlpoints)
         if tolerance and error > tolerance:
             error_msg = "Cannot update knotvector cause error is "
             error_msg += f" {error} > {tolerance}"
             raise ValueError(error_msg)
         self.set_knotvector(newvec)
-        self.apply_lineartrans(T)
+        self.apply_lineartrans(mattrans)
 
     def apply_lineartrans(self, matrix: np.ndarray):
         """ """
@@ -418,24 +422,6 @@ class Curve(BaseCurve):
         self.set_knotvector(newvector)
         self.apply_lineartrans(matrix)
 
-    def clean(self, tolerance: float = 1e-9):
-        self.degree_clean(tolerance=tolerance)
-        self.knot_clean(tolerance=tolerance)
-        if self.weights is None:
-            return
-        # Try to reduce to spline
-        knotvector = tuple(self.knotvector)
-        weights = tuple(self.weights)
-        ctrlpoints = tuple(self.ctrlpoints)
-        T, E = heavy.LeastSquare.func2func(
-            knotvector, weights, knotvector, [1] * self.npts
-        )
-        error = ctrlpoints @ E @ ctrlpoints
-        if error < tolerance:
-            self.ctrlpoints = T @ ctrlpoints
-            self.weights = None
-            self.clean(tolerance)
-
     def degree_decrease(
         self, times: Optional[int] = 1, tolerance: Optional[float] = 1e-9
     ):
@@ -457,6 +443,26 @@ class Curve(BaseCurve):
                 self.degree_decrease(1, tolerance)
         except ValueError:
             pass
+
+    def clean(self, tolerance: float = 1e-9):
+        self.degree_clean(tolerance=tolerance)
+        self.knot_clean(tolerance=tolerance)
+        if self.weights is None:
+            return
+        # Try to reduce to spline
+        knotvector = tuple(self.knotvector)
+        weights = tuple(self.weights)
+        ctrlpoints = tuple(self.ctrlpoints)
+        mattrans, materror = heavy.LeastSquare.func2func(
+            knotvector, weights, knotvector, [1] * self.npts
+        )
+        error = np.moveaxis(ctrlpoints, 0, -1) @ materror @ ctrlpoints
+        error = np.max(abs(error))
+        error = max(error, weights @ np.array(materror) @ weights)
+        if error < tolerance:
+            self.ctrlpoints = np.array(mattrans) @ ctrlpoints
+            self.weights = None
+            self.clean(tolerance)
 
     def split(self, nodes: Optional[Tuple[float]] = None) -> Tuple[Curve]:
         """

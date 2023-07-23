@@ -13,7 +13,6 @@ from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
 
 
 @pytest.mark.order(7)
-@pytest.mark.skip(reason="Needs implementation of + - * and / of rational")
 @pytest.mark.dependency(
     depends=[
         "tests/test_knotspace.py::test_end",
