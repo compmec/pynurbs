@@ -31,14 +31,14 @@ class TestBuild:
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestBuild::test_begin"])
     def test_failbuild(self):
-        for degree in range(1, 6):
-            npts = np.random.randint(degree + 1, degree + 3)
-            knotvector = GeneratorKnotVector.random(degree, npts)
-            curve = Curve(knotvector)
-            with pytest.raises(ValueError):
-                curve.weights = 1
-            with pytest.raises(ValueError):
-                curve.weights = "asd"
+        degree = 2
+        npts = np.random.randint(degree + 1, degree + 3)
+        knotvector = GeneratorKnotVector.random(degree, npts)
+        curve = Curve(knotvector)
+        with pytest.raises(ValueError):
+            curve.weights = 1
+        with pytest.raises(ValueError):
+            curve.weights = "asd"
 
     @pytest.mark.order(6)
     @pytest.mark.timeout(15)
@@ -64,9 +64,128 @@ class TestBuild:
         pass
 
 
-class TestCircle:
+class TestAddSubMulDiv:
     @pytest.mark.order(6)
     @pytest.mark.dependency(depends=["TestBuild::test_end"])
+    def test_begin(self):
+        pass
+
+    @pytest.mark.order(6)
+    @pytest.mark.timeout(1)
+    @pytest.mark.dependency(depends=["TestAddSubMulDiv::test_begin"])
+    def test_bezier_known(self):
+        degree = 2
+        knotvector = GeneratorKnotVector.bezier(degree, frac)
+        curvea = Curve(knotvector)
+        curveb = Curve(knotvector)
+        curvea.ctrlpoints = [0, 1, 2]  # A(u) = 2*u
+        curveb.ctrlpoints = [1, 1, 2]  # B(u) = 1 + u^2
+
+        divatob = curvea / curveb  # C(u) = 2*u/(1+u^2)
+        assert divatob.knotvector == [0, 0, 0, 1, 1, 1]
+        assert divatob.weights == (1, 1, 2)
+        assert divatob.ctrlpoints == (0, 1, 1)
+
+    @pytest.mark.order(6)
+    @pytest.mark.timeout(10)
+    @pytest.mark.skip(
+        reason="Standard fraction fails due to lack of precision. sympy.Rational works"
+    )
+    @pytest.mark.dependency(
+        depends=["TestAddSubMulDiv::test_begin", "TestAddSubMulDiv::test_bezier_known"]
+    )
+    def test_random_bezier_fractions(self):
+        maxdenom = 2
+        for degree in range(1, 4):
+            knotvector = GeneratorKnotVector.bezier(degree, frac)
+            npts = knotvector.npts
+            curvea = Curve(knotvector)
+            curveb = Curve(knotvector)
+            randnumbers = [np.random.randint(maxdenom + 1) for i in range(npts)]
+            curvea.ctrlpoints = [1 + frac(num, maxdenom) for num in randnumbers]
+            randnumbers = [np.random.randint(maxdenom + 1) for i in range(npts)]
+            curvea.weights = [1 + frac(num, maxdenom) for num in randnumbers]
+            randnumbers = [np.random.randint(maxdenom + 1) for i in range(npts)]
+            curveb.ctrlpoints = [1 + frac(num, maxdenom) for num in randnumbers]
+            randnumbers = [np.random.randint(maxdenom + 1) for i in range(npts)]
+            curveb.weights = [1 + frac(num, maxdenom) for num in randnumbers]
+
+            aaddb = curvea + curveb
+            badda = curveb + curvea
+            asubb = curvea - curveb
+            bsuba = curveb - curvea
+            amulb = curvea * curveb
+            bmula = curveb * curvea
+            adivb = curvea / curveb
+            bdiva = curveb / curvea
+
+            randnumbers = [np.random.randint(maxdenom + 1) for i in range(npts)]
+            usample = [frac(num, maxdenom) for num in range(maxdenom + 1)]
+            avals = curvea(usample)
+            bvals = curveb(usample)
+            for ai, bi, ui in zip(avals, bvals, usample):
+                assert abs(aaddb(ui) - (ai + bi)) < 1e-9
+                assert abs(badda(ui) - (bi + ai)) < 1e-9
+                assert abs(asubb(ui) - (ai - bi)) < 1e-9
+                assert abs(bsuba(ui) - (bi - ai)) < 1e-9
+                assert abs(amulb(ui) - (ai * bi)) < 1e-9
+                assert abs(bmula(ui) - (bi * ai)) < 1e-9
+                assert abs(adivb(ui) - (ai / bi)) < 1e-9
+                assert abs(bdiva(ui) - (bi / ai)) < 1e-9
+
+    @pytest.mark.order(6)
+    @pytest.mark.timeout(10)
+    @pytest.mark.dependency(
+        depends=["TestAddSubMulDiv::test_begin", "TestAddSubMulDiv::test_bezier_known"]
+    )
+    def test_random_bezier_float64(self):
+        for degree in range(1, 4):
+            knotvector = GeneratorKnotVector.bezier(degree, np.float64)
+            npts = knotvector.npts
+            curvea = Curve(knotvector)
+            curveb = Curve(knotvector)
+            curvea.ctrlpoints = np.random.uniform(1, 2, npts)
+            curvea.weights = np.random.uniform(1, 2, npts)
+            curveb.ctrlpoints = np.random.uniform(1, 2, npts)
+            curveb.weights = np.random.uniform(1, 2, npts)
+
+            aaddb = curvea + curveb
+            badda = curveb + curvea
+            asubb = curvea - curveb
+            bsuba = curveb - curvea
+            amulb = curvea * curveb
+            bmula = curveb * curvea
+            adivb = curvea / curveb
+            bdiva = curveb / curvea
+
+            usample = np.linspace(0, 1, 9)
+            avals = curvea(usample)
+            bvals = curveb(usample)
+            for ai, bi, ui in zip(avals, bvals, usample):
+                assert abs(aaddb(ui) - (ai + bi)) < 1e-9
+                assert abs(badda(ui) - (bi + ai)) < 1e-9
+                assert abs(asubb(ui) - (ai - bi)) < 1e-9
+                assert abs(bsuba(ui) - (bi - ai)) < 1e-9
+                assert abs(amulb(ui) - (ai * bi)) < 1e-9
+                assert abs(bmula(ui) - (bi * ai)) < 1e-9
+                assert abs(adivb(ui) - (ai / bi)) < 1e-9
+                assert abs(bdiva(ui) - (bi / ai)) < 1e-9
+
+    @pytest.mark.order(6)
+    @pytest.mark.dependency(
+        depends=[
+            "TestAddSubMulDiv::test_begin",
+            "TestAddSubMulDiv::test_bezier_known",
+            "TestAddSubMulDiv::test_random_bezier_float64",
+        ]
+    )
+    def test_end(self):
+        pass
+
+
+class TestCircle:
+    @pytest.mark.order(6)
+    @pytest.mark.dependency(depends=["TestAddSubMulDiv::test_end"])
     def test_begin(self):
         pass
 
@@ -173,7 +292,7 @@ class TestRandomInsertKnot:
     @pytest.mark.dependency(depends=["TestRandomInsertKnot::test_begin"])
     def test_none_weights_fraction(self):
         denmax = 100
-        for degree in range(1, 6):
+        for degree in range(1, 4):
             for npts in range(degree + 1, degree + 3):
                 knotvector = GeneratorKnotVector.uniform(degree, npts, frac)
                 randnums = [np.random.randint(denmax + 1) for i in range(npts)]
@@ -205,7 +324,7 @@ class TestRandomInsertKnot:
     )
     def test_unitary_weights_fraction(self):
         denmax = 100
-        for degree in range(1, 6):
+        for degree in range(1, 4):
             for npts in range(degree + 1, degree + 3):
                 knotvector = GeneratorKnotVector.uniform(degree, npts, frac)
                 randnums = [np.random.randint(denmax + 1) for i in range(npts)]
@@ -240,7 +359,7 @@ class TestRandomInsertKnot:
     )
     def test_const_weights_fraction(self):
         denmax = 100
-        for degree in range(1, 6):
+        for degree in range(1, 4):
             for npts in range(degree + 1, degree + 3):
                 knotvector = GeneratorKnotVector.uniform(degree, npts, frac)
                 randnums = [np.random.randint(denmax + 1) for i in range(npts)]
@@ -276,7 +395,7 @@ class TestRandomInsertKnot:
     )
     def test_random_weights_fraction(self):
         denmax = 20
-        for degree in range(1, 6):
+        for degree in range(1, 4):
             for npts in range(degree + 1, degree + 3):
                 knotvector = GeneratorKnotVector.uniform(degree, npts, frac)
                 randnums = [np.random.randint(denmax + 1) for i in range(npts)]

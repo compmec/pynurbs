@@ -55,11 +55,9 @@ class BaseCurve(Intface_BaseCurve):
         if self.knotvector.limits != other.knotvector.limits:
             raise ValueError
         if self.weights is None and other.weights is None:
-            assert self.knotvector == other.knotvector
-            vectadd = self.knotvector | other.knotvector
             vecta, vectb = tuple(self.knotvector), tuple(other.knotvector)
             matra, matrb = heavy.MathOperations.add_spline_curve(vecta, vectb)
-            curve = Curve(vectadd)
+            curve = Curve(self.knotvector | other.knotvector)
             ctrlpoints = np.array(matra) @ self.ctrlpoints
             ctrlpoints += np.array(matrb) @ other.ctrlpoints
             curve.ctrlpoints = ctrlpoints
@@ -87,7 +85,6 @@ class BaseCurve(Intface_BaseCurve):
         if self.knotvector.limits != other.knotvector.limits:
             raise ValueError
         if self.weights is None and other.weights is None:
-            assert self.knotvector == other.knotvector
             vecta, vectb = tuple(self.knotvector), tuple(other.knotvector)
             vectmul = heavy.MathOperations.knotvector_mul(vecta, vectb)
             matrix3d = heavy.MathOperations.mul_spline_curve(vecta, vectb)
@@ -271,8 +268,8 @@ class BaseCurve(Intface_BaseCurve):
             numerator = self.deepcopy()
             return numerator, 1
         ctrlpoints = [deepcopy(point) for point in self.ctrlpoints]
-        numerator = self.__class__(self.knotvector.deepcopy)
-        denominator = self.__class__(self.knotvector.deepcopy)
+        numerator = self.__class__(self.knotvector.deepcopy())
+        denominator = self.__class__(self.knotvector.deepcopy())
         numerator.ctrlpoints = [wi * pt for wi, pt in zip(self.weights, ctrlpoints)]
         denominator.ctrlpoints = self.weights
         return numerator, denominator

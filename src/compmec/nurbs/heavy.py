@@ -539,6 +539,29 @@ class KnotVector:
             retorno.append(newknotvect)
         return tuple(retorno)
 
+    @staticmethod
+    def nodes_to_insert(vectora: Tuple[float], vectorb: Tuple[float]) -> Tuple[float]:
+        """
+        It's the inverse of
+            vectorb = KnotVector.insert_knots(vectora, nodes)
+        """
+        assert KnotVector.is_valid_vector(vectora)
+        assert KnotVector.is_valid_vector(vectorb)
+
+        knotsa = set(vectora)
+        knotsb = set(vectorb)
+        assert len(knotsa - knotsb) == 0
+        degreea = KnotVector.find_degree(vectora)
+        degreeb = KnotVector.find_degree(vectorb)
+        assert degreea == degreeb
+
+        nodes = []
+        for knot in tuple(sorted(knotsb)):
+            multa = KnotVector.find_mult(knot, vectora)
+            multb = KnotVector.find_mult(knot, vectorb)
+            nodes += [knot] * (multb - multa)
+        return tuple(nodes)
+
 
 class BasisFunction:
     @staticmethod
@@ -851,7 +874,19 @@ class Operations:
         """
         assert KnotVector.is_valid_vector(vectora)
         assert KnotVector.is_valid_vector(vectorb)
-        raise NotImplementedError
+
+        degreea = KnotVector.find_degree(vectora)
+        degreeb = KnotVector.find_degree(vectorb)
+        knotsa = KnotVector.find_knots(vectora)
+        assert degreea <= degreeb
+        matrix_deginc = Operations.degree_increase(vectora, degreeb - degreea)
+        vectora = KnotVector.insert_knots(vectora, knotsa * (degreeb - degreea))
+
+        nodes2ins = KnotVector.nodes_to_insert(vectora, vectorb)
+        matrix_knotins = Operations.knot_insert(vectora, nodes2ins)
+
+        finalresult = np.array(matrix_knotins) @ matrix_deginc
+        return totuple(finalresult)
 
 
 class MathOperations:
@@ -920,34 +955,8 @@ class MathOperations:
         assert vectora[-1] == vectorb[-1]
 
         vectorc = MathOperations.knotvector_add(vectora, vectorb)
-        degreea = KnotVector.find_degree(vectora)
-        degreeb = KnotVector.find_degree(vectorb)
-        degreec = KnotVector.find_degree(vectorc)
-        knotsa = KnotVector.find_knots(vectora)
-        knotsb = KnotVector.find_knots(vectorb)
-        knotsc = KnotVector.find_knots(vectorc)
-        timesa = degreec - degreea
-        timesb = degreec - degreeb
-        matrix_deginca = Operations.degree_increase(vectora, timesa)
-        matrix_degincb = Operations.degree_increase(vectorb, timesb)
-        vectora = KnotVector.insert_knots(vectora, timesa * knotsa)
-        vectorb = KnotVector.insert_knots(vectorb, timesb * knotsb)
-
-        insknotsa = []
-        insknotsb = []
-        for knot in knotsc:
-            multc = KnotVector.find_mult(knot, vectorc)
-            multa = KnotVector.find_mult(knot, vectora)
-            multb = KnotVector.find_mult(knot, vectorb)
-            if multa < multc:
-                insknotsa += (multc - multa) * [knot]
-            if multb < multc:
-                insknotsb += (multc - multb) * [knot]
-
-        matrix_knotinsa = Operations.knot_insert(vectora, insknotsa)
-        matrix_knotinsb = Operations.knot_insert(vectorb, insknotsb)
-        matrixa = np.array(matrix_knotinsa) @ matrix_deginca
-        matrixb = np.array(matrix_knotinsb) @ matrix_degincb
+        matrixa = Operations.matrix_transformation(vectora, vectorc)
+        matrixb = Operations.matrix_transformation(vectorb, vectorc)
         return totuple(matrixa), totuple(matrixb)
 
     @staticmethod
@@ -1007,6 +1016,7 @@ class MathOperations:
             invmatrix2d = invert_fraction_matrix(matrix2d)
             lstsqmat = invmatrix2d @ cvals
         else:
+            cvals = np.array(cvals, dtype="float64")
             lstsqmat = np.linalg.solve(cvals @ cvals.T, cvals)
 
         matrix3d = np.empty((nptsc, nptsa, nptsb), dtype="object")
