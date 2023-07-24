@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union
 
 import numpy as np
 
@@ -362,11 +362,14 @@ class Curve(BaseCurve):
         """
         vector = tuple(self.knotvector)
         nodes = tuple(nodes)
+        degree = int(self.knotvector.degree)
         if self.weights is None:
-            matrix = heavy.eval_spline_nodes(vector, nodes)
+            eval = heavy.eval_spline_nodes
+            matrix = eval(vector, nodes, degree)
         else:
+            eval = heavy.eval_rational_nodes
             weights = tuple(self.weights)
-            matrix = heavy.eval_rational_nodes(vector, weights, nodes)
+            matrix = eval(vector, weights, nodes, degree)
         result = np.moveaxis(matrix, 0, -1) @ self.ctrlpoints
         return tuple(result)
 
@@ -491,3 +494,53 @@ class Curve(BaseCurve):
                 newcurve.weights = matrix @ self.weights
             newcurves.append(newcurve)
         return tuple(newcurves)
+
+    def fit_curve(self, other: Curve, nodes: Tuple[float] = None) -> None:
+        """
+        Given a 'other' curve, this function finds the best control points
+        such keeps as near as possible to 'other'
+
+        If weights is None -> spline fit
+        Else: -> rationa spline fit
+
+        If nodes are given
+            if len(nodes) < npts
+                interpolates all nodes, uses least square in others
+            if len(nodes) == npts
+                interpolate at all points
+            if len(nodes) > npts:
+                same as fit_points(other(nodes), nodes)
+        """
+        raise NotImplementedError
+
+    def fit_function(self, function: Callable, nodes: Tuple[float] = None) -> None:
+        """
+        Find the control points such fits the given function
+        If nodes are not given, it uses least square in many intervals
+            for subinterval [uk, u_{k+1}] evaluates on
+            max(degree+1, 5*npts/len(subintervals)) using chebyshev nodes
+        If nodes are given
+            if len(nodes) < npts
+                interpolates all nodes and
+            if len(nodes) == npts
+                interpolate at all points
+            if len(nodes) > npts:
+                same as fit_points(function(nodes), nodes)
+        """
+        raise NotImplementedError
+
+    def fit_points(self, points: Tuple["Point"], nodes: Tuple[float] = None) -> None:
+        """
+        Fit the curve into given points
+        If the quantity of points are not enough to
+        """
+        raise NotImplementedError
+
+    def fit(
+        self, data: Union[Curve, Callable, Tuple["Point"]], nodes: Tuple[float] = None
+    ) -> None:
+        if isinstance(data, self.__class__):
+            return self.fit_curve(data, nodes)
+        if callable(data):
+            return self.fit_function(data, nodes)
+        return self.fit_points(data, nodes)

@@ -1,8 +1,39 @@
 import math
 from fractions import Fraction
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
+
+
+def number_type(number: Union[int, float, Fraction]):
+    """
+    Returns the type of a number, if it's a integer, a float, fraction
+    It accepts tuple, lists and so on such:
+        [int, int, int] -> int
+        [int, Fraction, int] -> Fraction
+        [int, int, float] -> float
+        [Fraction, float, int] -> float
+    """
+    try:
+        iter(number)
+        tipos = []
+        for numb in number:
+            tipo = number_type(numb)
+            if tipo is float:
+                return float
+            tipos.append(tipo)
+        for tipo in tipos:
+            if tipo is Fraction:
+                return Fraction
+        return int
+    except TypeError:
+        if isinstance(number, (int, np.integer)):
+            return int
+        if isinstance(number, (float, np.floating)):
+            return float
+        if isinstance(number, Fraction):
+            return Fraction
+        return float
 
 
 def invert_integer_matrix(
@@ -42,21 +73,38 @@ def invert_integer_matrix(
     return totuple(diagonal), totuple(inverse)
 
 
-def invert_fraction_matrix(matrix: Tuple[Tuple[Fraction]]) -> Tuple[Tuple[Fraction]]:
+def matrix_fraction2integer(
+    matrix: Tuple[Tuple[Fraction]],
+) -> Tuple[Tuple[int], Tuple[Tuple[int]]]:
     matrix = np.array(matrix, dtype="object")
     side = len(matrix)
-    intdiag = [1] * side
+    diagonal = [1] * side
     for i, line in enumerate(matrix):
         denoms = [frac.denominator for frac in line]
-        intdiag[i] = math.lcm(*denoms)
-        matrix[i] *= intdiag[i]
-    intdiag = np.array(intdiag, dtype="int64")
+        diagonal[i] = math.lcm(*denoms)
+        matrix[i] = tuple([int(val * diagonal[i]) for val in matrix[i]])
+    intdiag = [int(diagi) for diagi in diagonal]
+    return tuple(intdiag), tuple(matrix)
+
+
+def invert_fraction_matrix(matrix: Tuple[Tuple[Fraction]]) -> Tuple[Tuple[Fraction]]:
+    """
+    C
+    """
+    numbtype = number_type(matrix)
+    assert numbtype is not float
+    assert len(matrix) == len(matrix[0])  # Square matrix
+    if numbtype is Fraction:
+        updiag, matrix = matrix_fraction2integer(matrix)
+    else:
+        updiag = [1] * len(matrix)
+    updiag = np.array(updiag, dtype="int64")
     integermatrix = np.array(matrix, dtype="int64")
-    diag, inverseintegermat = invert_integer_matrix(integermatrix)
-    inverse = np.array(inverseintegermat, dtype="object")
-    for i, line in enumerate(inverseintegermat):
+    lowdiag, inverseint = invert_integer_matrix(integermatrix)
+    inverse = np.array(inverseint, dtype="object")
+    for i, line in enumerate(inverseint):
         for j, elem in enumerate(line):
-            inverse[i, j] = Fraction(elem * intdiag[j], diag[i])
+            inverse[i, j] = Fraction(elem * updiag[j], lowdiag[i])
     return inverse
 
 
@@ -89,15 +137,15 @@ def binom(n: int, i: int):
 
 
 def eval_spline_nodes(
-    knotvector: Tuple[float], nodes: Tuple[float], degree: int = None
-):
+    knotvector: Tuple[float], nodes: Tuple[float], degree: int
+) -> Tuple[Tuple[float]]:
     """
     Returns a matrix M of which M_{ij} = N_{i,degree}(node_j)
+    M.shape = (npts, len(nodes))
     """
     assert isinstance(knotvector, (tuple, list))
     assert isinstance(nodes, (tuple, list))
     maxdegree = KnotVector.find_degree(knotvector)
-    degree = maxdegree if (degree is None) else degree
     assert isinstance(degree, int)
     assert 0 <= degree
     assert degree <= maxdegree
@@ -122,13 +170,11 @@ def eval_spline_nodes(
 
 
 def eval_rational_nodes(
-    knotvector: Tuple[float],
-    weights: Tuple[float],
-    nodes: Tuple[float],
-    degree: int = None,
-):
+    knotvector: Tuple[float], weights: Tuple[float], nodes: Tuple[float], degree: int
+) -> Tuple[Tuple[float]]:
     """
     Returns a matrix M of which M_{ij} = N_{i,p}(node_j)
+    M.shape = (len(weights), len(nodes))
     """
     assert isinstance(knotvector, (tuple, list))
     assert isinstance(weights, (tuple, list))
@@ -209,7 +255,7 @@ class LeastSquare:
         return totuple(nodes)
 
     @staticmethod
-    def interpolator_matrix(npts: int) -> Tuple[float]:
+    def interp_bezier_matrix(npts: int) -> Tuple[float]:
         """
         This function helps computing the values of F_{i} such
             f(x) approx g(x) = sum_{i=0}^{z} F_{i} * B_{i, z}(x)
@@ -255,11 +301,47 @@ class LeastSquare:
             int_{0}^{1} B_{i, z}(x) dx = 1/(z+1)
         Therefore
             int_{0}^{1} f(x) dx approx 1/(z+1) * sum F_{i}
-        The values of F_{i} are gotten from ```interpolator_matrix```
+        The values of F_{i} are gotten from ```interp_bezier_matrix```
         """
         assert isinstance(npts, int)
-        matrix = LeastSquare.interpolator_matrix(npts)
+        matrix = LeastSquare.interp_bezier_matrix(npts)
         return totuple(np.einsum("ij->j", matrix) / npts)
+
+    @staticmethod
+    def fit_function(
+        knotvector: Tuple[float],
+        nodes: Tuple[float],
+        weights: Union[Tuple[float], None],
+    ) -> Tuple[Tuple[float]]:
+        """
+        Let C(u) be a curve C(u) of base functions F of given vector
+            C(u) = sum_i F_i(u) * P_i
+        it's wanted to fit a C(u) into the curve f(u)
+
+        To do it, we do least squares by minimizing
+            J(P) = sum_j abs(C(nodej)-f(nodej))
+
+        This function returns a matrix M such
+            [P] = [M] * [f(nodes)]
+        """
+        assert KnotVector.is_valid_vector(knotvector)
+        npts = KnotVector.find_npts(knotvector)
+        degree = KnotVector.find_degree(knotvector)
+        assert len(nodes) <= npts
+        if weights is None:
+            funcvals = eval_spline_nodes(knotvector, nodes, degree)
+        else:
+            funcvals = eval_rational_nodes(knotvector, nodes, weights, degree)
+        matrix = np.zeros((npts, npts), dtype="object")
+        for i in range(npts):
+            for j in range(npts):
+                matrix[i, j] += np.sum(funcvals[i], funcvals[j])
+        numbtype = number_type(matrix)
+        if numbtype is Fraction or numbtype is int:
+            inverse = invert_fraction_matrix(matrix)
+            return np.array(inverse) @ funcvals
+        matrix = np.array(matrix)
+        return np.linalg.solve(matrix, funcvals)
 
     @staticmethod
     def spline2spline(
@@ -308,8 +390,8 @@ class LeastSquare:
         for start, end in zip(allknots[:-1], allknots[1:]):
             chebynodes = LeastSquare.chebyshev_nodes(nptsinteg, start, end)
             # Integral of the functions in the interval [a, b]
-            Fvalues = eval_rational_nodes(oldvector, oldweights, chebynodes)
-            Gvalues = eval_rational_nodes(newvector, newweights, chebynodes)
+            Fvalues = eval_rational_nodes(oldvector, oldweights, chebynodes, olddegree)
+            Gvalues = eval_rational_nodes(newvector, newweights, chebynodes, newdegree)
             A += np.einsum("k,ik,jk->ij", integrator, Fvalues, Fvalues)
             B += np.einsum("k,ik,jk->ij", integrator, Fvalues, Gvalues)
             C += np.einsum("k,ik,jk->ij", integrator, Gvalues, Gvalues)
@@ -1008,6 +1090,8 @@ class MathOperations:
         assert vectora[-1] == vectorb[-1]
 
         vectorc = MathOperations.knotvector_mul(vectora, vectorb)
+        degreea = KnotVector.find_degree(vectora)
+        degreeb = KnotVector.find_degree(vectorb)
         degreec = KnotVector.find_degree(vectorc)
         nptsa = KnotVector.find_npts(vectora)
         nptsb = KnotVector.find_npts(vectorb)
@@ -1023,9 +1107,9 @@ class MathOperations:
             allevalnodes[i * nptseval : (i + 1) * nptseval] = chebynodes
         allevalnodes = tuple(allevalnodes)
 
-        avals = eval_spline_nodes(vectora, allevalnodes)
-        bvals = eval_spline_nodes(vectorb, allevalnodes)
-        cvals = eval_spline_nodes(vectorc, allevalnodes)
+        avals = eval_spline_nodes(vectora, allevalnodes, degreea)
+        bvals = eval_spline_nodes(vectorb, allevalnodes, degreeb)
+        cvals = eval_spline_nodes(vectorc, allevalnodes, degreec)
         avals = np.array(avals)
         bvals = np.array(bvals)
         cvals = np.array(cvals)
