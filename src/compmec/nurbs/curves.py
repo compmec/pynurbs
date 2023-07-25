@@ -26,6 +26,8 @@ class BaseCurve(Intface_BaseCurve):
             return False
         if self.knotvector[-1] != other.knotvector[-1]:
             return False
+        if (self.ctrlpoints is None) ^ (other.ctrlpoints is None):
+            return False
         newknotvec = self.knotvector | other.knotvector
         selfcopy = self.deepcopy()
         selfcopy.knotvector = newknotvec
@@ -511,7 +513,24 @@ class Curve(BaseCurve):
             if len(nodes) > npts:
                 same as fit_points(other(nodes), nodes)
         """
-        raise NotImplementedError
+        assert nodes is None  # Needs implementation
+        assert isinstance(other, self.__class__)
+        vectora, vectorb = tuple(self.knotvector), tuple(other.knotvector)
+        if self.weights is None and other.weights is None:
+            lstsq = heavy.LeastSquare.spline2spline
+            transmat, _ = lstsq(vectorb, vectora)
+        else:
+            weightsa = self.weights if self.weights else [1] * self.npts
+            weightsb = other.weights if other.weights else [1] * other.npts
+            lstsq = heavy.LeastSquare.func2func
+            transmat, _ = lstsq(vectorb, weightsb, vectora, weightsa)
+        transmat = np.array(transmat)
+        ctrlpoints = transmat @ other.ctrlpoints
+        if self.weights is not None:
+            weights = transmat @ weightsb
+            ctrlpoints = [point / weig for point, weig in zip(ctrlpoints, weights)]
+            self.weights = weights
+        self.ctrlpoints = ctrlpoints
 
     def fit_function(self, function: Callable, nodes: Tuple[float] = None) -> None:
         """
@@ -527,14 +546,34 @@ class Curve(BaseCurve):
             if len(nodes) > npts:
                 same as fit_points(function(nodes), nodes)
         """
-        raise NotImplementedError
+        assert nodes is None
+        assert not isinstance(function, self.__class__)
+        knots = self.knotvector.knots
+        npts_each = 1 + int(np.ceil(self.degree * self.npts / (len(knots) - 1)))
+        nodes = []
+        chebys = heavy.LeastSquare.chebyshev_nodes
+        for start, end in zip(knots[:-1], knots[1:]):
+            nodes += list(chebys(npts_each, start, end))
+        nodes = tuple(nodes)
+        funcvals = [function(node) for node in nodes]
+        return self.fit_points(funcvals, nodes)
 
     def fit_points(self, points: Tuple["Point"], nodes: Tuple[float] = None) -> None:
         """
         Fit the curve into given points
         If the quantity of points are not enough to
         """
-        raise NotImplementedError
+        assert len(points) >= self.npts
+        fitfunc = heavy.LeastSquare.fit_function
+        if nodes is None:
+            umin, umax = self.knotvector.limits
+            nodes = np.linspace(umin, umax, len(points))
+        knotvector = tuple(self.knotvector)
+        nodes = tuple(nodes)
+        weights = None if self.weights is None else tuple(self.weights)
+        matrix = fitfunc(knotvector, nodes, weights)
+        ctrlpoints = np.dot(matrix, points)
+        self.ctrlpoints = tuple(ctrlpoints)
 
     def fit(
         self, data: Union[Curve, Callable, Tuple["Point"]], nodes: Tuple[float] = None
