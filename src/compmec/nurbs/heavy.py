@@ -327,7 +327,7 @@ class LeastSquare:
         assert KnotVector.is_valid_vector(knotvector)
         npts = KnotVector.find_npts(knotvector)
         degree = KnotVector.find_degree(knotvector)
-        assert len(nodes) <= npts
+        assert len(nodes) >= npts
         if weights is None:
             funcvals = eval_spline_nodes(knotvector, nodes, degree)
         else:
@@ -335,18 +335,25 @@ class LeastSquare:
         matrix = np.zeros((npts, npts), dtype="object")
         for i in range(npts):
             for j in range(npts):
-                matrix[i, j] += np.sum(funcvals[i], funcvals[j])
+                matrix[i, j] += np.dot(funcvals[i], funcvals[j])
         numbtype = number_type(matrix)
         if numbtype is Fraction or numbtype is int:
             inverse = invert_fraction_matrix(matrix)
             return np.array(inverse) @ funcvals
-        matrix = np.array(matrix)
+        matrix = np.array(matrix, dtype="float64")
         return np.linalg.solve(matrix, funcvals)
 
     @staticmethod
     def spline2spline(
         oldvector: Tuple[float], newvector: Tuple[float]
     ) -> Tuple["Matrix2D"]:
+        """
+        Given two bspline curves A(u) and B(u), this
+        function returns a matrix [M] such
+            [Q] = [M] * [P]
+            A(u) = sum_i N_i(u) * P_i
+            B(u) = sum_i N_i(u) * Q_i
+        """
         assert KnotVector.is_valid_vector(oldvector)
         assert KnotVector.is_valid_vector(newvector)
         oldnpts = KnotVector.find_npts(oldvector)
@@ -363,10 +370,16 @@ class LeastSquare:
         newvector: Tuple[float],
         newweights: Tuple[float],
     ) -> Tuple[np.ndarray]:
-        """ """
-        assert isinstance(oldvector, (tuple, list))
+        """
+        Given two rational bspline curves A(u) and B(u), this
+        function returns a matrix [M] such
+            [Q] = [M] * [P]
+            A(u) = sum_i R_i(u) * P_i
+            B(u) = sum_i R_i(u) * Q_i
+        """
+        assert KnotVector.is_valid_vector(oldvector)
         assert isinstance(oldweights, (tuple, list))
-        assert isinstance(newvector, (tuple, list))
+        assert KnotVector.is_valid_vector(newvector)
         assert isinstance(newweights, (tuple, list))
         oldvector = tuple(oldvector)
         olddegree = KnotVector.find_degree(oldvector)
@@ -992,6 +1005,64 @@ class Operations:
 
 class MathOperations:
     @staticmethod
+    def add_nonrat_bezier(
+        vectora: Tuple[float], vectorb: Tuple[float]
+    ) -> Tuple[Tuple[float]]:
+        assert KnotVector.is_valid_vector(vectora)
+        assert KnotVector.is_valid_vector(vectorb)
+        assert vectora[0] == vectorb[0]
+        assert vectora[-1] == vectorb[-1]
+
+        vectorc = KnotVector.unite_vectors(vectora, vectorb)
+        degreea = KnotVector.find_degree(vectora)
+        degreeb = KnotVector.find_degree(vectorb)
+        degreec = KnotVector.find_degree(vectorc)
+        matrixa = Operations.degree_increase_bezier(vectora, degreec - degreea)
+        matrixb = Operations.degree_increase_bezier(vectorb, degreec - degreeb)
+        return matrixa, matrixb
+
+    @staticmethod
+    def mult_nonrat_bezier(
+        vectora: Tuple[float], vectorb: Tuple[float]
+    ) -> Tuple[Tuple[float]]:
+        """
+        Given two bezier curves A(u) and B(u) of degrees p and q,
+        we want to find a bezier curve C(u) of degree (p+q) such
+            C(u) = A(u) * B(u)
+        This function returns [M] of shape (p+q+1, p, q) such
+            [C] = [M] :
+            C_i = sum_{j,k}^{p,q} M_{ijk} A_j B_k
+        """
+        assert KnotVector.is_valid_vector(vectora)
+        assert KnotVector.is_valid_vector(vectorb)
+        assert vectora[0] == vectorb[0]
+        assert vectora[-1] == vectorb[-1]
+
+        degreea = KnotVector.find_degree(vectora)
+        degreeb = KnotVector.find_degree(vectorb)
+        degreec = degreea + degreeb
+        matrixleft = np.zeros((degreec, degreec), dtype="float64")
+        matrixright = np.zeros((degreec, degreea, degreeb), dtype="float64")
+        for i in range(degreec):
+            binompqi = math.comb(degreec, i)
+            for j in range(degreec):
+                binompqj = math.comb(degreec, j)
+                denomin = math.comb(2 * degreec, i + j)
+                matrixleft[i, j] = binompqi * binompqj / denomin
+        for k in range(degreec):
+            binompqk = math.comb(degreec, k)
+            for i in range(degreea):
+                binompi = math.comb(degreea, i)
+                for j in range(degreeb):
+                    binomqj = math.comb(degreeb, j)
+                    denomin = math.comb(2 * degreec, i + j + k)
+                    matrixright[i, j] = binompqk * binompi * binomqj / denomin
+        invmatleft = np.linalg.inv(matrixleft)
+        return np.einsum("il,ljk->ijk", invmatleft, matrixright)
+
+        return matrixa, matrixb
+
+    @staticmethod
     def knotvector_add(vectora: Tuple[float], vectorb: Tuple[float]) -> Tuple[float]:
         assert KnotVector.is_valid_vector(vectora)
         assert KnotVector.is_valid_vector(vectorb)
@@ -1129,3 +1200,96 @@ class MathOperations:
                 for k, linek in enumerate(bvals):
                     matrix3d[i, j, k] = np.sum(linei * linej * linek)
         return totuple(matrix3d)
+
+
+class Calculus:
+    @staticmethod
+    def difference_vector(knotvector: Tuple[float]) -> Tuple[float]:
+        assert KnotVector.is_valid_vector(knotvector)
+        degree = KnotVector.find_degree(knotvector)
+        npts = KnotVector.find_npts(knotvector)
+        avals = np.zeros(npts, dtype="float64")
+        for i in range(npts):
+            diff = knotvector[i + degree] - knotvector[i]
+            if diff != 0:
+                avals[i] = degree / diff
+        return totuple(avals)
+
+    @staticmethod
+    def difference_matrix(knotvector: Tuple[float]) -> np.ndarray:
+        assert KnotVector.is_valid_vector(knotvector)
+        avals = Calculus.difference_vector(knotvector)
+        npts = len(avals)
+        matrix = np.diag(avals)
+        for i in range(npts - 1):
+            matrix[i, i + 1] = -avals[i + 1]
+        return totuple(matrix)
+
+    @staticmethod
+    def derivate_nonrational_bezier(
+        knotvector: Tuple[float], reduce: bool = True
+    ) -> Tuple[Tuple[float]]:
+        """
+        Given a nonrational bezier C(u) of degree p, this function returns matrix [M] such
+            [Q] = [M] * [P]
+            C(u) = sum_{i=0}^p B_{i,p}(u) * P_i
+            C'(u) = sum_{i=0}^q B_{i,q}(u) * Q_i
+        The matrix size if (q+1, p+1)
+
+        Normally q = p-1, since it decreases the degree.
+        If reduce is False, it does a degree elevation and keeps the same degree
+        """
+        assert KnotVector.is_valid_vector(knotvector)
+
+        degree = KnotVector.find_degree(knotvector)
+        matrix = np.zeros((degree, degree + 1), dtype="object")
+        for i in range(degree):
+            matrix[i, i] = -degree
+            matrix[i, i + 1] = degree
+        matrix /= knotvector[-1] - knotvector[0]
+        if reduce:
+            return totuple(matrix)
+        elevate = Operations.degree_increase_bezier_once(knotvector[1:-1])
+        return totuple(np.dot(elevate, matrix))
+
+    @staticmethod
+    def derivate_spline(knotvector: Tuple[float]) -> Tuple[Tuple[float]]:
+        """
+        Given a spline C(u) of degree p, this function returns matrix [M] such
+            [Q] = [M] * [P]
+            C(u) = sum_{i=0}^{n} N_{i,p}(u) * P_i
+            C'(u) = sum_{i=0}^{m} N_{i,q-1}(u) * Q_i
+        The matrix size if (m, n)
+
+        Normally q = p-1, since it decreases the degree.
+        If reduce is False, it does a degree elevation and keeps the same degree
+        """
+        assert KnotVector.is_valid_vector(knotvector)
+        matrix = Calculus.difference_matrix(knotvector)
+        matrix = np.transpose(matrix)[1:]
+        return totuple(matrix)
+
+    @staticmethod
+    def derivate_rational_bezier(knotvector: Tuple[float]) -> Tuple[Tuple[float]]:
+        """
+        Given a rational bezier C(u) of degree p, control points P_i and weights w_i,
+        this function returns matrix [M] and [K] such
+
+            [D] = [P/w] * [M] * [w]
+            [z] = [w] * [K] * [w]
+            [M].shape = (p+1, 2p+1, p+1)
+            [z].shape = (p+1, 2p+1, p+1)
+
+            C(u) = A(u)/w(u)
+            A(u) = sum_i B_{i,p}(u) * (w_i * P_i)
+                 = sum_i B_{i,p}(u) A_i
+            w(u) = sum_i B_{i,p}(u) * w_i
+
+            C'(u) = (A'(u) * w(u) - A(u) * w'(u))/(w(u)^2)
+            C'(u) = (sum_{i=0}^{2p} B_{i,2p} * D_i)/(sum_{i=0}^{2p} B_{i,2p} * z_i)
+        """
+        matrixmult = MathOperations.mult_nonrat_bezier(knotvector, knotvector)
+        matrixderi = Calculus.derivate_nonrational_bezier(knotvector, False)
+        matrixleft = np.einsum("ilk,lj->jik", matrixmult, matrixderi)
+        matrixrigh = np.einsum("ijl,lk->jik", matrixmult, matrixderi)
+        return totuple(matrixleft - matrixrigh), totuple(matrixmult)

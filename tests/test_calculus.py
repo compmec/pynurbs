@@ -93,6 +93,22 @@ class TestBezier:
 
 @pytest.mark.order(7)
 @pytest.mark.dependency(depends=["TestBezier::test_end"])
+def test_derivate_uniform_knotvector():
+    knotvector = [0, 0, 1, 2, 3, 4, 5, 5]
+    knotvector = KnotVector(knotvector)
+    assert knotvector.degree == 1
+    points = np.random.uniform(-1, 1, knotvector.npts)
+    curve = Curve(knotvector, points)
+
+    dcurve = calculus.derivate_curve(curve)
+    knots = np.array(curve.knotvector.knots, dtype="float64")
+    midnodes = (knots[:-1] + knots[1:]) / 2
+    for i, node in enumerate(midnodes):
+        assert np.abs((points[i + 1] - points[i]) - dcurve(node)) < 1e-9
+
+
+@pytest.mark.order(7)
+@pytest.mark.dependency(depends=["TestBezier::test_end"])
 def test_derivative_curve():
     # Example 3.1 at page 94 of Nurbs book
     knotvector = KnotVector([0, 0, 0, 2 / 5, 3 / 5, 1, 1, 1])

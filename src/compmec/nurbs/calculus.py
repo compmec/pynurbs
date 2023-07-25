@@ -8,36 +8,33 @@ from compmec.nurbs.functions import Function
 from compmec.nurbs.knotspace import KnotVector
 
 
-def difference_vector(knotvector: Tuple[float]) -> Tuple[float]:
-    degree = heavy.KnotVector.find_degree(knotvector)
-    npts = heavy.KnotVector.find_npts(knotvector)
-    avals = np.zeros(npts, dtype="float64")
-    for i in range(npts):
-        diff = knotvector[i + degree] - knotvector[i]
-        if diff != 0:
-            avals[i] = degree / diff
-    return avals
-
-
-def difference_matrix(knotvector: Tuple[float]) -> np.ndarray:
-    avals = difference_vector(knotvector)
-    npts = len(avals)
-    matrix = np.diag(avals)
-    for i in range(npts - 1):
-        matrix[i, i + 1] = -avals[i + 1]
-    return matrix
-
-
 def derivate_nonrational_bezier(curve: Curve) -> Curve:
+    """ """
     assert curve.degree + 1 == curve.npts
-    if curve.weights is not None:
-        return derivate_rational_bezier(curve)
+    assert curve.weights is None
+    vector = tuple(curve.knotvector)
+    matrix = heavy.Calculus.derivate_nonrational_bezier(vector)
+    ctrlpoints = tuple(np.dot(matrix, curve.ctrlpoints))
+    newcurve = curve.__class__(vector[1:-1], ctrlpoints)
+    newcurve.clean()
+    return newcurve
 
 
 def derivate_rational_bezier(curve: Curve) -> Curve:
     assert curve.degree + 1 == curve.npts
-    if curve.weights is None:
-        return derivate_nonrational_bezier(curve)
+    assert curve.weights is not None
+
+    knotvector = tuple(curve.knotvector)
+    matrixup, matrixdown = heavy.Calculus.derivate_rational_bezier(knotvector)
+    weights = np.array(curve.ctrlpoints)
+    assert np.all(curve.weights != 0)
+    ctrlptsa = [wi * pi for pi, wi in zip(curve.ctrlpoints, weights)]
+    numctrlpts = ctrlptsa @ matrixup @ weights
+    finalweights = weights @ matrixdown @ weights
+    finalctrlpts = [point / weight for point, weight in zip(numctrlpts, finalweights)]
+    finalcurve = curve.__class__(knotvector, finalctrlpts, finalweights)
+    finalcurve.clean()
+    return finalcurve
 
 
 def derivate_spline_curve(curve: Curve) -> Curve:
@@ -48,12 +45,17 @@ def derivate_spline_curve(curve: Curve) -> Curve:
         newctrlpoints = [0 * anypoint]
         return Curve(newknotvector, newctrlpoints)
     knotvector = tuple(curve.knotvector)
-    matrix = difference_matrix(knotvector)
-
+    matrix = heavy.Calculus.derivate_spline(knotvector)
+    matrix = np.array(matrix)
+    print("matrix = ")
+    print(matrix)
+    if curve.degree + 1 == curve.npts:
+        return derivate_nonrational_bezier(curve)
     newvector = heavy.KnotVector.derivate(knotvector)
+    newctrlpoints = np.array(matrix) @ curve.ctrlpoints
     newcurve = Curve(newvector)
-    newctrlpoints = np.transpose(matrix) @ curve.ctrlpoints
-    newcurve.ctrlpoints = newctrlpoints[1:]
+    newcurve.ctrlpoints = newctrlpoints
+    newcurve.clean()
     return newcurve
 
 
