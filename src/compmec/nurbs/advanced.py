@@ -7,7 +7,7 @@ from typing import Set, Tuple
 import numpy as np
 
 from compmec.nurbs import heavy
-from compmec.nurbs.calculus import derivate_curve
+from compmec.nurbs.calculus import Derivate
 from compmec.nurbs.curves import Curve
 
 
@@ -45,8 +45,8 @@ class Projection:
     def point_on_bezier(point: Tuple[float], bezier: Curve) -> Tuple[float]:
         umin, umax = bezier.knotvector.limits
         curves = [bezier]
-        curves.append(derivate_curve(curves[0]))
-        curves.append(derivate_curve(curves[1]))
+        curves.append(Derivate.curve(curves[0]))
+        curves.append(Derivate.curve(curves[1]))
         tparams = np.linspace(umin, umax, 5)
         tvalues = set()
         for tparam in tparams:
@@ -73,6 +73,8 @@ class Projection:
         """
         point = np.array(point)
         beziers = curve.split()
+        for bez in beziers:
+            bez.clean()
         tvalues = set()
         for bezier in beziers:
             newtvalues = Projection.point_on_bezier(point, bezier)
@@ -178,11 +180,11 @@ class Intersection:
             Still needs implementation
         """
         curvesa = [beziera]
-        curvesa.append(derivate_curve(curvesa[0]))
-        curvesa.append(derivate_curve(curvesa[1]))
+        curvesa.append(Derivate.curve(curvesa[0]))
+        curvesa.append(Derivate.curve(curvesa[1]))
         curvesb = [bezierb]
-        curvesb.append(derivate_curve(curvesb[0]))
-        curvesb.append(derivate_curve(curvesb[1]))
+        curvesb.append(Derivate.curve(curvesb[0]))
+        curvesb.append(Derivate.curve(curvesb[1]))
         limits = np.array([beziera.knotvector.limits, bezierb.knotvector.limits])
         tsample = np.linspace(limits[0, 0], limits[0, 1], 2)
         usample = np.linspace(limits[1, 0], limits[1, 1], 2)
@@ -217,6 +219,10 @@ class Intersection:
         """
         beziersa = curvea.split()
         beziersb = curveb.split()
+        for bez in beziersa:
+            bez.clean()
+        for bez in beziersb:
+            bez.clean()
         pairs = set()
         for beziera in beziersa:
             for bezierb in beziersb:

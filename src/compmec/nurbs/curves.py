@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 
@@ -90,13 +90,10 @@ class BaseCurve(Intface_BaseCurve):
             vecta, vectb = tuple(self.knotvector), tuple(other.knotvector)
             vectmul = heavy.MathOperations.knotvector_mul(vecta, vectb)
             matrix3d = heavy.MathOperations.mul_spline_curve(vecta, vectb)
-            ctrlpoints = []
-            for i, matrix in enumerate(matrix3d):
-                matrix = np.array(matrix)
-                newpoint = (
-                    np.moveaxis(self.ctrlpoints, 0, -1) @ matrix @ other.ctrlpoints
-                )
-                ctrlpoints.append(newpoint)
+            ctrlpoints = np.tensordot(
+                np.moveaxis(self.ctrlpoints, 0, -1), matrix3d, axes=1
+            )
+            ctrlpoints = ctrlpoints @ other.ctrlpoints
             curve = Curve(vectmul, ctrlpoints)
             return curve
         numa, dena = self.fraction()
@@ -121,12 +118,18 @@ class BaseCurve(Intface_BaseCurve):
         if self.knotvector.limits != other.knotvector.limits:
             raise ValueError
         if self.weights is None and other.weights is None:
-            vectora, vectorb = tuple(self.knotvector), tuple(other.knotvector)
-            vectorc = tuple(self.knotvector | other.knotvector)
+            copyse = self.deepcopy()
+            copyot = other.deepcopy()
+            vectora, vectorb = tuple(copyse.knotvector), tuple(copyot.knotvector)
+            vectorc = tuple(copyse.knotvector | copyot.knotvector)
             transctrlpts = heavy.Operations.matrix_transformation(vectora, vectorc)
             transweights = heavy.Operations.matrix_transformation(vectorb, vectorc)
-            weights = np.array(transweights) @ other.ctrlpoints
-            ctrlpts = np.array(transctrlpts) @ self.ctrlpoints
+            weights = np.dot(transweights, copyot.ctrlpoints)
+            if np.any(weights == 0):
+                message = "Cannot divide if the denominator has root"
+                message += " in the interval {copyse.knotvector.limits}"
+                raise ValueError(message)
+            ctrlpts = np.dot(transctrlpts, copyse.ctrlpoints)
             ctrlpts = [pti / wi for pti, wi in zip(ctrlpts, weights)]
             return self.__class__(vectorc, ctrlpts, weights)
 
@@ -143,8 +146,14 @@ class BaseCurve(Intface_BaseCurve):
         assert not isinstance(other, self.__class__)
         for point in self.ctrlpoints:
             float(point)
+        if self.weights is None:
+            newcurve = self.__class__(tuple(self.knotvector))
+            newcurve.weights = [deepcopy(p) for p in self.ctrlpoints]
+            newcurve.ctrlpoints = [1 / w for w in newcurve.weights]
+            return newcurve
         num, den = self.fraction()
-        return other * (den / num)
+        frac = den / num
+        return other * frac
 
     def __or__(self, other: object):
         umaxleft = self.knotvector[-1]
@@ -152,28 +161,23 @@ class BaseCurve(Intface_BaseCurve):
         if umaxleft != uminright:
             error_msg = f"max(Uleft) = {umaxleft} != {uminright} = min(Uright)"
             raise ValueError(error_msg)
-        pointleft = self.ctrlpoints[-1]
-        pointright = other.ctrlpoints[0]
-        if np.sum((pointleft - pointright) ** 2) > 1e-9:
-            error_msg = "Points are not coincident.\n"
-            error_msg += f"  Point left = {pointleft}\n"
-            error_msg += f" Point right = {pointright}"
-            raise ValueError(error_msg)
         othercopy = other.deepcopy()
         selfcopy = self.deepcopy()
         maxdegree = max(self.degree, other.degree)
-        selfcopy.degree = maxdegree
-        othercopy.degree = maxdegree
+        selfcopy.degree_increase(maxdegree - self.degree)
+        othercopy.degree_increase(maxdegree - other.degree)
         npts0 = selfcopy.npts
         npts1 = othercopy.npts
-        newknotvector = [0] * (maxdegree + npts0 + npts1)
+        newknotvector = [0] * (maxdegree + npts0 + npts1 + 1)
         newknotvector[:npts0] = selfcopy.knotvector[:npts0]
         newknotvector[npts0:] = othercopy.knotvector[1:]
         newknotvector = KnotVector(newknotvector)
         newctrlpoints = [0] * (npts0 + npts1 - 1)
         newctrlpoints[:npts0] = selfcopy.ctrlpoints[:npts0]
         newctrlpoints[npts0:] = othercopy.ctrlpoints[1:]
-        return self.__class__(newknotvector, newctrlpoints)
+        newcurve = self.__class__(newknotvector, newctrlpoints)
+        newcurve.knot_clean([umaxleft])
+        return newcurve
 
     @property
     def knotvector(self):
@@ -576,10 +580,17 @@ class Curve(BaseCurve):
         self.ctrlpoints = tuple(ctrlpoints)
 
     def fit(
-        self, data: Union[Curve, Callable, Tuple["Point"]], nodes: Tuple[float] = None
+        self,
+        param: Union[Curve, Callable[[float], float], Tuple[Any]],
+        nodes: Tuple[float] = None,
     ) -> None:
-        if isinstance(data, self.__class__):
-            return self.fit_curve(data, nodes)
-        if callable(data):
-            return self.fit_function(data, nodes)
-        return self.fit_points(data, nodes)
+        if nodes is not None:
+            iter(nodes)
+            for node in nodes:
+                assert self.knotvector[0] <= node
+                assert node <= self.knotvector[-1]
+        if isinstance(param, self.__class__):
+            return self.fit_curve(param, nodes)
+        if callable(param):
+            return self.fit_function(param, nodes)
+        return self.fit_points(param, nodes)

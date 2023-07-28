@@ -806,8 +806,9 @@ class TestSplitUnite:
         curve1 = Curve(knotvector1, ctrlpoints)
         with pytest.raises(ValueError):
             curve0 | curve0
+        curve0 | curve1
         with pytest.raises(ValueError):
-            curve0 | curve1
+            curve1 | curve0
 
     @pytest.mark.order(5)
     @pytest.mark.dependency(

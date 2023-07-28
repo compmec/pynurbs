@@ -331,7 +331,7 @@ class LeastSquare:
         if weights is None:
             funcvals = eval_spline_nodes(knotvector, nodes, degree)
         else:
-            funcvals = eval_rational_nodes(knotvector, nodes, weights, degree)
+            funcvals = eval_rational_nodes(knotvector, weights, nodes, degree)
         matrix = np.zeros((npts, npts), dtype="object")
         for i in range(npts):
             for j in range(npts):
@@ -680,6 +680,19 @@ class KnotVector:
 class BasisFunction:
     @staticmethod
     def horner_method(coefs: Tuple[float], value: float) -> float:
+        """
+        Horner method is a efficient method of computing polynomials
+        Let's say you have a polynomial
+            P(x) = a_0 + a_1 * x + ... + a_n * x^n
+        A way to compute P(x_0) is
+            P(x_0) = a_0 + a_1 * x_0 + ... + a_n * x_0^n
+        But a more efficient way is to use
+            P(x_0) = ((...((x_0 * a_n + a_{n-1})*x_0)...)*x_0 + a_1)*x_0 + a_0
+
+        Input:
+            coefs : Tuple[float] = (a_0, a_1, ..., a_n)
+            value : float = x_0
+        """
         soma = 0
         for ck in coefs[::-1]:
             soma *= value
@@ -1028,49 +1041,16 @@ class MathOperations:
         """
         Given two bezier curves A(u) and B(u) of degrees p and q,
         we want to find a bezier curve C(u) of degree (p+q) such
-            C(u) = A(u) * B(u)
-        This function returns [M] of shape (p+q+1, p, q) such
-            [C] = [M] :
-            C_i = sum_{j,k}^{p,q} M_{ijk} A_j B_k
+            C(u) = A(u) * B(u) forall u
+        This function returns [M] of shape (p+1, p+q+1, q+1) such
+            [C] = [A] * [M] * [B]
+            C_j = sum_{i,k}^{p,q} M_{ijk} A_i B_k
         """
         assert KnotVector.is_valid_vector(vectora)
         assert KnotVector.is_valid_vector(vectorb)
         assert vectora[0] == vectorb[0]
         assert vectora[-1] == vectorb[-1]
-
-        degreea = KnotVector.find_degree(vectora)
-        degreeb = KnotVector.find_degree(vectorb)
-        degreec = degreea + degreeb
-        matrixleft = np.zeros((degreec, degreec), dtype="float64")
-        matrixright = np.zeros((degreec, degreea, degreeb), dtype="float64")
-        for i in range(degreec):
-            binompqi = math.comb(degreec, i)
-            for j in range(degreec):
-                binompqj = math.comb(degreec, j)
-                denomin = math.comb(2 * degreec, i + j)
-                matrixleft[i, j] = binompqi * binompqj / denomin
-        for k in range(degreec):
-            binompqk = math.comb(degreec, k)
-            for i in range(degreea):
-                binompi = math.comb(degreea, i)
-                for j in range(degreeb):
-                    binomqj = math.comb(degreeb, j)
-                    denomin = math.comb(2 * degreec, i + j + k)
-                    matrixright[i, j] = binompqk * binompi * binomqj / denomin
-        invmatleft = np.linalg.inv(matrixleft)
-        return np.einsum("il,ljk->ijk", invmatleft, matrixright)
-
-        return matrixa, matrixb
-
-    @staticmethod
-    def knotvector_add(vectora: Tuple[float], vectorb: Tuple[float]) -> Tuple[float]:
-        assert KnotVector.is_valid_vector(vectora)
-        assert KnotVector.is_valid_vector(vectorb)
-        assert vectora[0] == vectorb[0]
-        assert vectora[-1] == vectorb[-1]
-
-        vectorc = KnotVector.unite_vectors(vectora, vectorb)
-        return tuple(vectorc)
+        return MathOperations.mul_spline_curve(vectora, vectorb)
 
     @staticmethod
     def knotvector_mul(vectora: Tuple[float], vectorb: Tuple[float]) -> Tuple[float]:
@@ -1126,7 +1106,7 @@ class MathOperations:
         assert vectora[0] == vectorb[0]
         assert vectora[-1] == vectorb[-1]
 
-        vectorc = MathOperations.knotvector_add(vectora, vectorb)
+        vectorc = KnotVector.unite_vectors(vectora, vectorb)
         matrixa = Operations.matrix_transformation(vectora, vectorc)
         matrixb = Operations.matrix_transformation(vectorb, vectorc)
         return totuple(matrixa), totuple(matrixb)
@@ -1154,6 +1134,11 @@ class MathOperations:
         Restrictions: The limits of B(u) must be the same as the limits of A(u)
         The parameter `simplify` shows if the function try to reduce at maximum
         the degree and the knots inside.
+
+        The matrix is such
+            [C] = [A] @ [M] @ [B]
+            C_j = sum_{i, k} A_i * M_{ijk} * B_k
+
         """
         assert KnotVector.is_valid_vector(vectora)
         assert KnotVector.is_valid_vector(vectorb)
@@ -1193,10 +1178,9 @@ class MathOperations:
             cvals = np.array(cvals, dtype="float64")
             lstsqmat = np.linalg.solve(cvals @ cvals.T, cvals)
 
-        matrix3d = np.empty((nptsc, nptsa, nptsb), dtype="object")
-        # matrix3d = np.einsum("iz,jz,kz->ijk", lstsqmat, avals, bvals)
-        for i, linei in enumerate(lstsqmat):
-            for j, linej in enumerate(avals):
+        matrix3d = np.empty((nptsa, nptsc, nptsb), dtype="object")
+        for i, linei in enumerate(avals):
+            for j, linej in enumerate(lstsqmat):
                 for k, linek in enumerate(bvals):
                     matrix3d[i, j, k] = np.sum(linei * linej * linek)
         return totuple(matrix3d)
@@ -1253,7 +1237,7 @@ class Calculus:
         return totuple(np.dot(elevate, matrix))
 
     @staticmethod
-    def derivate_spline(knotvector: Tuple[float]) -> Tuple[Tuple[float]]:
+    def derivate_nonrational_spline(knotvector: Tuple[float]) -> Tuple[Tuple[float]]:
         """
         Given a spline C(u) of degree p, this function returns matrix [M] such
             [Q] = [M] * [P]
@@ -1272,6 +1256,8 @@ class Calculus:
     @staticmethod
     def derivate_rational_bezier(knotvector: Tuple[float]) -> Tuple[Tuple[float]]:
         """
+        Does'nt work yet
+
         Given a rational bezier C(u) of degree p, control points P_i and weights w_i,
         this function returns matrix [M] and [K] such
 
@@ -1289,7 +1275,10 @@ class Calculus:
             C'(u) = (sum_{i=0}^{2p} B_{i,2p} * D_i)/(sum_{i=0}^{2p} B_{i,2p} * z_i)
         """
         matrixmult = MathOperations.mult_nonrat_bezier(knotvector, knotvector)
-        matrixderi = Calculus.derivate_nonrational_bezier(knotvector, False)
-        matrixleft = np.einsum("ilk,lj->jik", matrixmult, matrixderi)
-        matrixrigh = np.einsum("ijl,lk->jik", matrixmult, matrixderi)
+        # matrixderi = Calculus.derivate_nonrational_bezier(knotvector, False)
+        matrixderi = Calculus.derivate_nonrational_bezier(knotvector)
+        elevate = Operations.degree_increase_bezier_once(knotvector[1:-1])
+        matrixderi = np.dot(elevate, matrixderi)
+        matrixleft = np.tensordot(np.transpose(matrixderi), matrixmult, axes=1)
+        matrixrigh = matrixmult @ matrixderi
         return totuple(matrixleft - matrixrigh), totuple(matrixmult)
