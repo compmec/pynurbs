@@ -36,6 +36,103 @@ def number_type(number: Union[int, float, Fraction]):
         return float
 
 
+def newton_iteration(
+    matrix: Tuple[Tuple[float]], ctrlpts: Tuple[float], dctrlpts: Tuple[float]
+):
+    """
+    Given a function f(x), we want to find the roots of f
+    inside the interval [0, 1].
+    We use newtons' method
+    """
+    maximal = max(abs(ctrlpts))
+    if maximal < 1e-9:
+        return (0, 1)
+    ctrlpts = [pt / maximal for pt in ctrlpts]
+    roots = []
+    nctrlpts = len(ctrlpts)
+    evalvalues = np.zeros(nctrlpts, dtype="float64")
+    test_nodes = LeastSquare.chebyshev_nodes(2 * nctrlpts, 0, 1)
+    for node in test_nodes:
+        for niter in range(20):  # nitermax
+            for y in range(nctrlpts):
+                evalvalues[y] = BasisFunction.horner_method(matrix[y], node)
+            funcval = np.inner(evalvalues, ctrlpts)
+            dfuncval = np.inner(evalvalues, dctrlpts)
+            if abs(dfuncval) < 1e-9:
+                node = 2  # Outside interval
+                break
+            oldnode = node
+            node -= funcval / dfuncval
+            if node < 0:
+                node = 0
+            elif 1 < node:
+                node = 1
+            if abs(node - oldnode) < 1e-9:
+                break  # convergence
+        if node < 0 or 1 < node:
+            continue
+        if not abs(funcval) < 1e-3:
+            continue
+        roots.append(node)
+    return tuple(set(roots))
+
+
+def find_roots(knotvector: Tuple[float], ctrlvalues: Tuple[float]) -> Tuple[float]:
+    """
+    Finds the roots of given a spline function
+    Each subinterval [u_{k}, u_{k+1}] can be interpoled
+    by a polynomial of degree p.
+    Taking out the case of constant equal
+    """
+    assert KnotVector.is_valid_vector(knotvector)
+    assert isinstance(ctrlvalues, tuple)
+    for value in ctrlvalues:
+        float(value)
+    ctrlvalues = np.array(ctrlvalues, dtype="float64")
+    knots = KnotVector.find_knots(knotvector)
+    spans = [KnotVector.find_span(knot, knotvector) for knot in knots]
+    degree = KnotVector.find_degree(knotvector)
+    matr3d = BasisFunction.speval_matrix(knotvector, degree)
+    dspline = Calculus.derivate_nonrational_spline(knotvector)
+    newknotvector = KnotVector.derivate(knotvector)
+    degincrease = Operations.degree_increase(newknotvector, 1)
+    dctrlvalues = np.dot(degincrease, dspline) @ ctrlvalues
+
+    totalroots = []
+    for start, end in zip(knots[:-1], knots[1:]):
+        span = KnotVector.find_span(start, knotvector)
+        ind = spans.index(span)
+        points = ctrlvalues[span - degree : span + 1]
+        dpoints = dctrlvalues[span - degree : span + 1]
+        roots = newton_iteration(matr3d[ind], points, dpoints)
+        for root in roots:
+            totalroots.append(start + (end - start) * root)
+    if len(totalroots) == 0:
+        return tuple()
+    totalroots = np.array(sorted(totalroots), dtype="float64")
+    distances = totalroots[1:] - totalroots[:-1]
+    masks = distances < 1e-3
+
+    # Now we filter the roots
+    # They can be really near to each other
+    filtered_roots = []
+    i = 0
+    while i < len(totalroots):
+        j = 0
+        while i + j < len(masks) and masks[i + j]:
+            j += 1
+        root = np.mean(totalroots[i : i + j + 1])
+        filtered_roots.append(root)
+        i += j + 1
+    for root in totalroots:
+        for filtroot in filtered_roots:
+            if abs(root - filtroot) < 1e-3:
+                break
+        else:
+            filtered_roots.append(root)
+    return tuple(filtered_roots)
+
+
 def invert_integer_matrix(
     matrix: Tuple[Tuple[int]],
 ) -> Tuple[Tuple[int], Tuple[Tuple[int]]]:
@@ -234,6 +331,7 @@ class LeastSquare:
 
         k = np.arange(0, npts)
         nodes = np.cos(np.pi * (2 * k + 1) / (2 * npts))
+        nodes = np.array(nodes, dtype="float64")
         nodes *= (b - a) / 2
         nodes += (a + b) / 2
         nodes.sort()

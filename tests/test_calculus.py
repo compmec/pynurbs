@@ -177,7 +177,8 @@ class TestNumericalDeriv:
 
             dcurve = calculus.Derivate.curve(curve)
             for node in usample:
-                dnumer = (curve(node + deltau) - curve(node - deltau)) / (2 * deltau)
+                dnumer = curve(node + deltau) - curve(node - deltau)
+                dnumer /= 2 * deltau
                 assert np.abs(dcurve(node) - dnumer) < 1e-6
 
     @pytest.mark.order(7)

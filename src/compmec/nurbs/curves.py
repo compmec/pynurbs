@@ -230,6 +230,12 @@ class BaseCurve(Intface_BaseCurve):
             error_msg = "Weights must be a 1D array with "
             error_msg += f"{self.npts} points"
             raise ValueError(error_msg)
+        # Verify if there's roots
+        vector = tuple(self.knotvector)
+        roots = heavy.find_roots(vector, value)
+        if roots:
+            error_msg = f"Zero division at nodes {roots}"
+            raise ValueError(error_msg)
         self.__weights = tuple(value)
 
     @ctrlpoints.setter
