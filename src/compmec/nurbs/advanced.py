@@ -2,7 +2,7 @@
 This file contains Advanced Geometric Algorithms
 In Nurbs book, it correspond to chapter 6
 """
-from typing import Set, Tuple
+from typing import Any, Tuple
 
 import numpy as np
 
@@ -90,6 +90,47 @@ class Projection:
 
 
 class Intersection:
+    @staticmethod
+    def _inse_retangle_float(avals: Tuple[float], bvals: Tuple[float]) -> bool:
+        """
+        Given two array of floats, if verifies if the region
+            [min(avals), max(avals)] cap [min(bvals), max(bvals)]
+        is not empty
+        """
+        mina, maxa = min(avals), max(avals)
+        minb, maxb = min(bvals), max(bvals)
+        avals = (mina, (mina + maxa) / 2, maxa)
+        bvals = (minb, (minb + maxb) / 2, maxb)
+        for aval in avals:
+            if (aval - minb) * (aval - maxb) < 0:
+                return True
+        for bval in bvals:
+            if (bval - mina) * (bval - maxa) < 0:
+                return True
+        return False
+
+    @staticmethod
+    def _inse_retangle(ctrlptsa: Tuple[Any], ctrlptsb: Tuple[Any]) -> bool:
+        """
+        Given two curves A(u) and B(t), we test if the rectangular
+        region made by points A intersects the retangular region
+        made by points of B.
+
+        - If A control points are scalars, it verifies if the region
+        """
+        try:
+            nsuba = len(ctrlptsa[0])
+            assert nsuba == len(ctrlptsb[0])
+            for i in range(nsuba):
+                valsa = [pt[i] for pt in ctrlptsa]
+                valsb = [pt[i] for pt in ctrlptsb]
+                inside = Intersection._inse_retangle(valsa, valsb)
+                if not inside:
+                    return False
+            return True
+        except TypeError:
+            return Intersection._inse_retangle_float(ctrlptsa, ctrlptsb)
+
     @staticmethod
     def filter_pairs(pairs: Tuple[Tuple[float]], tolerance: float = 1e-9):
         pairs = np.array(pairs, dtype="float64")
@@ -179,20 +220,33 @@ class Intersection:
             The interval [(ta, tb), (ua, ub)]
             Still needs implementation
         """
+        assert isinstance(beziera, Curve)
+        assert isinstance(bezierb, Curve)
+        assert beziera.degree + 1 == beziera.npts
+        assert beziera.degree + 1 == beziera.npts
+        if not Intersection._inse_retangle(beziera.ctrlpoints, bezierb.ctrlpoints):
+            return tuple()
+
         curvesa = [beziera]
         curvesa.append(Derivate.curve(curvesa[0]))
         curvesa.append(Derivate.curve(curvesa[1]))
         curvesb = [bezierb]
         curvesb.append(Derivate.curve(curvesb[0]))
         curvesb.append(Derivate.curve(curvesb[1]))
-        limits = np.array([beziera.knotvector.limits, bezierb.knotvector.limits])
-        tsample = np.linspace(limits[0, 0], limits[0, 1], 2)
-        usample = np.linspace(limits[1, 0], limits[1, 1], 2)
+        dega, degb = beziera.degree, bezierb.degree
+        nsma, nsmb = dega + 1, degb + 1  # Number of samples
+        uamin, uamax = beziera.knotvector.limits
+        ubmin, ubmax = bezierb.knotvector.limits
+        limits = ((uamin, uamax), (ubmin, ubmax))
+        uasample = [0] + [(2 * i + 1) / (2 * nsma) for i in range(nsma)] + [1]
+        ubsample = [0] + [(2 * i + 1) / (2 * nsmb) for i in range(nsmb)] + [1]
+        uasample = [uamin + (uamax - uamin) * ua for ua in uasample]
+        ubsample = [ubmin + (ubmax - ubmin) * ub for ub in ubsample]
         pairs = set()
-        for ti in tsample:
-            for uj in usample:
+        for ua in uasample:
+            for ub in ubsample:
                 # Newton's iteration
-                pair = np.array((ti, uj), dtype="float64")
+                pair = np.array((ua, ub), dtype="float64")
                 pair = Intersection.__newton_bcurve_and_bcurve(
                     pair, curvesa, curvesb, limits
                 )

@@ -9,6 +9,10 @@ class Derivate:
     def curve(curve: Curve) -> Curve:
         assert isinstance(curve, Curve)
         assert curve.ctrlpoints is not None
+        if curve.degree == 0:
+            limits = curve.knotvector.limits
+            zero = 0 * curve.ctrlpoints[0]
+            return curve.__class__(limits, [zero])
         if curve.degree + 1 == curve.npts:
             return Derivate.bezier(curve)
         return Derivate.spline(curve)
@@ -46,27 +50,24 @@ class Derivate:
         assert isinstance(curve, Curve)
         assert curve.degree + 1 == curve.npts
         assert curve.weights is not None
+        assert np.all(np.array(curve.weights) != 0)
 
         knotvector = tuple(curve.knotvector)
-        matrixup, matrixdown = heavy.Calculus.derivate_rational_bezier(knotvector)
-        matrixup = np.array(matrixup)
-        matrixdown = np.array(matrixdown)
-        weights = np.array(curve.ctrlpoints)
-        assert np.all(weights != 0)
-
+        matrixup, matrixdo = heavy.Calculus.derivate_rational_bezier(knotvector)
         num, den = curve.fraction()
-        movenumctrlpts = np.moveaxis(num.ctrlpoints, 0, -1)
-        movedenctrlpts = np.moveaxis(den.ctrlpoints, 0, -1)
-        dennumctrlpts = (
-            np.tensordot(movedenctrlpts, matrixdown, axes=1) @ den.ctrlpoints
-        )
-        newnumctrlpts = np.tensordot(movenumctrlpts, matrixup, axes=1) @ den.ctrlpoints
+        matrixup = np.dot(matrixup, den.ctrlpoints)
+        matrixdo = np.dot(matrixdo, den.ctrlpoints)
+
+        dennumctrlpts = den.ctrlpoints @ matrixdo
+        newnumctrlpts = np.dot(np.transpose(matrixup), num.ctrlpoints)
         newnumctrlpts = [
             point / weight for point, weight in zip(newnumctrlpts, dennumctrlpts)
         ]
         number_bound = 1 + 2 * curve.degree
         newknotvector = number_bound * [knotvector[0]] + number_bound * [knotvector[-1]]
-        finalcurve = curve.__class__(newknotvector, newnumctrlpts, dennumctrlpts)
+        finalcurve = curve.__class__(newknotvector)
+        finalcurve.ctrlpoints = newnumctrlpts
+        finalcurve.weights = dennumctrlpts
         return finalcurve
 
     def nonrational_spline(curve: Curve) -> Curve:
@@ -90,7 +91,9 @@ class Derivate:
     def rational_spline(curve: Curve) -> Curve:
         numer, denom = curve.fraction()
         dnumer = Derivate.nonrational_spline(numer)
+        dnumer.degree_increase(1)  # Shouldn't be necessary
         ddenom = Derivate.nonrational_spline(denom)
+        ddenom.degree_increase(1)  # Needs further correction
         deriva = dnumer * denom - numer * ddenom
         deriva /= denom * denom
         return deriva

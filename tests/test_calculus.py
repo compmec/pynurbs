@@ -6,7 +6,7 @@ Its functions are getting derivatives, computing integrals along curves and so o
 import numpy as np
 import pytest
 
-from compmec.nurbs import calculus, heavy
+from compmec.nurbs import calculus
 from compmec.nurbs.curves import Curve
 from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
 
@@ -181,7 +181,6 @@ class TestNumericalDeriv:
                 assert np.abs(dcurve(node) - dnumer) < 1e-6
 
     @pytest.mark.order(7)
-    @pytest.mark.skip(reason="Needs correction in Bezier rational derivative")
     @pytest.mark.dependency(
         depends=[
             "TestNumericalDeriv::test_begin",
@@ -206,9 +205,8 @@ class TestNumericalDeriv:
                 for start, end in zip(knots[:-1], knots[1:]):
                     usample = np.linspace(start + 2 * deltau, end - 2 * deltau, 5)
                     for node in usample:
-                        dnumer = (curve(node + deltau) - curve(node - deltau)) / (
-                            2 * deltau
-                        )
+                        dnumer = curve(node + deltau) - curve(node - deltau)
+                        dnumer /= 2 * deltau
                         assert np.abs(dcurve(node) - dnumer) < 1e-6
 
     @pytest.mark.order(7)

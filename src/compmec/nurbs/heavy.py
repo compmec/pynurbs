@@ -1191,6 +1191,7 @@ class Calculus:
     def difference_vector(knotvector: Tuple[float]) -> Tuple[float]:
         assert KnotVector.is_valid_vector(knotvector)
         degree = KnotVector.find_degree(knotvector)
+        assert degree > 0
         npts = KnotVector.find_npts(knotvector)
         avals = np.zeros(npts, dtype="float64")
         for i in range(npts):
@@ -1202,6 +1203,7 @@ class Calculus:
     @staticmethod
     def difference_matrix(knotvector: Tuple[float]) -> np.ndarray:
         assert KnotVector.is_valid_vector(knotvector)
+
         avals = Calculus.difference_vector(knotvector)
         npts = len(avals)
         matrix = np.diag(avals)
@@ -1224,8 +1226,8 @@ class Calculus:
         If reduce is False, it does a degree elevation and keeps the same degree
         """
         assert KnotVector.is_valid_vector(knotvector)
-
         degree = KnotVector.find_degree(knotvector)
+        assert degree > 0
         matrix = np.zeros((degree, degree + 1), dtype="object")
         for i in range(degree):
             matrix[i, i] = -degree

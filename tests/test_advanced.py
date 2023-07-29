@@ -96,30 +96,82 @@ class TestIntersection:
         assert len(inters) == 1
         np.testing.assert_allclose(inters[0], (0.5, 0.5))
 
-    @pytest.mark.order(8)
-    @pytest.mark.timeout(4)
-    @pytest.mark.dependency(depends=["TestIntersection::test_begin"])
-    def test_curve_and_curve(self):
-        beziera = Curve([0, 0, 1, 1])
-        beziera.ctrlpoints = np.array([(0, 0), (1, 1)], dtype="float64")
-        bezierb = Curve([0, 0, 1, 1])
-        bezierb.ctrlpoints = np.array([(0, 1), (1, 0)], dtype="float64")
-
         beziera.knot_insert([0.2])
         bezierb.knot_insert([0.7])
-        inters = Intersection.bcurve_and_bcurve(beziera, bezierb)
+        inters = Intersection.curve_and_curve(beziera, bezierb)
 
         assert len(inters) == 1
         np.testing.assert_allclose(inters[0], (0.5, 0.5))
 
     @pytest.mark.order(8)
-    @pytest.mark.skip(reason="Needs correction, don't know where yet")
+    @pytest.mark.timeout(4)
+    @pytest.mark.dependency(
+        depends=[
+            "TestIntersection::test_begin",
+            "TestIntersection::test_bcurve_and_bcurve",
+        ]
+    )
+    def test_quarter_circles(self):
+        knotvector = [0, 0, 0, 1, 1, 1]
+        pointsa = [(1, 0), (1, 1), (0, 1)]
+        pointsb = [(0, 0), (0, 1), (1, 1)]
+        circlea = Curve(knotvector, np.array(pointsa))
+        circleb = Curve(knotvector, np.array(pointsb))
+
+        inters = Intersection.bcurve_and_bcurve(circlea, circleb)
+        assert len(inters) == 1
+        root = 1 / np.sqrt(2)
+        np.testing.assert_allclose(inters[0], (root, root))
+
+        circlea.weights = (1, 1, 1)
+        circleb.weights = (1, 1, 1)
+        inters = Intersection.bcurve_and_bcurve(circlea, circleb)
+        assert len(inters) == 1
+        np.testing.assert_allclose(inters[0], (root, root))
+
+        circlea.weights = (1, 1, 2)
+        circleb.weights = (1, 1, 2)
+        inters = Intersection.bcurve_and_bcurve(circlea, circleb)
+        assert len(inters) == 1
+        root = 1 / np.sqrt(3)
+        np.testing.assert_allclose(inters[0], (root, root))
+
+    @pytest.mark.order(8)
+    @pytest.mark.timeout(4)
+    @pytest.mark.dependency(
+        depends=[
+            "TestIntersection::test_begin",
+            "TestIntersection::test_bcurve_and_bcurve",
+            "TestIntersection::test_quarter_circles",
+        ]
+    )
+    def test_half_circles(self):
+        knotvector = [0, 0, 0, 0, 1, 1, 1, 1]
+        weights = [3, 1, 1, 3]
+        pointsa = [(1, 0), (1, 2), (-1, 2), (-1, 0)]
+        pointsb = [(0, 0), (0, 2), (2, 2), (2, 0)]
+        circlea = Curve(knotvector, np.array(pointsa), weights)
+        circleb = Curve(knotvector, np.array(pointsb), weights)
+
+        inters = Intersection.bcurve_and_bcurve(circlea, circleb)
+        assert len(inters) == 1
+        root = (np.sqrt(3) - 1) / 2
+        np.testing.assert_allclose(inters[0], (root, root))
+
+    @pytest.mark.order(8)
     @pytest.mark.timeout(40)
-    @pytest.mark.dependency(depends=["TestIntersection::test_begin"])
+    @pytest.mark.dependency(
+        depends=[
+            "TestIntersection::test_begin",
+            "TestIntersection::test_bcurve_and_bcurve",
+            "TestIntersection::test_quarter_circles",
+            "TestIntersection::test_half_circles",
+        ]
+    )
     def test_circle_and_circle(self):
-        circlea = Curve([0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1])
-        circlea.weights = [3, 1, 1, 3, 1, 1, 3]
-        ctrlpoints = [
+        knotvector = [0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1]
+        weights = [3, 1, 1, 3, 1, 1, 3]
+        ctrlpointsa = [
             (1, 0),
             (1, 2),
             (-1, 2),
@@ -128,22 +180,27 @@ class TestIntersection:
             (1, -2),
             (1, 0),
         ]
-        circlea.ctrlpoints = np.array(ctrlpoints, dtype="float64")
+        ctrlpointsa = np.array(ctrlpointsa, dtype="float64")
+        circlea = Curve(knotvector, ctrlpointsa, weights)
 
-        circleb = circlea.deepcopy()
-        newctrlpoints = np.array(circleb.ctrlpoints, dtype="float64")
-        newctrlpoints[:, 0] += 1
-        circleb.ctrlpoints = newctrlpoints
+        ctrlpointsb = np.copy(ctrlpointsa)
+        ctrlpointsb[:, 0] += 1
+        circleb = Curve(knotvector, ctrlpointsb, weights)
 
         inters = Intersection.curve_and_curve(circlea, circleb)
-        assert inters == [(0, 0.5), (1, 0.5)]
+        for ua, ub in inters:
+            pointa = circlea(ua)
+            pointb = circleb(ub)
+            distance = np.abs(pointa - pointb)
+            assert np.all(distance < 1e-9)
 
     @pytest.mark.order(8)
     @pytest.mark.dependency(
         depends=[
             "TestIntersection::test_begin",
             "TestIntersection::test_bcurve_and_bcurve",
-            "TestIntersection::test_curve_and_curve",
+            "TestIntersection::test_quarter_circles",
+            "TestIntersection::test_half_circles",
             "TestIntersection::test_circle_and_circle",
         ]
     )
