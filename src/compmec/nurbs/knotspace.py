@@ -265,7 +265,7 @@ class KnotVector(Intface_KnotVector):
 
 class GeneratorKnotVector:
     @staticmethod
-    def bezier(degree: int, cls: Optional[type] = None) -> KnotVector:
+    def bezier(degree: int, cls: type = int) -> KnotVector:
         """
         Returns a knotvector for a bezier curve.
         The parameter ```cls``` is good if you want your knotvector
@@ -278,9 +278,13 @@ class GeneratorKnotVector:
         return KnotVector(knotvector)
 
     @staticmethod
-    def uniform(degree: int, npts: int, cls: Optional[type] = None) -> KnotVector:
+    def uniform(degree: int, npts: int, cls: type = int) -> KnotVector:
         """
         Creates a equally distributed knotvector between [0, 1]
+
+        Example:
+            uniform(1, 3) = [0, 0, 1/2, 1, 1]
+            uniform(2, 6) = [0, 0, 0, 1/4, 2/4, 3/4, 1, 1, 1]
         """
         assert isinstance(degree, int)
         assert isinstance(npts, int)

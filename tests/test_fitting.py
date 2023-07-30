@@ -2,18 +2,17 @@ import numpy as np
 import pytest
 
 from compmec.nurbs.curves import Curve
-from compmec.nurbs.functions import Function
-from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
+from compmec.nurbs.knotspace import GeneratorKnotVector
 
 
 @pytest.mark.order(7)
 @pytest.mark.dependency(
     depends=[
-        # "tests/test_knotspace.py::test_end",
-        # "tests/test_functions.py::test_end",
-        # "tests/test_beziercurve.py::test_end",
-        # "tests/test_splinecurve.py::test_end",
-        # "tests/test_rationalcurve.py::test_end",
+        "tests/test_knotspace.py::test_end",
+        "tests/test_functions.py::test_end",
+        "tests/test_beziercurve.py::test_end",
+        "tests/test_splinecurve.py::test_end",
+        "tests/test_rationalcurve.py::test_end",
     ],
     scope="session",
 )

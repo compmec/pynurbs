@@ -34,7 +34,8 @@ class BaseCurve(Intface_BaseCurve):
         othercopy = other.deepcopy()
         othercopy.knotvector = newknotvec
         for poi, qoi in zip(self.ctrlpoints, othercopy.ctrlpoints):
-            if np.linalg.norm(poi - qoi) > 1e-9:
+            diff2 = (poi - qoi) ** 2
+            if float(np.sum(diff2)) > 1e-9:
                 return False
         return True
 
@@ -225,11 +226,13 @@ class BaseCurve(Intface_BaseCurve):
         if value is None:
             self.__weights = None
             return
-        array = np.array(value, dtype="float64")
-        if array.shape != (self.npts,):
-            error_msg = "Weights must be a 1D array with "
-            error_msg += f"{self.npts} points"
-            raise ValueError(error_msg)
+        try:
+            value = tuple(value)
+            for val in value:
+                float(val)
+        except TypeError:
+            msg = f"Weights must be a vector of floats, received {value}"
+            raise ValueError(msg)
         # Verify if there's roots
         vector = tuple(self.knotvector)
         roots = heavy.find_roots(vector, value)
@@ -483,6 +486,7 @@ class Curve(BaseCurve):
         if error < tolerance:
             self.ctrlpoints = np.array(mattrans) @ ctrlpoints
             self.weights = None
+            assert NotImplementedError  # Needs correction
             self.clean(tolerance)
 
     def split(self, nodes: Optional[Tuple[float]] = None) -> Tuple[Curve]:
@@ -556,14 +560,19 @@ class Curve(BaseCurve):
             if len(nodes) > npts:
                 same as fit_points(function(nodes), nodes)
         """
-        assert nodes is None
+        if nodes is not None:
+            raise NotImplementedError
         assert not isinstance(function, self.__class__)
         knots = self.knotvector.knots
         npts_each = 1 + int(np.ceil(self.degree * self.npts / (len(knots) - 1)))
         nodes = []
-        chebys = heavy.LeastSquare.chebyshev_nodes
+        numbtype = heavy.number_type(knots)
+        if numbtype in (float, np.floating):
+            funcnodes = heavy.LeastSquare.chebyshev_nodes
+        else:
+            funcnodes = heavy.LeastSquare.uniform_nodes
         for start, end in zip(knots[:-1], knots[1:]):
-            nodes += list(chebys(npts_each, start, end))
+            nodes += list(funcnodes(npts_each, start, end))
         nodes = tuple(nodes)
         funcvals = [function(node) for node in nodes]
         return self.fit_points(funcvals, nodes)
@@ -577,7 +586,7 @@ class Curve(BaseCurve):
         fitfunc = heavy.LeastSquare.fit_function
         if nodes is None:
             umin, umax = self.knotvector.limits
-            nodes = np.linspace(umin, umax, len(points))
+            nodes = heavy.LeastSquare.linspace(umin, umax, len(points))
         knotvector = tuple(self.knotvector)
         nodes = tuple(nodes)
         weights = None if self.weights is None else tuple(self.weights)

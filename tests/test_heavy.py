@@ -47,9 +47,9 @@ class TestLeastSquare:
         symbintegral = sum([coef / (i + 1) for i, coef in enumerate(coeffs)])
 
         npts = 10  # Number of integration points
-        chebynodes = LeastSquare.chebyshev_nodes(npts)
-        fvals = [func(xi) for xi in chebynodes]
-        integrator = LeastSquare.integrator_array(npts)
+        nodes = LeastSquare.chebyshev_nodes(npts)
+        fvals = [func(xi) for xi in nodes]
+        integrator = LeastSquare.integrator_array(nodes)
         numeintegral = np.array(integrator) @ fvals
         assert np.abs(symbintegral - numeintegral) < 1e-9
 

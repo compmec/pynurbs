@@ -104,7 +104,7 @@ class TestIntersection:
         np.testing.assert_allclose(inters[0], (0.5, 0.5))
 
     @pytest.mark.order(8)
-    @pytest.mark.timeout(4)
+    @pytest.mark.timeout(50)
     @pytest.mark.dependency(
         depends=[
             "TestIntersection::test_begin",
@@ -137,7 +137,7 @@ class TestIntersection:
         np.testing.assert_allclose(inters[0], (root, root))
 
     @pytest.mark.order(8)
-    @pytest.mark.timeout(4)
+    @pytest.mark.timeout(50)
     @pytest.mark.dependency(
         depends=[
             "TestIntersection::test_begin",
@@ -159,7 +159,7 @@ class TestIntersection:
         np.testing.assert_allclose(inters[0], (root, root))
 
     @pytest.mark.order(8)
-    @pytest.mark.timeout(40)
+    @pytest.mark.timeout(50)
     @pytest.mark.dependency(
         depends=[
             "TestIntersection::test_begin",

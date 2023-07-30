@@ -36,46 +36,6 @@ def number_type(number: Union[int, float, Fraction]):
         return float
 
 
-def newton_iteration(
-    matrix: Tuple[Tuple[float]], ctrlpts: Tuple[float], dctrlpts: Tuple[float]
-):
-    """
-    Given a function f(x), we want to find the roots of f
-    inside the interval [0, 1].
-    We use newtons' method
-    """
-    maximal = max(abs(ctrlpts))
-    if maximal < 1e-9:
-        return (0, 1)
-    ctrlpts = [pt / maximal for pt in ctrlpts]
-    roots = []
-    nctrlpts = len(ctrlpts)
-    evalvalues = np.zeros(nctrlpts, dtype="float64")
-    test_nodes = LeastSquare.chebyshev_nodes(2 * nctrlpts, 0, 1)
-    for node in test_nodes:
-        for niter in range(20):  # nitermax
-            for y in range(nctrlpts):
-                evalvalues[y] = BasisFunction.horner_method(matrix[y], node)
-            funcval = np.inner(evalvalues, ctrlpts)
-            dfuncval = np.inner(evalvalues, dctrlpts)
-            if abs(dfuncval) < 1e-9:
-                node = 2  # Outside interval
-                break
-            oldnode = node
-            node -= funcval / dfuncval
-            if node < 0:
-                node = 0
-            elif 1 < node:
-                node = 1
-            if abs(node - oldnode) < 1e-9:
-                break  # convergence
-        if node < 0 or 1 < node:
-            continue
-        if not abs(funcval) < 1e-3:
-            continue
-        roots.append(node)
-    return tuple(set(roots))
-
 
 def find_roots(knotvector: Tuple[float], ctrlvalues: Tuple[float]) -> Tuple[float]:
     """
@@ -83,128 +43,78 @@ def find_roots(knotvector: Tuple[float], ctrlvalues: Tuple[float]) -> Tuple[floa
     Each subinterval [u_{k}, u_{k+1}] can be interpoled
     by a polynomial of degree p.
     Taking out the case of constant equal
+
+    We do it by sampling
     """
     assert KnotVector.is_valid_vector(knotvector)
     assert isinstance(ctrlvalues, tuple)
+    tolerance = 1e-8
     for value in ctrlvalues:
         float(value)
     ctrlvalues = np.array(ctrlvalues, dtype="float64")
     knots = KnotVector.find_knots(knotvector)
-    spans = [KnotVector.find_span(knot, knotvector) for knot in knots]
     degree = KnotVector.find_degree(knotvector)
-    matr3d = BasisFunction.speval_matrix(knotvector, degree)
-    dspline = Calculus.derivate_nonrational_spline(knotvector)
-    newknotvector = KnotVector.derivate(knotvector)
-    degincrease = Operations.degree_increase(newknotvector, 1)
-    dctrlvalues = np.dot(degincrease, dspline) @ ctrlvalues
-
-    totalroots = []
+    nsample = 100
+    manynodes = []
     for start, end in zip(knots[:-1], knots[1:]):
-        span = KnotVector.find_span(start, knotvector)
-        ind = spans.index(span)
-        points = ctrlvalues[span - degree : span + 1]
-        dpoints = dctrlvalues[span - degree : span + 1]
-        roots = newton_iteration(matr3d[ind], points, dpoints)
-        for root in roots:
-            totalroots.append(start + (end - start) * root)
-    if len(totalroots) == 0:
-        return tuple()
-    totalroots = np.array(sorted(totalroots), dtype="float64")
-    distances = totalroots[1:] - totalroots[:-1]
-    masks = distances < 1e-3
+        manynodes += list(LeastSquare.uniform_nodes(nsample, start, end))
+    manynodes = tuple(sorted(manynodes + list(knots)))
+    matrixeval = eval_spline_nodes(knotvector, manynodes, degree)
+    manyvalues = np.dot(np.transpose(matrixeval), ctrlvalues)
+    manyvalues = tuple(manyvalues)
+    while 0 in manyvalues:
+        index = manyvalues.index(0)
+        manyvalues.pop(index)
+        manynodes.pop(index)
+    # return tuple(sorted(manynodes))
 
-    # Now we filter the roots
-    # They can be really near to each other
+    # Bissection algorithm
+    lefts = []  # a
+    righs = []  # b
+    fleft = []  # f(a)
+    frigh = []  # f(b)
+    maxdist = 0
+    for i, (aval, bval) in enumerate(zip(manyvalues[:-1], manyvalues[1:])):
+        if aval * bval < 0:
+            maxdist = max(maxdist, manynodes[i + 1] - manynodes[i])
+            lefts.append(manynodes[i])
+            righs.append(manynodes[i + 1])
+            fleft.append(aval)
+            frigh.append(bval)
+    nintervs = len(lefts)
+    if nintervs == 0:
+        return tuple()
+    lefts = np.array(lefts, dtype="float64")
+    righs = np.array(righs, dtype="float64")
+    fleft = np.array(fleft, dtype="float64")
+    frigh = np.array(frigh, dtype="float64")
+    niters = 1 + int(np.ceil(np.log2(maxdist / tolerance)))
+    for i in range(niters):
+        mednodes = (lefts + righs) / 2
+        matrixeval = eval_spline_nodes(knotvector, tuple(mednodes), degree)
+        medvals = np.dot(np.transpose(matrixeval), ctrlvalues)
+        for i, medval in enumerate(medvals):
+            if medval == 0:
+                lefts[i] = mednodes[i]
+                righs[i] = mednodes[i]
+                fleft[i] = 0
+                frigh[i] = 0
+            elif fleft[i] * medval < 0:
+                righs[i] = mednodes[i]
+                frigh[i] = medval
+            else:
+                lefts[i] = mednodes[i]
+                fleft[i] = medval
+    roots = (lefts + righs) / 2
     filtered_roots = []
-    i = 0
-    while i < len(totalroots):
-        j = 0
-        while i + j < len(masks) and masks[i + j]:
-            j += 1
-        root = np.mean(totalroots[i : i + j + 1])
-        filtered_roots.append(root)
-        i += j + 1
-    for root in totalroots:
+    for root in roots:
         for filtroot in filtered_roots:
-            if abs(root - filtroot) < 1e-3:
+            if abs(root - filtroot) < tolerance:
                 break
         else:
             filtered_roots.append(root)
-    return tuple(filtered_roots)
+    return tuple(sorted(filtered_roots))
 
-
-def invert_integer_matrix(
-    matrix: Tuple[Tuple[int]],
-) -> Tuple[Tuple[int], Tuple[Tuple[int]]]:
-    """
-    Given a matrix with integer entries, this function computes the
-    inverse of this matrix, returning a matrix of integers and their diagonal
-        inverse @ matrix = diag(diagonal)
-    """
-    side = len(matrix)
-    inverse = np.eye(side, dtype="int64")
-    matrix = np.column_stack((matrix, inverse))
-    for k in range(side):
-        # Search biggest pivo
-        absline = np.abs(matrix[k:, k])
-        biggest = np.max(absline)
-        index = k + np.where(absline == biggest)[0][0]
-        # Switch lines
-        copyline = np.copy(matrix[k, :])
-        matrix[k, :] = matrix[index, :]
-        matrix[index, :] = copyline[:]
-        # Gaussian elimination
-        for i in range(k + 1, side):
-            matrix[i] = matrix[i] * matrix[k, k] - matrix[k] * matrix[i, k]
-            gdcline = math.gcd(*matrix[i])
-            if gdcline == 0:
-                raise ValueError("Cannot invert matrix: Det = 0")
-            if gdcline != 1:
-                matrix[i] = matrix[i] / gdcline
-    for k in range(side - 1, 0, -1):
-        for i in range(k - 1, -1, -1):
-            matrix[i] = matrix[i] * matrix[k, k] - matrix[k] * matrix[i, k]
-            gdcline = math.gcd(*matrix[i])
-            if gdcline != 1:
-                matrix[i] = matrix[i] / gdcline
-    diagonal = np.diag(matrix[:, :side])
-    inverse = matrix[:, side:]
-    return totuple(diagonal), totuple(inverse)
-
-
-def matrix_fraction2integer(
-    matrix: Tuple[Tuple[Fraction]],
-) -> Tuple[Tuple[int], Tuple[Tuple[int]]]:
-    matrix = np.array(matrix, dtype="object")
-    side = len(matrix)
-    diagonal = [1] * side
-    for i, line in enumerate(matrix):
-        denoms = [frac.denominator for frac in line]
-        diagonal[i] = math.lcm(*denoms)
-        matrix[i] = tuple([int(val * diagonal[i]) for val in matrix[i]])
-    intdiag = [int(diagi) for diagi in diagonal]
-    return tuple(intdiag), tuple(matrix)
-
-
-def invert_fraction_matrix(matrix: Tuple[Tuple[Fraction]]) -> Tuple[Tuple[Fraction]]:
-    """
-    C
-    """
-    numbtype = number_type(matrix)
-    assert numbtype is not float
-    assert len(matrix) == len(matrix[0])  # Square matrix
-    if numbtype is Fraction:
-        updiag, matrix = matrix_fraction2integer(matrix)
-    else:
-        updiag = [1] * len(matrix)
-    updiag = np.array(updiag, dtype="int64")
-    integermatrix = np.array(matrix, dtype="int64")
-    lowdiag, inverseint = invert_integer_matrix(integermatrix)
-    inverse = np.array(inverseint, dtype="object")
-    for i, line in enumerate(inverseint):
-        for j, elem in enumerate(line):
-            inverse[i, j] = Fraction(elem * updiag[j], lowdiag[i])
-    return inverse
 
 
 def totuple(array):
@@ -293,6 +203,101 @@ def eval_rational_nodes(
     return totuple(rationalvals)
 
 
+class Linalg:
+    @staticmethod
+    def solve(matrix: Tuple[Tuple[float]], force: Tuple[Tuple[float]]):
+        numbtype = number_type((matrix, force))
+        if numbtype in (float, np.floating):
+            matrix = np.array(matrix, dtype="float64")
+            force = np.array(force, dtype="float64")
+            return totuple(np.linalg.solve(matrix, force))
+        if numbtype in (int, Fraction):
+            matrix = np.array(matrix, dtype="object")
+            force = np.array(force, dtype="object")
+            for i, (linea, lineb) in enumerate(zip(matrix, force)):
+                lcmleft = math.lcm(*[Fraction(elem).denominator for elem in linea])
+                lcmrigh = math.lcm(*[Fraction(elem).denominator for elem in lineb])
+                lcm = math.lcm(lcmleft, lcmrigh)
+                matrix[i] *= lcm
+                force[i] *= lcm
+            matrix = matrix.tolist()
+            force = force.tolist()
+            for i, line in enumerate(matrix):
+                for j, elem in enumerate(line):
+                    matrix[i][j] = int(elem)
+            for i, line in enumerate(force):
+                for j, elem in enumerate(line):
+                    force[i][j] = int(elem)
+            diagonal, inverse = Linalg.invert_integer_matrix(matrix)
+            diagonal = np.array(diagonal)
+            result = np.dot(inverse, force)
+            for i, diag in enumerate(diagonal):
+                gdc = math.gcd(diag, *result[i])
+                diagonal[i] //= gdc
+                result[i] //= gdc
+            for i, diag in enumerate(diagonal):
+                for j, elem in enumerate(result[i]):
+                    fraction = Fraction(elem, diag)
+                    result[i, j] = fraction
+            return totuple(result)
+        raise NotImplementedError
+
+    @staticmethod
+    def lstsq(matrix: Tuple[Tuple[float]]):
+        """
+        Given a matrix A of shape (n, m), with n >= m
+        We want the best solution X for
+            [A] * [X] approx [B]
+        To do it, we first transform into a square matrix and solve:
+            [A]^T * [A] * [X] = [A]^T * [B]
+        This function in fact returns the matrix [M] such
+            [X] = [M] * [B]
+            [M] = (A^T * A)^{-1} * A^T
+        """
+        matrix = np.array(matrix)
+        assert matrix.shape[0] >= matrix.shape[1]
+        if matrix.shape[0] == matrix.shape[1]:
+            ident = totuple(np.eye(len(matrix), dtype="object"))
+            return Linalg.solve(matrix, ident)
+        return Linalg.solve(matrix.T @ matrix, matrix.T)
+
+    def invert_integer_matrix(
+        matrix: Tuple[Tuple[int]],
+    ) -> Tuple[Tuple[int], Tuple[Tuple[int]]]:
+        """
+        Given a matrix A with integer entries, this function computes the
+        inverse of this matrix by gaussian elimination.
+
+        # Input:
+            matrix: Tuple[Tuple[int]]
+                Square matrix A of size (m, m) of integer values
+
+        # Output:
+            diagonal: Tuple[int]
+                The final diagonal D after gaussian elimination, with values d_i
+            inverse: Tuple[Tuple[int]]
+                The final inversed matrix M = diag(D) * A^{-1}
+        """
+        side = len(matrix)
+        inverse = np.eye(side, dtype="object")
+        matrix = np.column_stack((matrix, inverse))
+        for k in range(side):
+            for i in range(k + 1, side):
+                matrix[i] = matrix[i] * matrix[k, k] - matrix[k] * matrix[i, k]
+                gdcline = math.gcd(*matrix[i])
+                if gdcline != 1:
+                    matrix[i] = matrix[i] // gdcline
+        for k in range(side - 1, 0, -1):
+            for i in range(k - 1, -1, -1):
+                matrix[i] = matrix[i] * matrix[k, k] - matrix[k] * matrix[i, k]
+                gdcline = math.gcd(*matrix[i])
+                if gdcline != 1:
+                    matrix[i] = matrix[i] // gdcline
+        diagonal = np.diag(matrix[:, :side])
+        inverse = matrix[:, side:]
+        return diagonal, inverse
+
+
 class LeastSquare:
     """
     Given two hypotetic curves C0 and C1, which are associated
@@ -325,16 +330,27 @@ class LeastSquare:
         """
         assert isinstance(npts, int)
         assert npts > 0
-        float(a)
-        float(b)
+        a = np.float64(a)
+        b = np.float64(b)
         assert a < b
 
-        k = np.arange(0, npts)
+        k = np.array(np.arange(0, npts), dtype="float64")
         nodes = np.cos(np.pi * (2 * k + 1) / (2 * npts))
         nodes = np.array(nodes, dtype="float64")
         nodes *= (b - a) / 2
         nodes += (a + b) / 2
         nodes.sort()
+        return totuple(nodes)
+
+    @staticmethod
+    def linspace(a: float, b: float, npts: int) -> Tuple[float]:
+        assert isinstance(npts, int)
+        assert npts > 0
+        float(a)
+        float(b)
+        assert a < b
+
+        nodes = [a + ((b - a) * i) / (npts-1) for i in range(npts)]
         return totuple(nodes)
 
     @staticmethod
@@ -355,14 +371,14 @@ class LeastSquare:
         return totuple(nodes)
 
     @staticmethod
-    def interp_bezier_matrix(npts: int) -> Tuple[float]:
+    def interp_bezier_matrix(nodes: Tuple[float]) -> Tuple[float]:
         """
         This function helps computing the values of F_{i} such
             f(x) approx g(x) = sum_{i=0}^{z} F_{i} * B_{i, z}(x)
         Which B_{i, z}(x) is a bezier function
             B_{i, z}(x) = binom(z, i) * (1-x)^{i} * x^{z-i}
         Then, a linear system is obtained by setting f(x_j) = g(x_j)
-        at (z+1) points, which are the chebyshev nodes:
+        at (z+1) points:
             [B0(x0)   B1(x0)   ...   Bz(x0)][ F0 ]   [ f(x0) ]
             [B0(x1)   B1(x1)   ...   Bz(x1)][ F1 ]   [ f(x1) ]
             [B0(x2)   B1(x2)   ...   Bz(x2)][ F2 ] = [ f(x2) ]
@@ -370,19 +386,23 @@ class LeastSquare:
             [B0(xz)   B1(xz)   ...   Bz(xz)][ Fz ]   [ f(xz) ]
         The return is the inverse of the matrix
         """
-        assert isinstance(npts, int)
-        assert npts > 0
-        z = npts - 1
-        chebyshev0to1 = LeastSquare.chebyshev_nodes(npts)
-        matrixbezier = np.zeros((npts, npts), dtype="float64")
-        for i, xi in enumerate(chebyshev0to1):
+        assert isinstance(nodes, tuple)
+        for node in nodes:
+            float(node)
+            assert 0 <= node
+            assert node <= 1
+        numbtype = number_type(nodes)
+        z = len(nodes) - 1
+        matrixbezier = np.zeros((z + 1, z + 1), dtype=numbtype)
+        for i, xi in enumerate(nodes):
             for j in range(z + 1):
                 matrixbezier[i, j] = binom(z, j) * (1 - xi) ** (z - j) * (xi**j)
-        invmatrix = np.linalg.inv(matrixbezier)
+        identity = np.eye(len(matrixbezier), dtype=numbtype)
+        invmatrix = Linalg.solve(matrixbezier, identity)
         return totuple(invmatrix)
 
     @staticmethod
-    def integrator_array(npts: int) -> Tuple[float]:
+    def integrator_array(nodes: Tuple[float]) -> Tuple[float]:
         """
         This function helps computing the integral of f(x) at the
         interval [0, 1] by using a polynomial of degree ```npts```.
@@ -390,7 +410,7 @@ class LeastSquare:
             int_{0}^{1} f(x) dx = [A] * [f]
         Which
             [f] = [f(x0)  f(x1)  ...  f(xz)]
-        The points x0, x1, ... are the chebyshev nodes
+        The points x0, x1, ... are the given nodes
 
         We suppose that
             int_{0}^{1} f(x) dx approx int_{0}^{1} g(x) dx
@@ -403,9 +423,16 @@ class LeastSquare:
             int_{0}^{1} f(x) dx approx 1/(z+1) * sum F_{i}
         The values of F_{i} are gotten from ```interp_bezier_matrix```
         """
-        assert isinstance(npts, int)
-        matrix = LeastSquare.interp_bezier_matrix(npts)
-        return totuple(np.einsum("ij->j", matrix) / npts)
+        assert isinstance(nodes, tuple)
+        for node in nodes:
+            float(node)
+            assert 0 <= node
+            assert node <= 1
+        npts = len(nodes)
+        matrix = LeastSquare.interp_bezier_matrix(nodes)
+        matrix = np.array(matrix)
+        array = tuple([sum(matrix[:, j]) / npts for j in range(npts)])
+        return array
 
     @staticmethod
     def fit_function(
@@ -432,16 +459,7 @@ class LeastSquare:
             funcvals = eval_spline_nodes(knotvector, nodes, degree)
         else:
             funcvals = eval_rational_nodes(knotvector, weights, nodes, degree)
-        matrix = np.zeros((npts, npts), dtype="object")
-        for i in range(npts):
-            for j in range(npts):
-                matrix[i, j] += np.dot(funcvals[i], funcvals[j])
-        numbtype = number_type(matrix)
-        if numbtype is Fraction or numbtype is int:
-            inverse = invert_fraction_matrix(matrix)
-            return np.array(inverse) @ funcvals
-        matrix = np.array(matrix, dtype="float64")
-        return np.linalg.solve(matrix, funcvals)
+        return Linalg.lstsq(np.transpose(funcvals))
 
     @staticmethod
     def spline2spline(
@@ -496,28 +514,39 @@ class LeastSquare:
 
         allknots = list(set(oldknots + newknots))
         allknots.sort()
+
+        numbtype = number_type(allknots)
+        numbtype = Fraction if (numbtype is int) else numbtype
         nptsinteg = olddegree + newdegree + 3  # Number integration points
-        integrator = LeastSquare.integrator_array(nptsinteg)
+        if numbtype is Fraction:
+            nodes0to1 = LeastSquare.uniform_nodes(nptsinteg, numbtype(0), numbtype(1))
+        else:
+            nodes0to1 = LeastSquare.chebyshev_nodes(nptsinteg)
+        integrator = LeastSquare.integrator_array(nodes0to1)
+        nodes0to1 = np.array(nodes0to1)
         integrator = np.array(integrator)
 
-        A = np.zeros((oldnpts, oldnpts), dtype="float64")  # F*F
-        B = np.zeros((oldnpts, newnpts), dtype="float64")  # F*G
-        C = np.zeros((newnpts, newnpts), dtype="float64")  # G*G
+        A = np.zeros((oldnpts, oldnpts), dtype=numbtype)  # F*F
+        B = np.zeros((oldnpts, newnpts), dtype=numbtype)  # F*G
+        C = np.zeros((newnpts, newnpts), dtype=numbtype)  # G*G
         for start, end in zip(allknots[:-1], allknots[1:]):
-            chebynodes = LeastSquare.chebyshev_nodes(nptsinteg, start, end)
+            nodes = start + (end - start) * nodes0to1
             # Integral of the functions in the interval [a, b]
             Fvalues = eval_rational_nodes(
-                oldknotvector, oldweights, chebynodes, olddegree
+                oldknotvector, oldweights, tuple(nodes), olddegree
             )
             Gvalues = eval_rational_nodes(
-                newknotvector, newweights, chebynodes, newdegree
+                newknotvector, newweights, tuple(nodes), newdegree
             )
-            A += np.einsum("k,ik,jk->ij", integrator, Fvalues, Fvalues)
-            B += np.einsum("k,ik,jk->ij", integrator, Fvalues, Gvalues)
-            C += np.einsum("k,ik,jk->ij", integrator, Gvalues, Gvalues)
+            Fvalues = np.array(Fvalues, dtype=numbtype)
+            Gvalues = np.array(Gvalues, dtype=numbtype)
+            for k, integ in enumerate(integrator):
+                A += integ * np.tensordot(Fvalues[:, k], Fvalues[:, k], axes=0)
+                B += integ * np.tensordot(Fvalues[:, k], Gvalues[:, k], axes=0)
+                C += integ * np.tensordot(Gvalues[:, k], Gvalues[:, k], axes=0)
 
-        T = np.linalg.solve(C, B.T)
-        E = A - B @ T
+        T = Linalg.solve(C, B.T)
+        E = A - np.dot(B, T)
         return totuple(T), totuple(E)
 
 
@@ -1032,14 +1061,16 @@ class Operations:
 
     def degree_increase_bezier_once(knotvector: Tuple[float]) -> "Matrix2D":
         assert KnotVector.is_valid_vector(knotvector)
+        one = knotvector[-1] - knotvector[0]
+        one /= one
         degree = KnotVector.find_degree(knotvector)
         matrix = np.zeros((degree + 2, degree + 1), dtype="object")
-        matrix[0, 0] = 1
+        matrix[0, 0] = one
         for i in range(1, degree + 1):
-            alpha = i / (degree + 1)
+            alpha = (one * i) / (degree + 1)
             matrix[i, i - 1] = alpha
-            matrix[i, i] = 1 - alpha
-        matrix[degree + 1, degree] = 1
+            matrix[i, i] = one - alpha
+        matrix[degree + 1, degree] = one
         return totuple(matrix)
 
     def degree_increase_bezier(knotvector: Tuple[float], times: int) -> "Matrix2D":
@@ -1134,23 +1165,7 @@ class Operations:
 
 
 class MathOperations:
-    @staticmethod
-    def add_nonrat_bezier(
-        knotvectora: Tuple[float], knotvectorb: Tuple[float]
-    ) -> Tuple[Tuple[float]]:
-        assert KnotVector.is_valid_vector(knotvectora)
-        assert KnotVector.is_valid_vector(knotvectorb)
-        assert knotvectora[0] == knotvectorb[0]
-        assert knotvectora[-1] == knotvectorb[-1]
-
-        knotvectorc = KnotVector.unite_vectors(knotvectora, knotvectorb)
-        degreea = KnotVector.find_degree(knotvectora)
-        degreeb = KnotVector.find_degree(knotvectorb)
-        degreec = KnotVector.find_degree(knotvectorc)
-        matrixa = Operations.degree_increase_bezier(knotvectora, degreec - degreea)
-        matrixb = Operations.degree_increase_bezier(knotvectorb, degreec - degreeb)
-        return matrixa, matrixb
-
+    
     @staticmethod
     def mult_nonrat_bezier(
         knotvectora: Tuple[float], knotvectorb: Tuple[float]
@@ -1278,8 +1293,8 @@ class MathOperations:
         allevalnodes = np.empty(nptstotal, dtype="object")
         for i in range(len(allknots) - 1):
             start, end = allknots[i : i + 2]
-            chebynodes = LeastSquare.uniform_nodes(nptseval, start, end)
-            allevalnodes[i * nptseval : (i + 1) * nptseval] = chebynodes
+            nodes = LeastSquare.uniform_nodes(nptseval, start, end)
+            allevalnodes[i * nptseval : (i + 1) * nptseval] = nodes
         allevalnodes = tuple(allevalnodes)
 
         avals = eval_spline_nodes(knotvectora, allevalnodes, degreea)
@@ -1289,13 +1304,7 @@ class MathOperations:
         bvals = np.array(bvals)
         cvals = np.array(cvals)
 
-        if isinstance(cvals[0, 0], Fraction):
-            matrix2d = cvals @ np.transpose(cvals)
-            invmatrix2d = invert_fraction_matrix(matrix2d)
-            lstsqmat = invmatrix2d @ cvals
-        else:
-            cvals = np.array(cvals, dtype="float64")
-            lstsqmat = np.linalg.solve(cvals @ cvals.T, cvals)
+        lstsqmat = Linalg.lstsq(np.transpose(cvals))
 
         matrix3d = np.empty((nptsa, nptsc, nptsb), dtype="object")
         for i, linei in enumerate(avals):

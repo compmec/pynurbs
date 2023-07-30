@@ -1,3 +1,4 @@
+import functools
 from fractions import Fraction as frac
 
 import numpy as np
@@ -436,7 +437,6 @@ class TestRandomInsertKnot:
 
 class TestInsKnotCircle:
     @pytest.mark.order(6)
-    # @pytest.mark.skip(reason="Needs knot insertion correction")
     @pytest.mark.dependency(depends=["TestRandomInsertKnot::test_end"])
     def test_begin(self):
         pass
@@ -534,6 +534,69 @@ class TestInsKnotCircle:
         points_new = newcurve(nodes_sample)
         for oldpt, newpt in zip(points_old, points_new):
             assert abs(np.linalg.norm(oldpt - newpt)) < 1e-9
+
+    @pytest.mark.order(6)
+    @pytest.mark.dependency(
+        depends=[
+            "TestInsKnotCircle::test_begin",
+            "TestInsKnotCircle::test_quarter_circle_standard",
+            "TestInsKnotCircle::test_quarter_circle_symmetric",
+            "TestInsKnotCircle::test_half_circle",
+            "TestInsKnotCircle::test_full_circle",
+        ]
+    )
+    def test_end(self):
+        pass
+
+
+class TestCleanRational:
+    @pytest.mark.order(6)
+    @pytest.mark.dependency(depends=["TestRandomInsertKnot::test_end"])
+    def test_begin(self):
+        pass
+
+    @pytest.mark.order(6)
+    @pytest.mark.timeout(1)
+    @pytest.mark.skip(reason="Needs correction")
+    @pytest.mark.dependency(depends=["TestInsKnotCircle::test_begin"])
+    def test_divpolybezier(self):
+        degree_num, degree_den = 3, 1
+        assert degree_num > degree_den
+        roots_quo, roots_den = [], []
+        while len(roots_den) < degree_den:
+            number = np.random.uniform(-1, 2)
+            number = frac(number).limit_denominator(4)
+            if number < -0.2 or 1.2 < number:
+                roots_den.append(number)
+        for i in range(degree_num - degree_den):
+            number = np.random.uniform(0.2, 0.8)
+            number = frac(number).limit_denominator(4)
+            roots_quo.append(number)
+
+        prod = lambda vals: functools.reduce(lambda a, b: a * b, vals)
+        funct_denom = lambda x: prod([x - v for v in roots_den])
+        funct_quoti = lambda x: prod([x - v for v in roots_quo])
+        funct_numer = lambda x: funct_quoti(x) * funct_denom(x)
+
+        vector_num = GeneratorKnotVector.bezier(degree_num, frac)
+        vector_den = GeneratorKnotVector.bezier(degree_den, frac)
+        vector_quo = GeneratorKnotVector.bezier(degree_num - degree_den, frac)
+        curve_numer = Curve(vector_num)
+        curve_denom = Curve(vector_den)
+        curve_quoti = Curve(vector_quo)
+        curve_numer.fit_function(funct_numer)
+        curve_denom.fit_function(funct_denom)
+        curve_denom.degree_increase(degree_num - degree_den)
+        curve_quoti.fit_function(funct_quoti)
+
+        test_curve = curve_numer / curve_denom
+        test_curve.clean()
+        
+        good_vector = GeneratorKnotVector.bezier(degree_num - degree_den, frac)
+        good_curve = Curve(good_vector)
+        good_curve.fit_function(funct_quoti)
+
+        assert test_curve == good_curve
 
     @pytest.mark.order(6)
     @pytest.mark.dependency(
