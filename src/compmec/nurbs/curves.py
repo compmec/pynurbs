@@ -43,6 +43,8 @@ class BaseCurve(Intface_BaseCurve):
         return not self.__eq__(obj)
 
     def __neg__(self):
+        if self.ctrlpoints is None:
+            raise ValueError
         newcurve = self.deepcopy()
         newctrlpoints = [-1 * ctrlpt for ctrlpt in newcurve.ctrlpoints]
         newcurve.ctrlpoints = newctrlpoints
@@ -126,10 +128,6 @@ class BaseCurve(Intface_BaseCurve):
             transctrlpts = heavy.Operations.matrix_transformation(vectora, vectorc)
             transweights = heavy.Operations.matrix_transformation(vectorb, vectorc)
             weights = np.dot(transweights, copyot.ctrlpoints)
-            if np.any(weights == 0):
-                message = "Cannot divide if the denominator has root"
-                message += " in the interval {copyse.knotvector.limits}"
-                raise ValueError(message)
             ctrlpts = np.dot(transctrlpts, copyse.ctrlpoints)
             ctrlpts = [pti / wi for pti, wi in zip(ctrlpts, weights)]
             return self.__class__(vectorc, ctrlpts, weights)

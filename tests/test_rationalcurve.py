@@ -173,11 +173,57 @@ class TestAddSubMulDiv:
                 assert abs(bdiva(ui) - (bi / ai)) < 1e-9
 
     @pytest.mark.order(6)
+    @pytest.mark.timeout(10)
+    @pytest.mark.dependency(
+        depends=["TestAddSubMulDiv::test_begin", "TestAddSubMulDiv::test_bezier_known"]
+    )
+    def test_others(self):
+        knotvector = GeneratorKnotVector.bezier(3)
+        curve = Curve(knotvector)
+
+        curve.ctrlpoints = [2, 2, 2, 2]
+        inverse = 1 / curve
+        assert id(inverse) != id(curve)
+        assert inverse != curve
+        invinverse = 1 / inverse
+
+        assert id(invinverse) != id(curve)
+        assert invinverse == curve
+
+        curve.weights = [1, 1, 1, 1]
+        inverse = 1 / curve
+        assert id(inverse) != id(curve)
+        assert inverse != curve
+        invinverse = 1 / inverse
+
+        assert id(invinverse) != id(curve)
+        assert invinverse == curve
+
+    @pytest.mark.order(6)
+    @pytest.mark.timeout(10)
+    @pytest.mark.dependency(
+        depends=["TestAddSubMulDiv::test_begin", "TestAddSubMulDiv::test_bezier_known"]
+    )
+    def test_zero_division(self):
+        knotvector = GeneratorKnotVector.bezier(3)
+        curve = Curve(knotvector)
+
+        curve.ctrlpoints = [2, 2, 2, 2]
+        with pytest.raises(ValueError):
+            curve.weights = [1, -3, 3, -1]
+        with pytest.raises(ValueError):
+            curve.weights = [1, -3, 5, -1]
+        with pytest.raises(ValueError):
+            curve.weights = [1, -4, 5, -1]
+
+    @pytest.mark.order(6)
     @pytest.mark.dependency(
         depends=[
             "TestAddSubMulDiv::test_begin",
             "TestAddSubMulDiv::test_bezier_known",
             "TestAddSubMulDiv::test_random_bezier_float64",
+            "TestAddSubMulDiv::test_others",
+            "TestAddSubMulDiv::test_zero_division",
         ]
     )
     def test_end(self):
@@ -591,7 +637,7 @@ class TestCleanRational:
 
         test_curve = curve_numer / curve_denom
         test_curve.clean()
-        
+
         good_vector = GeneratorKnotVector.bezier(degree_num - degree_den, frac)
         good_curve = Curve(good_vector)
         good_curve.fit_function(funct_quoti)

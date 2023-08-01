@@ -625,6 +625,10 @@ class TestRational:
         rational.weights = np.ones(rational.npts)
         assert rational != spline
 
+        copy = rational.deepcopy()
+        assert id(copy) != id(rational)
+        assert copy == rational
+
     @pytest.mark.order(3)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestRational::test_begin"])

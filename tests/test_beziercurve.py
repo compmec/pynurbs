@@ -645,10 +645,6 @@ class TestAddSubMulDiv:
         randinters = [np.random.randint(0, denmax + 1) for i in range(npts)]
         ctrlpts1 = [1 + frac(nb, denmax) for nb in randinters]
 
-        # knotvector = np.array(knotvector, dtype="float64")
-        # ctrlpts0 = np.array(ctrlpts0, dtype="float64")
-        # ctrlpts1 = np.array(ctrlpts1, dtype="float64")
-
         curve0 = Curve(knotvector, ctrlpts0)
         curve1 = Curve(knotvector, ctrlpts1)
         curve_mul0 = curve0 * curve1
@@ -731,6 +727,64 @@ class TestAddSubMulDiv:
         np.testing.assert_allclose(points * a, ptsmul0)
         np.testing.assert_allclose(b * points, ptsmul1)
         np.testing.assert_allclose(points / c, ptsdiv0)
+
+    @pytest.mark.order(4)
+    @pytest.mark.dependency(
+        depends=[
+            "TestAddSubMulDiv::test_begin",
+            "TestAddSubMulDiv::test_addsub_curves",
+            "TestAddSubMulDiv::test_muldiv_curves",
+            "TestAddSubMulDiv::test_addsub_scalar",
+            "TestAddSubMulDiv::test_muldiv_scalar",
+        ]
+    )
+    def test_fails(self):
+        """
+        If the knotvectors are different, it's not possible to sum
+        It's expected a ValueError
+        """
+        curve0 = Curve([0, 0, 1, 1])
+        curve1 = Curve([0, 0, 1, 1])
+        with pytest.raises(ValueError):
+            curve0 + curve1
+        with pytest.raises(ValueError):
+            curve0 - curve1
+        with pytest.raises(ValueError):
+            curve0 * curve1
+        with pytest.raises(ValueError):
+            curve0 / curve1
+        with pytest.raises(ValueError):
+            1 + curve1
+        with pytest.raises(ValueError):
+            curve1 + 1
+        with pytest.raises(ValueError):
+            1 - curve1
+        with pytest.raises(ValueError):
+            curve1 - 1
+        with pytest.raises(ValueError):
+            1 * curve1
+        with pytest.raises(ValueError):
+            curve1 * 1
+        with pytest.raises(ValueError):
+            1 / curve1
+        with pytest.raises(ValueError):
+            curve1 / 1
+
+        curve0 = Curve([0, 0, 1, 1], [0, 0])
+        curve1 = Curve([0, 0, 2, 2], [0, 0])
+        with pytest.raises(ValueError):
+            curve0 + curve1
+        with pytest.raises(ValueError):
+            curve0 - curve1
+        with pytest.raises(ValueError):
+            curve0 * curve1
+        with pytest.raises(ValueError):
+            curve0 / curve1
+
+        curve0 = Curve([0, 0, 1, 1], [1, 1])
+        curve1 = Curve([0, 0, 2, 2], [1, 0])
+        with pytest.raises(ValueError):
+            curve0 / curve1
 
     @pytest.mark.order(4)
     @pytest.mark.dependency(

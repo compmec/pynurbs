@@ -36,7 +36,6 @@ def number_type(number: Union[int, float, Fraction]):
         return float
 
 
-
 def find_roots(knotvector: Tuple[float], ctrlvalues: Tuple[float]) -> Tuple[float]:
     """
     Finds the roots of given a spline function
@@ -114,7 +113,6 @@ def find_roots(knotvector: Tuple[float], ctrlvalues: Tuple[float]) -> Tuple[floa
         else:
             filtered_roots.append(root)
     return tuple(sorted(filtered_roots))
-
 
 
 def totuple(array):
@@ -350,7 +348,7 @@ class LeastSquare:
         float(b)
         assert a < b
 
-        nodes = [a + ((b - a) * i) / (npts-1) for i in range(npts)]
+        nodes = [a + ((b - a) * i) / (npts - 1) for i in range(npts)]
         return totuple(nodes)
 
     @staticmethod
@@ -1165,7 +1163,6 @@ class Operations:
 
 
 class MathOperations:
-    
     @staticmethod
     def mult_nonrat_bezier(
         knotvectora: Tuple[float], knotvectorb: Tuple[float]

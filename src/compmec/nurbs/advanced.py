@@ -202,10 +202,6 @@ class Intersection:
                 pair[1] = umax
             if np.linalg.norm(deltapair) < 1e-9:
                 return tuple(pair)  # convergence
-        if pair[0] < tmin or tmax < pair[0]:
-            return tuple()  # No solution
-        if pair[1] < umin or umax < pair[1]:
-            return tuple()  # No solution
         return tuple(pair)
 
     @staticmethod

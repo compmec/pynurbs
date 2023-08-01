@@ -324,9 +324,8 @@ class GeneratorKnotVector:
         """
         assert isinstance(degree, int)
         assert degree >= 0
+        assert len(weights) > 0
         weights = tuple(weights)
-        if len(weights) == 0:
-            return GeneratorKnotVector.bezier(degree)
         listknots = list(np.cumsum(weights))
         knotvector = (degree + 1) * [0] + listknots + degree * [listknots[-1]]
         knotvector = KnotVector(knotvector)
