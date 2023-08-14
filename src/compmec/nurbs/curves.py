@@ -10,6 +10,23 @@ from compmec.nurbs.__classes__ import Intface_BaseCurve
 from compmec.nurbs.knotspace import KnotVector
 
 
+def norm(object: Union[float, Tuple[float]], L: int = 0)-> float:
+    """
+    Computes recursively a norm of an object.
+    If L = 0, it means infinity norm
+    If L = 1, it means abs norm
+    If L = 2, it means euclidean norm
+    """
+    try:
+        soma = 0
+        for item in object:
+            norma = norm(item, L)
+            soma = max(soma, norma) if L == 0 else soma + norma**L
+        return soma if L == 0 else soma**(1/L)
+    except TypeError:
+        return abs(object)
+        
+
 class BaseCurve(Intface_BaseCurve):
     def __init__(self, knotvector: KnotVector):
         self.__ctrlpoints = None
@@ -34,8 +51,7 @@ class BaseCurve(Intface_BaseCurve):
         othercopy = other.deepcopy()
         othercopy.knotvector = newknotvec
         for poi, qoi in zip(self.ctrlpoints, othercopy.ctrlpoints):
-            diff2 = (poi - qoi) ** 2
-            if float(np.sum(diff2)) > 1e-9:
+            if norm(poi-qoi) > 1e-9:
                 return False
         return True
 
