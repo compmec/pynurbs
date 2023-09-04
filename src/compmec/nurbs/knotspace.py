@@ -11,6 +11,10 @@ from compmec.nurbs.__classes__ import Intface_KnotVector
 
 class KnotVector(Intface_KnotVector):
     def __init__(self, knotvector: Tuple[float]):
+        """Constructor method of KnotVector
+
+        :raises ValueError: Input is not a valid knot vector
+        """
         if isinstance(knotvector, self.__class__):
             self.__safe_init(knotvector)
         elif not heavy.KnotVector.is_valid_vector(knotvector):
@@ -19,8 +23,10 @@ class KnotVector(Intface_KnotVector):
         self.__safe_init(knotvector)
 
     def __safe_init(self, newvector: Tuple[float]):
-        """
-        Unprotected private function to set newvector
+        """Private method to initialize a instance without verifications
+
+        :param newvector: The vector of values
+        :type file_loc: tuple[float]
         """
         self.__degree = None
         self.__npts = None
@@ -78,25 +84,25 @@ class KnotVector(Intface_KnotVector):
         return self.__safe_init(newvector)
 
     def __add__(self, other: Union[float, Tuple[float]]):
-        return self.deepcopy().__iadd__(other)
+        return self.copy().__iadd__(other)
 
     def __sub__(self, other: Union[float, Tuple[float]]):
-        return self.deepcopy().__isub__(other)
+        return self.copy().__isub__(other)
 
     def __mul__(self, other: float):
-        return self.deepcopy().__imul__(other)
+        return self.copy().__imul__(other)
 
     def __rmul__(self, other: float):
-        return self.deepcopy().__imul__(other)
+        return self.copy().__imul__(other)
 
     def __truediv__(self, other: float):
-        return self.deepcopy().__itruediv__(other)
+        return self.copy().__itruediv__(other)
 
     def __or__(self, other: float):
-        return self.deepcopy().__ior__(other)
+        return self.copy().__ior__(other)
 
     def __and__(self, other: float):
-        return self.deepcopy().__iand__(other)
+        return self.copy().__iand__(other)
 
     def __eq__(self, other: object):
         if not isinstance(other, self.__class__):
@@ -168,35 +174,72 @@ class KnotVector(Intface_KnotVector):
     def copy(self) -> KnotVector:
         """Returns a copy of the object. The internal knots are also copied.
 
+        :return: An exact copy of the instance.
+        :rtype: KnotVector
         """
         knotvector = [deepcopy(knot) for knot in self]
         return self.__class__(knotvector)
 
-    def shift(self, value: float):
-        """
-        Moves every knot by an amount `value`
+    def shift(self, value: float) -> KnotVector:
+        """Add ``value`` to each knot
+
+        :param value: The amount to shift every knot
+        :type value: float
+        :raises TypeError: If ``value`` is not convertible to float
+        :return: The same instance
+        :rtype: KnotVector
         """
         float(value)  # Verify if it's a number
         newvector = tuple([knoti + value for knoti in self])
         return self.__safe_init(newvector)
 
     def scale(self, value: float) -> KnotVector:
-        """
-        Multiply every knot by amount `value`
+        """Multiplies every knot by amount ``value``
+
+        :param value: The amount to scale every knot
+        :type value: float
+        :raises TypeError: If ``value`` is not convertible to float
+        :return: The same instance
+        :rtype: KnotVector
         """
         float(value)  # Verify if it's a number
         newvector = tuple([knoti * value for knoti in self])
         return self.__safe_init(newvector)
 
     def normalize(self) -> KnotVector:
-        """
-        Shift and scale the vector to match the interval [0, 1]
+        """Shift and scale the vector to match the interval [0, 1]
+
+        :return: The same instance
+        :rtype: KnotVector
+
+        Example use
+        -----------
+
+        >>> from fractions import Fraction
+        >>> from compmec.nurbs import KnotVector
+        >>> vector = [1, 1, 2, 3, 3]
+        >>> knotvector = KnotVector(vector)
+        >>> knotvector.normalize()
+        (0., 0., 0.5, 1., 1.)
+        >>> two, three, four = Fraction(2), Fraction(3), Fraction(4)
+        >>> vector = [two, two, three, four, four]
+        >>> knotvector = KnotVector(vector)
+        >>> knotvector.normalize()
+        (Fraction(0, 1), Fraction(0, 1), Fraction(1, 2), Fraction(1, 1), Fraction(1, 1))
+
         """
         self.shift(-self[0])
         self.scale(1 / self[-1])
         return self
 
     def valid_nodes(self, nodes: Tuple[float]):
+        """Verifies if each node is valid
+
+        :param nodes: The list of nodes
+        :type nodes: tuple[float]
+        :raises TypeError: If ``nodes`` is not a list of numbers
+        :raises ValueError: If at least one node is outside ``[umin, umax]``
+        """
         for node in nodes:
             self.__valid_node(node)
 
@@ -225,8 +268,32 @@ class KnotVector(Intface_KnotVector):
         return tuple(spans)
 
     def span(self, nodes: Union[float, Tuple[float]]) -> Union[int, Tuple[int]]:
-        """
-        Finds the index position of
+        """Finds the index position of a ``node`` such
+        ``knotvector[span] <= node < knotvector[span+1]``
+
+        If ``nodes`` is a vector of numbers, it returns a vector of indexs
+
+        :param nodes: A node to compute the span, or a list of nodes
+        :type nodes: float | tuple[float]
+        :raises TypeError: If ``nodes`` is not a list of numbers
+        :raises ValueError: If at least one node is outside ``[umin, umax]``
+        :return: The index of the node
+        :rtype: int | tuple[int]
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import KnotVector
+        >>> vector = [0, 0, 1, 2, 2]
+        >>> knotvector = KnotVector(vector)
+        >>> knotvector.span(0)
+        1
+        >>> knotvector.span(0.5)
+        1
+        >>> knotvector.span(1)
+        2
+        >>> knotvector.span([0, 0.5, 1, 1.5, 2])
+        (1, 1, 2, 2, 2)
         """
         onevalue = True
         try:
@@ -248,8 +315,31 @@ class KnotVector(Intface_KnotVector):
         return tuple(mults)
 
     def mult(self, nodes: Union[float, Tuple[float]]) -> Union[int, Tuple[int]]:
-        """
-        Counts how many times a node is inside the knotvector
+        """Counts how many times a node is inside the knotvector
+
+        If ``nodes`` is a vector of numbers, it returns a list of mult
+
+        :param nodes: The node to count, or a list of nodes
+        :type nodes: float | tuple[float]
+        :raises TypeError: If ``nodes`` is not a number or a list of numbers
+        :raises ValueError: If the node is outside ``[umin, umax]``
+        :return: The index of the node
+        :rtype: int | tuple[int]
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import KnotVector
+        >>> vector = [0, 0, 1, 2, 2]
+        >>> knotvector = KnotVector(vector)
+        >>> knotvector.mult(0)
+        2
+        >>> knotvector.mult(1)
+        1
+        >>> knotvector.mult(0.5)
+        0
+        >>> knotvector.mult([0, 0.5, 1, 1.2, 1.8, 2])
+        (2, 0, 1, 0, 0, 2)
         """
         onevalue = True
         try:
@@ -265,47 +355,140 @@ class KnotVector(Intface_KnotVector):
 
 class GeneratorKnotVector:
     @staticmethod
-    def bezier(degree: int, cls: type = int) -> KnotVector:
-        """
-        Returns a knotvector for a bezier curve.
-        The parameter ```cls``` is good if you want your knotvector
-        to be of a certain type
+    def bezier(degree: int, cls: Optional[type] = int) -> KnotVector:
+        """Creates the KnotVector of a bezier curve.
+
+        :param degree: The degree of the bezier curve, non-negative
+        :type degree: int
+        :param cls: The class to convert the number, defaults to ``int``
+        :type cls: int(, optional)
+        :raises AssertionError: If ``degree`` is not a non-negative integer
+        :return: The bezier knot vector
+        :rtype: KnotVector
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import GeneratorKnotVector
+        >>> GeneratorKnotVector.bezier(1)
+        (0, 0, 1, 1)
+        >>> GeneratorKnotVector.bezier(2)
+        (0, 0, 0, 1, 1, 1)
+        >>> GeneratorKnotVector.bezier(3)
+        (0, 0, 0, 0, 1, 1, 1, 1)
+        >>> GeneratorKnotVector.bezier(3, float)
+        (0., 0., 0., 0., 1., 1., 1., 1.)
         """
         assert isinstance(degree, int)
         assert degree >= 0
-        cls = cls if cls else int
         knotvector = (degree + 1) * [cls(0)] + (degree + 1) * [cls(1)]
         return KnotVector(knotvector)
 
     @staticmethod
-    def uniform(degree: int, npts: int, cls: type = int) -> KnotVector:
-        """
-        Creates a equally distributed knotvector between [0, 1]
+    def integer(degree: int, npts: int, cls: Optional[type] = int) -> KnotVector:
+        """Creates a KnotVector of equally integer spaced.
 
-        Example:
-            uniform(1, 3) = [0, 0, 1/2, 1, 1]
-            uniform(2, 6) = [0, 0, 0, 1/4, 2/4, 3/4, 1, 1, 1]
+        :param degree: The degree of the bezier curve, non-negative
+        :type degree: int
+        :param npts: The number of control points of the curve
+        :type npts: int
+        :param cls: The class to convert the number, defaults to ``int``
+        :type cls: int(, optional)
+        :raises AssertionError: If ``degree`` or ``npts`` is not a non-negative integer
+        :raises AssertionError: If ``npts`` is not greater than ``degree``
+        :return: The bezier knot vector
+        :rtype: KnotVector
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import GeneratorKnotVector
+        >>> GeneratorKnotVector.integer(1, 2)
+        (0, 0, 1, 1)
+        >>> GeneratorKnotVector.integer(1, 3)
+        (0, 0, 1, 2, 2)
+        >>> GeneratorKnotVector.integer(2, 5)
+        (0, 0, 0, 1, 2, 3, 3, 3)
+        >>> GeneratorKnotVector.integer(2, 5, float)
+        (0., 0., 0., 1., 2., 3., 3., 3.)
         """
         assert isinstance(degree, int)
         assert isinstance(npts, int)
         assert degree >= 0
         assert npts > degree
-        cls = cls if cls else int
         nintknots = npts - degree - 1
         knotvector = degree * [cls(0)]
         knotvector += [cls(i) for i in range(nintknots + 2)]
         knotvector += degree * [cls(nintknots + 1)]
         knotvector = KnotVector(knotvector)
+        return knotvector
+
+    @staticmethod
+    def uniform(degree: int, npts: int, cls: Optional[type] = int) -> KnotVector:
+        """Creates a equally distributed knotvector between [0, 1]
+
+        :param degree: The degree of the curve, non-negative
+        :type degree: int
+        :param npts: The number of control points of the curve
+        :type npts: int
+        :param cls: The class to convert the number, defaults to ``int``
+        :type cls: int(, optional)
+        :raises AssertionError: If ``degree`` or ``npts`` is not a non-negative integer
+        :raises AssertionError: If ``npts`` is not greater than ``degree``
+        :return: The uniform knotvector of given degree and number of control points
+        :rtype: KnotVector
+
+        Example use
+        -----------
+
+        >>> from fractions import Fraction
+        >>> from compmec.nurbs import GeneratorKnotVector
+        >>> GeneratorKnotVector.uniform(1, 2)
+        (0, 0, 1, 1)
+        >>> GeneratorKnotVector.uniform(1, 3)
+        (0, 0, 0.5, 1, 1)
+        >>> GeneratorKnotVector.uniform(2, 6)
+        (0, 0, 0, 0.25, 0.5, 0.75, 1, 1, 1)
+        >>> GeneratorKnotVector.uniform(1, 3, Fraction)
+        (Fraction(0, 1), Fraction(0, 1), Fraction(1, 2), Fraction(1, 1), Fraction(1, 1))
+        """
+        knotvector = GeneratorKnotVector.integer(degree, npts, cls)
         knotvector.normalize()
         return knotvector
 
     @staticmethod
-    def random(degree: int, npts: int) -> KnotVector:
+    def random(degree: int, npts: int, cls: Optional[type] = float) -> KnotVector:
+        """Creates a random distributed knotvector between [0, 1]
+
+        :param degree: The degree of the curve, non-negative
+        :type degree: int
+        :param npts: The number of control points of the curve
+        :type npts: int
+        :param cls: The class to convert the number, defaults to ``float``
+        :type cls: float(, optional)
+        :raises AssertionError: If ``degree`` or ``npts`` is not a non-negative integer
+        :raises AssertionError: If ``npts`` is not greater than ``degree``
+        :return: The random knotvector of given degree and number of control points
+        :rtype: KnotVector
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import GeneratorKnotVector
+        >>> GeneratorKnotVector.random(1, 2)
+        (0, 0, 1, 1)
+        >>> GeneratorKnotVector.random(1, 3)
+        (0, 0, 0.4, 1, 1)
+        >>> GeneratorKnotVector.random(2, 6)
+        [0, 0, 0, 0.21, 0.57, 0.61, 1, 1, 1]
+
+        """
         assert isinstance(degree, int)
         assert isinstance(npts, int)
         assert degree >= 0
         assert npts > degree
         weights = np.random.randint(1, 1000, npts - degree)
+        weights = [cls(weight) for weight in weights]
         knotvector = GeneratorKnotVector.weight(degree, weights)
         knotvector.shift(np.random.uniform(-1, 1))
         knotvector.scale(np.random.uniform(1, 2))
@@ -313,21 +496,42 @@ class GeneratorKnotVector:
 
     @staticmethod
     def weight(degree: int, weights: Tuple[float]) -> KnotVector:
-        """
-        Creates a KnotVector with degree ```degree``` and spaced points
-        depending on the ```weights``` vectors.
-        The number of segments are equal to lenght of weights
+        """Creates a knotvector of degree ```degree``` based on
+        given ```weights``` vector.
 
-        degree = 1 and weights = [1] -> [0, 0, 1, 1]
-        degree = 1 and weights = [1, 1] -> [0, 0, 0.5, 1, 1]
-        degree = 1 and weights = [1, 1, 2] -> [0, 0.25, 0.5, 1, 1]
+        :param degree: The degree of the curve, non-negative
+        :type degree: int
+        :param weights: The vector of weights
+        :type weights: tuple[float]
+        :raises AssertionError: If ``degree`` is not a non-negative integer
+        :raises AssertionError: If the weights is not an array of positive numbers
+        :return: A knotvector of degree ``degree``
+        :rtype: KnotVector
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import GeneratorKnotVector
+        >>> GeneratorKnotVector.weights(1, [1])
+        (0, 0, 1, 1)
+        >>> GeneratorKnotVector.weights(2, [1])
+        (0, 0, 0, 1, 1, 1)
+        >>> GeneratorKnotVector.weights(2, [2])
+        (0, 0, 0, 2, 2, 2)
+        >>> GeneratorKnotVector.weights(1, [2, 2])
+        (0, 0, 2, 4, 4)
+        >>> GeneratorKnotVector.weights(1, [1, 2])
+        (0, 0, 1, 3, 3)
+        >>> GeneratorKnotVector.weights(1, [1., 2.])
+        (0., 0., 1., 3., 3.)
+
         """
         assert isinstance(degree, int)
         assert degree >= 0
         assert len(weights) > 0
+        cls = type(weights[0])
         weights = tuple(weights)
         listknots = list(np.cumsum(weights))
-        knotvector = (degree + 1) * [0] + listknots + degree * [listknots[-1]]
+        knotvector = (degree + 1) * [cls(0)] + listknots + degree * [listknots[-1]]
         knotvector = KnotVector(knotvector)
-        knotvector.normalize()
         return knotvector

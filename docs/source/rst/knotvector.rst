@@ -1,15 +1,14 @@
 Knot Vector
 =============
 
-To compute the basis functions, it's used a specific type of ordoned vector, which we call **KnotVector**.
+One of the main objects used by this library is the **KnotVector**.
+It's a specific type of ordoned vector which defines the parametric interval and the curve's internal behavior, like continuity and smoothness.
 
-This KnotVector defines not only the parametric interval extremities, but also the internal knots, which are responsible for the behavior of the curve, like continuity and smoothness.
-
-The construction of a KnotVector may be complicated.
-A Generator can be used to create these knotvectors by setting the ``degree`` and the ``npts`` (number of points). 
+A Generator can be used to create these knotvectors by passing the ``degree`` and the ``npts`` (number of points). 
 
 .. code-block:: python
 
+    from compmec.nurbs import GeneratorKnotVector
     GeneratorKnotVector.bezier(degree=1)
     # [0, 0, 1, 1]
     GeneratorKnotVector.bezier(degree=2)
@@ -23,6 +22,29 @@ A Generator can be used to create these knotvectors by setting the ``degree`` an
     GeneratorKnotVector.weight(degree=1, [1, 2, 1])
     # [0, 0, 1, 3, 4, 4]
 
+You can also create your own custom knotvector by passing a list of custom values.
+For example, take fractional knots.
+
+.. code-block:: python
+
+    from fractions import Fraction
+    from compmec.nurbs import KnotVector
+    zero, half, one = Fraction(0), Fraction(1, 2), Fraction(1)
+
+    vector = [zero, zero, half, one, one]
+    knotvector = KnotVector(vector)
+    print(knotvector.degree)  # 1
+    print(knotvector.npts)  # 3
+
+-------
+Methods
+-------
+
+.. autoclass:: nurbs.GeneratorKnotVector
+    :members:
+
+.. autoclass:: nurbs.KnotVector
+    :members:
 
 
 ------
