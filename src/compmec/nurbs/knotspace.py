@@ -15,22 +15,35 @@ class KnotVector(Intface_KnotVector):
 
         :raises ValueError: Input is not a valid knot vector
         """
-        if isinstance(knotvector, self.__class__):
-            self.__safe_init(knotvector)
-        elif not heavy.KnotVector.is_valid_vector(knotvector):
-            msg = f"Invalid KnotVector of type {type(knotvector)} = {knotvector}"
-            raise ValueError(msg)
-        self.__safe_init(knotvector)
+        self.__nonsafe_init(knotvector)
 
-    def __safe_init(self, newvector: Tuple[float]):
+    def __nonsafe_init(self, vector: Tuple[float]) -> KnotVector:
+        """Private method to initialize a instance with verifications
+
+        :param newvector: The vector of values
+        :type file_loc: tuple[float]
+        :raises ValueError: If the given knotvector is not valid
+        :return: The same instance
+        :rtype: KnotVector
+        """
+        if isinstance(vector, self.__class__):
+            self.__safe_init(vector)
+        elif not heavy.KnotVector.is_valid_vector(vector):
+            msg = f"Invalid KnotVector of type {type(vector)} = {vector}"
+            raise ValueError(msg)
+        return self.__safe_init(vector)
+
+    def __safe_init(self, vector: Tuple[float]) -> KnotVector:
         """Private method to initialize a instance without verifications
 
         :param newvector: The vector of values
         :type file_loc: tuple[float]
+        :return: The same instance
+        :rtype: KnotVector
         """
         self.__degree = None
         self.__npts = None
-        self.__internal_vector = tuple(newvector)
+        self.__internal_vector = tuple(vector)
         return self
 
     def __str__(self) -> str:
@@ -154,8 +167,8 @@ class KnotVector(Intface_KnotVector):
             self += diff * knots
 
     def __insert_knots(self, nodes: Tuple[float]):
-        self.valid_nodes(nodes)
         try:
+            assert self.valid_nodes(nodes)
             newvector = heavy.KnotVector.insert_knots(tuple(self), nodes)
         except AssertionError:
             error_msg = f"Cannot insert nodes {nodes} in knotvector {self}"
@@ -163,19 +176,71 @@ class KnotVector(Intface_KnotVector):
         return self.__safe_init(newvector)
 
     def __remove_knots(self, nodes: Tuple[float]):
-        self.valid_nodes(nodes)
         try:
+            assert self.valid_nodes(nodes)
             newvector = heavy.KnotVector.remove_knots(tuple(self), nodes)
         except AssertionError:
             error_msg = f"Cannot remove nodes {nodes} in knotvector {self}"
             raise ValueError(error_msg)
         return self.__safe_init(newvector)
 
+    def convert(self, cls: type, tolerance: Optional[float] = 1e-9) -> KnotVector:
+        """Convert the knots from current type to given type.
+
+        If ``tolerance`` is too small, it raises a ValueError cause cannot convert.
+
+        :param cls: The class to convert the knots
+        :type cls: type
+        :param tolerance: The tolerance to check if each node is very far from other
+        :type tolerance: float
+        :raises ValueError: If cannot convert all knots to given type for given tolerance
+        :return: The same instance
+        :rtype: KnotVector
+
+        Example use
+        -----------
+
+        >>> from fractions import Fraction
+        >>> from compmec.nurbs import KnotVector
+        >>> knotvector = KnotVector([1., 1., 2., 3., 3.])
+        >>> knotvector.convert(int)
+        (1, 1, 2, 3, 3)
+        >>> knotvector.convert(float)
+        (1., 1., 2., 3., 3.)
+        >>> knotvector.convert(Fraction)
+        (Fraction(1, 1), Fraction(1, 1), Fraction(2, 1), Fraction(3, 1), Fraction(3, 1))
+        >>> knotvector = KnotVector([0., 0., 0.5, 1., 1.])
+        >>> knotvector.convert(int)
+        ValueError: Cannot convert knot 0.5 from type <class 'float'> to type <class 'int'>
+
+        """
+        new_vector = []
+        for knot in self:
+            new_knot = cls(knot)
+            if abs(new_knot - knot) > tolerance:
+                error_msg = "Cannot convert knot %s from type %s to type %s"
+                error_msg %= str(knot), str(type(knot)), str(cls)
+                raise ValueError(error_msg)
+            new_vector.append(new_knot)
+        self.__nonsafe_init(new_vector)
+
     def copy(self) -> KnotVector:
         """Returns a copy of the object. The internal knots are also copied.
 
         :return: An exact copy of the instance.
         :rtype: KnotVector
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import KnotVector
+        >>> vector0 = GeneratorKnotVector.random(2, 5)
+        >>> vector1 = vector0.copy()
+        >>> vector1 == vector0
+        True
+        >>> id(vector1) == id(vector0)
+        False
+
         """
         knotvector = [deepcopy(knot) for knot in self]
         return self.__class__(knotvector)
@@ -185,9 +250,22 @@ class KnotVector(Intface_KnotVector):
 
         :param value: The amount to shift every knot
         :type value: float
-        :raises TypeError: If ``value`` is not convertible to float
+        :raises TypeError: If ``value`` is not a number
         :return: The same instance
         :rtype: KnotVector
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import KnotVector
+        >>> knotvector = KnotVector([0, 0, 1, 1])
+        >>> knotvector.shift(1)
+        (1, 1, 2, 2)
+        >>> knotvector.shift(-1)
+        (0, 0, 1, 1)
+        >>> knotvector.shift(1.0)
+        (1., 1., 2., 2.)
+
         """
         float(value)  # Verify if it's a number
         newvector = tuple([knoti + value for knoti in self])
@@ -198,11 +276,23 @@ class KnotVector(Intface_KnotVector):
 
         :param value: The amount to scale every knot
         :type value: float
-        :raises TypeError: If ``value`` is not convertible to float
+        :raises TypeError: If ``value`` is not a number
+        :raises AssertionError: If ``value`` is not positive
         :return: The same instance
         :rtype: KnotVector
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import KnotVector
+        >>> knotvector = KnotVector([1, 1, 2, 2])
+        >>> knotvector.scale(2)
+        (2, 2, 4, 4)
+        >>> knotvector.scale(1/2)
+        (1.0, 1.0, 2.0, 2.0)
+
         """
         float(value)  # Verify if it's a number
+        assert value > 0
         newvector = tuple([knoti * value for knoti in self])
         return self.__safe_init(newvector)
 
@@ -221,10 +311,10 @@ class KnotVector(Intface_KnotVector):
         >>> knotvector = KnotVector(vector)
         >>> knotvector.normalize()
         (0., 0., 0.5, 1., 1.)
-        >>> two, three, four = Fraction(2), Fraction(3), Fraction(4)
-        >>> vector = [two, two, three, four, four]
+        >>> vector = [2, 2, 3, 4, 4]
         >>> knotvector = KnotVector(vector)
-        >>> knotvector.normalize()
+        >>> knotvector.convert(Fraction)
+        >>> knotvector.normalize(Fraction)
         (Fraction(0, 1), Fraction(0, 1), Fraction(1, 2), Fraction(1, 1), Fraction(1, 1))
 
         """
@@ -232,16 +322,29 @@ class KnotVector(Intface_KnotVector):
         self.scale(1 / self[-1])
         return self
 
-    def valid_nodes(self, nodes: Tuple[float]):
-        """Verifies if each node is valid
+    def valid_nodes(self, nodes: Tuple[float]) -> bool:
+        """Tells if all given nodes are valid
 
         :param nodes: The list of nodes
         :type nodes: tuple[float]
         :raises TypeError: If ``nodes`` is not a list of numbers
-        :raises ValueError: If at least one node is outside ``[umin, umax]``
+        :return: If all the nodes are in the interval ``[umin, umax]``
+        :rtype: bool
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import KnotVector
+        >>> knotvector = KnotVector([0, 0, 1, 1])
+        >>> knotvector.valid_nodes([0, 0.5, 1])
+        True
+        >>> knotvector.valid_nodes([-1, 0.5, 1])
+        False
         """
         for node in nodes:
-            self.__valid_node(node)
+            if not self.__valid_node(node):
+                return False
+        return True
 
     def __valid_node(self, node: float):
         """
@@ -253,8 +356,8 @@ class KnotVector(Intface_KnotVector):
             raise TypeError
         float(node)  # Verify if it's a number
         if node < self[0] or self[-1] < node:
-            msg = f"{node} outside interval [{self[0]}, {self[-1]}]"
-            raise ValueError(msg)
+            return False
+        return True
 
     def __span(self, nodes: Tuple[float]) -> Tuple[int]:
         """
@@ -301,8 +404,9 @@ class KnotVector(Intface_KnotVector):
             onevalue = False
         except TypeError:
             nodes = (nodes,)
-        for node in nodes:
-            self.__valid_node(node)  # may raise error
+        if not self.valid_nodes(nodes):
+            error_msg = f"The nodes {nodes} are not valid"
+            raise ValueError(error_msg)
         spans = self.__span(nodes)
         return spans[0] if onevalue else spans
 
@@ -347,8 +451,9 @@ class KnotVector(Intface_KnotVector):
             onevalue = False
         except TypeError:
             nodes = (nodes,)
-        for node in nodes:
-            self.__valid_node(node)  # may raise error
+        if not self.valid_nodes(nodes):
+            error_msg = f"The nodes {nodes} are not valid"
+            raise ValueError(error_msg)
         mults = self.__mult(nodes)
         return mults[0] if onevalue else mults
 
@@ -388,7 +493,7 @@ class GeneratorKnotVector:
     def integer(degree: int, npts: int, cls: Optional[type] = int) -> KnotVector:
         """Creates a KnotVector of equally integer spaced.
 
-        :param degree: The degree of the bezier curve, non-negative
+        :param degree: The degree of the curve, non-negative
         :type degree: int
         :param npts: The number of control points of the curve
         :type npts: int
@@ -490,14 +595,13 @@ class GeneratorKnotVector:
         weights = np.random.randint(1, 1000, npts - degree)
         weights = [cls(weight) for weight in weights]
         knotvector = GeneratorKnotVector.weight(degree, weights)
-        knotvector.shift(np.random.uniform(-1, 1))
-        knotvector.scale(np.random.uniform(1, 2))
+        knotvector.normalize()
         return knotvector
 
     @staticmethod
     def weight(degree: int, weights: Tuple[float]) -> KnotVector:
-        """Creates a knotvector of degree ```degree``` based on
-        given ```weights``` vector.
+        """Creates a knotvector of degree ``degree`` based on
+        given ``weights`` vector.
 
         :param degree: The degree of the curve, non-negative
         :type degree: int
@@ -531,7 +635,9 @@ class GeneratorKnotVector:
         assert len(weights) > 0
         cls = type(weights[0])
         weights = tuple(weights)
-        listknots = list(np.cumsum(weights))
-        knotvector = (degree + 1) * [cls(0)] + listknots + degree * [listknots[-1]]
+        listknots = [cls(0) for i in range(1 + len(weights))]
+        for i, weight in enumerate(weights):
+            listknots[i + 1] = listknots[i] + weight
+        knotvector = degree * [cls(0)] + listknots + degree * [listknots[-1]]
         knotvector = KnotVector(knotvector)
         return knotvector

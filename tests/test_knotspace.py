@@ -224,91 +224,163 @@ def test_CompareKnotvector():
     assert U1 != "asad"
 
 
-@pytest.mark.order(2)
-@pytest.mark.timeout(4)
-@pytest.mark.dependency(depends=["test_CompareKnotvector"])
-def test_shift():
-    U1 = KnotVector([0, 0, 1, 1])
-    U2 = KnotVector([1, 1, 2, 2])
-    U = U1.copy()
-    assert U == U1
-    assert U != U2
-    U.shift(1)  # Shift all vector
-    assert U == U2
+class TestOperations:
+    @pytest.mark.order(2)
+    @pytest.mark.timeout(2)
+    @pytest.mark.dependency(depends=["test_CompareKnotvector"])
+    def test_begin(self):
+        pass
 
-    U = U1.copy()
-    U += 1
-    assert U == U2
+    @pytest.mark.order(2)
+    @pytest.mark.timeout(4)
+    @pytest.mark.dependency(depends=["TestOperations::test_begin"])
+    def test_scale(self):
+        U1 = KnotVector([0, 0, 1, 1])
+        U2 = KnotVector([0, 0, 2, 2])
+        U3 = KnotVector([1, 1, 3, 3])
+        U4 = KnotVector([2, 2, 6, 6])
 
-    U = U2.copy()
-    assert U == U2
-    assert U != U1
-    U.shift(-1)
-    assert U == U1
+        U = U1.copy()
+        assert U == U1
+        assert U != U2
+        U.scale(2)
+        assert U != U1
+        assert U == U2
+        U.scale(1 / 2)
+        assert U == U1
+        assert U != U2
+        U *= 2
+        assert U != U1
+        assert U == U2
+        U *= 1 / 2
+        assert U == U1
+        assert U != U2
+        U /= 1 / 2  # times 2
+        assert U != U1
+        assert U == U2
+        U /= 2
+        assert U == U1
+        assert U != U2
 
-    U = U2.copy()
-    U -= 1
-    assert U == U1
+        U = U3.copy()
+        assert U == U3
+        assert U != U2
+        U.scale(2)
+        assert U != U3
+        assert U == U4
+        U.scale(1 / 2)
+        assert U == U3
+        assert U != U4
+        U *= 2
+        assert U != U3
+        assert U == U4
+        U *= 1 / 2
+        assert U == U3
+        assert U != U4
+        U /= 1 / 2  # times 2
+        assert U != U3
+        assert U == U4
+        U /= 2
+        assert U == U3
+        assert U != U4
 
+    @pytest.mark.order(2)
+    @pytest.mark.timeout(4)
+    @pytest.mark.dependency(depends=["TestOperations::test_begin"])
+    def test_shift(self):
+        U1 = KnotVector([0, 0, 1, 1])
+        U2 = KnotVector([1, 1, 2, 2])
+        U = U1.copy()
+        assert U == U1
+        assert U != U2
+        U.shift(1)  # Shift all vector
+        assert U == U2
 
-@pytest.mark.order(2)
-@pytest.mark.timeout(4)
-@pytest.mark.dependency(depends=["test_CompareKnotvector"])
-def test_scale():
-    U1 = KnotVector([0, 0, 1, 1])
-    U2 = KnotVector([0, 0, 2, 2])
-    U3 = KnotVector([1, 1, 3, 3])
-    U4 = KnotVector([2, 2, 6, 6])
+        U = U1.copy()
+        U += 1
+        assert U == U2
 
-    U = U1.copy()
-    assert U == U1
-    assert U != U2
-    U.scale(2)
-    assert U != U1
-    assert U == U2
-    U.scale(1 / 2)
-    assert U == U1
-    assert U != U2
-    U *= 2
-    assert U != U1
-    assert U == U2
-    U *= 1 / 2
-    assert U == U1
-    assert U != U2
-    U /= 1 / 2  # times 2
-    assert U != U1
-    assert U == U2
-    U /= 2
-    assert U == U1
-    assert U != U2
+        U = U2.copy()
+        assert U == U2
+        assert U != U1
+        U.shift(-1)
+        assert U == U1
 
-    U = U3.copy()
-    assert U == U3
-    assert U != U2
-    U.scale(2)
-    assert U != U3
-    assert U == U4
-    U.scale(1 / 2)
-    assert U == U3
-    assert U != U4
-    U *= 2
-    assert U != U3
-    assert U == U4
-    U *= 1 / 2
-    assert U == U3
-    assert U != U4
-    U /= 1 / 2  # times 2
-    assert U != U3
-    assert U == U4
-    U /= 2
-    assert U == U3
-    assert U != U4
+        U = U2.copy()
+        U -= 1
+        assert U == U1
+
+    @pytest.mark.order(2)
+    @pytest.mark.timeout(4)
+    @pytest.mark.dependency(depends=["TestOperations::test_begin"])
+    def test_normalize(self):
+        knotvector = KnotVector([1.0, 1.0, 2.0, 3.0, 3.0])
+        knotvector.normalize()
+        assert knotvector == [0, 0, 0.5, 1, 1]
+
+        knotvector = KnotVector([2, 2, 3, 4, 4])
+        knotvector.normalize()
+        assert knotvector == [0, 0, 0.5, 1, 1]
+
+    @pytest.mark.order(2)
+    @pytest.mark.timeout(4)
+    @pytest.mark.dependency(depends=["TestOperations::test_begin"])
+    def test_convert(self):
+        knotvector = KnotVector([1.0, 1.0, 2.0, 3.0, 3.0])
+        knotvector.convert(int)
+        for knot in knotvector:
+            assert isinstance(knot, int)
+        knotvector.convert(float)
+        for knot in knotvector:
+            assert isinstance(knot, float)
+        knotvector.convert(Fraction)
+        for knot in knotvector:
+            assert isinstance(knot, Fraction)
+
+        knotvector = KnotVector([0, 0, 0.5, 1, 1])
+        knotvector.convert(Fraction)
+        for knot in knotvector:
+            assert isinstance(knot, Fraction)
+        assert knotvector == [0, 0, 0.5, 1, 1]
+
+    @pytest.mark.order(2)
+    @pytest.mark.timeout(4)
+    @pytest.mark.dependency(
+        depends=[
+            "TestOperations::test_begin",
+            "TestOperations::test_scale",
+            "TestOperations::test_shift",
+            "TestOperations::test_normalize",
+            "TestOperations::test_convert",
+        ]
+    )
+    def test_fails(self):
+        knotvector = KnotVector([0.0, 0.0, 0.5, 1.0, 1.0])
+        with pytest.raises(ValueError):
+            knotvector.convert(int)
+
+    @pytest.mark.order(2)
+    @pytest.mark.timeout(4)
+    @pytest.mark.dependency(
+        depends=[
+            "TestOperations::test_begin",
+            "TestOperations::test_scale",
+            "TestOperations::test_shift",
+            "TestOperations::test_normalize",
+            "TestOperations::test_convert",
+            "TestOperations::test_fails",
+        ]
+    )
+    def test_end(self):
+        pass
 
 
 class TestGenerator:
     @pytest.mark.order(2)
     @pytest.mark.timeout(2)
-    @pytest.mark.dependency(depends=["test_CompareKnotvector"])
+    @pytest.mark.dependency(
+        depends=["test_CompareKnotvector", "TestOperations::test_end"]
+    )
     def test_begin(self):
         pass
 
@@ -499,6 +571,57 @@ class TestGenerator:
             "TestGenerator::test_weighted",
         ]
     )
+    def test_clstype(self):
+        # bezier
+        for degree in range(0, 7):
+            for cls in [int, float, Fraction]:
+                knotvector = GeneratorKnotVector.bezier(degree, cls)
+                for knot in knotvector:
+                    assert isinstance(knot, cls)
+        # integers
+        for degree in range(0, 7):
+            for npts in range(degree + 1, degree + 11):
+                for cls in [int, float, Fraction]:
+                    knotvector = GeneratorKnotVector.integer(degree, npts, cls)
+                    for knot in knotvector:
+                        assert isinstance(knot, cls)
+        # uniform
+        for degree in range(0, 7):
+            for npts in range(degree + 1, degree + 11):
+                for cls in [float, Fraction]:
+                    knotvector = GeneratorKnotVector.uniform(degree, npts, cls)
+                    for knot in knotvector:
+                        assert isinstance(knot, cls)
+        # random
+        for degree in range(0, 7):
+            for npts in range(degree + 1, degree + 11):
+                for cls in [float, Fraction]:
+                    knotvector = GeneratorKnotVector.random(degree, npts, cls)
+                    for knot in knotvector:
+                        assert isinstance(knot, cls)
+        # weight
+        for degree in range(0, 7):
+            for npts in range(degree + 1, degree + 11):
+                for cls in [int, float, Fraction]:
+                    vector = np.random.randint(1, 5, npts - degree)
+                    vector = [cls(number) for number in vector]
+                    knotvector = GeneratorKnotVector.weight(degree, vector)
+                    for knot in knotvector:
+                        assert isinstance(knot, cls)
+
+    @pytest.mark.order(2)
+    @pytest.mark.timeout(2)
+    @pytest.mark.dependency(
+        depends=[
+            "TestGenerator::test_begin",
+            "TestGenerator::test_bezier",
+            "TestGenerator::test_integer",
+            "TestGenerator::test_uniform",
+            "TestGenerator::test_random",
+            "TestGenerator::test_weighted",
+            "TestGenerator::test_clstype",
+        ]
+    )
     def test_fails(self):
         with pytest.raises(AssertionError):
             GeneratorKnotVector.bezier(degree=-1)
@@ -528,63 +651,6 @@ class TestGenerator:
             GeneratorKnotVector.random(degree=2, npts=3.0)
         with pytest.raises(AssertionError):
             GeneratorKnotVector.random(degree=2.0, npts=3)
-    @pytest.mark.order(2)
-    @pytest.mark.timeout(2)
-    @pytest.mark.dependency(
-        depends=[
-            "TestGenerator::test_begin",
-            "TestGenerator::test_bezier",
-            "TestGenerator::test_integer",
-            "TestGenerator::test_uniform",
-            "TestGenerator::test_random",
-            "TestGenerator::test_weighted",
-            "TestGenerator::test_fails",
-        ]
-    )
-    def test_clstype(self):
-        # bezier
-        for degree in range(0, 7):
-            for cls in [int, float, Fraction]:
-                knotvector = GeneratorKnotVector.bezier(degree, cls)
-                for knot in knotvector:
-                    assert isinstance(knot, cls)
-        # integers
-        for degree in range(0, 7):
-            for npts in range(degree+1, degree+11):
-                for cls in [int, float, Fraction]:
-                    knotvector = GeneratorKnotVector.integer(degree, npts, cls)
-                    for knot in knotvector:
-                        assert isinstance(knot, cls)
-        # uniform
-        for degree in range(0, 7):
-            for npts in range(degree+1, degree+11):
-                for cls in [float, Fraction]:
-                    knotvector = GeneratorKnotVector.uniform(degree, npts, cls)
-                    for knot in knotvector:
-                        assert isinstance(knot, cls)
-        # random
-        for degree in range(0, 7):
-            for npts in range(degree+1, degree+11):
-                for cls in [float, Fraction]:
-                    knotvector = GeneratorKnotVector.random(degree, npts, cls)
-                    for knot in knotvector:
-                        assert isinstance(knot, cls)
-        # weight
-        for degree in range(0, 7):
-            for npts in range(degree+1, degree+11):
-                for cls in [int, float, Fraction]:
-                    vector = np.random.randint(1, 5, npts-degree)
-                    vector = [cls(number) for number in vector]
-                    print("vector = ")
-                    print(vector)
-                    print(type(vector[0]))
-                    knotvector = GeneratorKnotVector.weight(degree, vector)
-                    print("Knotvector = ")
-                    print(knotvector)
-                    print("cls = ", cls)
-                    for knot in knotvector:
-                        print(type(knot))
-                        assert isinstance(knot, cls)
 
     @pytest.mark.order(2)
     @pytest.mark.timeout(4)
@@ -596,8 +662,8 @@ class TestGenerator:
             "TestGenerator::test_uniform",
             "TestGenerator::test_random",
             "TestGenerator::test_weighted",
-            "TestGenerator::test_fails",
             "TestGenerator::test_clstype",
+            "TestGenerator::test_fails",
         ]
     )
     def test_end(self):
