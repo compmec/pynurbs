@@ -374,7 +374,7 @@ class TestSumSubtract:
             for npts in range(degree + 2, degree + 9):
                 U1 = GeneratorKnotVector.random(degree, npts)
                 U2 = GeneratorKnotVector.random(degree, npts)
-                U1.shift(0.01+np.random.rand())
+                U1.shift(0.01 + np.random.rand())
                 P1 = np.random.uniform(-1, 1, npts)
                 P2 = np.random.uniform(-1, 1, npts)
                 C1 = Curve(U1, P1)

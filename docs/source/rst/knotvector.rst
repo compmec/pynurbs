@@ -11,16 +11,8 @@ A Generator can be used to create these knotvectors by passing the ``degree`` an
     from compmec.nurbs import GeneratorKnotVector
     GeneratorKnotVector.bezier(degree=1)
     # [0, 0, 1, 1]
-    GeneratorKnotVector.bezier(degree=2)
-    # [0, 0, 0, 1, 1, 1]
     GeneratorKnotVector.uniform(degree=1, npts=3)
     # [0, 0, 0.5, 1, 1]
-    GeneratorKnotVector.uniform(degree=2, npts=6)
-    # [0, 0, 0, 0.25, 0.5, 0.75, 1, 1, 1]
-    GeneratorKnotVector.random(degree=2, npts=6)
-    # [0, 0, 0, 0.21, 0.57, 0.61, 1, 1, 1]
-    GeneratorKnotVector.weight(degree=1, [1, 2, 1])
-    # [0, 0, 1, 3, 4, 4]
 
 You can also create your own custom knotvector by passing a list of custom values.
 For example, take fractional knots.

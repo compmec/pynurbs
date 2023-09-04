@@ -385,7 +385,7 @@ class Curve(BaseCurve):
         msg += "]\n"
         return msg
 
-    def __eval(self, nodes: Tuple[float]) -> Tuple["Point"]:
+    def __eval(self, nodes: Tuple[float]) -> Tuple[Any]:
         """
         Private method fto evaluate points in the curve
         """
@@ -402,7 +402,7 @@ class Curve(BaseCurve):
         result = np.moveaxis(matrix, 0, -1) @ self.ctrlpoints
         return tuple(result)
 
-    def eval(self, nodes: Union[float, Tuple[float]]) -> Union["Point", Tuple["Point"]]:
+    def eval(self, nodes: Union[float, Tuple[float]]) -> Union[Any, Tuple[Any]]:
         if self.ctrlpoints is None:
             error_msg = "Cannot evaluate: There are no control points"
             raise ValueError(error_msg)
@@ -591,7 +591,7 @@ class Curve(BaseCurve):
         funcvals = [function(node) for node in nodes]
         return self.fit_points(funcvals, nodes)
 
-    def fit_points(self, points: Tuple["Point"], nodes: Tuple[float] = None) -> None:
+    def fit_points(self, points: Tuple[Any], nodes: Tuple[float] = None) -> None:
         """
         Fit the curve into given points
         If the quantity of points are not enough to
