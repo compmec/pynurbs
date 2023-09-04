@@ -616,7 +616,7 @@ class TestRational:
     def test_compare_spline(self):
         knotvector = [0, 0, 0, 1, 2, 2, 2]
         spline = Function(knotvector)
-        rational = spline.deepcopy()
+        rational = spline.copy()
         rational.weights = np.ones(rational.npts)
 
         assert rational == spline
@@ -625,7 +625,7 @@ class TestRational:
         rational.weights = np.ones(rational.npts)
         assert rational != spline
 
-        copy = rational.deepcopy()
+        copy = rational.copy()
         assert id(copy) != id(rational)
         assert copy == rational
 
@@ -635,7 +635,7 @@ class TestRational:
     def test_values_rational_equal_spline(self):
         knotvector = [0, 0, 0, 1, 2, 2, 2]
         spline = Function(knotvector)
-        rational = spline.deepcopy()
+        rational = spline.copy()
         rational.weights = np.ones(rational.npts)
 
         nodes_sample = np.linspace(0, 2, 33)
@@ -711,7 +711,7 @@ class TestOthers:
     def test_print(self):
         vector_bezier = GeneratorKnotVector.bezier(3)
         vector_spline = GeneratorKnotVector.uniform(3, 5)
-        vector_rational = vector_spline.deepcopy()
+        vector_rational = vector_spline.copy()
         weights = np.random.uniform(1, 2, 5)
         bezier = Function(vector_bezier)
         spline = Function(vector_spline)

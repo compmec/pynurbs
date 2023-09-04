@@ -347,7 +347,7 @@ class TestRandomInsertKnot:
                 oldcurve = Curve(knotvector)
                 oldcurve.ctrlpoints = ctrlpoints
 
-                newcurve = oldcurve.deepcopy()
+                newcurve = oldcurve.copy()
                 while True:
                     newknot = frac(np.random.randint(denmax), denmax)
                     if oldcurve.knotvector.mult(newknot) == 0:
@@ -381,7 +381,7 @@ class TestRandomInsertKnot:
                 oldcurve.ctrlpoints = ctrlpoints
                 oldcurve.weights = weights
 
-                newcurve = oldcurve.deepcopy()
+                newcurve = oldcurve.copy()
                 while True:
                     newknot = frac(np.random.randint(denmax), denmax)
                     if oldcurve.knotvector.mult(newknot) == 0:
@@ -416,7 +416,7 @@ class TestRandomInsertKnot:
                 oldcurve.ctrlpoints = ctrlpoints
                 oldcurve.weights = weights
 
-                newcurve = oldcurve.deepcopy()
+                newcurve = oldcurve.copy()
                 while True:
                     newknot = frac(np.random.randint(1, denmax), denmax)
                     if oldcurve.knotvector.mult(newknot) == 0:
@@ -453,7 +453,7 @@ class TestRandomInsertKnot:
                 oldcurve.ctrlpoints = ctrlpoints
                 oldcurve.weights = weights
 
-                newcurve = oldcurve.deepcopy()
+                newcurve = oldcurve.copy()
                 while True:
                     newknot = frac(np.random.randint(1, denmax), denmax)
                     if oldcurve.knotvector.mult(newknot) == 0:
@@ -499,7 +499,7 @@ class TestInsKnotCircle:
         oldcurve.ctrlpoints = np.array(ctrlpoints)
         oldcurve.weights = [frac(weight) for weight in weights]
 
-        newcurve = oldcurve.deepcopy()
+        newcurve = oldcurve.copy()
         newcurve.knot_insert([frac(1, 2)])
 
         denmax = 128
@@ -522,7 +522,7 @@ class TestInsKnotCircle:
         curve.ctrlpoints = np.array(ctrlpoints, dtype="float64")
         curve.weights = np.array(weights, dtype="float64")
 
-        newcurve = curve.deepcopy()
+        newcurve = curve.copy()
         newcurve.knot_insert([0.5])
 
         nodes_sample = np.linspace(0, 1, 129)
@@ -547,7 +547,7 @@ class TestInsKnotCircle:
         curve.ctrlpoints = np.array(ctrlpoints, dtype="float64")
         curve.weights = np.array(weights, dtype="float64")
 
-        newcurve = curve.deepcopy()
+        newcurve = curve.copy()
         newcurve.knot_insert([0.5])
 
         nodes_sample = np.linspace(0, 1, 129)
@@ -572,7 +572,7 @@ class TestInsKnotCircle:
         curve.ctrlpoints = np.array(ctrlpoints, dtype="float64")
         curve.weights = np.array(weights, dtype="float64")
 
-        newcurve = curve.deepcopy()
+        newcurve = curve.copy()
         newcurve.knot_insert([0.25, 0.75])
 
         nodes_sample = np.linspace(0, 1, 129)

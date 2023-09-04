@@ -165,9 +165,9 @@ class KnotVector(Intface_KnotVector):
             raise ValueError(error_msg)
         return self.__safe_init(newvector)
 
-    def deepcopy(self) -> KnotVector:
-        """
-        Returns a exact object, but with different ID
+    def copy(self) -> KnotVector:
+        """Returns a copy of the object. The internal knots are also copied.
+
         """
         knotvector = [deepcopy(knot) for knot in self]
         return self.__class__(knotvector)

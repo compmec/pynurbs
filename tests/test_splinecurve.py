@@ -83,7 +83,7 @@ class TestInitCurve:
         curve = Curve(knotvector, ctrlpoints)
         curve = Curve(knotvector, ctrlpoints)
         # Functions
-        assert hasattr(curve, "deepcopy")
+        assert hasattr(curve, "copy")
         assert hasattr(curve, "split")
         assert hasattr(curve, "degree_increase")
         assert hasattr(curve, "degree_decrease")
@@ -118,7 +118,7 @@ class TestInitCurve:
         P4 = np.random.uniform(1, 2, (npts, ndim))
         C1 = Curve(knotvector, P1)
         C2 = Curve(knotvector, P1)
-        C3 = C1.deepcopy()
+        C3 = C1.copy()
         C4 = Curve(knotvector, P4)
         assert id(C1) != id(C2)
         assert C1 == C2
@@ -933,7 +933,7 @@ class TestOthers:
         assert curve.knotvector == knotvector
         assert id(curve.knotvector) != id(knotvector)
 
-        newvector = knotvector.deepcopy()
+        newvector = knotvector.copy()
         newvector += [1.5]
         curve.knotvector = newvector
         with pytest.raises(ValueError):

@@ -10,7 +10,7 @@ from compmec.nurbs.__classes__ import Intface_BaseCurve
 from compmec.nurbs.knotspace import KnotVector
 
 
-def norm(object: Union[float, Tuple[float]], L: int = 0)-> float:
+def norm(object: Union[float, Tuple[float]], L: int = 0) -> float:
     """
     Computes recursively a norm of an object.
     If L = 0, it means infinity norm
@@ -22,10 +22,10 @@ def norm(object: Union[float, Tuple[float]], L: int = 0)-> float:
         for item in object:
             norma = norm(item, L)
             soma = max(soma, norma) if L == 0 else soma + norma**L
-        return soma if L == 0 else soma**(1/L)
+        return soma if L == 0 else soma ** (1 / L)
     except TypeError:
         return abs(object)
-        
+
 
 class BaseCurve(Intface_BaseCurve):
     def __init__(self, knotvector: KnotVector):
@@ -46,12 +46,12 @@ class BaseCurve(Intface_BaseCurve):
         if (self.ctrlpoints is None) ^ (other.ctrlpoints is None):
             return False
         newknotvec = self.knotvector | other.knotvector
-        selfcopy = self.deepcopy()
+        selfcopy = self.copy()
         selfcopy.knotvector = newknotvec
-        othercopy = other.deepcopy()
+        othercopy = other.copy()
         othercopy.knotvector = newknotvec
         for poi, qoi in zip(self.ctrlpoints, othercopy.ctrlpoints):
-            if norm(poi-qoi) > 1e-9:
+            if norm(poi - qoi) > 1e-9:
                 return False
         return True
 
@@ -61,7 +61,7 @@ class BaseCurve(Intface_BaseCurve):
     def __neg__(self):
         if self.ctrlpoints is None:
             raise ValueError
-        newcurve = self.deepcopy()
+        newcurve = self.copy()
         newctrlpoints = [-1 * ctrlpt for ctrlpt in newcurve.ctrlpoints]
         newcurve.ctrlpoints = newctrlpoints
         return newcurve
@@ -70,7 +70,7 @@ class BaseCurve(Intface_BaseCurve):
         if self.ctrlpoints is None:
             raise ValueError
         if not isinstance(other, self.__class__):
-            copy = self.deepcopy()
+            copy = self.copy()
             copy.ctrlpoints = [other + point for point in self.ctrlpoints]
             return copy
         if self.knotvector.limits != other.knotvector.limits:
@@ -100,7 +100,7 @@ class BaseCurve(Intface_BaseCurve):
         if self.ctrlpoints is None:
             raise ValueError
         if not isinstance(other, self.__class__):
-            copy = self.deepcopy()
+            copy = self.copy()
             copy.ctrlpoints = [point * other for point in copy.ctrlpoints]
             return copy
         if self.knotvector.limits != other.knotvector.limits:
@@ -123,7 +123,7 @@ class BaseCurve(Intface_BaseCurve):
         if self.ctrlpoints is None:
             raise ValueError
         assert not isinstance(other, self.__class__)
-        copy = self.deepcopy()
+        copy = self.copy()
         copy.ctrlpoints = [other * point for point in copy.ctrlpoints]
         return copy
 
@@ -131,14 +131,14 @@ class BaseCurve(Intface_BaseCurve):
         if self.ctrlpoints is None:
             raise ValueError
         if not isinstance(other, self.__class__):
-            copy = self.deepcopy()
+            copy = self.copy()
             copy.ctrlpoints = [point / other for point in copy.ctrlpoints]
             return copy
         if self.knotvector.limits != other.knotvector.limits:
             raise ValueError
         if self.weights is None and other.weights is None:
-            copyse = self.deepcopy()
-            copyot = other.deepcopy()
+            copyse = self.copy()
+            copyot = other.copy()
             vectora, vectorb = tuple(copyse.knotvector), tuple(copyot.knotvector)
             vectorc = tuple(copyse.knotvector | copyot.knotvector)
             transctrlpts = heavy.Operations.matrix_transformation(vectora, vectorc)
@@ -163,7 +163,7 @@ class BaseCurve(Intface_BaseCurve):
             float(point)
         if self.weights is None:
             newcurve = self.__class__(tuple(self.knotvector))
-            newcurve.weights = [deepcopy(p) for p in self.ctrlpoints]
+            newcurve.weights = [deepcopy(point) for point in self.ctrlpoints]
             newcurve.ctrlpoints = [1 / w for w in newcurve.weights]
             return newcurve
         num, den = self.fraction()
@@ -176,8 +176,8 @@ class BaseCurve(Intface_BaseCurve):
         if umaxleft != uminright:
             error_msg = f"max(Uleft) = {umaxleft} != {uminright} = min(Uright)"
             raise ValueError(error_msg)
-        othercopy = other.deepcopy()
-        selfcopy = self.deepcopy()
+        othercopy = other.copy()
+        selfcopy = self.copy()
         maxdegree = max(self.degree, other.degree)
         selfcopy.degree_increase(maxdegree - self.degree)
         othercopy.degree_increase(maxdegree - other.degree)
@@ -231,7 +231,7 @@ class BaseCurve(Intface_BaseCurve):
 
     @degree.setter
     def degree(self, value: int):
-        newknotvector = self.knotvector.deepcopy()
+        newknotvector = self.knotvector.copy()
         newknotvector.degree = int(value)
         self.knotvector = newknotvector
 
@@ -281,11 +281,11 @@ class BaseCurve(Intface_BaseCurve):
 
         self.__ctrlpoints = tuple(newpoints)
 
-    def deepcopy(self) -> Curve:
+    def copy(self) -> Curve:
         """
         Returns a copy with all the internal elements
         """
-        knotvector = [deepcopy(knot) for knot in self.knotvector]
+        knotvector = self.knotvector.copy()
         curve = self.__class__(knotvector)
         if self.ctrlpoints is not None:
             curve.ctrlpoints = [deepcopy(point) for point in self.ctrlpoints]
@@ -300,11 +300,11 @@ class BaseCurve(Intface_BaseCurve):
         If it's spline, then returns [Spline, 1]
         """
         if self.weights is None:
-            numerator = self.deepcopy()
+            numerator = self.copy()
             return numerator, 1
         ctrlpoints = [deepcopy(point) for point in self.ctrlpoints]
-        numerator = self.__class__(self.knotvector.deepcopy())
-        denominator = self.__class__(self.knotvector.deepcopy())
+        numerator = self.__class__(self.knotvector.copy())
+        denominator = self.__class__(self.knotvector.copy())
         numerator.ctrlpoints = [wi * pt for wi, pt in zip(self.weights, ctrlpoints)]
         denominator.ctrlpoints = self.weights
         return numerator, denominator
@@ -426,7 +426,7 @@ class Curve(BaseCurve):
 
     def knot_remove(self, nodes: Tuple[float], tolerance: float = 1e-9) -> None:
         nodes = tuple(nodes)
-        newknotvec = self.knotvector.deepcopy() - tuple(nodes)
+        newknotvec = self.knotvector.copy() - tuple(nodes)
         self.update_knotvector(newknotvec, tolerance)
 
     def knot_clean(
@@ -467,7 +467,7 @@ class Curve(BaseCurve):
         The same as mycurve.degree -= 1
         But this function forces the degree reductions without looking the error
         """
-        newknotvec = self.knotvector.deepcopy()
+        newknotvec = self.knotvector.copy()
         newknotvec.degree -= times
         self.update_knotvector(newknotvec, tolerance)
 

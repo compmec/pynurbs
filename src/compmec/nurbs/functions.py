@@ -75,11 +75,11 @@ class BaseFunction(Intface_BaseFunction):
             raise ValueError(error_msg)
         self.__weights = value
 
-    def deepcopy(self) -> BaseFunction:
+    def copy(self) -> BaseFunction:
         """
         Returns a copy with all the internal elements
         """
-        knotvector = [deepcopy(knot) for knot in self.knotvector]
+        knotvector = self.knotvector.copy()
         newfunc = self.__class__(knotvector)
         if self.weights is not None:
             newfunc.weights = [deepcopy(weight) for weight in self.weights]
