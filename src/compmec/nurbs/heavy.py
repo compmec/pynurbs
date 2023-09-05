@@ -5,6 +5,38 @@ from typing import Tuple, Union
 import numpy as np
 
 
+class Math:
+    @staticmethod
+    def gcd(*numbers: Tuple[int]) -> int:
+        print(f"gdc({str(numbers)})")
+        lenght = len(numbers)
+        if lenght == 1:
+            return numbers[0]
+        if lenght != 2:
+            middle = lenght // 2
+            x = Math.gcd(*numbers[:middle])
+            y = Math.gcd(*numbers[middle:])
+        else:
+            x, y = numbers
+        while y:
+            x, y = y, x % y
+        return abs(x)
+
+    @staticmethod
+    def lcm(*numbers: Tuple[int]) -> int:
+        print(f"lcm({str(numbers)})")
+        lenght = len(numbers)
+        if lenght == 1:
+            return numbers[0]
+        if lenght != 2:
+            middle = lenght // 2
+            x = Math.lcm(*numbers[:middle])
+            y = Math.lcm(*numbers[:middle])
+        else:
+            x, y = numbers
+        return x * y // Math.gcd(x, y)
+
+
 def number_type(number: Union[int, float, Fraction]):
     """
     Returns the type of a number, if it's a integer, a float, fraction
@@ -213,9 +245,9 @@ class Linalg:
             matrix = np.array(matrix, dtype="object")
             force = np.array(force, dtype="object")
             for i, (linea, lineb) in enumerate(zip(matrix, force)):
-                lcmleft = math.lcm(*[Fraction(elem).denominator for elem in linea])
-                lcmrigh = math.lcm(*[Fraction(elem).denominator for elem in lineb])
-                lcm = math.lcm(lcmleft, lcmrigh)
+                lcmleft = Math.lcm(*[Fraction(elem).denominator for elem in linea])
+                lcmrigh = Math.lcm(*[Fraction(elem).denominator for elem in lineb])
+                lcm = Math.lcm(lcmleft, lcmrigh)
                 matrix[i] *= lcm
                 force[i] *= lcm
             matrix = matrix.tolist()
@@ -230,7 +262,7 @@ class Linalg:
             diagonal = np.array(diagonal)
             result = np.dot(inverse, force)
             for i, diag in enumerate(diagonal):
-                gdc = math.gcd(diag, *result[i])
+                gdc = Math.gcd(diag, *result[i])
                 diagonal[i] //= gdc
                 result[i] //= gdc
             for i, diag in enumerate(diagonal):
@@ -282,13 +314,13 @@ class Linalg:
         for k in range(side):
             for i in range(k + 1, side):
                 matrix[i] = matrix[i] * matrix[k, k] - matrix[k] * matrix[i, k]
-                gdcline = math.gcd(*matrix[i])
+                gdcline = Math.gcd(*matrix[i])
                 if gdcline != 1:
                     matrix[i] = matrix[i] // gdcline
         for k in range(side - 1, 0, -1):
             for i in range(k - 1, -1, -1):
                 matrix[i] = matrix[i] * matrix[k, k] - matrix[k] * matrix[i, k]
-                gdcline = math.gcd(*matrix[i])
+                gdcline = Math.gcd(*matrix[i])
                 if gdcline != 1:
                     matrix[i] = matrix[i] // gdcline
         diagonal = np.diag(matrix[:, :side])
