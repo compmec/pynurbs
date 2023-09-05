@@ -90,12 +90,18 @@ class Projection:
 
 
 class Intersection:
+    """Intersection static class, responsible to compute the intersection
+    between two objects, like curve and curve, surface and curve, and so on
+
+    """
+
     @staticmethod
     def _inse_retangle_float(avals: Tuple[float], bvals: Tuple[float]) -> bool:
         """
         Given two array of floats, if verifies if the region
             [min(avals), max(avals)] cap [min(bvals), max(bvals)]
         is not empty
+
         """
         mina, maxa = min(avals), max(avals)
         minb, maxb = min(bvals), max(bvals)
@@ -117,6 +123,7 @@ class Intersection:
         made by points of B.
 
         - If A control points are scalars, it verifies if the region
+
         """
         try:
             nsuba = len(ctrlptsa[0])

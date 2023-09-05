@@ -1,3 +1,5 @@
+This page contains all the documentation of the classes and methods.
+
 .. autoclass:: nurbs.GeneratorKnotVector
     :members:
 

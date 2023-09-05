@@ -100,5 +100,4 @@ class Derivate:
 
 
 class Integrate:
-    
     pass

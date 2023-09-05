@@ -1,3 +1,9 @@
+"""
+Defines the KnotVector class and GeneratorKnotVector which are responsible to
+define the parametric behavior of the curve.
+For example, the valid limits to evaluate curve, the polynomial degree, continuity
+and smoothness
+"""
 from __future__ import annotations
 
 from copy import deepcopy
@@ -145,8 +151,8 @@ class KnotVector(Intface_KnotVector):
             return False
         if self.degree != other.degree:
             return False
-        for i, v in enumerate(self):
-            if v != other[i]:
+        for i, val in enumerate(self):
+            if val != other[i]:
                 return False
         return True
 
@@ -615,6 +621,11 @@ class KnotVector(Intface_KnotVector):
 
 
 class GeneratorKnotVector:
+    """
+    Set of static functions to help creating KnotVector
+    of given ``degree`` and ``npts``
+    """
+
     @staticmethod
     def bezier(degree: int, cls: Optional[type] = int) -> KnotVector:
         """Creates the KnotVector of a bezier curve.

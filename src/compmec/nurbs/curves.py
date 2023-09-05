@@ -196,14 +196,70 @@ class BaseCurve(Intface_BaseCurve):
 
     @property
     def knotvector(self):
+        """Knot Vector
+
+        :getter: Returns the knotvector of the curve
+        :setter: Sets the knotvector of the curve
+        :type: KnotVector
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0., 0., 1., 1.])
+        >>> curve.knotvector
+        (0., 0., 1., 1.)
+        >>> curve.knotvector = [0, 0, 0, 1, 1, 1]
+        >>> curve.knotvector
+        (0, 0, 0, 1, 1, 1)
+
+        """
+
         return self.__knotvector
 
     @property
     def degree(self):
+        """Polynomial degree of curve
+
+        :getter: Returns the degree of the curve
+        :setter: Sets the degree of the curve, by increasing or decreasing
+        :type: int
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0., 0., 1., 1.], [1, 2])
+        >>> curve.degree = 3  # From 1 to 3
+        >>> print(curve.ctrlpoints)
+        (1.0, 1.33, 1.67, 2.0)
+        >>> curve.degree -= 1
+        >>> print(curve.ctrlpoints)
+        (1.0, 1.5, 2.0)
+
+        """
+
         return self.knotvector.degree
 
     @property
     def npts(self):
+        """Number of control points
+
+        :getter: Returns the number of control points of the curve
+        :type: int
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0., 0., 1., 1.], [1, 2])
+        >>> curve.npts
+        2
+        >>> curve = Curve([0., 0., 0.5, 1., 1.], [1, 2, 1])
+        >>> curve.npts
+        3
+
+        """
         return self.knotvector.npts
 
     @property
@@ -212,12 +268,53 @@ class BaseCurve(Intface_BaseCurve):
 
     @property
     def weights(self):
+        """Weights of rational curve
+
+        If weights is None, the curve is a spline
+
+        :getter: Returns the weights of curve
+        :setter: Sets the weights for a rational curve
+        :type: None | tuple[float]
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0., 0., 1., 1.], [1, 2])
+        >>> curve.weights = [1, 2]
+        (1, 2)
+        >>> curve = Curve([0., 0., 0.5, 1., 1.], [1, 2, 1])
+        >>> curve.weights = [1, 2, 1]
+        >>> curve.weights
+        (1, 2, 1)
+
+        """
         if self.__weights is None:
             return None
         return tuple(self.__weights)
 
     @property
     def ctrlpoints(self):
+        """Control points of the curve
+
+        :getter: Returns the control points of the curve
+        :setter: Sets the control points of the curve
+        :type: None | tuple[Any]
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0., 0., 1., 1.])
+        >>> curve.ctrlpoints = [1, 2]
+        >>> curve.ctrlpoints
+        (1, 2)
+        >>> curve = Curve([0., 0., 0.5, 1., 1.])
+        >>> curve.ctrlpoints = [1, 2, 1]
+        >>> curve.ctrlpoints
+        (1, 2, 1)
+
+        """
         if self.__ctrlpoints is None:
             return None
         return tuple(self.__ctrlpoints)
@@ -282,8 +379,22 @@ class BaseCurve(Intface_BaseCurve):
         self.__ctrlpoints = tuple(newpoints)
 
     def copy(self) -> Curve:
-        """
-        Returns a copy with all the internal elements
+        """Returns a copy of the object. The knotvector, control points and weights are also copied.
+
+        :return: An exact copy of the instance.
+        :rtype: Curve
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> curveA = Curve([0, 0, 0, 1, 1, 1])
+        >>> curveB = curveA.copy()
+        >>> curveB == curveA
+        True
+        >>> id(curveB) == id(curveA)
+        False
+
         """
         knotvector = self.knotvector.copy()
         curve = self.__class__(knotvector)
@@ -294,10 +405,33 @@ class BaseCurve(Intface_BaseCurve):
         return curve
 
     def fraction(self) -> Tuple[BaseCurve]:
-        """
-        Returns the current curve into the form Spline/Spline
-        If it's rational, then returns [Spline, Spline]
-        If it's spline, then returns [Spline, 1]
+        """Returns the current curve ``C`` in the form ``A``/``B``
+
+        ``A`` and ``B`` are bsplines of same degree as ``C``
+        and same number of points.
+
+        If ``C`` is already a bspline, then ``B = 1``
+
+        :return: The pair ``(A, B)``
+        :rtype: tuple[curve]
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0, 0, 0.5, 1, 1])
+        >>> curve.ctrlpoints = [2, 4, 2]
+        >>> curve.weights = [1, 3, 2]
+        >>> A, B = curve.fraction()
+        >>> print(A)
+        Spline curve of degree 1 and 3 control points
+        KnotVector = (0, 0, 0.5, 1, 1)
+        ControlPoints = [2, 12, 4]
+        >>> print(B)
+        Spline curve of degree 1 and 3 control points
+        KnotVector = (0, 0, 0.5, 1, 1)
+        ControlPoints = [1, 3, 2]
+
         """
         if self.weights is None:
             numerator = self.copy()
@@ -330,8 +464,26 @@ class BaseCurve(Intface_BaseCurve):
         self.set_knotvector(newvec)
         self.apply_lineartrans(mattrans)
 
-    def apply_lineartrans(self, matrix: np.ndarray):
-        """ """
+    def apply_lineartrans(self, matrix: Tuple[Tuple[float]]):
+        """Applies the linear transformation for every control point
+
+        new ctrlpoints = matrix @ old ctrlpoints
+        new weights = matrix @ old weights
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0, 0, 0.5, 1, 1])
+        >>> curve.ctrlpoints = [2, 4, 2]
+        >>> matrix = [(0, 1, 0), (-1, 0, 1), (2, -1, 0)]
+        >>> curve.apply_lineartrans(matrix)
+        >>> print(curve)
+        Spline curve of degree 1 and 3 control points
+        KnotVector = (0, 0, 0.5, 1, 1)
+        ControlPoints = [4, 0, 0]
+
+        """
         matrix = np.array(matrix)
         if self.weights is None:
             self.ctrlpoints = matrix @ self.ctrlpoints
@@ -386,7 +538,7 @@ class Curve(BaseCurve):
 
     def __eval(self, nodes: Tuple[float]) -> Tuple[Any]:
         """
-        Private method fto evaluate points in the curve
+        Private method to evaluate points in the curve
         """
         vector = tuple(self.knotvector)
         nodes = tuple(nodes)
@@ -402,6 +554,31 @@ class Curve(BaseCurve):
         return tuple(result)
 
     def eval(self, nodes: Union[float, Tuple[float]]) -> Union[Any, Tuple[Any]]:
+        """Point evaluation function
+
+        :param nodes: The nodes to evaluates
+        :type nodes: float | tuple[float]
+        :raises TypeError: If ``nodes`` is not a number or a list of numbers
+        :raises ValueError: If at least node is outside ``[umin, umax]``
+        :return: The point computed by using control points
+        :rtype: Any | tuple[Any]
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0, 0, 0.5, 1, 1])
+        >>> curve.ctrlpoints = (1, 2, -3)
+        >>> curve(0)
+        1.0
+        >>> curve(0.2)
+        1.4
+        >>> curve(0.5)]
+        2.0
+        >>> curve([0, 0.5, 1])
+        (1.0, 2.0, -3.0)
+
+        """
         if self.ctrlpoints is None:
             error_msg = "Cannot evaluate: There are no control points"
             raise ValueError(error_msg)
@@ -416,6 +593,24 @@ class Curve(BaseCurve):
         return result[0] if onevalue else result
 
     def knot_insert(self, nodes: Tuple[float]) -> None:
+        """Insert given nodes inside knotvector
+
+        :param nodes: The nodes to be inserted
+        :type nodes: tuple[float]
+        :raises TypeError: If ``nodes`` is not a number or a list of numbers
+        :raises ValueError: If it's not possible to insert the knots
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0, 0, 0.5, 1, 1])
+        >>> curve.ctrlpoints = (1, 2, -3)
+        >>> curve.knot_insert([0.2, 0.7])
+        >>> curve.knotvector
+        (0, 0, 0.2, 0.5, 0.7, 1, 1)
+
+        """
         nodes = tuple(nodes)
         oldvector = tuple(self.knotvector)
         newvector = tuple(self.knotvector + tuple(nodes))
@@ -424,19 +619,76 @@ class Curve(BaseCurve):
         self.apply_lineartrans(matrix)
 
     def knot_remove(self, nodes: Tuple[float], tolerance: float = 1e-9) -> None:
+        """Remove given nodes from knotvector
+
+        :param nodes: The nodes to be removed
+        :type nodes: tuple[float]
+        :raises TypeError: If ``nodes`` is not a number or a list of numbers
+        :raises ValueError: If it's not possible to remove the knot
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0, 0, 0, 0.5, 1, 1, 1])
+        >>> curve.ctrlpoints = [1, 1.5, -0.5, -3]
+        >>> print(curve)
+        Spline curve of degree 2 and 4 control points
+        KnotVector = (0, 0, 0, 0.5, 1, 1, 1)
+        ControlPoints = [1, 1.5, -0.5, -3]
+        >>> curve.knot_remove([0.5])
+        >>> print(curve)
+        Bezier curve of degree 2 and 3 control points
+        KnotVector = (0, 0, 0, 1, 1, 1)
+        ControlPoints = [1.0, 2.0, -3.0]
+
+        """
         nodes = tuple(nodes)
+        for node in nodes:
+            float(node)
         newknotvec = self.knotvector.copy() - tuple(nodes)
         self.update_knotvector(newknotvec, tolerance)
 
     def knot_clean(
-        self, nodes: Optional[Tuple[float]] = None, tolerance: float = 1e-9
+        self, nodes: Optional[Tuple[float]] = None, tolerance: Optional[float] = 1e-9
     ) -> None:
-        """
-        Remove all unnecessary knots.
+        """Remove all unnecessary knots.
+
         If no nodes are given, it tries to remove all internal knots
-        Nothing happens if removing error by removing certain knot is
-        bigger than the tolerance.
+
+        Nothing happens if the curve is irreductible
+
+        Nodes equals to extremities are ignored
+
+        Nodes which are not in knotvectors are ignored
+
+        :param nodes: The nodes to be removed, defaults to ``None``, all internal knots
+        :type nodes: tuple[float](, optional)
+        :param tolerance: The tolerance to remove knots, defaults to ``1e-9``
+        :type tolerance: float(, optional)
+        :raises TypeError: If ``nodes`` is not a number or a list of numbers
+        :raises TypeError: If ``tolerance`` is not a number
+        :raises ValueError: If ``tolerance`` is negative
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0, 0, 0, 0.5, 1, 1, 1])
+        >>> curve.ctrlpoints = [1, 1.5, -0.5, -3]
+        >>> print(curve)
+        Spline curve of degree 2 and 4 control points
+        KnotVector = (0, 0, 0, 0.5, 1, 1, 1)
+        ControlPoints = [1, 1.5, -0.5, -3]
+        >>> curve.knot_clean()
+        >>> print(curve)
+        Bezier curve of degree 2 and 3 control points
+        KnotVector = (0, 0, 0, 1, 1, 1)
+        ControlPoints = [1.0, 2.0, -3.0]
+
         """
+        float(tolerance)
+        assert tolerance >= 0
         if nodes is None:
             nodes = self.knotvector.knots
         nodes = tuple(set(nodes) - set(self.knotvector.limits))
@@ -448,9 +700,30 @@ class Curve(BaseCurve):
                 pass
 
     def degree_increase(self, times: Optional[int] = 1):
+        """Increase the degree of the curve by an amount ``times``
+
+        :param times: The number of times to increase, defaults to ``1``
+        :type times: int(, optional)
+        :raises AssertionError: If ``times`` is not a integer >= 0
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0, 0, 0, 0.5, 1, 1, 1])
+        >>> curve.ctrlpoints = [1, 1.5, -0.5, -3]
+        >>> print(curve)
+        Spline curve of degree 2 and 4 control points
+        KnotVector = (0, 0, 0, 0.5, 1, 1, 1)
+        ControlPoints = [1, 1.5, -0.5, -3]
+        >>> curve.degree_increase(1)
+        >>> print(curve)
+        Spline curve of degree 3 and 6 control points
+        KnotVector = (0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1)
+        ControlPoints = [1.0, 1.33, 1.17, -0.17, -1.33, -3.0]
         """
-        The same as mycurve.degree += times
-        """
+        assert isinstance(times, int)
+        assert times >= 0
         oldvector = tuple(self.knotvector)
         matrix = heavy.Operations.degree_increase(oldvector, times)
         nodes = self.knotvector.knots
@@ -462,19 +735,63 @@ class Curve(BaseCurve):
     def degree_decrease(
         self, times: Optional[int] = 1, tolerance: Optional[float] = 1e-9
     ):
+        """Decrease the degree of the curve by an amount ``times``
+
+        :param times: The nodes to be removed, defaults to ``1``
+        :type times: int(, optional)
+        :raises AssertionError: If ``times`` is not a integer >= 0
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1])
+        >>> curve.ctrlpoints = [1, 4/3, 7/6, -1/6, -4/3, -3]
+        >>> print(curve)
+        Spline curve of degree 3 and 6 control points
+        KnotVector = (0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1)
+        ControlPoints = [1.0, 1.33, 1.17, -0.17, -1.33, -3.0]
+        >>> curve.degree_decrease(1)
+        >>> print(curve)
+        Spline curve of degree 2 and 4 control points
+        KnotVector = (0, 0, 0, 0.5, 1, 1, 1)
+        ControlPoints = [1, 1.5, -0.5, -3]
         """
-        The same as mycurve.degree -= 1
-        But this function forces the degree reductions without looking the error
-        """
+        float(tolerance)
+        assert tolerance >= 0
         newknotvec = self.knotvector.copy()
         newknotvec.degree -= times
         self.update_knotvector(newknotvec, tolerance)
 
     def degree_clean(self, tolerance: float = 1e-9):
+        """Reduces au maximum the degree of the curve for given tolerance.
+
+        Does nothing if cannot reduce the degree
+
+        :param tolerance: The tolerance to reduce degree, defaults to ``1e-9``
+        :type tolerance: float(, optional)
+        :raises AssertionError: If ``tolerance`` is not a number >= 0
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1])
+        >>> curve.ctrlpoints = [1, 4/3, 7/6, -1/6, -4/3, -3]
+        >>> print(curve)
+        Spline curve of degree 3 and 6 control points
+        KnotVector = (0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1)
+        ControlPoints = [1.0, 1.33, 1.17, -0.17, -1.33, -3.0]
+        >>> curve.degree_clean()
+        >>> print(curve)
+        Spline curve of degree 2 and 4 control points
+        KnotVector = (0, 0, 0, 0.5, 1, 1, 1)
+        ControlPoints = [1, 1.5, -0.5, -3]
         """
-        Reduces au maximum the degree of the curve received the tolerance.
-        If the reduced degree error is bigger than the tolerance, nothing happens
-        """
+        float(tolerance)
+        assert tolerance >= 0
         try:
             while True:
                 self.degree_decrease(1, tolerance)
@@ -482,6 +799,32 @@ class Curve(BaseCurve):
             pass
 
     def clean(self, tolerance: float = 1e-9):
+        """Calls degree_clean and knot_clean
+
+        If the curve is rational, it tries to simplify,
+
+        :param tolerance: The tolerance to reduce degree, defaults to ``1e-9``
+        :type tolerance: float(, optional)
+        :raises AssertionError: If ``tolerance`` is not a number >= 0
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1])
+        >>> curve.ctrlpoints = [1, 4/3, 7/6, -1/6, -4/3, -3]
+        >>> print(curve)
+        Spline curve of degree 3 and 6 control points
+        KnotVector = (0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1)
+        ControlPoints = [1.0, 1.33, 1.17, -0.17, -1.33, -3.0]
+        >>> curve.degree_clean()
+        >>> print(curve)
+        Spline curve of degree 2 and 4 control points
+        KnotVector = (0, 0, 0, 0.5, 1, 1, 1)
+        ControlPoints = [1, 1.5, -0.5, -3]
+
+        """
         self.degree_clean(tolerance=tolerance)
         self.knot_clean(tolerance=tolerance)
         if self.weights is None:
@@ -503,10 +846,31 @@ class Curve(BaseCurve):
             self.clean(tolerance)
 
     def split(self, nodes: Optional[Tuple[float]] = None) -> Tuple[Curve]:
-        """
-        Separate the current spline at specified knots
-        If no arguments are given, it splits at every knot and
-            returns a list of bezier curves
+        """Separate the current curve at specified nodes
+
+        If no arguments are given, it splits at every knot, returning a
+        list of bezier curves
+
+        :param nodes: The positions to split, defaults to ``None``, all internal nodes
+        :type tolerance: tuple[float](, optional)
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> knotvector = (0, 0, 0, 0.5, 1, 1, 1)
+        >>> ctrlpoints = [2, 1, 3, 0]
+        >>> curve = Curve(knotvector, ctrlpoints)
+        >>> subcurves = curve.split([0.2, 0.8])
+        >>> len(subcurves)
+        3
+        >>> subcurves[0].knotvector
+        (0.0, 0.0, 0.0, 0.2, 0.2, 0.2)
+        >>> subcurves[1].knotvector
+        (0.2, 0.2, 0.2, 0.5, 0.8, 0.8, 0.8)
+        >>> subcurves[2].knotvector
+        (0.8, 0.8, 0.8, 1.0, 1.0, 1.0)
+
         """
         vector = tuple(self.knotvector)
         if nodes is None:
@@ -525,20 +889,37 @@ class Curve(BaseCurve):
         return tuple(newcurves)
 
     def fit_curve(self, other: Curve, nodes: Tuple[float] = None) -> None:
-        """
-        Given a 'other' curve, this function finds the best control points
-        such keeps as near as possible to 'other'
-
-        If weights is None -> spline fit
-        Else: -> rationa spline fit
+        """Finds the control points such this curve keeps as near as
+        possible to ``other``
 
         If nodes are given
-            if len(nodes) < npts
-                interpolates all nodes, uses least square in others
-            if len(nodes) == npts
-                interpolate at all points
-            if len(nodes) > npts:
-                same as fit_points(other(nodes), nodes)
+
+        * if len(nodes) < npts
+            interpolates all nodes, uses least square in the other degrees of freedom
+        * if len(nodes) == npts
+            interpolate at all points
+        * if len(nodes) > npts:
+            same as fit_points(other(nodes), nodes)
+
+        :param other: The objective curve
+        :type other: Curve
+        :param nodes: The positions to fit, defaults to ``None``
+        :type nodes: None | tuple[float](, optional)
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> knotvector = (0, 0, 0, 0.5, 1, 1, 1)
+        >>> ctrlpoints = [2, 1, 3, 0]
+        >>> curvea = Curve(knotvector, ctrlpoints)
+        >>> curveb = Curve([0, 0, 0.5, 1, 1])
+        >>> curveb.fit_curve(curvea)
+        >>> print(curveb)
+        Spline curve of degree 1 and 3 control points
+        KnotVector = (0, 0, 0.5, 1, 1)
+        ControlPoints = [1.417, 2.167, 0.917]
+
         """
         assert nodes is None  # Needs implementation
         assert isinstance(other, self.__class__)
@@ -560,18 +941,38 @@ class Curve(BaseCurve):
         self.ctrlpoints = ctrlpoints
 
     def fit_function(self, function: Callable, nodes: Tuple[float] = None) -> None:
-        """
-        Find the control points such fits the given function
+        """Finds the control points such this curve keeps as near as
+        possible to ``function``
+
         If nodes are not given, it uses least square in many intervals
             for subinterval [uk, u_{k+1}] evaluates on
             max(degree+1, 5*npts/len(subintervals)) using chebyshev nodes
-        If nodes are given
-            if len(nodes) < npts
-                interpolates all nodes and
-            if len(nodes) == npts
-                interpolate at all points
-            if len(nodes) > npts:
-                same as fit_points(function(nodes), nodes)
+
+        * if len(nodes) < npts
+            interpolates all nodes, uses least square in the other degrees of freedom
+        * if len(nodes) == npts
+            interpolate at all points
+        * if len(nodes) > npts:
+            same as fit_points(other(nodes), nodes)
+
+        :param other: The objective curve
+        :type other: Curve
+        :param nodes: The positions to fit, defaults to ``None``
+        :type nodes: None | tuple[float](, optional)
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> knotvector = (0, 0, 0.5, 1, 1)
+        >>> curve = Curve(knotvector)
+        >>> function = lambda x: 1 + x**2
+        >>> curve.fit_function(function)
+        >>> print(curve)
+        Spline curve of degree 1 and 3 control points
+        KnotVector = (0, 0, 0.5, 1, 1)
+        ControlPoints = [0.969, 1.219, 1.969]
+
         """
         if nodes is not None:
             raise NotImplementedError
@@ -591,9 +992,39 @@ class Curve(BaseCurve):
         return self.fit_points(funcvals, nodes)
 
     def fit_points(self, points: Tuple[Any], nodes: Tuple[float] = None) -> None:
-        """
-        Fit the curve into given points
-        If the quantity of points are not enough to
+        """Finds the control points such this curve keeps as near as
+        possible to ``points``
+
+        If nodes are not given, it supposes equally distributed nodes
+
+        * if len(points) < npts
+            ValueError
+        * if len(nodes) == npts
+            interpolate at all points
+        * if len(nodes) > npts:
+            Uses discrete least squares
+
+        :param points: The objective points
+        :type points: tuple[any]
+        :param nodes: The positions to fit, defaults to ``None``, equally distributed points
+        :type nodes: None | tuple[float](, optional)
+
+        Example use
+        -----------
+
+        >>> import numpy as np
+        >>> from compmec.nurbs import Curve
+        >>> knotvector = (0, 0, 0.5, 1, 1)
+        >>> curve = Curve(knotvector)
+        >>> function = lambda x: 1 + x**2
+        >>> usample = np.linspace(0, 1, 129)
+        >>> points = function(usample)
+        >>> curve.fit_points(points)
+        >>> print(curve)
+        Spline curve of degree 1 and 3 control points
+        KnotVector = (0, 0, 0.5, 1, 1)
+        ControlPoints = [0.96, 1.21, 1.96]
+
         """
         assert len(points) >= self.npts
         fitfunc = heavy.LeastSquare.fit_function
@@ -610,8 +1041,11 @@ class Curve(BaseCurve):
     def fit(
         self,
         param: Union[Curve, Callable[[float], float], Tuple[Any]],
-        nodes: Tuple[float] = None,
+        nodes: Optional[Tuple[float]] = None,
     ) -> None:
+        """
+        Calls ``fit_curve``, ``fit_function`` or ``fit_points`` depending on ``param``
+        """
         if nodes is not None:
             iter(nodes)
             for node in nodes:
