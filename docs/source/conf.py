@@ -167,7 +167,7 @@ texinfo_documents = [
         "compmec-nurbs Documentation",
         author,
         "compmec-nurbs",
-        "Geometry 2D library",
+        "Parametric geometry 2D library",
         "Miscellaneous",
     ),
 ]
@@ -202,3 +202,5 @@ sphinx_gallery_conf = {
 # }
 
 # -- Extension configuration -------------------------------------------------
+
+autodoc_member_order = 'bysource'

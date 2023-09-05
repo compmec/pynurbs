@@ -97,3 +97,8 @@ class Derivate:
         deriva = dnumer * denom - numer * ddenom
         deriva /= denom * denom
         return deriva
+
+
+class Integrate:
+    
+    pass

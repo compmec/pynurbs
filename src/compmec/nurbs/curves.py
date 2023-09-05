@@ -379,9 +379,8 @@ class Curve(BaseCurve):
         msg += f"KnotVector = {self.knotvector}\n"
         if self.ctrlpoints is None:
             return msg
-        msg += "ControlPoints = [\n"
-        for point in self.ctrlpoints:
-            msg += str(point) + "\n"
+        msg += "ControlPoints = ["
+        msg += ", ".join([str(point) for point in self.ctrlpoints])
         msg += "]\n"
         return msg
 

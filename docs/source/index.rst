@@ -6,20 +6,44 @@
 Documentation
 =============
 
-*compmec-nurbs* is a python package for geometry parametrization.
+**compmec-nurbs** is a python package for geometry parametrization.
 
 
 .. toctree::
-  :maxdepth: 1
-  :caption: Content
+  :maxdepth: 2
+  :caption: Introduction
   
   rst/installation
   rst/tutorial
+  rst/motivation
+  rst/features
+
+.. toctree::
+  :maxdepth: 2
+  :caption: Using the library
+
+  rst/basics
+  rst/custom_objects
   rst/knotvector
   rst/basisfunction
   rst/curve
   rst/advanced
-  rst/theory
+  rst/calculus
+  rst/fitting
+
+.. toctree::
+  :maxdepth: 2
+  :caption: References
+
+  rst/references
+  
+.. toctree::
+  :maxdepth: 2
+  :caption: Theory
+
+  rst/theory-knotvector
+  rst/theory-fitting
+  rst/theory-integration
 
 
 Support

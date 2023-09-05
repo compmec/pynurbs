@@ -62,7 +62,8 @@ class KnotVector(Intface_KnotVector):
         return self
 
     def __str__(self) -> str:
-        return str(self.__internal_vector)
+        items = [str(item) for item in self]
+        return "(" + ", ".join(items) + ")"
 
     def __repr__(self) -> str:
         return str(self)

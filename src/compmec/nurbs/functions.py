@@ -34,22 +34,109 @@ class BaseFunction(Intface_BaseFunction):
 
     @property
     def knotvector(self) -> KnotVector:
+        """The knotvector of the current basis function
+
+        :getter: knotvector of current basis function
+        :setter: -
+        :type: KnotVector
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import KnotVector
+        >>> knotvector = KnotVector([0, 0, 2, 3, 3])
+        >>> basis = Function(knotvector)
+        >>> basis.knotvector
+        (0, 0, 2, 3, 3)
+        >>> type(basis.knotvector)
+        <class 'compmec.nurbs.knotspace.KnotVector'>
+
+        """
         return self.__knotvector
 
     @property
     def degree(self) -> int:
+        """Polynomial degree of basis function
+
+        :getter: The polynomial degree
+        :setter: -
+        :type: int
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import KnotVector
+        >>> knotvector = KnotVector([0, 0, 2, 3, 3])
+        >>> basis = Function(knotvector)
+        >>> basis.degree
+        1
+
+        """
         return self.knotvector.degree
 
     @property
     def npts(self) -> int:
+        """Number of control points
+
+        :getter: The number of control points
+        :setter: -
+        :type: int
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import KnotVector
+        >>> knotvector = KnotVector([0, 0, 2, 3, 3])
+        >>> basis = Function(knotvector)
+        >>> basis.npts
+        3
+
+        """
         return self.knotvector.npts
 
     @property
     def knots(self) -> Tuple[float]:
+        """The knots of the knotvector
+
+        :getter: knot of the knotvector
+        :setter: -
+        :type: tuple[float]
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import KnotVector
+        >>> knotvector = KnotVector([0, 0, 2, 3, 3])
+        >>> basis = Function(knotvector)
+        >>> basis.knots
+        (0, 2, 3)
+
+        """
         return self.knotvector.knots
 
     @property
     def weights(self) -> Union[Tuple[float], None]:
+        """Weights of the current function. If it's ``None``, it means
+        the basis function is not rational
+
+        :getter: Returns the tuple of the weights, or None if there are no weights
+        :setter: Set the weights of rational bspline basis functions
+        :type: None | tuple[float]
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import KnotVector
+        >>> knotvector = KnotVector([0, 0, 2, 3, 3])
+        >>> basis = Function(knotvector)
+        >>> basis.weights
+        None
+
+        >>> basis.weights = [1, 2, 1]
+        >>> basis.weights
+        (1, 2, 1)
+
+        """
         return self.__weights
 
     @degree.setter
@@ -76,8 +163,24 @@ class BaseFunction(Intface_BaseFunction):
         self.__weights = value
 
     def copy(self) -> BaseFunction:
-        """
-        Returns a copy with all the internal elements
+        """Returns a copy of the object.
+        The internal knots are also copied.
+
+        :return: A copy of the object
+        :rtype: BaseFunction
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import KnotVector
+        >>> knotvector = KnotVector([0, 0, 1, 1])
+        >>> basis0 = Function(knotvector)
+        >>> basis1 = basis0.copy()
+        >>> basis1 == basis0
+        True
+        >>> id(basis1) == id(basis0)
+        False
+
         """
         knotvector = self.knotvector.copy()
         newfunc = self.__class__(knotvector)
@@ -183,6 +286,10 @@ class FunctionEvaluator(Intface_Evaluator):
 
 
 class IndexableFunction(BaseFunction):
+    """
+    Allows BaseFunction to be indexable
+    """
+
     def __init__(self, knotvector: KnotVector):
         super().__init__(knotvector)
 
@@ -214,17 +321,34 @@ class IndexableFunction(BaseFunction):
         return FunctionEvaluator(self, i, j)
 
     def eval(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
+        """Evaluate the given nodes"""
         evaluator = self[:, self.degree]
         return evaluator(nodes)
 
 
 class Function(IndexableFunction):
-    def __doc__(self):
-        """
-        Spline and rational base function
-        """
+    """Basis Function class, to evaluate functions
+
+    Example use
+    -----------
+
+    >>> import numpy as np
+    >>> from compmec.nurbs import Function
+    >>> knotvector = [0, 0, 1, 1]
+    >>> basis = Function(knotvector)
+    >>> basis.degree
+    1
+    >>> basis.npts
+    2
+    >>> basis(0.5)  # same as basis[:, degree](0.5)
+    (0.5, 0.5)
+    >>> basis([0, 0.5, 1])
+    ((0, 0.5, 1), (1, 0.5, 0))
+
+    """
 
     def __repr__(self) -> str:
+        """Official printing"""
         if self.npts == self.degree + 1:
             return f"Bezier function of degree {self.degree}"
         elif self.weights is None:
