@@ -37,6 +37,22 @@ class Math:
             return y if x == 0 else y
         return x * y // Math.gcd(x, y)
 
+    @staticmethod
+    def factorial(number: int) -> int:
+        if number < 2:
+            return 1
+        prod = 1
+        for i in range(2, number + 1):
+            prod *= i
+        return prod
+
+    @staticmethod
+    def comb(upper: int, lower: int) -> int:
+        numerator = Math.factorial(upper)
+        denominator = Math.factorial(lower)
+        denominator *= Math.factorial(upper - lower)
+        return numerator // denominator
+
 
 def number_type(number: Union[int, float, Fraction]):
     """
