@@ -127,6 +127,43 @@ class BaseCurve(Intface_BaseCurve):
         copy.ctrlpoints = [other * point for point in copy.ctrlpoints]
         return copy
 
+    def __matmul__(self, other: object):
+        if self.ctrlpoints is None:
+            raise ValueError
+        if not isinstance(other, self.__class__):
+            copy = self.copy()
+            copy.ctrlpoints = [point @ other for point in copy.ctrlpoints]
+            return copy
+        if self.knotvector.limits != other.knotvector.limits:
+            raise ValueError
+        if self.weights is None and other.weights is None:
+            vecta, vectb = tuple(self.knotvector), tuple(other.knotvector)
+            vectmul = heavy.MathOperations.knotvector_mul(vecta, vectb)
+            matrix3d = heavy.MathOperations.mul_spline_curve(vecta, vectb)
+            matrix2d = [
+                [pt0 @ pt1 for pt0 in self.ctrlpoints] for pt1 in other.ctrlpoints
+            ]
+            matrix3d = np.array(matrix3d)
+            matrix2d = np.array(matrix2d)
+            newctrlpts = [0] * matrix3d.shape[1]
+            for i in range(matrix3d.shape[1]):
+                newctrlpt = np.tensordot(matrix3d[:, i, :], matrix2d, axes=2)
+                newctrlpts[i] = newctrlpt
+            ctrlpoints = newctrlpts
+            curve = Curve(vectmul, ctrlpoints)
+            return curve
+        numa, dena = self.fraction()
+        numb, denb = other.fraction()
+        return (numa @ numb) / (dena * denb)
+
+    def __rmatmul__(self, other: object):
+        if self.ctrlpoints is None:
+            raise ValueError
+        assert not isinstance(other, self.__class__)
+        copy = self.copy()
+        copy.ctrlpoints = [other @ point for point in copy.ctrlpoints]
+        return copy
+
     def __truediv__(self, other: object):
         if self.ctrlpoints is None:
             raise ValueError

@@ -620,6 +620,10 @@ class TestKnotOperations:
         with pytest.raises(ValueError):
             C.knot_remove([0.5, 0.5, 0.5, 0.5])
 
+        knotvector = [0, 0, 1, 1]
+        curve = Curve(knotvector)
+        curve.knot_insert([0.2, 0.8])
+
     @pytest.mark.order(5)
     @pytest.mark.dependency(
         depends=[

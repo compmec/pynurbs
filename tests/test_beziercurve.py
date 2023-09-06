@@ -574,6 +574,14 @@ class TestDegreeOperations:
             curve.degree -= 4
         with pytest.raises(ValueError):
             curve.degree = "asd"
+        with pytest.raises(ValueError):
+            curve.degree_decrease("asd")
+        with pytest.raises(ValueError):
+            curve.degree_increase("asd")
+        with pytest.raises(ValueError):
+            curve.degree_decrease(0)
+        with pytest.raises(ValueError):
+            curve.degree_increase(0)
 
     @pytest.mark.order(4)
     @pytest.mark.dependency(
@@ -738,6 +746,99 @@ class TestAddSubMulDiv:
             "TestAddSubMulDiv::test_muldiv_scalar",
         ]
     )
+    def test_matmul_scalar(self):
+        """
+        If the knotvectors are different, it's not possible to sum
+        It's expected a ValueError
+        """
+        degree, npts = 1, 2
+        denmax = 2
+        knotvector = GeneratorKnotVector.uniform(degree, npts, frac)
+        randinters = [np.random.randint(0, denmax + 1) for i in range(npts)]
+        ptsx = [1 + frac(nb, denmax) for nb in randinters]
+        randinters = [np.random.randint(0, denmax + 1) for i in range(npts)]
+        ptsy = [1 + frac(nb, denmax) for nb in randinters]
+        ctrlpts = [np.array([x, y]) for x, y in zip(ptsx, ptsy)]
+
+        curve = Curve(knotvector, ctrlpts)
+
+        denmax = 4
+        usample = [frac(i, denmax) for i in range(denmax + 1)]
+        points = curve(usample)
+        points = np.array(points, dtype="float64")
+        print("points = ", points.shape)
+
+        scalar = (1, -2)
+        test_curve = scalar @ curve
+        test = np.array(test_curve(usample), dtype="float64")
+        good = [scalar @ pt for pt in points]
+        np.testing.assert_allclose(test, good)
+        test_curve = curve @ scalar
+        test = np.array(test_curve(usample), dtype="float64")
+        good = [pt @ scalar for pt in points]
+        np.testing.assert_allclose(test, good)
+
+    @pytest.mark.order(4)
+    @pytest.mark.dependency(
+        depends=[
+            "TestAddSubMulDiv::test_begin",
+            "TestAddSubMulDiv::test_addsub_curves",
+            "TestAddSubMulDiv::test_muldiv_curves",
+            "TestAddSubMulDiv::test_addsub_scalar",
+            "TestAddSubMulDiv::test_muldiv_scalar",
+            "TestAddSubMulDiv::test_matmul_scalar",
+        ]
+    )
+    def test_matmul_curves(self):
+        """
+        If the knotvectors are different, it's not possible to sum
+        It's expected a ValueError
+        """
+        degree, npts = 1, 2
+        denmax = 2
+        knotvector = GeneratorKnotVector.uniform(degree, npts, frac)
+        randinters = [np.random.randint(0, denmax + 1) for i in range(npts)]
+        pts0x = [1 + frac(nb, denmax) for nb in randinters]
+        randinters = [np.random.randint(0, denmax + 1) for i in range(npts)]
+        pts0y = [1 + frac(nb, denmax) for nb in randinters]
+        ctrlpts0 = [np.array((x, y)) for x, y in zip(pts0x, pts0y)]
+        randinters = [np.random.randint(0, denmax + 1) for i in range(npts)]
+        pts1x = [1 + frac(nb, denmax) for nb in randinters]
+        randinters = [np.random.randint(0, denmax + 1) for i in range(npts)]
+        pts1y = [1 + frac(nb, denmax) for nb in randinters]
+        ctrlpts1 = [np.array((x, y)) for x, y in zip(pts1x, pts1y)]
+
+        curve0 = Curve(knotvector, ctrlpts0)
+        curve1 = Curve(knotvector, ctrlpts1)
+
+        denmax = 4
+        usample = [frac(i, denmax) for i in range(denmax + 1)]
+        points0 = curve0(usample)
+        points1 = curve1(usample)
+        points0 = np.array(points0, dtype="float64")
+        points1 = np.array(points1, dtype="float64")
+
+        test_curve = curve0 @ curve1
+        test = np.array(test_curve(usample), dtype="float64")
+        good = [pt0 @ pt1 for pt0, pt1 in zip(points0, points1)]
+        np.testing.assert_allclose(test, good)
+        test_curve = curve1 @ curve0
+        test = np.array(test_curve(usample), dtype="float64")
+        good = [pt1 @ pt0 for pt0, pt1 in zip(points0, points1)]
+        np.testing.assert_allclose(test, good)
+
+    @pytest.mark.order(4)
+    @pytest.mark.dependency(
+        depends=[
+            "TestAddSubMulDiv::test_begin",
+            "TestAddSubMulDiv::test_addsub_curves",
+            "TestAddSubMulDiv::test_muldiv_curves",
+            "TestAddSubMulDiv::test_addsub_scalar",
+            "TestAddSubMulDiv::test_muldiv_scalar",
+            "TestAddSubMulDiv::test_matmul_scalar",
+            "TestAddSubMulDiv::test_matmul_curves",
+        ]
+    )
     def test_fails(self):
         """
         If the knotvectors are different, it's not possible to sum
@@ -751,6 +852,8 @@ class TestAddSubMulDiv:
             curve0 - curve1
         with pytest.raises(ValueError):
             curve0 * curve1
+        with pytest.raises(ValueError):
+            curve0 @ curve1
         with pytest.raises(ValueError):
             curve0 / curve1
         with pytest.raises(ValueError):
@@ -766,6 +869,10 @@ class TestAddSubMulDiv:
         with pytest.raises(ValueError):
             curve1 * 1
         with pytest.raises(ValueError):
+            1 @ curve1
+        with pytest.raises(ValueError):
+            curve1 @ 1
+        with pytest.raises(ValueError):
             1 / curve1
         with pytest.raises(ValueError):
             curve1 / 1
@@ -779,12 +886,27 @@ class TestAddSubMulDiv:
         with pytest.raises(ValueError):
             curve0 * curve1
         with pytest.raises(ValueError):
+            curve0 @ curve1
+        with pytest.raises(ValueError):
             curve0 / curve1
 
         curve0 = Curve([0, 0, 1, 1], [1, 1])
         curve1 = Curve([0, 0, 2, 2], [1, 0])
         with pytest.raises(ValueError):
             curve0 / curve1
+
+        pts0 = np.array([1, 1])
+        pts1 = np.array([2, 2])
+        curve0 = Curve([0, 0, 1, 1], pts0)
+        curve1 = Curve([0, 0, 2, 2], pts1)
+        with pytest.raises(ValueError):
+            curve0 @ curve1
+        pts0 = np.array([(1, 1, 3), (2, 2, 4)])
+        pts1 = np.array([(1, 1), (2, 2)])
+        curve0 = Curve([0, 0, 1, 1], pts0)
+        curve1 = Curve([0, 0, 2, 2], pts1)
+        with pytest.raises(ValueError):
+            curve0 @ curve1
 
     @pytest.mark.order(4)
     @pytest.mark.dependency(
@@ -794,6 +916,9 @@ class TestAddSubMulDiv:
             "TestAddSubMulDiv::test_muldiv_curves",
             "TestAddSubMulDiv::test_addsub_scalar",
             "TestAddSubMulDiv::test_muldiv_scalar",
+            "TestAddSubMulDiv::test_matmul_curves",
+            "TestAddSubMulDiv::test_matmul_scalar",
+            "TestAddSubMulDiv::test_fails",
         ]
     )
     def test_end(self):
