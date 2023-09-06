@@ -2,6 +2,7 @@
 This file contains Advanced Geometric Algorithms
 In Nurbs book, it correspond to chapter 6
 """
+
 from typing import Any, Tuple
 
 import numpy as np
@@ -20,6 +21,7 @@ class Projection:
         Returns the parameter ui from newton's iteration
             u_{i+1} = u_{i} - f(u_{i})/f'(u_{i})
         The point is
+
         """
         tolerance1 = 1e-6
         umin, umax = curves[0].knotvector.limits
@@ -56,20 +58,24 @@ class Projection:
 
     @staticmethod
     def point_on_curve(point: Tuple[float], curve: Curve) -> Tuple[float]:
-        """
+        """Finds the parameters t* such curve(t*) is near point
+
         This function finds the parameter tstar in [tmin, tmax] such
         minimizes the distance abs(curve(tstar) - point).
+
         Trully, it minimizes the distance square, related to the inner
         product < C(u) - P, C(u) - P > = abs(C(u)-P)^2
         This function finds the solution of
-            f(u) = < C'(u), C(u) - P > = 0
+        f(u) = < C'(u), C(u) - P > = 0
+
         Since it's possible to have more than one solution:
-            for example, the center of a circle is at equal distance always
+        for example, the center of a circle is at equal distance always
         then we return a list of parameters
 
         First, we decompose the curve in beziers, and try to find
         the minimum distance of each bezier curve.
         We use Newton's method
+
         """
         point = np.array(point)
         beziers = curve.split()
@@ -117,8 +123,7 @@ class Intersection:
 
     @staticmethod
     def _inse_retangle(ctrlptsa: Tuple[Any], ctrlptsb: Tuple[Any]) -> bool:
-        """
-        Given two curves A(u) and B(t), we test if the rectangular
+        """Given two curves A(u) and B(t), we test if the rectangular
         region made by points A intersects the retangular region
         made by points of B.
 
@@ -174,9 +179,7 @@ class Intersection:
         curvesb: Tuple[Curve],
         limits: Tuple[float],
     ):
-        """
-        We supose pair is inside limits
-        """
+        """We supose pair is inside limits"""
         tmin, tmax = limits[0]
         umin, umax = limits[1]
         for niter in range(10):
@@ -213,15 +216,18 @@ class Intersection:
 
     @staticmethod
     def bcurve_and_bcurve(beziera: Curve, bezierb: Curve) -> Tuple[float, float]:
-        """
+        """Return the parameters t*, u* such beziera(t*) = bezierb(u*)
+
         Given two bezier curves, A(t) and B(u), this function returns the
         intersections between A and B. It can be:
+
         - If A(t) don't touch B(u), returns empty tuple
         - If A(t) touches B(u) in a finite number of points, it returns
             the pairs [(ta, ua), (tb, ub), ..., (tk, uk)]
         - If A(t) overlaps B(u) in some interval, it returns
             The interval [(ta, tb), (ua, ub)]
             Still needs implementation
+
         """
         assert isinstance(beziera, Curve)
         assert isinstance(bezierb, Curve)
@@ -264,15 +270,17 @@ class Intersection:
 
     @staticmethod
     def curve_and_curve(curvea: Curve, curveb: Curve) -> Tuple[Curve]:
-        """
+        """Return the parameters t*, u* such curvea(t*) = curveb(u*)
+
         Given two curves, A(t) and B(u), this function returns the
         intersections between A and B. It can be:
+
         - If A(t) don't touch B(u), returns empty tuple
         - If A(t) touches B(u) in a finite number of points, it returns
             the pairs [(ta, ua), (tb, ub), ..., (tk, uk)]
         - If A(t) overlaps B(u) in some interval, it returns
             The interval [(ta, tb), (ua, ub)]
-            Still needs implementation
+
         """
         beziersa = curvea.split()
         beziersb = curveb.split()

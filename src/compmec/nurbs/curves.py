@@ -449,29 +449,50 @@ class BaseCurve(Intface_BaseCurve):
 
     def update(
         self,
-        newvector: KnotVector,
+        newknotvector: KnotVector,
         tolerance: Optional[float] = 1e-9,
         nodes: Optional[tuple[float]] = None,
     ):
-        newvector = KnotVector(newvector)
-        if newvector == self.knotvector:
+        """Update the knotvector to newknotvector
+
+        This function compute the new control points and
+        new weights such the new curve is near the old curve
+
+        If the error is bigger than tolerance, then raises a ValueError
+
+        If ``nodes`` are given, the new curve will fit on these ``nodes``
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import Curve
+        >>> curve = Curve([0, 0, 1, 1], [1, 2])
+        >>> curve.update([0, 0, 0.5, 1, 1])  # Insert knot [0.5]
+        >>> curve = Curve([0, 0, 1, 1], [1, 2])
+        >>> curve.update([0, 0, 0, 1, 1, 1])  # Degree elevate
+        >>> curve = Curve([0, 0, 0.5, 1, 1], [1, 2, 1])
+        >>> curve.update([0, 0, 1, 1], nodes = (0, 1))  # Remove knot [0.5]
+
+        """
+        newknotvector = KnotVector(newknotvector)
+        if newknotvector == self.knotvector:
             return
         if self.ctrlpoints is None:
-            self.__knotvector = newvector
+            self.__knotvector = newknotvector
             return
-        if self.knotvector.limits != newvector.limits:
+        if self.knotvector.limits != newknotvector.limits:
             raise ValueError
-        temp_curve = self.__class__(newvector)
+        temp_curve = self.__class__(newknotvector)
         error = temp_curve.fit_curve(self, nodes)
         if tolerance and error > tolerance:
             error_msg = "Cannot update knotvector cause error is "
             error_msg += f" {float(error):.2e} > {tolerance}"
             raise ValueError(error_msg)
-        self.__knotvector = newvector
+        self.__knotvector = newknotvector
         self.ctrlpoints = temp_curve.ctrlpoints
         self.weights = temp_curve.weights
 
-    def apply(self, newvector: KnotVector, matrix: Tuple[Tuple[float]]):
+    def apply(self, newknotvector: KnotVector, matrix: Tuple[Tuple[float]]):
         """Applies the linear transformation for every control point
 
         new ctrlpoints = matrix @ old ctrlpoints
@@ -484,7 +505,7 @@ class BaseCurve(Intface_BaseCurve):
         >>> curve = Curve([0, 0, 0.5, 1, 1])
         >>> curve.ctrlpoints = [2, 4, 2]
         >>> matrix = [(0, 1, 0), (-1, 0, 1), (2, -1, 0)]
-        >>> curve.apply_lineartrans(matrix)
+        >>> curve.apply(matrix)
         >>> print(curve)
         Spline curve of degree 1 and 3 control points
         KnotVector = (0, 0, 0.5, 1, 1)
@@ -494,11 +515,11 @@ class BaseCurve(Intface_BaseCurve):
         oldctrlpoints = self.ctrlpoints
         oldweights = self.weights
         if oldctrlpoints is None and oldweights is None:
-            self.knotvector = newvector
+            self.knotvector = newknotvector
             return
         self.ctrlpoints = None
         self.weights = None
-        self.knotvector = newvector
+        self.knotvector = newknotvector
         if oldweights is None:
             self.ctrlpoints = np.dot(matrix, oldctrlpoints)
             return

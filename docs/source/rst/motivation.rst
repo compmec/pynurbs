@@ -10,5 +10,5 @@ Motivation
 
 The third point is the main motivation since there are no other libraries which allows use of custom objects like explained here: :ref:`custom-objects`
 
-For example, the [compmec-shape]https://github.com/compmec/shape library uses the custom object ``Point2D`` and fractions to get better precision.
+For example, the `compmec-shape <https://github.com/compmec/shape>`_ library uses the custom object ``Point2D`` and fractions to get exact point position.
 

@@ -1,4 +1,5 @@
 .. _basics:
+
 ======
 Basics
 ======
@@ -9,13 +10,6 @@ This page is meant as a fast guide for these who already know about NURBS.
 If you don't feel confident, please go to :ref:`tutorial`
 
 --------------------------------------------------------------------------
-
-To generate NURBS curves, it's necessary
-
-* knotvector
-* control points
-
-For now, this library only works with 1D objects, that means, parametric curves.
 
 Construct a BSpline curve
 -------------------------
@@ -63,7 +57,7 @@ Evaluating curve points
 
 To evaluate the curve points, you can call the curve as a function or use the ``eval`` function.
 
-Using ``curve(nodes)`` calls ``curve.eval(nodes)``
+Use ``curve(nodes)`` is the same as ``curve.eval(nodes)``
 
 .. code-block:: python
 
@@ -71,6 +65,7 @@ Using ``curve(nodes)`` calls ``curve.eval(nodes)``
     from matplotlib import pyplot as plt
     from compmec.nurbs import GeneratorKnotVector, Curve
     
+    # Create the curve
     knotvector = GeneratorKnotVector.uniform(2, 4)
     ctrlpoints = np.array([(2, 4), (1, 1), (3, 2), (0, 3)])
     curve = Curve(knotvector, ctrlpoints)
@@ -160,7 +155,7 @@ Trying to remove non-possible knots raises a ``ValueError``
 
     print(curve.knotvector)  # (0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0)
     curve.knot_remove([0.5])
-    # ValueError: Cannot update knotvector cause error is  0.225 > 1e-09
+    # ValueError: Cannot update knotvector cause error is  6.00e-01 > 1e-09
 
 
 It's possible to force knot removal by changing the value of ``tolerance`` or setting it to ``None`` (infinite tolerance)
@@ -187,7 +182,7 @@ It's possible to force knot removal by changing the value of ``tolerance`` or se
 .. _degree-increase-decrease:
 
 Degree increase and decrease
------------------------
+----------------------------
 
 Other two of the main features are ``degree_increase`` and ``degree_decrease`` which modifies the polynomial degree without changing the curve
 
@@ -214,14 +209,18 @@ You can also change the value of ``tolerance`` or set it to ``None`` (infinite t
     import numpy as np
     from compmec.nurbs import GeneratorKnotVector, Curve
 
-    knotvector = GeneratorKnotVector.uniform(2, 4)
-    ctrlpoints = np.array([(2, 4), (1, 1), (3, 2), (0, 3)])
-    curve = Curve(knotvector, ctrlpoints)
-
+    knotvector = [0, 0, 0, 0, 1/3, 1/3, 1/3, 2/3, 2/3, 2/3, 1, 1, 1, 1]
+    ctrlpoints = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0),
+                (-1, -1), (0, -1), (1, -1), (0.5, -0.5), (1, 0)]
+    curve = Curve(knotvector, np.array(ctrlpoints))  # Blue
+    
     curve.degree_decrease(times = 1)
-    # ValueError: Cannot update knotvector cause error is  0.7674 > 1e-09
+    # ValueError: Cannot update knotvector cause error is  1.04e-02 > 1e-09
 
-    curve.degree_decrease(tolerance = None)
+    curve.degree_decrease(times = 1, tolerance = None)  # Red
+    
+    curve.degree_decrease(times = 1, tolerance = None)  # Green
+
 
 .. image:: ../img/force_degree_reduce.png
   :width: 70 %
@@ -406,7 +405,7 @@ Projection of a point in curve
 ------------------------------
 
 Finds the parameter :math:`u^{\star}` such :math:`\|\mathbf{C}(u^{\star})-\mathbf{P}\|` is minimal.
-Since it's possible to have two parameters with equal distance, the function returns a tuple of parameters.
+Since it's possible to have more than one parameters :math:`u^{\star}` with equal distance, the function returns a tuple of parameters.
 
 .. code-block:: python
 
@@ -441,7 +440,7 @@ Since it's possible to have two parameters with equal distance, the function ret
 Intersection of two curves
 ------------------------------
 
-Finds all the pairs  :math:`\left(u^{\star}, \ \right)` such :math:`\|\mathbf{C}(u^{\star})-\mathbf{D}(v^{\star})\|` is minimal
+Finds all the pairs  :math:`\left(u^{\star}, \ v^{\star} \right)` such :math:`\|\mathbf{C}(u^{\star})-\mathbf{D}(v^{\star})\| \le TOL`
 
 .. code-block:: python
 

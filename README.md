@@ -7,27 +7,27 @@
 [![Python Versions][pyversions-img]][pyversions-url]
 [![License: MIT][license-img]][license-url]
 
-A python package for [Non-Uniform rational B-Spline][nurbswiki-url], parametrized geometry.
+![compmec-nurbs logo](docs/source/img/logo.svg)
 
+A object-oriented python package for parametrized geometry which supports [Custom objects](https://compmec-nurbs.readthedocs.io/en/latest/rst/custom_objects.html).
 
-#### Features
+For now, it supports only 1D-objects (curves).
 
-* [X] Knot Vector
-* [X] Base Functions
-* [X] Curves
+## Features
 
-Operations
-
-* Knots
-    * [X] Insertion
-    * [X] Removal
-    * [X] Clean
-* Degree
-    * [X] Increase
-    * [X] Decrease
-    * [X] Clean
-* [X] Split curves
-* [X] Unite curves
+* [X] Evaluate points
+* [X] Insert and remove knots
+* [X] Degree increase and decrease
+* [X] Split and unite curves
+* [X] Math operations (``+``, ``-``, ``*``, ``/``, ``@``)
+* [X] Projection of point in curve
+* [X] Intersection of two curves
+* [X] Derivative of curves
+* [ ] Line Integral
+* [X] Curve fitting
+* [X] Function fitting
+* [X] Points fitting
+* [ ] Reparameterize curve
 
 ## Install
 
@@ -39,7 +39,7 @@ pip install compmec-nurbs
 
 For more details, refer to the [documentation][docs-url].
 
-### Documentation
+## Documentation
 
 The documentation can be found at [compmec-nurbs.readthedocs.io][docs-url]
 

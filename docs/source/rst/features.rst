@@ -8,7 +8,7 @@ Features
 * :ref:`insert-remove-knots`
 * :ref:`degree-increase-decrease`
 * :ref:`split-unite`
-* :ref:`math-operations` (Sum, sub, mult and div curves)
+* :ref:`math-operations`
 * :ref:`projection-basics`
 * :ref:`intersection-basics`
 * :ref:`derivative-basics`

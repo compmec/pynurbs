@@ -1,5 +1,5 @@
-.. image:: img/logo.png
-  :width: 70 %
+.. image:: img/logo.svg
+  :width: 100 %
   :alt: compmec-nurbs
   :align: center
 
@@ -8,6 +8,7 @@ Documentation
 
 **compmec-nurbs** is a python package for geometry parametrization.
 
+**compmec-nurbs** provides easy-to-use data structures to describe parametric curves and allows the use of :ref:`custom-objects`.
 
 .. toctree::
   :maxdepth: 2
