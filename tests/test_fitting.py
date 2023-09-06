@@ -43,7 +43,7 @@ class TestCurve:
     @pytest.mark.dependency(
         depends=["TestCurve::test_begin", "TestCurve::test_constant"]
     )
-    def test_overdefined(self):
+    def test_overdefined_spline(self):
         for degree_base in range(0, 4):
             vector = GeneratorKnotVector.bezier(degree_base)
             good_curve = Curve(vector)
@@ -60,7 +60,29 @@ class TestCurve:
         depends=[
             "TestCurve::test_begin",
             "TestCurve::test_constant",
-            "TestCurve::test_overdefined",
+            "TestCurve::test_overdefined_spline",
+        ]
+    )
+    def test_overdefined_rational(self):
+        for degree_base in range(0, 4):
+            vector = GeneratorKnotVector.bezier(degree_base)
+            good_curve = Curve(vector)
+            points = np.random.uniform(-1, 1, 1 + degree_base)
+            good_curve.ctrlpoints = points
+            for degree in range(degree_base, 7):
+                vector = GeneratorKnotVector.bezier(degree)
+                test_curve = Curve(vector)
+                test_curve.weights = [1] * test_curve.npts
+                test_curve.fit(good_curve)
+                assert test_curve == good_curve
+
+    @pytest.mark.order(7)
+    @pytest.mark.dependency(
+        depends=[
+            "TestCurve::test_begin",
+            "TestCurve::test_constant",
+            "TestCurve::test_overdefined_spline",
+            "TestCurve::test_overdefined_rational",
         ]
     )
     def test_end(self):
@@ -89,7 +111,7 @@ class TestFunction:
     @pytest.mark.dependency(
         depends=["TestFunction::test_begin", "TestFunction::test_constant"]
     )
-    def test_overdefined(self):
+    def test_overdefined_spline(self):
         usample = np.linspace(0, 1, 33)
         for degree_base in range(0, 4):
             coefs = np.random.uniform(-1, 1, 1 + degree_base)
@@ -106,7 +128,29 @@ class TestFunction:
         depends=[
             "TestFunction::test_begin",
             "TestFunction::test_constant",
-            "TestFunction::test_overdefined",
+            "TestFunction::test_overdefined_spline",
+        ]
+    )
+    def test_overdefined_rational(self):
+        usample = np.linspace(0, 1, 33)
+        for degree_base in range(0, 4):
+            coefs = np.random.uniform(-1, 1, 1 + degree_base)
+            function = lambda u: sum([cof * u**i for i, cof in enumerate(coefs)])
+            for degree in range(degree_base, 7):
+                vector = GeneratorKnotVector.bezier(degree)
+                test_curve = Curve(vector)
+                test_curve.weights = [1] * test_curve.npts
+                test_curve.fit(function)
+                for ui in usample:
+                    assert np.abs(test_curve(ui) - function(ui)) < 1e-9
+
+    @pytest.mark.order(7)
+    @pytest.mark.dependency(
+        depends=[
+            "TestFunction::test_begin",
+            "TestFunction::test_constant",
+            "TestFunction::test_overdefined_spline",
+            "TestFunction::test_overdefined_rational",
         ]
     )
     def test_end(self):
@@ -137,7 +181,7 @@ class TestPoints:
     @pytest.mark.dependency(
         depends=["TestPoints::test_begin", "TestPoints::test_constant"]
     )
-    def test_overdefined(self):
+    def test_overdefined_spline(self):
         usample = np.linspace(0, 1, 33)
         for degree_base in range(0, 4):
             coefs = np.random.uniform(-1, 1, 1 + degree_base)
@@ -156,7 +200,31 @@ class TestPoints:
         depends=[
             "TestPoints::test_begin",
             "TestPoints::test_constant",
-            "TestPoints::test_overdefined",
+            "TestPoints::test_overdefined_spline",
+        ]
+    )
+    def test_overdefined_rational(self):
+        usample = np.linspace(0, 1, 33)
+        for degree_base in range(0, 4):
+            coefs = np.random.uniform(-1, 1, 1 + degree_base)
+            values = np.zeros(len(usample), dtype="float64")
+            for i, coefi in enumerate(coefs):
+                values += coefi * usample**i
+            for degree in range(degree_base, 7):
+                vector = GeneratorKnotVector.bezier(degree)
+                test_curve = Curve(vector)
+                test_curve.weights = [1] * test_curve.npts
+                test_curve.fit(values)
+                for ui, valui in zip(usample, values):
+                    assert np.abs(test_curve(ui) - valui) < 1e-9
+
+    @pytest.mark.order(7)
+    @pytest.mark.dependency(
+        depends=[
+            "TestPoints::test_begin",
+            "TestPoints::test_constant",
+            "TestPoints::test_overdefined_spline",
+            "TestPoints::test_overdefined_rational",
         ]
     )
     def test_end(self):
