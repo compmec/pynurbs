@@ -179,8 +179,8 @@ class BaseCurve(Intface_BaseCurve):
         othercopy = other.copy()
         selfcopy = self.copy()
         maxdegree = max(self.degree, other.degree)
-        selfcopy.degree_increase(maxdegree - self.degree)
-        othercopy.degree_increase(maxdegree - other.degree)
+        selfcopy.degree = maxdegree
+        othercopy.degree = maxdegree
         npts0 = selfcopy.npts
         npts1 = othercopy.npts
         newknotvector = [0] * (maxdegree + npts0 + npts1 + 1)
@@ -322,15 +322,19 @@ class BaseCurve(Intface_BaseCurve):
     @knotvector.setter
     def knotvector(self, value: KnotVector):
         value = KnotVector(value)
-        if self.knotvector == value:
-            return
-        self.update_knotvector(value)
+        self.update(value)
 
     @degree.setter
     def degree(self, value: int):
-        newknotvector = self.knotvector.copy()
-        newknotvector.degree = int(value)
-        self.knotvector = newknotvector
+        if not isinstance(value, int) or value < 0:
+            raise ValueError(f"Cannot set degree {value}")
+        print(f"Setting degree from {self.degree} to {value}")
+        times = value - self.degree
+        if times == 0:
+            return
+        if times > 0:
+            return self.degree_increase(times)
+        return self.degree_decrease(-times)
 
     @weights.setter
     def weights(self, value: Tuple[float]):
@@ -443,28 +447,31 @@ class BaseCurve(Intface_BaseCurve):
         denominator.ctrlpoints = self.weights
         return numerator, denominator
 
-    def update_knotvector(self, newvector: KnotVector, tolerance: float = 1e-9):
+    def update(
+        self,
+        newvector: KnotVector,
+        tolerance: Optional[float] = 1e-9,
+        nodes: Optional[tuple[float]] = None,
+    ):
         newvector = KnotVector(newvector)
         if newvector == self.knotvector:
             return
         if self.ctrlpoints is None:
-            return self.set_knotvector(newvector)
-        oldvec, newvec = tuple(self.knotvector), tuple(newvector)
-        mattrans, materror = heavy.LeastSquare.spline2spline(oldvec, newvec)
-
-        materror = np.array(materror)
-        error = np.moveaxis(self.ctrlpoints, 0, -1) @ materror @ tuple(self.ctrlpoints)
-        error = np.max(np.abs(error))
-        if self.weights is not None:
-            error += tuple(self.weights) @ materror @ tuple(self.ctrlpoints)
+            self.__knotvector = newvector
+            return
+        if self.knotvector.limits != newvector.limits:
+            raise ValueError
+        temp_curve = self.__class__(newvector)
+        error = temp_curve.fit_curve(self, nodes)
         if tolerance and error > tolerance:
             error_msg = "Cannot update knotvector cause error is "
-            error_msg += f" {error} > {tolerance}"
+            error_msg += f" {float(error):.2e} > {tolerance}"
             raise ValueError(error_msg)
-        self.set_knotvector(newvec)
-        self.apply_lineartrans(mattrans)
+        self.__knotvector = newvector
+        self.ctrlpoints = temp_curve.ctrlpoints
+        self.weights = temp_curve.weights
 
-    def apply_lineartrans(self, matrix: Tuple[Tuple[float]]):
+    def apply(self, newvector: KnotVector, matrix: Tuple[Tuple[float]]):
         """Applies the linear transformation for every control point
 
         new ctrlpoints = matrix @ old ctrlpoints
@@ -484,28 +491,32 @@ class BaseCurve(Intface_BaseCurve):
         ControlPoints = [4, 0, 0]
 
         """
-        matrix = np.array(matrix)
-        if self.weights is None:
-            self.ctrlpoints = matrix @ self.ctrlpoints
-            return
+        oldctrlpoints = self.ctrlpoints
         oldweights = self.weights
-        self.weights = matrix @ oldweights
+        if oldctrlpoints is None and oldweights is None:
+            self.knotvector = newvector
+            return
+        self.ctrlpoints = None
+        self.weights = None
+        self.knotvector = newvector
+        if oldweights is None:
+            self.ctrlpoints = np.dot(matrix, oldctrlpoints)
+            return
+        newweights = np.dot(matrix, oldweights)
+        self.weights = newweights
 
-        if self.ctrlpoints is not None:
-            oldctrlpoints = [point for point in self.ctrlpoints]
+        if oldctrlpoints is not None:
+            oldctrlpoints = list(oldctrlpoints)
             for i, weight in enumerate(oldweights):
                 oldctrlpoints[i] *= weight
             newctrlpoints = []
             for i, line in enumerate(matrix):
-                newctrlpoints.append(0 * self.ctrlpoints[0])
+                newctrlpoints.append(0 * oldctrlpoints[0])
                 for j, point in enumerate(oldctrlpoints):
                     newpoint = line[j] * point
                     newpoint /= self.weights[i]
                     newctrlpoints[i] += newpoint
             self.ctrlpoints = newctrlpoints
-
-    def set_knotvector(self, newknotvector: KnotVector):
-        self.__knotvector = KnotVector(newknotvector)
 
 
 class Curve(BaseCurve):
@@ -613,16 +624,21 @@ class Curve(BaseCurve):
         """
         nodes = tuple(nodes)
         oldvector = tuple(self.knotvector)
-        newvector = tuple(self.knotvector + tuple(nodes))
+        newvector = tuple(self.knotvector + nodes)
+        if self.ctrlpoints is None and self.weights is None:
+            self.knotvector = newvector
         matrix = heavy.Operations.knot_insert(oldvector, nodes)
-        self.set_knotvector(newvector)
-        self.apply_lineartrans(matrix)
+        self.apply(newvector, matrix)
 
     def knot_remove(self, nodes: Tuple[float], tolerance: float = 1e-9) -> None:
         """Remove given nodes from knotvector
 
         :param nodes: The nodes to be removed
         :type nodes: tuple[float]
+        :param tolerance: Tolerance to remove knots, defaults to ``1``
+        :type tolerance: float(, optional)
+        :param nodes: Nodes to be assure to, defaults to ``None``
+        :type nodes: tuple[float](, optional)
         :raises TypeError: If ``nodes`` is not a number or a list of numbers
         :raises ValueError: If it's not possible to remove the knot
 
@@ -647,7 +663,8 @@ class Curve(BaseCurve):
         for node in nodes:
             float(node)
         newknotvec = self.knotvector.copy() - tuple(nodes)
-        self.update_knotvector(newknotvec, tolerance)
+        knots = newknotvec.knots if newknotvec.degree != 0 else None
+        self.update(newknotvec, tolerance, knots)
 
     def knot_clean(
         self, nodes: Optional[Tuple[float]] = None, tolerance: Optional[float] = 1e-9
@@ -722,23 +739,24 @@ class Curve(BaseCurve):
         KnotVector = (0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1)
         ControlPoints = [1.0, 1.33, 1.17, -0.17, -1.33, -3.0]
         """
-        assert isinstance(times, int)
-        assert times >= 0
+        if not isinstance(times, int) or times <= 0:
+            raise ValueError
         oldvector = tuple(self.knotvector)
-        matrix = heavy.Operations.degree_increase(oldvector, times)
         nodes = self.knotvector.knots
         newnodes = times * nodes
         newvector = heavy.KnotVector.insert_knots(oldvector, newnodes)
-        self.set_knotvector(newvector)
-        self.apply_lineartrans(matrix)
+        matrix = heavy.Operations.degree_increase(oldvector, times)
+        self.apply(newvector, matrix)
 
     def degree_decrease(
         self, times: Optional[int] = 1, tolerance: Optional[float] = 1e-9
     ):
         """Decrease the degree of the curve by an amount ``times``
 
-        :param times: The nodes to be removed, defaults to ``1``
+        :param times: The number of times to reduce degree, defaults to ``1``
         :type times: int(, optional)
+        :param tolerance: Tolerance to remove knots, defaults to ``1``
+        :type tolerance: float(, optional)
         :raises AssertionError: If ``times`` is not a integer >= 0
 
         Example use
@@ -758,11 +776,15 @@ class Curve(BaseCurve):
         KnotVector = (0, 0, 0, 0.5, 1, 1, 1)
         ControlPoints = [1, 1.5, -0.5, -3]
         """
-        float(tolerance)
-        assert tolerance >= 0
+        if not isinstance(times, int) or times <= 0:
+            raise ValueError(f"times = {times}")
+        if tolerance is not None:
+            float(tolerance)
+            assert tolerance >= 0
         newknotvec = self.knotvector.copy()
         newknotvec.degree -= times
-        self.update_knotvector(newknotvec, tolerance)
+        knots = newknotvec.knots if newknotvec.degree != 0 else None
+        self.update(newknotvec, tolerance, knots)
 
     def degree_clean(self, tolerance: float = 1e-9):
         """Reduces au maximum the degree of the curve for given tolerance.
@@ -836,11 +858,11 @@ class Curve(BaseCurve):
         mattrans, materror = heavy.LeastSquare.func2func(
             knotvector, weights, knotvector, [1] * self.npts
         )
-        error = np.moveaxis(ctrlpoints, 0, -1) @ materror @ ctrlpoints
+        error = np.dot(np.moveaxis(ctrlpoints, 0, -1), np.dot(materror, ctrlpoints))
         error = np.max(abs(error))
-        error = max(error, weights @ np.array(materror) @ weights)
+        error = max(error, np.dot(weights, np.dot(materror, weights)))
         if error < tolerance:
-            self.ctrlpoints = np.array(mattrans) @ ctrlpoints
+            self.ctrlpoints = np.dot(mattrans, ctrlpoints)
             self.weights = None
             assert NotImplementedError  # Needs correction
             self.clean(tolerance)
@@ -882,13 +904,13 @@ class Curve(BaseCurve):
         for newvector, matrix in zip(newvectors, matrices):
             matrix = np.array(matrix)
             newcurve = Curve(newvector)
-            newcurve.ctrlpoints = matrix @ self.ctrlpoints
+            newcurve.ctrlpoints = np.dot(matrix, self.ctrlpoints)
             if self.weights is not None:
-                newcurve.weights = matrix @ self.weights
+                newcurve.weights = np.dot(matrix, self.weights)
             newcurves.append(newcurve)
         return tuple(newcurves)
 
-    def fit_curve(self, other: Curve, nodes: Tuple[float] = None) -> None:
+    def fit_curve(self, other: Curve, nodes: Tuple[float] = None) -> float:
         """Finds the control points such this curve keeps as near as
         possible to ``other``
 
@@ -921,24 +943,29 @@ class Curve(BaseCurve):
         ControlPoints = [1.417, 2.167, 0.917]
 
         """
-        assert nodes is None  # Needs implementation
         assert isinstance(other, self.__class__)
         vectora, vectorb = tuple(self.knotvector), tuple(other.knotvector)
         if self.weights is None and other.weights is None:
             lstsq = heavy.LeastSquare.spline2spline
-            transmat, _ = lstsq(vectorb, vectora)
+            transmat, materror = lstsq(vectorb, vectora, nodes)
         else:
             weightsa = self.weights if self.weights else [1] * self.npts
             weightsb = other.weights if other.weights else [1] * other.npts
             lstsq = heavy.LeastSquare.func2func
-            transmat, _ = lstsq(vectorb, weightsb, vectora, weightsa)
+            transmat, materror = lstsq(vectorb, weightsb, vectora, weightsa, nodes)
         transmat = np.array(transmat)
-        ctrlpoints = transmat @ other.ctrlpoints
-        if self.weights is not None:
-            weights = transmat @ weightsb
+        ctrlpoints = np.dot(transmat, other.ctrlpoints)
+        error = np.dot(
+            np.moveaxis(other.ctrlpoints, 0, -1), np.dot(materror, other.ctrlpoints)
+        )
+        error = np.max(np.abs(error))
+        if other.weights is not None:
+            error += np.dot(other.weights, np.dot(materror, other.ctrlpoints))
+            weights = np.dot(transmat, weightsb)
             ctrlpoints = [point / weig for point, weig in zip(ctrlpoints, weights)]
             self.weights = weights
         self.ctrlpoints = ctrlpoints
+        return error
 
     def fit_function(self, function: Callable, nodes: Tuple[float] = None) -> None:
         """Finds the control points such this curve keeps as near as
@@ -1046,11 +1073,6 @@ class Curve(BaseCurve):
         """
         Calls ``fit_curve``, ``fit_function`` or ``fit_points`` depending on ``param``
         """
-        if nodes is not None:
-            iter(nodes)
-            for node in nodes:
-                assert self.knotvector[0] <= node
-                assert node <= self.knotvector[-1]
         if isinstance(param, self.__class__):
             return self.fit_curve(param, nodes)
         if callable(param):

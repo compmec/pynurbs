@@ -1,4 +1,5 @@
 import math
+from copy import deepcopy
 from fractions import Fraction
 from typing import Tuple, Union
 
@@ -8,32 +9,32 @@ import numpy as np
 class Math:
     @staticmethod
     def gcd(*numbers: Tuple[int]) -> int:
-        print(f"gdc({str(numbers)})")
         lenght = len(numbers)
         if lenght == 1:
-            return numbers[0]
-        if lenght != 2:
+            return abs(numbers[0])
+        if lenght == 2:
+            x, y = numbers
+        else:
             middle = lenght // 2
             x = Math.gcd(*numbers[:middle])
             y = Math.gcd(*numbers[middle:])
-        else:
-            x, y = numbers
         while y:
             x, y = y, x % y
         return abs(x)
 
     @staticmethod
     def lcm(*numbers: Tuple[int]) -> int:
-        print(f"lcm({str(numbers)})")
         lenght = len(numbers)
         if lenght == 1:
             return numbers[0]
-        if lenght != 2:
+        if lenght == 2:
+            x, y = numbers
+        else:
             middle = lenght // 2
             x = Math.lcm(*numbers[:middle])
-            y = Math.lcm(*numbers[:middle])
-        else:
-            x, y = numbers
+            y = Math.lcm(*numbers[middle:])
+        if x == 0 or y == 0:
+            return y if x == 0 else y
         return x * y // Math.gcd(x, y)
 
 
@@ -237,40 +238,44 @@ class Linalg:
     @staticmethod
     def solve(matrix: Tuple[Tuple[float]], force: Tuple[Tuple[float]]):
         numbtype = number_type((matrix, force))
-        if numbtype in (float, np.floating):
+        if numbtype not in (int, Fraction):
             matrix = np.array(matrix, dtype="float64")
             force = np.array(force, dtype="float64")
             return totuple(np.linalg.solve(matrix, force))
-        if numbtype in (int, Fraction):
-            matrix = np.array(matrix, dtype="object")
-            force = np.array(force, dtype="object")
-            for i, (linea, lineb) in enumerate(zip(matrix, force)):
-                lcmleft = Math.lcm(*[Fraction(elem).denominator for elem in linea])
-                lcmrigh = Math.lcm(*[Fraction(elem).denominator for elem in lineb])
-                lcm = Math.lcm(lcmleft, lcmrigh)
-                matrix[i] *= lcm
-                force[i] *= lcm
-            matrix = matrix.tolist()
-            force = force.tolist()
-            for i, line in enumerate(matrix):
+        matrix = [[deepcopy(elem) for elem in line] for line in matrix]
+        inverse = Linalg.invert(matrix)
+        result = np.dot(inverse, force)
+        if numbtype is int:
+            all_int = True
+            for i, line in enumerate(result):
                 for j, elem in enumerate(line):
-                    matrix[i][j] = int(elem)
-            for i, line in enumerate(force):
-                for j, elem in enumerate(line):
-                    force[i][j] = int(elem)
-            diagonal, inverse = Linalg.invert_integer_matrix(matrix)
-            diagonal = np.array(diagonal)
-            result = np.dot(inverse, force)
-            for i, diag in enumerate(diagonal):
-                gdc = Math.gcd(diag, *result[i])
-                diagonal[i] //= gdc
-                result[i] //= gdc
-            for i, diag in enumerate(diagonal):
-                for j, elem in enumerate(result[i]):
-                    fraction = Fraction(elem, diag)
-                    result[i, j] = fraction
-            return totuple(result)
-        raise NotImplementedError
+                    if elem.denominator == 1:
+                        result[i, j] = int(elem)
+                    else:
+                        all_int = False
+            result = result.astype("int64") if all_int else result
+        return totuple(result)
+
+    @staticmethod
+    def invert(matrix: Tuple[Tuple[float]]):
+        numbtype = number_type(matrix)
+        if numbtype not in (int, Fraction):
+            matrix = np.array(matrix, dtype="float64")
+            return totuple(np.linalg.inv(matrix))
+        matrix = [[deepcopy(elem) for elem in line] for line in matrix]
+        denomins = [1] * len(matrix)
+        for i, line in enumerate(matrix):
+            lcm = Math.lcm(*[Fraction(elem).denominator for elem in line])
+            denomins[i] *= lcm
+            for j, elem in enumerate(line):
+                line[j] = lcm * elem
+        matrix = tuple(tuple(int(elem) for elem in line) for line in matrix)
+        diagonal, inverse = Linalg.invert_integer_matrix(matrix)
+        inverse = np.array(inverse, dtype="object")
+        for i, diag in enumerate(diagonal):
+            for j, denom in enumerate(denomins):
+                inverse[i, j] = Fraction(denom * inverse[i, j], diag)
+        return inverse
 
     @staticmethod
     def lstsq(matrix: Tuple[Tuple[float]]):
@@ -325,7 +330,7 @@ class Linalg:
                     matrix[i] = matrix[i] // gdcline
         diagonal = np.diag(matrix[:, :side])
         inverse = matrix[:, side:]
-        return diagonal, inverse
+        return totuple(diagonal), totuple(inverse)
 
 
 class LeastSquare:
@@ -493,7 +498,9 @@ class LeastSquare:
 
     @staticmethod
     def spline2spline(
-        oldknotvector: Tuple[float], newknotvector: Tuple[float]
+        oldknotvector: Tuple[float],
+        newknotvector: Tuple[float],
+        fit_nodes: Tuple[float] = None,
     ) -> Tuple["Matrix2D"]:
         """
         Given two bspline curves A(u) and B(u), this
@@ -506,10 +513,10 @@ class LeastSquare:
         assert KnotVector.is_valid_vector(newknotvector)
         oldnpts = KnotVector.find_npts(oldknotvector)
         newnpts = KnotVector.find_npts(newknotvector)
-        oldweights = [1] * oldnpts
-        newweights = [1] * newnpts
+        oldweights = [Fraction(1) for i in range(oldnpts)]
+        newweights = [Fraction(1) for i in range(newnpts)]
         result = LeastSquare.func2func(
-            oldknotvector, oldweights, newknotvector, newweights
+            oldknotvector, oldweights, newknotvector, newweights, fit_nodes
         )
         return totuple(result)
 
@@ -519,6 +526,7 @@ class LeastSquare:
         oldweights: Tuple[float],
         newknotvector: Tuple[float],
         newweights: Tuple[float],
+        fit_nodes: Tuple[float] = None,
     ) -> Tuple[np.ndarray]:
         """
         Given two rational bspline curves A(u) and B(u), this
@@ -541,6 +549,13 @@ class LeastSquare:
         newdegree = KnotVector.find_degree(newknotvector)
         newnpts = KnotVector.find_npts(newknotvector)
         newknots = KnotVector.find_knots(newknotvector)
+
+        oldknotvector = tuple(
+            Fraction(node) if isinstance(node, int) else node for node in oldknotvector
+        )
+        newknotvector = tuple(
+            Fraction(node) if isinstance(node, int) else node for node in newknotvector
+        )
 
         allknots = list(set(oldknots + newknots))
         allknots.sort()
@@ -575,8 +590,49 @@ class LeastSquare:
                 B += integ * np.tensordot(Fvalues[:, k], Gvalues[:, k], axes=0)
                 C += integ * np.tensordot(Gvalues[:, k], Gvalues[:, k], axes=0)
 
-        T = Linalg.solve(C, B.T)
-        E = A - np.dot(B, T)
+        Cinv = Linalg.invert(C)
+        if fit_nodes is None:
+            T = np.dot(Cinv, B.T)
+            E = A - np.dot(B, T)
+            return totuple(T), totuple(E)
+        fit_nodes = tuple(
+            Fraction(node) if isinstance(node, int) else node for node in fit_nodes
+        )
+        F = eval_rational_nodes(oldknotvector, oldweights, tuple(fit_nodes), olddegree)
+        G = eval_rational_nodes(newknotvector, newweights, tuple(fit_nodes), newdegree)
+        # Now we want to solve the system
+        # [C,  G] [Q]   [B']
+        # [     ]*[ ] = [  ]
+        # [G', 0] [L]   [F']
+        # C * Q + G * L = B'
+        # G' * Q = F'
+        # Q = Cinv * (B' - G * L)
+        # G' * Q = F'
+        # G' * Cinv * (B' - G * L) = F'
+        # G' * Cinv * G * L = G' * Cinv * B' - F'
+        # D = G' * Cinv * G
+        # L = Dinv * (G' * Cinv * B' - F')
+        # Q = Cinv * (B' - G * L)
+        F = np.array(F, dtype="object")
+        G = np.array(G, dtype="object")
+        expsize = F.shape[1] + len(C)
+        Bexp = np.zeros((expsize, len(B)), dtype="object")
+        Cexp = np.zeros((expsize, expsize), dtype="object")
+        Bexp[: B.shape[1]] = B.T
+        Bexp[B.shape[1] :] = F.T
+        Cexp[: len(C), : len(C)] = C
+        Cexp[: len(C), len(C) :] = G
+        Cexp[len(C) :, : len(C)] = G.T
+        # Bexp = totuple(Bexp)
+        # Cexp = totuple(Cexp)
+        Texp = Linalg.solve(Cexp, Bexp)
+        Texp = np.array(Texp)
+        # print("Texp = ", Texp.shape)
+        # print(Texp)
+        # print("Bexp = ", Bexp.shape)
+        # print(Bexp)
+        E = A - np.dot(Bexp.T, Texp)
+        T = Texp[: len(C)]
         return totuple(T), totuple(E)
 
 
