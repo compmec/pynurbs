@@ -6,7 +6,7 @@ Its functions are getting derivatives, computing integrals along curves and so o
 import numpy as np
 import pytest
 
-from compmec.nurbs import calculus
+from compmec.nurbs.calculus import Derivate
 from compmec.nurbs.curves import Curve
 from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
 
@@ -39,7 +39,7 @@ class TestBezier:
         P = np.random.uniform(-1, 1, curve.npts)
         curve.ctrlpoints = P
 
-        test_curve = calculus.Derivate.curve(curve)
+        test_curve = Derivate(curve)
         good_curve = Curve(GeneratorKnotVector.bezier(0))
         good_curve.ctrlpoints = [P[1] - P[0]]
 
@@ -52,7 +52,7 @@ class TestBezier:
         P = np.random.uniform(-1, 1, curve.npts)
         curve.ctrlpoints = P
 
-        test_curve = calculus.Derivate.curve(curve)
+        test_curve = Derivate(curve)
 
         good_curve = Curve(GeneratorKnotVector.bezier(1))
         good_curve.ctrlpoints = [2 * (P[1] - P[0]), 2 * (P[2] - P[1])]
@@ -66,7 +66,7 @@ class TestBezier:
         P = np.random.uniform(-1, 1, curve.npts)
         curve.ctrlpoints = P
 
-        test_curve = calculus.Derivate.curve(curve)
+        test_curve = Derivate(curve)
 
         good_curve = Curve(GeneratorKnotVector.bezier(2))
         good_curve.ctrlpoints = [
@@ -86,7 +86,7 @@ class TestBezier:
             points = np.random.uniform(-1, 1, curve.npts)
             curve.ctrlpoints = points
 
-            test_curve = calculus.Derivate.curve(curve)
+            test_curve = Derivate(curve)
 
             good_vector = GeneratorKnotVector.bezier(degree - 1)
             good_curve = Curve(good_vector)
@@ -127,7 +127,7 @@ class TestNumericalDeriv:
             points = np.random.uniform(-1, 1, curve.npts)
             curve.ctrlpoints = points
 
-            dcurve = calculus.Derivate.curve(curve)
+            dcurve = Derivate(curve)
             for node in usample:
                 dnumer = (curve(node + deltau) - curve(node - deltau)) / (2 * deltau)
                 assert np.abs(dcurve(node) - dnumer) < 1e-6
@@ -147,7 +147,7 @@ class TestNumericalDeriv:
                 points = np.random.uniform(-1, 1, curve.npts)
                 curve.ctrlpoints = points
 
-                dcurve = calculus.Derivate.curve(curve)
+                dcurve = Derivate(curve)
                 for start, end in zip(knots[:-1], knots[1:]):
                     usample = np.linspace(start + 2 * deltau, end - 2 * deltau, 5)
                     for node in usample:
@@ -175,7 +175,7 @@ class TestNumericalDeriv:
             curve.ctrlpoints = points
             curve.weights = weighs
 
-            dcurve = calculus.Derivate.curve(curve)
+            dcurve = Derivate(curve)
             for node in usample:
                 dnumer = curve(node + deltau) - curve(node - deltau)
                 dnumer /= 2 * deltau
@@ -202,7 +202,7 @@ class TestNumericalDeriv:
                 curve.ctrlpoints = points
                 curve.weights = weighs
 
-                dcurve = calculus.Derivate.curve(curve)
+                dcurve = Derivate(curve)
                 for start, end in zip(knots[:-1], knots[1:]):
                     usample = np.linspace(start + 2 * deltau, end - 2 * deltau, 5)
                     for node in usample:
@@ -233,7 +233,7 @@ def test_derivate_integers_knotvector():
     points = np.random.uniform(-1, 1, knotvector.npts)
     curve = Curve(knotvector, points)
 
-    dcurve = calculus.Derivate.curve(curve)
+    dcurve = Derivate(curve)
     knots = np.array(curve.knotvector.knots, dtype="float64")
     midnodes = (knots[:-1] + knots[1:]) / 2
     for i, node in enumerate(midnodes):
@@ -257,7 +257,7 @@ def test_example31page94nurbsbook():
     Q[3] = 5 * (P[4] - P[3])
     good_curve = Curve(newknotvector, Q)
 
-    test_curve = calculus.Derivate.curve(curve)
+    test_curve = Derivate(curve)
     assert test_curve == good_curve
 
 

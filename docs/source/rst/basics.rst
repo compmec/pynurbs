@@ -386,7 +386,7 @@ It's possible to derivate a curve
     curve = Curve(knotvector, ctrlpoints)
 
     # Derivate
-    dcurve = Derivate.curve(curve)
+    dcurve = Derivate(curve)
 
     print(dcurve)
     # Spline curve of degree 1 and 5 control points
@@ -409,8 +409,7 @@ Since it's possible to have more than one parameters :math:`u^{\star}` with equa
 
 .. code-block:: python
 
-    from compmec.nurbs import Curve
-    from compmec.nurbs.advanced import Projection
+    from compmec.nurbs import Curve, Projection
 
     # Create knot vector
     knotvector = (0, 0, 0, 0.2, 0.5, 0.7, 1, 1, 1)

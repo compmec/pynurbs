@@ -5,6 +5,10 @@ from compmec.nurbs.curves import Curve
 
 
 class Derivate:
+
+    def __new__(cls, curve: Curve):
+        return Derivate.curve(curve)
+
     @staticmethod
     def curve(curve: Curve) -> Curve:
         assert isinstance(curve, Curve)
