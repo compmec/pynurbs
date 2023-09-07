@@ -332,19 +332,32 @@ class Linalg:
         side = len(matrix)
         inverse = np.eye(side, dtype="object")
         matrix = np.column_stack((matrix, inverse))
+
+        # Eliminate lower triangle
         for k in range(side):
+            # Swap pivos
+            if matrix[k, k] == 0:
+                for i in range(k + 1, side):
+                    if matrix[i, k] != 0:
+                        matrix[[k, i]] = matrix[[i, k]]
+                        break
+            # Eliminate lines bellow
+            if matrix[k, k] < 0:
+                matrix[k] *= -1
             for i in range(k + 1, side):
                 matrix[i] = matrix[i] * matrix[k, k] - matrix[k] * matrix[i, k]
                 gdcline = Math.gcd(*matrix[i])
                 if gdcline != 1:
                     matrix[i] = matrix[i] // gdcline
+
+        # Eliminate upper triangle
         for k in range(side - 1, 0, -1):
             for i in range(k - 1, -1, -1):
                 matrix[i] = matrix[i] * matrix[k, k] - matrix[k] * matrix[i, k]
                 gdcline = Math.gcd(*matrix[i])
                 if gdcline != 1:
                     matrix[i] = matrix[i] // gdcline
-        diagonal = np.diag(matrix[:, :side])
+        diagonal = list(np.diag(matrix[:, :side]))
         inverse = matrix[:, side:]
         return totuple(diagonal), totuple(inverse)
 
@@ -616,39 +629,15 @@ class LeastSquare:
         )
         F = eval_rational_nodes(oldknotvector, oldweights, tuple(fit_nodes), olddegree)
         G = eval_rational_nodes(newknotvector, newweights, tuple(fit_nodes), newdegree)
-        # Now we want to solve the system
-        # [C,  G] [Q]   [B']
-        # [     ]*[ ] = [  ]
-        # [G', 0] [L]   [F']
-        # C * Q + G * L = B'
-        # G' * Q = F'
-        # Q = Cinv * (B' - G * L)
-        # G' * Q = F'
-        # G' * Cinv * (B' - G * L) = F'
-        # G' * Cinv * G * L = G' * Cinv * B' - F'
-        # D = G' * Cinv * G
-        # L = Dinv * (G' * Cinv * B' - F')
-        # Q = Cinv * (B' - G * L)
         F = np.array(F, dtype="object")
         G = np.array(G, dtype="object")
-        expsize = F.shape[1] + len(C)
-        Bexp = np.zeros((expsize, len(B)), dtype="object")
-        Cexp = np.zeros((expsize, expsize), dtype="object")
-        Bexp[: B.shape[1]] = B.T
-        Bexp[B.shape[1] :] = F.T
-        Cexp[: len(C), : len(C)] = C
-        Cexp[: len(C), len(C) :] = G
-        Cexp[len(C) :, : len(C)] = G.T
-        # Bexp = totuple(Bexp)
-        # Cexp = totuple(Cexp)
-        Texp = Linalg.solve(Cexp, Bexp)
-        Texp = np.array(Texp)
-        # print("Texp = ", Texp.shape)
-        # print(Texp)
-        # print("Bexp = ", Bexp.shape)
-        # print(Bexp)
-        E = A - np.dot(Bexp.T, Texp)
-        T = Texp[: len(C)]
+        D = np.dot(G.T, np.dot(Cinv, G))
+        Dinv = Linalg.invert(D)
+        H = np.dot(Cinv, B.T)
+        L = np.dot(Dinv, np.dot(G.T, H) - F.T)
+        T = H - np.dot(Cinv, np.dot(G, L))
+        E = (A + np.dot(T.T, np.dot(C, T))) / 2
+        E -= np.dot(T.T, B.T)
         return totuple(T), totuple(E)
 
 

@@ -194,12 +194,15 @@ class TestLinalg:
         np.testing.assert_allclose(testident, np.eye(len(matrix)))
 
         size = 3
-        floatmatrix = np.random.uniform(-1, 1, (size, size))
-        fracmatrix = np.empty((size, size), dtype="object")
-        for i, line in enumerate(floatmatrix):
-            for j, elem in enumerate(line):
-                fracmatrix[i, j] = Fraction(elem).limit_denominator(10)
-        fracmatrix += np.transpose(fracmatrix)
+        while True:
+            floatmatrix = np.random.uniform(-1, 1, (size, size))
+            fracmatrix = np.empty((size, size), dtype="object")
+            for i, line in enumerate(floatmatrix):
+                for j, elem in enumerate(line):
+                    fracmatrix[i, j] = Fraction(elem).limit_denominator(10)
+            fracmatrix += np.transpose(fracmatrix)
+            if abs(np.linalg.det(np.array(fracmatrix, dtype="float64"))) > 1e-6:
+                break
         invfracmatrix = Linalg.invert(fracmatrix)
         product = fracmatrix @ invfracmatrix
         product = np.array(product, dtype="float64")
@@ -226,10 +229,6 @@ class TestLinalg:
         matrix = ((1, 0), (0, 1))
         solution = Linalg.solve(matrix, force)
         mult = np.dot(matrix, solution)
-        print("mult = ")
-        print(mult)
-        print("force = ")
-        print(force)
         np.testing.assert_allclose(mult, force)
 
         side, nsols = 2, 4
@@ -237,10 +236,6 @@ class TestLinalg:
         matrix = ((1, 1), (2, 3))
         solution = Linalg.solve(matrix, force)
         mult = np.dot(matrix, solution)
-        print("mult = ")
-        print(mult)
-        print("force = ")
-        print(force)
         np.testing.assert_allclose(mult, force)
 
         side, nsols = 2, 4
@@ -248,10 +243,6 @@ class TestLinalg:
         matrix = ((1, 1), (11, 12))
         solution = Linalg.solve(matrix, force)
         mult = np.dot(matrix, solution)
-        print("mult = ")
-        print(mult)
-        print("force = ")
-        print(force)
         np.testing.assert_allclose(mult, force)
 
         side, nsols = 4, 4
@@ -264,18 +255,12 @@ class TestLinalg:
         )
         solution = Linalg.solve(matrix, force)
         mult = np.dot(matrix, solution)
-        print("mult = ")
-        print(mult)
-        print("force = ")
-        print(force)
         np.testing.assert_allclose(mult, force)
 
         # Ericksen matrix
         for side in range(1, 10):
             nsols = side + 1
-            force = [
-                [np.random.randint(-10, 10) for j in range(nsols)] for i in range(side)
-            ]
+            force = np.random.randint(-10, 10, (side, nsols))
             matrix = np.zeros((side, side), dtype="int64")
             for n in range(side, side + 10):
                 for i in range(side):
@@ -367,6 +352,39 @@ class TestLinalg:
         mult = np.dot(C, solution)
         diff = np.array(mult - B, dtype="float64")
         np.testing.assert_allclose(diff, np.zeros(B.shape))
+
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(
+        depends=[
+            "TestLinalg::test_begin",
+            "TestLinalg::test_solve_float",
+            "TestLinalg::test_solve_fraction",
+        ]
+    )
+    def test_specific_case2(self):
+        f = Fraction
+        matrix = [[0, -54, -5], [-9, -20, -3], [-25, -90, 216]]
+        good = [
+            [f(2295, 55288), f(-6057, 55288), f(-31, 55288)],
+            [f(-2019, 110576), f(125, 110576), f(-45, 110576)],
+            [f(-155, 55288), f(-675, 55288), f(243, 55288)],
+        ]
+        prod = np.dot(matrix, np.array(good, dtype="float64"))
+        np.testing.assert_allclose(prod, np.eye(3), atol=1e-9)
+        test = Linalg.invert(matrix)
+        diff = np.array(good - test, dtype="float64")
+        np.testing.assert_array_equal(diff, np.zeros(diff.shape))
+
+        matrix = [
+            [f(0, 1), f(-3, 4), f(-5, 72)],
+            [f(-3, 4), f(-5, 3), f(-1, 4)],
+            [f(-5, 72), f(-1, 4), f(3, 5)],
+        ]
+        inverse = Linalg.invert(matrix)
+        prod = np.dot(matrix, inverse).astype("float64")
+        np.testing.assert_allclose(prod, np.eye(3))
+        prod = np.dot(inverse, matrix).astype("float64")
+        np.testing.assert_allclose(prod, np.eye(3))
 
     @pytest.mark.order(1)
     @pytest.mark.dependency(

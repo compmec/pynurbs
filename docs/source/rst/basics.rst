@@ -358,7 +358,7 @@ The ``Curve``'s objects has the functions ``fit_curve``, ``fit_function`` and ``
     curve.fit(function)
 
 
-.. image:: ../img/fitting-function.png
+.. image:: ../img/fitting_function.png
   :width: 70 %
   :alt: Example of fitting the square function by degree 1 spline
   :align: center
