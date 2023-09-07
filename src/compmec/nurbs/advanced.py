@@ -47,8 +47,8 @@ class Projection:
     def point_on_bezier(point: Tuple[float], bezier: Curve) -> Tuple[float]:
         umin, umax = bezier.knotvector.limits
         curves = [bezier]
-        curves.append(Derivate.curve(curves[0]))
-        curves.append(Derivate.curve(curves[1]))
+        curves.append(Derivate(curves[0]))
+        curves.append(Derivate(curves[1]))
         tparams = np.linspace(umin, umax, 5)
         tvalues = set()
         for tparam in tparams:
@@ -237,11 +237,11 @@ class Intersection:
             return tuple()
 
         curvesa = [beziera]
-        curvesa.append(Derivate.curve(curvesa[0]))
-        curvesa.append(Derivate.curve(curvesa[1]))
+        curvesa.append(Derivate(curvesa[0]))
+        curvesa.append(Derivate(curvesa[1]))
         curvesb = [bezierb]
-        curvesb.append(Derivate.curve(curvesb[0]))
-        curvesb.append(Derivate.curve(curvesb[1]))
+        curvesb.append(Derivate(curvesb[0]))
+        curvesb.append(Derivate(curvesb[1]))
         dega, degb = beziera.degree, bezierb.degree
         nsma, nsmb = dega + 1, degb + 1  # Number of samples
         uamin, uamax = beziera.knotvector.limits

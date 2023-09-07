@@ -1,7 +1,7 @@
 
 
 =====================
-Integration by bezier
+Numerical Integration
 =====================
 
 Numerical integration is used by **LeastSquare** method.
