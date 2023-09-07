@@ -1,4 +1,4 @@
-from compmec.nurbs.advanced import Projection, Intersection
+from compmec.nurbs.advanced import Intersection, Projection
 from compmec.nurbs.calculus import Derivate
 from compmec.nurbs.curves import Curve
 from compmec.nurbs.functions import Function
