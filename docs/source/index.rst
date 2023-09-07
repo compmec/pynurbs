@@ -39,7 +39,7 @@ Documentation
   rst/references
   
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 1
   :caption: Theory
 
   rst/theory-knotvector

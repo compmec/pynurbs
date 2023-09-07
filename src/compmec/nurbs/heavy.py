@@ -586,6 +586,8 @@ class LeastSquare:
             Fraction(node) if isinstance(node, int) else node for node in newknotvector
         )
 
+        if fit_nodes and len(fit_nodes) > newnpts:
+            raise NotImplementedError
         allknots = list(set(oldknots + newknots))
         allknots.sort()
 
@@ -600,9 +602,9 @@ class LeastSquare:
         nodes0to1 = np.array(nodes0to1)
         integrator = np.array(integrator)
 
-        A = np.zeros((oldnpts, oldnpts), dtype=numbtype)  # F*F
-        B = np.zeros((oldnpts, newnpts), dtype=numbtype)  # F*G
-        C = np.zeros((newnpts, newnpts), dtype=numbtype)  # G*G
+        FF = np.zeros((oldnpts, oldnpts), dtype=numbtype)  # F*F
+        GF = np.zeros((newnpts, oldnpts), dtype=numbtype)  # F*G
+        GG = np.zeros((newnpts, newnpts), dtype=numbtype)  # G*G
         for start, end in zip(allknots[:-1], allknots[1:]):
             nodes = start + (end - start) * nodes0to1
             # Integral of the functions in the interval [a, b]
@@ -615,29 +617,30 @@ class LeastSquare:
             Fvalues = np.array(Fvalues, dtype=numbtype)
             Gvalues = np.array(Gvalues, dtype=numbtype)
             for k, integ in enumerate(integrator):
-                A += integ * np.tensordot(Fvalues[:, k], Fvalues[:, k], axes=0)
-                B += integ * np.tensordot(Fvalues[:, k], Gvalues[:, k], axes=0)
-                C += integ * np.tensordot(Gvalues[:, k], Gvalues[:, k], axes=0)
+                FF += integ * np.tensordot(Fvalues[:, k], Fvalues[:, k], axes=0)
+                GF += integ * np.tensordot(Gvalues[:, k], Fvalues[:, k], axes=0)
+                GG += integ * np.tensordot(Gvalues[:, k], Gvalues[:, k], axes=0)
 
-        Cinv = Linalg.invert(C)
+        GGinv = Linalg.invert(GG)
         if fit_nodes is None:
-            T = np.dot(Cinv, B.T)
-            E = A - np.dot(B, T)
+            T = np.dot(GGinv, GF)
+            E = FF - np.dot(GF.T, T)
             return totuple(T), totuple(E)
         fit_nodes = tuple(
             Fraction(node) if isinstance(node, int) else node for node in fit_nodes
         )
         F = eval_rational_nodes(oldknotvector, oldweights, tuple(fit_nodes), olddegree)
         G = eval_rational_nodes(newknotvector, newweights, tuple(fit_nodes), newdegree)
-        F = np.array(F, dtype="object")
-        G = np.array(G, dtype="object")
-        D = np.dot(G.T, np.dot(Cinv, G))
-        Dinv = Linalg.invert(D)
-        H = np.dot(Cinv, B.T)
-        L = np.dot(Dinv, np.dot(G.T, H) - F.T)
-        T = H - np.dot(Cinv, np.dot(G, L))
-        E = (A + np.dot(T.T, np.dot(C, T))) / 2
-        E -= np.dot(T.T, B.T)
+        F = np.array(F, dtype="object").T
+        GT = np.array(G, dtype="object")
+        G = np.transpose(GT)
+        LL = np.dot(G, np.dot(GGinv, GT))
+        LLinv = Linalg.invert(LL)
+        LG = np.dot(LLinv, np.dot(G, GGinv))
+        QG = GGinv - np.dot(GGinv, np.dot(GT, LG))
+        QF = np.dot(GGinv, np.dot(GT, LLinv))
+        T = np.dot(QG, GF) + np.dot(QF, F)
+        E = (FF - 2 * np.dot(T.T, GF) + np.dot(T.T, np.dot(GG, T))) / 2
         return totuple(T), totuple(E)
 
 
