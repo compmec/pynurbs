@@ -51,6 +51,100 @@ Use example
   :align: center
 
 
+Although above the function :math:`B_{i,p}(u)` is described only by :math:`p`, bellow we have the graphs of the basis functions by using the knotvector. They are in **svg** format and therefore you can open and expand to see better the image.
+
+.. dropdown:: Basis functions for degree :math:`p=0`
+
+    .. math::
+        \mathbf{U} = \left[0, \ 1\right]
+
+    .. image:: ../img/basis-functions/bezier-basisfunction-p0.svg
+        :width: 50 %
+        :alt: Basis functions for bezier of degree 0
+        :align: center
+
+.. dropdown:: Basis functions for degree :math:`p=1`
+
+    .. math::
+        \mathbf{U} = \left[0, \ 0, \ 1, \ 1\right]
+
+    .. image:: ../img/basis-functions/bezier-basisfunction-p1.svg
+        :width: 100 %
+        :alt: Basis functions for bezier of degree 1
+        :align: center
+
+.. dropdown:: Basis functions for degree :math:`p=2`
+
+    .. math::
+        \mathbf{U} = \left[0, \ 0, \ 0, \ 1, \ 1, \ 1\right]
+
+    .. image:: ../img/basis-functions/bezier-basisfunction-p2.svg
+        :width: 100 %
+        :alt: Basis functions for bezier of degree 2
+        :align: center
+
+.. dropdown:: Basis functions for degree :math:`p=3`
+
+    .. math::
+        \mathbf{U} = \left[0, \ 0, \ 0, \ 0, \ 1, \ 1, \ 1, \ 1\right]
+
+    .. image:: ../img/basis-functions/bezier-basisfunction-p3.svg
+        :width: 100 %
+        :alt: Basis functions for bezier of degree 3
+        :align: center
+
+.. dropdown:: Basis functions for degree :math:`p=4`
+
+    .. math::
+        \mathbf{U} = \left[0, \ 0, \ 0, \ 0, \ 0, \ 1, \ 1, \ 1, \ 1, \ 1\right]
+
+    .. image:: ../img/basis-functions/bezier-basisfunction-p4.svg
+        :width: 100 %
+        :alt: Basis functions for bezier of degree 4
+        :align: center
+
+.. dropdown:: Basis functions for degree :math:`p=5`
+
+    .. math::
+        \mathbf{U} = \left[0, \ 0, \ 0, \ 0, \ 0, \ 0, \ 1, \ 1, \ 1, \ 1, \ 1, \ 1\right]
+
+    .. image:: ../img/basis-functions/bezier-basisfunction-p5.svg
+        :width: 100 %
+        :alt: Basis functions for bezier of degree 5
+        :align: center
+
+.. dropdown:: Code to generate all the bezier basis functions
+
+    .. code-block:: python
+
+        import numpy as np
+        from matplotlib import pyplot as plt
+        from compmec.nurbs import GeneratorKnotVector, Function
+
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        colors = prop_cycle.by_key()['color']
+        uplot = np.linspace(0, 1, 1029)
+        for degree in range(0, 6):
+            knotvector = GeneratorKnotVector.bezier(degree)
+            function = Function(knotvector)
+            sizex = (degree+1)*3
+            sizey = (degree+1)*2
+            fig, axs = plt.subplots(degree+1, degree+1, figsize=(sizex,sizey))
+            for j in range(0, degree+1):
+                allvalues = function[:,j](uplot)
+                for i, values in enumerate(allvalues):
+                    label = r"$B_{%d,%d}$"%(i,j)
+                    color = colors[i]
+                    ax = axs if degree == 0 else axs[j][i]
+                    ax.plot(uplot, values, label=label, linewidth=3,color=color)
+                    ax.set_xlim(-0.1, 1.1)
+                    ax.set_ylim(-0.1, 1.1)
+                    ax.legend()
+                    ax.grid()
+            fig.tight_layout()
+            plt.savefig("bezier-basisfunction-p%d.svg"%degree)
+
+
 -----------------------------------------------------------------------
 
 
@@ -92,6 +186,94 @@ Use example
   :alt: BSpline Basis Functions of degree 2 and npts 5
   :align: center
 
+
+
+
+.. dropdown:: Basis functions for degree :math:`p=0` and :math:`\text{npts}=6`
+
+    .. math::
+        \mathbf{U} = \left(0, \ \dfrac{1}{6}, \ \dfrac{2}{6}, \ \dfrac{3}{6}, \ \dfrac{4}{6}, \ \dfrac{5}{6}, \ 1\right)
+
+    .. image:: ../img/basis-functions/splines-basisfunction-p0n6.svg
+        :width: 100 %
+        :alt: Basis functions for splines of degree 0
+        :align: center
+
+.. dropdown:: Basis functions for degree :math:`p=1` and :math:`\text{npts}=6`
+
+    .. math::
+        \mathbf{U} = \left(0, \ 0, \ \dfrac{1}{5}, \ \dfrac{2}{5}, \ \dfrac{3}{5}, \ \dfrac{4}{5}\ 1, \ 1 \right)
+
+    .. image:: ../img/basis-functions/splines-basisfunction-p1n6.svg
+        :width: 100 %
+        :alt: Basis functions for splines of degree 1
+        :align: center
+
+.. dropdown:: Basis functions for degree :math:`p=2` and :math:`\text{npts}=6`
+
+    .. math::
+        \mathbf{U} = \left(0, \ 0, \ 0, \ \dfrac{1}{4}, \ \dfrac{2}{4}, \ \dfrac{3}{4}, \ 1, \ 1,  \ 1 \right)
+
+    .. image:: ../img/basis-functions/splines-basisfunction-p2n6.svg
+        :width: 100 %
+        :alt: Basis functions for splines of degree 2
+        :align: center
+
+.. dropdown:: Basis functions for degree :math:`p=3` and :math:`\text{npts}=6`
+
+    .. math::
+        \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ \dfrac{1}{3}, \ \dfrac{2}{3}, \ 1, \ 1,  \ 1, \ 1 \right)
+
+    .. image:: ../img/basis-functions/splines-basisfunction-p3n6.svg
+        :width: 100 %
+        :alt: Basis functions for splines of degree 3
+        :align: center
+
+
+.. dropdown:: Basis functions for degree :math:`p=4` and :math:`\text{npts}=6`
+
+    .. math::
+        \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ 0, \ \dfrac{1}{2}, \ 1, \ 1, \ 1,  \ 1, \ 1 \right)
+
+    .. image:: ../img/basis-functions/splines-basisfunction-p4n6.svg
+        :width: 100 %
+        :alt: Basis functions for splines of degree 4
+        :align: center
+
+.. dropdown:: Code to generate all the spline basis functions
+
+    .. code-block:: python
+
+        import numpy as np
+        from matplotlib import pyplot as plt
+        from compmec.nurbs import GeneratorKnotVector, Function
+
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        colors = prop_cycle.by_key()['color']
+        uplot = np.linspace(0, 1, 1029)
+
+        nptsmax = 6
+        degmax = 4
+        for degree in range(0, degmax+1):
+            nfigsy = degree+1
+            sizex = nptsmax*4
+            sizey = nfigsy*3
+            fig, axs = plt.subplots(nfigsy, nptsmax, figsize=(sizex,sizey))
+            knotvector = GeneratorKnotVector.uniform(degree, nptsmax)
+            function = Function(knotvector)
+            for j in range(0, degree+1):
+                allvalues = function[:,j](uplot)
+                for i, values in enumerate(allvalues):
+                    label = r"$N_{%d,%d}$"%(i,j)
+                    color = colors[i]
+                    ax = axs[i] if degree == 0 else axs[j, i]
+                    ax.plot(uplot, values, label=label, linewidth=3,color=color)
+                    ax.set_xlim(-0.1, 1.1)
+                    ax.set_ylim(-0.1, 1.1)
+                    ax.legend()
+                    ax.grid()
+            fig.tight_layout()
+            plt.savefig("splines-basisfunction-p%dn%d.svg"%(degree, nptsmax))
 
 -----------------------------------------------------------------------
 
@@ -135,3 +317,105 @@ Use example
   :align: center
 
 
+
+.. dropdown:: Basis functions for degree :math:`p=0` and :math:`\text{npts}=6`
+
+    .. math::
+        \mathbf{U} = \left(0, \ \dfrac{1}{6}, \ \dfrac{2}{6}, \ \dfrac{3}{6}, \ \dfrac{4}{6}, \ \dfrac{5}{6}, \ 1\right)
+        
+    .. math::
+        \mathbf{w} = \left(2, 4, 2, 6, 1, 2 \right)
+
+    .. image:: ../img/basis-functions/rational-basisfunction-p0n6.svg
+        :width: 100 %
+        :alt: Basis functions for rational splines of degree 0
+        :align: center
+
+.. dropdown:: Basis functions for degree :math:`p=1` and :math:`\text{npts}=6`
+
+    .. math::
+        \mathbf{U} = \left(0, \ 0, \ \dfrac{1}{5}, \ \dfrac{2}{5}, \ \dfrac{3}{5}, \ \dfrac{4}{5}\ 1, \ 1 \right)
+        
+    .. math::
+        \mathbf{w} = \left(2, 4, 2, 6, 1, 2 \right)
+
+    .. image:: ../img/basis-functions/rational-basisfunction-p1n6.svg
+        :width: 100 %
+        :alt: Basis functions for rational splines of degree 1
+        :align: center
+
+.. dropdown:: Basis functions for degree :math:`p=2` and :math:`\text{npts}=6`
+
+    .. math::
+        \mathbf{U} = \left(0, \ 0, \ 0, \ \dfrac{1}{4}, \ \dfrac{2}{4}, \ \dfrac{3}{4}, \ 1, \ 1,  \ 1 \right)
+        
+    .. math::
+        \mathbf{w} = \left(2, 4, 2, 6, 1, 2 \right)
+
+    .. image:: ../img/basis-functions/rational-basisfunction-p2n6.svg
+        :width: 100 %
+        :alt: Basis functions for splines of degree 2
+        :align: center
+
+.. dropdown:: Basis functions for degree :math:`p=3` and :math:`\text{npts}=6`
+
+    .. math::
+        \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ \dfrac{1}{3}, \ \dfrac{2}{3}, \ 1, \ 1,  \ 1, \ 1 \right)
+
+    .. math::
+        \mathbf{w} = \left(2, 4, 2, 6, 1, 2 \right)
+
+    .. image:: ../img/basis-functions/rational-basisfunction-p3n6.svg
+        :width: 100 %
+        :alt: Basis functions for rational splines of degree 3
+        :align: center
+
+
+.. dropdown:: Basis functions for degree :math:`p=4` and :math:`\text{npts}=6`
+
+    .. math::
+        \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ 0, \ \dfrac{1}{2}, \ 1, \ 1, \ 1,  \ 1, \ 1 \right)
+
+    .. math::
+        \mathbf{w} = \left(2, 4, 2, 6, 1, 2 \right)
+
+    .. image:: ../img/basis-functions/rational-basisfunction-p4n6.svg
+        :width: 100 %
+        :alt: Basis functions for rational splines of degree 4
+        :align: center
+
+.. dropdown:: Code to generate all the rational spline basis functions
+
+    .. code-block:: python
+
+        import numpy as np
+        from matplotlib import pyplot as plt
+        from compmec.nurbs import GeneratorKnotVector, Function
+
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        colors = prop_cycle.by_key()['color']
+        uplot = np.linspace(0, 1, 1029)
+
+        nptsmax = 6
+        degmax = 4
+        for degree in range(0, degmax+1):
+            nfigsy = degree+1
+            sizex = nptsmax*4
+            sizey = nfigsy*3
+            fig, axs = plt.subplots(nfigsy, nptsmax, figsize=(sizex,sizey))
+            knotvector = GeneratorKnotVector.uniform(degree, nptsmax)
+            function = Function(knotvector)
+            function.weights = [1, 2, 1, 3, 0.5, 1]
+            for j in range(0, degree+1):
+                allvalues = function[:,j](uplot)
+                for i, values in enumerate(allvalues):
+                    label = r"$R_{%d,%d}$"%(i,j)
+                    color = colors[i]
+                    ax = axs[i] if degree == 0 else axs[j, i]
+                    ax.plot(uplot, values, label=label, linewidth=3,color=color)
+                    ax.set_xlim(-0.1, 1.1)
+                    ax.set_ylim(-0.1, 1.1)
+                    ax.legend()
+                    ax.grid()
+            fig.tight_layout()
+            plt.savefig("rational-basisfunction-p%dn%d.svg"%(degree, nptsmax))
