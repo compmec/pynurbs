@@ -6,9 +6,7 @@
 Documentation
 =============
 
-**compmec-nurbs** is a python package for geometry parametrization.
-
-**compmec-nurbs** provides easy-to-use data structures to describe parametric curves and allows the use of :ref:`custom-objects`.
+**compmec-nurbs** is a python package for geometry parametrization that provides easy-to-use data structures to describe parametric curves and allows the use of :ref:`custom-objects`.
 
 .. toctree::
   :maxdepth: 2
@@ -44,6 +42,7 @@ Documentation
 
   rst/theory-knotvector
   rst/theory-fitting
+  rst/theory-derivative
   rst/theory-integration
 
 
