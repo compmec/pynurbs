@@ -1,7 +1,13 @@
+"""
+This module contains very low level functions that can be easily change to another language such as C/C++ (further may be).
+They are 'heavy' functions that are called many times and don't require any special package 
+Most of these functions works only with integers, floats and tuples.
+"""
+
 import math
 from copy import deepcopy
 from fractions import Fraction
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 
@@ -103,9 +109,11 @@ def find_roots(knotvector: Tuple[float], ctrlvalues: Tuple[float]) -> Tuple[floa
     knots = KnotVector.find_knots(knotvector)
     degree = KnotVector.find_degree(knotvector)
     nsample = 100
+    nodes0to1 = NodeSample.open_linspace(nsample)
     manynodes = []
     for start, end in zip(knots[:-1], knots[1:]):
-        manynodes += list(LeastSquare.uniform_nodes(nsample, start, end))
+        nodes = [start + (end - start) * node for node in nodes0to1]
+        manynodes += nodes
     manynodes = tuple(sorted(manynodes + list(knots)))
     matrixeval = eval_spline_nodes(knotvector, manynodes, degree)
     manyvalues = np.dot(np.transpose(matrixeval), ctrlvalues)
@@ -387,125 +395,13 @@ class LeastSquare:
     """
 
     @staticmethod
-    def chebyshev_nodes(npts: int, a: float = 0, b: float = 1) -> Tuple[float]:
-        """
-        Returns a list of floats which are spaced in [a, b]
-        for integration purpose.
-        """
-        assert isinstance(npts, int)
-        assert npts > 0
-        a = np.float64(a)
-        b = np.float64(b)
-        assert a < b
-
-        k = np.array(np.arange(0, npts), dtype="float64")
-        nodes = np.cos(np.pi * (2 * k + 1) / (2 * npts))
-        nodes = np.array(nodes, dtype="float64")
-        nodes *= (b - a) / 2
-        nodes += (a + b) / 2
-        nodes.sort()
-        return totuple(nodes)
-
-    @staticmethod
-    def linspace(a: float, b: float, npts: int) -> Tuple[float]:
-        assert isinstance(npts, int)
-        assert npts > 0
-        float(a)
-        float(b)
-        assert a < b
-
-        nodes = [a + ((b - a) * i) / (npts - 1) for i in range(npts)]
-        return totuple(nodes)
-
-    @staticmethod
-    def uniform_nodes(npts: int, a: float = 0, b: float = 1) -> Tuple[float]:
-        """
-        Returns a list of floats which are equally spaced in [a, b]
-        This function doesn't return the extremities
-        """
-        assert isinstance(npts, int)
-        assert npts > 0
-        float(a)
-        float(b)
-        assert a < b
-
-        one = (b - a) / (b - a)
-        nodes = [(one + 2 * i * one) / (2 * npts) for i in range(npts)]
-        nodes = [a + (b - a) * node for node in nodes]
-        return totuple(nodes)
-
-    @staticmethod
-    def interp_bezier_matrix(nodes: Tuple[float]) -> Tuple[float]:
-        """
-        This function helps computing the values of F_{i} such
-            f(x) approx g(x) = sum_{i=0}^{z} F_{i} * B_{i, z}(x)
-        Which B_{i, z}(x) is a bezier function
-            B_{i, z}(x) = binom(z, i) * (1-x)^{i} * x^{z-i}
-        Then, a linear system is obtained by setting f(x_j) = g(x_j)
-        at (z+1) points:
-            [B0(x0)   B1(x0)   ...   Bz(x0)][ F0 ]   [ f(x0) ]
-            [B0(x1)   B1(x1)   ...   Bz(x1)][ F1 ]   [ f(x1) ]
-            [B0(x2)   B1(x2)   ...   Bz(x2)][ F2 ] = [ f(x2) ]
-            [  |        |       |      |   ][ |  ]   [   |   ]
-            [B0(xz)   B1(xz)   ...   Bz(xz)][ Fz ]   [ f(xz) ]
-        The return is the inverse of the matrix
-        """
-        assert isinstance(nodes, tuple)
-        for node in nodes:
-            float(node)
-            assert 0 <= node
-            assert node <= 1
-        numbtype = number_type(nodes)
-        z = len(nodes) - 1
-        matrixbezier = np.zeros((z + 1, z + 1), dtype=numbtype)
-        for i, xi in enumerate(nodes):
-            for j in range(z + 1):
-                matrixbezier[i, j] = binom(z, j) * (1 - xi) ** (z - j) * (xi**j)
-        identity = np.eye(len(matrixbezier), dtype=numbtype)
-        invmatrix = Linalg.solve(matrixbezier, identity)
-        return totuple(invmatrix)
-
-    @staticmethod
-    def integrator_array(nodes: Tuple[float]) -> Tuple[float]:
-        """
-        This function helps computing the integral of f(x) at the
-        interval [0, 1] by using a polynomial of degree ```npts```.
-        It returns an 1D array [A] such
-            int_{0}^{1} f(x) dx = [A] * [f]
-        Which
-            [f] = [f(x0)  f(x1)  ...  f(xz)]
-        The points x0, x1, ... are the given nodes
-
-        We suppose that
-            int_{0}^{1} f(x) dx approx int_{0}^{1} g(x) dx
-        Which g(x) is made by bezier curves
-            g(x) = sum_{i=0}^{z} F_{i} * B_{i, z}(x)
-            B_{i, z}(x) = binom(z, i) * (1-x)^{i} * x^{z-i}
-        We see that
-            int_{0}^{1} B_{i, z}(x) dx = 1/(z+1)
-        Therefore
-            int_{0}^{1} f(x) dx approx 1/(z+1) * sum F_{i}
-        The values of F_{i} are gotten from ```interp_bezier_matrix```
-        """
-        assert isinstance(nodes, tuple)
-        for node in nodes:
-            float(node)
-            assert 0 <= node
-            assert node <= 1
-        npts = len(nodes)
-        matrix = LeastSquare.interp_bezier_matrix(nodes)
-        matrix = np.array(matrix)
-        array = tuple([sum(matrix[:, j]) / npts for j in range(npts)])
-        return array
-
-    @staticmethod
     def fit_function(
         knotvector: Tuple[float],
         nodes: Tuple[float],
         weights: Union[Tuple[float], None],
     ) -> Tuple[Tuple[float]]:
         """
-        Let C(u) be a curve C(u) of base functions F of given vector
+        Let C(u) be a curve C(u) of base functions F of given knot vector
             C(u) = sum_i F_i(u) * P_i
         it's wanted to fit a C(u) into the curve f(u)
 
@@ -595,10 +491,11 @@ class LeastSquare:
         numbtype = Fraction if (numbtype is int) else numbtype
         nptsinteg = olddegree + newdegree + 3  # Number integration points
         if numbtype is Fraction:
-            nodes0to1 = LeastSquare.uniform_nodes(nptsinteg, numbtype(0), numbtype(1))
+            nodes0to1 = NodeSample.closed_linspace(nptsinteg)
+            integrator = IntegratorArray.closed_newton_cotes(nptsinteg)
         else:
-            nodes0to1 = LeastSquare.chebyshev_nodes(nptsinteg)
-        integrator = LeastSquare.integrator_array(nodes0to1)
+            nodes0to1 = NodeSample.chebyshev(nptsinteg)
+            integrator = IntegratorArray.chebyshev(nptsinteg)
         nodes0to1 = np.array(nodes0to1)
         integrator = np.array(integrator)
 
@@ -1384,9 +1281,10 @@ class MathOperations:
         nptseval = 2 * (degreec + 1)
         nptstotal = nptseval * (len(allknots) - 1)
         allevalnodes = np.empty(nptstotal, dtype="object")
+        nodes0to1 = NodeSample.closed_linspace(nptseval)
         for i in range(len(allknots) - 1):
             start, end = allknots[i : i + 2]
-            nodes = LeastSquare.uniform_nodes(nptseval, start, end)
+            nodes = tuple(start + (end - start) * node for node in nodes0to1)
             allevalnodes[i * nptseval : (i + 1) * nptseval] = nodes
         allevalnodes = tuple(allevalnodes)
 
@@ -1505,3 +1403,292 @@ class Calculus:
         matrixleft = np.tensordot(np.transpose(matrixderi), matrixmult, axes=1)
         matrixrigh = matrixmult @ matrixderi
         return totuple(matrixleft - matrixrigh), totuple(matrixmult)
+
+
+class NodeSample:
+    __cheby = {1: (Fraction(1, 2),)}
+    __gauss = {1: (Fraction(1, 2),)}
+
+    @staticmethod
+    def closed_linspace(npts: int, cls: Optional[type] = Fraction) -> Tuple[float]:
+        """Returns equally distributed nodes in [0, 1]
+        Include the extremities
+
+        Example
+        ------------
+        >>> NodeSample.closed_linspace(2)
+        (0, 1)
+        >>> NodeSample.closed_linspace(3)
+        (0, 1/2, 1)
+        >>> NodeSample.closed_linspace(4)
+        (0, 1/3, 2/3, 1)
+        >>> NodeSample.closed_linspace(5)
+        (0, 1/4, 2/4, 3/4, 1)
+        >>> NodeSample.closed_linspace(6)
+        (0, 1/5, 2/5, 3/5, 4/5, 1)
+        """
+        assert isinstance(npts, int)
+        assert npts > 1
+        nums = tuple(range(0, npts))
+        nums = tuple(cls(num) / (npts - 1) for num in nums)
+        return nums
+
+    @staticmethod
+    def open_linspace(npts: int, cls: Optional[type] = Fraction) -> Tuple[float]:
+        """Returns equally distributed nodes in (0, 1)
+        Exclude the extremities
+
+        Example
+        ------------
+        >>> NodeSample.open_linspace(1)
+        (1/2, )
+        >>> NodeSample.open_linspace(2)
+        (1/4, 3/4)
+        >>> NodeSample.open_linspace(3)
+        (1/6, 3/6, 5/6)
+        >>> NodeSample.open_linspace(4)
+        (1/8, 3/8, 5/8, 7/8)
+        >>> NodeSample.open_linspace(5)
+        (1/10, 3/10, 5/10, 7/10, 9/10)
+        """
+        assert isinstance(npts, int)
+        assert npts > 0
+        nums = range(1, 2 * npts, 2)
+        nums = tuple(cls(num) / (2 * npts) for num in nums)
+        return nums
+
+    @staticmethod
+    def chebyshev(npts: int) -> Tuple[float]:
+        """
+        Returns chebyshev nodes in the space [0, 1]
+        `Chebyshev nodes <https://en.wikipedia.org/wiki/Chebyshev_nodes>`_
+
+
+        >>> NodeSample.chebyshev(1)
+        (0.5,)
+        >>> NodeSample.chebyshev(2)
+        (0.146, 0.854)
+        >>> NodeSample.chebyshev(3)
+        (0.067, 0.5, 0.933)
+        >>> NodeSample.chebyshev(4)
+        (0.038, 0.309, 0.691, 0.962)
+        >>> NodeSample.chebyshev(5)
+        (0.024, 0.206, 0.5, 0.794, 0.976)
+        """
+        assert isinstance(npts, int)
+        assert npts > 0
+        if npts not in NodeSample.__cheby:
+            nums = NodeSample.open_linspace(npts)
+            nums = tuple(math.sin(0.5 * math.pi * num) ** 2 for num in nums)
+            NodeSample.__cheby[npts] = nums
+        return NodeSample.__cheby[npts]
+
+    @staticmethod
+    def gauss_legendre(npts: int) -> Tuple[float]:
+        """
+        Returns gauss legendre quadrature nodes in the space [0, 1]
+        `Gauss-Legendre quadrature <https://en.wikipedia.org/wiki/Gauss%E2%80%93Legendre_quadrature>`_
+
+        >>> NodeSample.gauss_legendre(1)
+        (0.5,)
+        >>> NodeSample.gauss_legendre(2)
+        (0.146, 0.854)
+        >>> NodeSample.gauss_legendre(3)
+        (0.067, 0.5, 0.933)
+        >>> NodeSample.gauss_legendre(4)
+        (0.038, 0.309, 0.691, 0.962)
+        >>> NodeSample.gauss_legendre(5)
+        (0.024, 0.206, 0.5, 0.794, 0.976)
+        """
+        assert isinstance(npts, int)
+        assert npts > 0
+        if npts not in NodeSample.__gauss:
+            nums, _ = np.polynomial.legendre.leggauss(npts)
+            nums = (1 + nums) / 2
+            NodeSample.__gauss[npts] = tuple(nums)
+        return NodeSample.__gauss[npts]
+
+
+class IntegratorArray:
+    __closed_newton = {
+        2: (Fraction(1, 2), Fraction(1, 2)),
+        3: (Fraction(1, 6), Fraction(2, 3), Fraction(1, 6)),
+        4: (Fraction(1, 8), Fraction(3, 8), Fraction(3, 8), Fraction(1, 8)),
+    }
+    __open_newton = {
+        1: (Fraction(1),),
+        2: (Fraction(1, 2), Fraction(1, 2)),
+        3: (Fraction(3, 8), Fraction(1, 4), Fraction(3, 8)),
+    }
+    __cheby = {
+        1: (Fraction(1),),
+        2: (Fraction(1, 2), Fraction(1, 2)),
+        3: (Fraction(2, 9), Fraction(5, 9), Fraction(2, 9)),
+    }
+    __gauss = {
+        1: (Fraction(1),),
+        2: (Fraction(1, 2), Fraction(1, 2)),
+        3: (Fraction(5, 18), Fraction(4, 9), Fraction(5, 18)),
+    }
+
+    @staticmethod
+    def interpolate_bezier(nodes: Tuple[float]) -> Tuple[Tuple[float]]:
+        """Returns a matrix that interpolates a function at given nodes using bezier
+
+        This function returns the inverse of matrix [M] which
+        interpolates a bezier curve C at the given nodes
+            C(u) = sum_{i=0}^{p} B_{i,p}(u) * P_{i}
+            B_{i,p}(u) = binom(p, i) * (1-u)^{p-i} * u^i
+            [M]_{i,k} = B_{i,p}(u_k)
+            [M] * [P] = [f(x_k)]
+
+        Example
+        ------------
+        >>> nodes = (0, 0.2, 1)
+        >>> IntegratorArray.interpolate_bezier(nodes)
+        ((1, -2, 0), (0, 25/8, 0), (0, -1/8, 1))
+        >>> nodes = (0, 0.5, 1)
+        >>> IntegratorArray.interpolate_bezier(nodes)
+        ((1, -1/2, 0), (0, 2, 0), (0, -1/2, 1))
+
+        """
+        assert isinstance(nodes, tuple)
+        for node in nodes:
+            float(node)
+            assert 0 <= node
+            assert node <= 1
+        degree = len(nodes) - 1
+        matrix_bezier = np.zeros((degree + 1, degree + 1), dtype="object")
+        for k, uk in enumerate(nodes):
+            for i in range(degree + 1):
+                matrix_bezier[i, k] = (
+                    math.comb(degree, i) * (1 - uk) ** (degree - i) * (uk**i)
+                )
+        matrix_bezier = totuple(matrix_bezier)
+        inverse = Linalg.invert(matrix_bezier)
+        inverse = tuple(map(tuple, inverse))
+        return inverse
+
+    @staticmethod
+    def bezier_integrator_array(nodes: Tuple[float]) -> Tuple[float]:
+        """Computes the weights to integrate at given nodes
+
+        Given ``nodes`` the positions of ``n`` values of ``x_i``,
+        this function returns ``n`` values of ``w_i`` such
+
+        int_{0}^{1} f(u) du = sum_{i=0}^{n-1} w_i * f(x_i)
+
+        Example
+        ------------
+        >>> nodes = (0, 0.2, 1)
+        >>> IntegratorArray.bezier_integrator_array(nodes)
+        (1/3, 1/3, 1/3)
+        >>> nodes = (0, 0.5, 1)
+        >>> IntegratorArray.bezier_integrator_array(nodes)
+        (1/3, 1/3, 1/3)
+        """
+        matrix = IntegratorArray.interpolate_bezier(nodes)
+        array = [sum(line) / len(nodes) for line in matrix]
+        return tuple(array)
+
+    @staticmethod
+    def closed_newton_cotes(npts: int) -> Tuple[Tuple[float]]:
+        """Returns the weight array for closed newton-cotes formula
+        in the interval [0, 1]
+
+        Example
+        ------------
+        >>> IntegratorArray.closed_newton_cotes(2)
+        (1/2, 1/2)
+        >>> IntegratorArray.closed_newton_cotes(3)
+        (1/6, 4/6, 1/6)
+        >>> IntegratorArray.closed_newton_cotes(4)
+        (1/8, 3/8, 3/8, 1/8)
+        >>> IntegratorArray.closed_newton_cotes(5)
+        (7/90, 16/45, 2/15, 16/45, 7/90)
+        """
+        assert isinstance(npts, int)
+        assert npts > 1
+        if npts not in IntegratorArray.__closed_newton:
+            nodes = NodeSample.closed_linspace(npts, Fraction)
+            weights = IntegratorArray.bezier_integrator_array(nodes)
+            IntegratorArray.__closed_newton[npts] = weights
+        return IntegratorArray.__closed_newton[npts]
+
+    @staticmethod
+    def open_newton_cotes(npts: int) -> Tuple[Tuple[float]]:
+        """Returns the weight array for open newton-cotes formula
+        in the interval (0, 1)
+
+        Example
+        ------------
+        >>> IntegratorArray.open_newton_cotes(1)
+        (1, )
+        >>> IntegratorArray.open_newton_cotes(2)
+        (1/2, 1/2)
+        >>> IntegratorArray.open_newton_cotes(3)
+        (3/8, 1/4, 3/8)
+        >>> IntegratorArray.open_newton_cotes(4)
+        (13/48, 11/48, 11/48, 13/48)
+        >>> IntegratorArray.open_newton_cotes(5)
+        (275/1152, 25/288, 67/192, 25/288, 275/1152)
+
+        """
+        assert isinstance(npts, int)
+        assert npts > 0
+        if npts not in IntegratorArray.__open_newton:
+            nodes = NodeSample.open_linspace(npts, Fraction)
+            weights = IntegratorArray.bezier_integrator_array(nodes)
+            IntegratorArray.__open_newton[npts] = weights
+        return IntegratorArray.__open_newton[npts]
+
+    @staticmethod
+    def chebyshev(npts: int) -> Tuple[float]:
+        """Returns the weight array for integrate at chebyshev nodes
+
+        Example
+        ------------
+        >>> IntegratorArray.chebyshev(1)
+        (1, )
+        >>> IntegratorArray.chebyshev(2)
+        (1/2, 1/2)
+        >>> IntegratorArray.chebyshev(3)
+        (3/8, 1/4, 3/8)
+        >>> IntegratorArray.chebyshev(4)
+        (13/48, 11/48, 11/48, 13/48)
+        >>> IntegratorArray.chebyshev(5)
+        (275/1152, 25/288, 67/192, 25/288, 275/1152)
+
+        """
+        assert isinstance(npts, int)
+        assert 0 < npts
+        if npts not in IntegratorArray.__cheby:
+            nodes = NodeSample.chebyshev(npts)
+            weights = IntegratorArray.bezier_integrator_array(nodes)
+            IntegratorArray.__cheby[npts] = weights
+        return IntegratorArray.__cheby[npts]
+
+    @staticmethod
+    def gauss_legendre(npts: int) -> Tuple[float]:
+        """Returns the weight array for integrate at gauss nodes
+
+        Example
+        ------------
+        >>> IntegratorArray.chebyshev(1)
+        (1, )
+        >>> IntegratorArray.chebyshev(2)
+        (1/2, 1/2)
+        >>> IntegratorArray.chebyshev(3)
+        (3/8, 1/4, 3/8)
+        >>> IntegratorArray.chebyshev(4)
+        (13/48, 11/48, 11/48, 13/48)
+        >>> IntegratorArray.chebyshev(5)
+        (275/1152, 25/288, 67/192, 25/288, 275/1152)
+
+        """
+        assert isinstance(npts, int)
+        assert 0 < npts
+        if npts not in IntegratorArray.__gauss:
+            _, weights = np.polynomial.legendre.leggauss(npts)
+            IntegratorArray.__gauss[npts] = tuple(weights / 2)
+        return IntegratorArray.__gauss[npts]

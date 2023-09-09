@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from fractions import Fraction
 from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
@@ -365,7 +366,6 @@ class BaseCurve(Intface_BaseCurve):
     def degree(self, value: int):
         if not isinstance(value, int) or value < 0:
             raise ValueError(f"Cannot set degree {value}")
-        print(f"Setting degree from {self.degree} to {value}")
         times = value - self.degree
         if times == 0:
             return
@@ -1067,11 +1067,12 @@ class Curve(BaseCurve):
         nodes = []
         numbtype = heavy.number_type(knots)
         if numbtype in (float, np.floating):
-            funcnodes = heavy.LeastSquare.chebyshev_nodes
+            funcnodes = heavy.NodeSample.chebyshev
         else:
-            funcnodes = heavy.LeastSquare.uniform_nodes
+            funcnodes = heavy.NodeSample.open_linspace
+        nodes_0to1 = funcnodes(npts_each)
         for start, end in zip(knots[:-1], knots[1:]):
-            nodes += list(funcnodes(npts_each, start, end))
+            nodes += [start + (end - start) * node for node in nodes_0to1]
         nodes = tuple(nodes)
         funcvals = [function(node) for node in nodes]
         return self.fit_points(funcvals, nodes)
@@ -1115,7 +1116,12 @@ class Curve(BaseCurve):
         fitfunc = heavy.LeastSquare.fit_function
         if nodes is None:
             umin, umax = self.knotvector.limits
-            nodes = heavy.LeastSquare.linspace(umin, umax, len(points))
+            if isinstance(umin, (int, Fraction)):
+                funcnodes = heavy.NodeSample.closed_linspace
+            else:
+                funcnodes = heavy.NodeSample.chebyshev
+            nodes_0to1 = funcnodes(len(points))
+            nodes = tuple(umin + (umax - umin) * node for node in nodes_0to1)
         knotvector = tuple(self.knotvector)
         nodes = tuple(nodes)
         weights = None if self.weights is None else tuple(self.weights)

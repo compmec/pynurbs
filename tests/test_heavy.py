@@ -1,9 +1,10 @@
+import math
 from fractions import Fraction
 
 import numpy as np
 import pytest
 
-from compmec.nurbs.heavy import LeastSquare, Linalg, Math
+from compmec.nurbs.heavy import IntegratorArray, LeastSquare, Linalg, Math, NodeSample
 
 
 @pytest.mark.order(1)
@@ -403,7 +404,7 @@ class TestLinalg:
         pass
 
 
-class TestLeastSquare:
+class TestNodeSample:
     @pytest.mark.order(1)
     @pytest.mark.dependency(
         depends=["test_begin", "TestMath::test_end", "TestLinalg::test_end"]
@@ -412,78 +413,406 @@ class TestLeastSquare:
         pass
 
     @pytest.mark.order(1)
-    @pytest.mark.dependency(depends=["TestLeastSquare::test_begin"])
-    def test_chebyshev_nodes(self):
-        nodes = LeastSquare.chebyshev_nodes(1)
-        assert nodes[0] == 0.5
+    @pytest.mark.dependency(depends=["TestNodeSample::test_begin"])
+    def test_closed_linspace(self):
+        nodes = NodeSample.closed_linspace(2)
+        good = (0, 1)
+        assert nodes == good
 
-        nodes = LeastSquare.chebyshev_nodes(2)
-        assert abs(nodes[0] - (2 - np.sqrt(2)) / 4) < 1e-9
-        assert abs(nodes[1] - (2 + np.sqrt(2)) / 4) < 1e-9
+        nodes = NodeSample.closed_linspace(3)
+        good = (0, 1 / 2, 1)
+        assert nodes == good
 
-        nodes = LeastSquare.chebyshev_nodes(3)
-        assert abs(nodes[0] - (2 - np.sqrt(3)) / 4) < 1e-9
-        assert nodes[1] == 0.5
-        assert abs(nodes[2] - (2 + np.sqrt(3)) / 4) < 1e-9
+        nodes = NodeSample.closed_linspace(4)
+        nodes = np.array(nodes, dtype="float64")
+        good = (0, 1 / 3, 2 / 3, 1)
+        np.testing.assert_allclose(nodes, good)
+
+        nodes = NodeSample.closed_linspace(5)
+        good = (0, 1 / 4, 2 / 4, 3 / 4, 1)
+        assert nodes == good
 
     @pytest.mark.order(1)
-    @pytest.mark.dependency(depends=["TestLeastSquare::test_begin"])
-    def test_integral_value(self):
-        """
-        This is for testing the array LeastSquare.integrator_array
-        """
-        degree = 2  # Polynomial degree to integrate
-        coeffs = np.random.uniform(-1, 1, degree + 1)
+    @pytest.mark.dependency(depends=["TestNodeSample::test_begin"])
+    def test_open_linspace(self):
+        nodes = NodeSample.open_linspace(1)
+        good = (1 / 2,)
+        assert nodes == good
 
-        def func(x: float) -> float:
-            return sum([coef * x**i for i, coef in enumerate(coeffs)])
+        nodes = NodeSample.open_linspace(2)
+        good = (1 / 4, 3 / 4)
+        assert nodes == good
 
-        # Symbolic integral, since it's polynomial
-        symbintegral = sum([coef / (i + 1) for i, coef in enumerate(coeffs)])
+        nodes = NodeSample.open_linspace(3)
+        nodes = np.array(nodes, dtype="float64")
+        good = (1 / 6, 3 / 6, 5 / 6)
+        np.testing.assert_allclose(nodes, good)
 
-        npts = 10  # Number of integration points
-        nodes = LeastSquare.chebyshev_nodes(npts)
-        fvals = [func(xi) for xi in nodes]
-        integrator = LeastSquare.integrator_array(nodes)
-        numeintegral = np.array(integrator) @ fvals
-        assert np.abs(symbintegral - numeintegral) < 1e-9
+        nodes = NodeSample.open_linspace(4)
+        good = (1 / 8, 3 / 8, 5 / 8, 7 / 8)
+        assert nodes == good
+
+        nodes = NodeSample.open_linspace(5)
+        nodes = np.array(nodes, dtype="float64")
+        good = (1 / 10, 3 / 10, 5 / 10, 7 / 10, 9 / 10)
+        np.testing.assert_allclose(nodes, good)
+
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(depends=["TestNodeSample::test_begin"])
+    def test_chebyshev(self):
+        nodes = NodeSample.chebyshev(1)
+        assert nodes == (1 / 2,)
+
+        nodes = NodeSample.chebyshev(2)
+        left = (2 - np.sqrt(2)) / 4
+        right = (2 + np.sqrt(2)) / 4
+        good = (left, right)
+        np.testing.assert_allclose(nodes, good)
+
+        nodes = NodeSample.chebyshev(3)
+        left = (2 - np.sqrt(3)) / 4
+        right = (2 + np.sqrt(3)) / 4
+        good = (left, 1 / 2, right)
+        np.testing.assert_allclose(nodes, good)
+
+        nodes = NodeSample.chebyshev(4)
+        good = np.sin(np.pi * np.array([1 / 16, 3 / 16, 5 / 16, 7 / 16])) ** 2
+        np.testing.assert_allclose(nodes, good)
+
+        nodes = NodeSample.chebyshev(5)
+        good = np.sin(np.pi * np.array([1 / 20, 3 / 20, 5 / 20, 7 / 20, 9 / 20])) ** 2
+        np.testing.assert_allclose(nodes, good)
+
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(depends=["TestNodeSample::test_begin"])
+    def test_gauss_legendre(self):
+        nodes = NodeSample.gauss_legendre(1)
+        assert nodes == (1 / 2,)
+
+        nodes = NodeSample.gauss_legendre(2)
+        minor = 1 / np.sqrt(3)
+        good = [(1 - minor) / 2, (1 + minor) / 2]
+        np.testing.assert_allclose(nodes, good)
+
+        nodes = NodeSample.gauss_legendre(3)
+        minor = np.sqrt(3 / 5)
+        good = [(1 - minor) / 2, 1 / 2, (1 + minor) / 2]
+        np.testing.assert_allclose(nodes, good)
+
+        nodes = NodeSample.gauss_legendre(4)
+        minor = np.sqrt(3 / 7 + 2 * np.sqrt(6 / 5) / 7)
+        middl = np.sqrt(3 / 7 - 2 * np.sqrt(6 / 5) / 7)
+        good = [(1 - minor) / 2, (1 - middl) / 2, (1 + middl) / 2, (1 + minor) / 2]
+        np.testing.assert_allclose(nodes, good)
+
+        nodes = NodeSample.gauss_legendre(5)
+        minor = np.sqrt(5 + 2 * np.sqrt(10 / 7)) / 3
+        middl = np.sqrt(5 - 2 * np.sqrt(10 / 7)) / 3
+        good = [
+            (1 - minor) / 2,
+            (1 - middl) / 2,
+            1 / 2,
+            (1 + middl) / 2,
+            (1 + minor) / 2,
+        ]
+        np.testing.assert_allclose(nodes, good)
+
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(
+        depends=[
+            "TestNodeSample::test_begin",
+            "TestNodeSample::test_closed_linspace",
+            "TestNodeSample::test_open_linspace",
+            "TestNodeSample::test_chebyshev",
+            "TestNodeSample::test_gauss_legendre",
+        ]
+    )
+    def test_end(self):
+        pass
+
+
+class TestUnidimentionIntegral:
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(
+        depends=[
+            "test_begin",
+            "TestMath::test_end",
+            "TestLinalg::test_end",
+            "TestNodeSample::test_end",
+        ]
+    )
+    def test_begin(self):
+        pass
+
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(depends=["TestUnidimentionIntegral::test_begin"])
+    def test_closed_newton_cotes(self):
+        a, b = Fraction(3), Fraction(5)
+        for degree in range(0, 7):
+            npts = max(2, degree + 1)  # Number integration points
+            numers = np.random.randint(-5, 5, degree + 1)
+            denoms = np.random.randint(2, 8, degree + 1)
+            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            good = sum(
+                ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
+                for i, ci in enumerate(coefs)
+            )
+
+            nodes = NodeSample.closed_linspace(npts)
+            weights = IntegratorArray.closed_newton_cotes(npts)
+            nodes = tuple(a + (b - a) * node for node in nodes)
+            funcvals = tuple(
+                sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+            )
+            test = (b - a) * np.inner(weights, funcvals)
+
+            assert test == good
+
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(depends=["TestUnidimentionIntegral::test_begin"])
+    def test_open_newton_cotes(self):
+        a, b = Fraction(3), Fraction(5)
+        for degree in range(0, 7):
+            npts = degree + 1  # Number integration points
+            numers = np.random.randint(-5, 5, degree + 1)
+            denoms = np.random.randint(2, 8, degree + 1)
+            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            good = sum(
+                ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
+                for i, ci in enumerate(coefs)
+            )
+
+            nodes = NodeSample.open_linspace(npts)
+            weights = IntegratorArray.open_newton_cotes(npts)
+            nodes = tuple(a + (b - a) * node for node in nodes)
+            funcvals = tuple(
+                sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+            )
+            test = (b - a) * np.inner(weights, funcvals)
+
+            assert test == good
+
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(depends=["TestUnidimentionIntegral::test_begin"])
+    def test_chebyshev(self):
+        a, b = Fraction(3), Fraction(7)
+        for degree in range(0, 7):
+            npts = degree + 1  # Number integration points
+            numers = np.random.randint(-5, 5, degree + 1)
+            denoms = np.random.randint(2, 8, degree + 1)
+            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            good = sum(
+                ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
+                for i, ci in enumerate(coefs)
+            )
+
+            nodes = NodeSample.chebyshev(npts)
+            weights = IntegratorArray.chebyshev(npts)
+            nodes = tuple(a + (b - a) * node for node in nodes)
+            funcvals = tuple(
+                sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+            )
+            test = (b - a) * np.inner(weights, funcvals)
+
+            print("test = ", test, float(test))
+            print("good = ", good, float(good))
+            assert abs(test - good) < 1e-9
+
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(depends=["TestUnidimentionIntegral::test_begin"])
+    def test_gauss_legendre(self):
+        a, b = Fraction(3), Fraction(7)
+        for degree in range(0, 7):
+            npts = degree + 1  # Number integration points
+            numers = np.random.randint(-5, 5, degree + 1)
+            denoms = np.random.randint(2, 8, degree + 1)
+            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            good = sum(
+                ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
+                for i, ci in enumerate(coefs)
+            )
+
+            nodes = NodeSample.gauss_legendre(npts)
+            weights = IntegratorArray.gauss_legendre(npts)
+            nodes = tuple(a + (b - a) * node for node in nodes)
+            funcvals = tuple(
+                sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+            )
+            test = (b - a) * np.inner(weights, funcvals)
+
+            assert abs(test - good) < 1e-9
+
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(
+        depends=[
+            "TestUnidimentionIntegral::test_begin",
+            "TestUnidimentionIntegral::test_closed_newton_cotes",
+            "TestUnidimentionIntegral::test_open_newton_cotes",
+            "TestUnidimentionIntegral::test_chebyshev",
+            "TestUnidimentionIntegral::test_gauss_legendre",
+        ]
+    )
+    def test_exact_integral_fraction(self):
+        a, b = Fraction(3), Fraction(7)
+        for degree in range(0, 7):
+            npts = 1 + 2 * math.floor(degree / 2)  # Number integration points
+            numers = np.random.randint(-5, 5, degree + 1)
+            denoms = np.random.randint(2, 8, degree + 1)
+            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            good = sum(
+                ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
+                for i, ci in enumerate(coefs)
+            )
+
+            if npts > 1:
+                nodes = NodeSample.open_linspace(npts)
+                weights = IntegratorArray.open_newton_cotes(npts)
+                nodes = tuple(a + (b - a) * node for node in nodes)
+                funcvals = tuple(
+                    sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+                )
+                test = (b - a) * np.inner(weights, funcvals)
+                assert test == good
+
+            nodes = NodeSample.open_linspace(npts)
+            weights = IntegratorArray.open_newton_cotes(npts)
+            nodes = tuple(a + (b - a) * node for node in nodes)
+            funcvals = tuple(
+                sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+            )
+            test = (b - a) * np.inner(weights, funcvals)
+            assert test == good
+
+            nodes = NodeSample.chebyshev(npts)
+            weights = IntegratorArray.chebyshev(npts)
+            nodes = tuple(a + (b - a) * node for node in nodes)
+            funcvals = tuple(
+                sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+            )
+            test = (b - a) * np.inner(weights, funcvals)
+            assert abs(test - good) < 1e-9
+
+            nodes = NodeSample.gauss_legendre(npts)
+            weights = IntegratorArray.gauss_legendre(npts)
+            nodes = tuple(a + (b - a) * node for node in nodes)
+            funcvals = tuple(
+                sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+            )
+            test = (b - a) * np.inner(weights, funcvals)
+            assert abs(test - good) < 1e-9
+
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(
+        depends=[
+            "TestUnidimentionIntegral::test_begin",
+            "TestUnidimentionIntegral::test_closed_newton_cotes",
+            "TestUnidimentionIntegral::test_open_newton_cotes",
+            "TestUnidimentionIntegral::test_chebyshev",
+            "TestUnidimentionIntegral::test_gauss_legendre",
+            "TestUnidimentionIntegral::test_exact_integral_fraction",
+        ]
+    )
+    def test_approx_integral(self):
+        a, b = Fraction(3), Fraction(7)
+        for degree in range(0, 7):
+            npts = 1 + 2 * math.floor(degree / 2)  # Number integration points
+            coefs = np.random.uniform(-5, 6, degree + 1)
+            good = sum(
+                ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
+                for i, ci in enumerate(coefs)
+            )
+
+            if npts > 1:
+                nodes = NodeSample.open_linspace(npts)
+                weights = IntegratorArray.open_newton_cotes(npts)
+                nodes = tuple(a + (b - a) * node for node in nodes)
+                funcvals = tuple(
+                    sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+                )
+                test = (b - a) * np.inner(weights, funcvals)
+                assert abs(test - good) < 1e-9
+
+            nodes = NodeSample.open_linspace(npts)
+            weights = IntegratorArray.open_newton_cotes(npts)
+            nodes = tuple(a + (b - a) * node for node in nodes)
+            funcvals = tuple(
+                sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+            )
+            test = (b - a) * np.inner(weights, funcvals)
+            assert abs(test - good) < 1e-9
+
+            nodes = NodeSample.chebyshev(npts)
+            weights = IntegratorArray.chebyshev(npts)
+            nodes = tuple(a + (b - a) * node for node in nodes)
+            funcvals = tuple(
+                sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+            )
+            test = (b - a) * np.inner(weights, funcvals)
+            assert abs(test - good) < 1e-9
+
+            nodes = NodeSample.gauss_legendre(npts)
+            weights = IntegratorArray.gauss_legendre(npts)
+            nodes = tuple(a + (b - a) * node for node in nodes)
+            funcvals = tuple(
+                sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+            )
+            test = (b - a) * np.inner(weights, funcvals)
+            assert abs(test - good) < 1e-9
+
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(
+        depends=[
+            "TestUnidimentionIntegral::test_begin",
+            "TestUnidimentionIntegral::test_closed_newton_cotes",
+            "TestUnidimentionIntegral::test_open_newton_cotes",
+            "TestUnidimentionIntegral::test_chebyshev",
+            "TestUnidimentionIntegral::test_gauss_legendre",
+            "TestUnidimentionIntegral::test_exact_integral_fraction",
+            "TestUnidimentionIntegral::test_approx_integral",
+        ]
+    )
+    def test_end(self):
+        pass
+
+
+class TestLeastSquare:
+    @pytest.mark.order(1)
+    @pytest.mark.dependency(
+        depends=[
+            "test_begin",
+            "TestMath::test_end",
+            "TestLinalg::test_end",
+            "TestNodeSample::test_end",
+            "TestUnidimentionIntegral::test_end",
+        ]
+    )
+    def test_begin(self):
+        pass
 
     @pytest.mark.order(1)
     @pytest.mark.dependency(depends=["TestLeastSquare::test_begin"])
     def test_leastsquarespline_identity(self):
         U0 = [0, 0, 1, 1]
         U1 = [0, 0, 1, 1]
-        T, _ = LeastSquare.spline2spline(U0, U1)
+        T, E = LeastSquare.spline2spline(U0, U1)
         np.testing.assert_almost_equal(T, np.eye(2))
+        assert np.all(np.abs(E) < 1e-9)
 
         U0 = [0, 0, 0, 1, 1, 1]
         U1 = [0, 0, 0, 1, 1, 1]
-        T, _ = LeastSquare.spline2spline(U0, U1)
+        T, E = LeastSquare.spline2spline(U0, U1)
         np.testing.assert_almost_equal(T, np.eye(3))
+        assert np.all(np.abs(E) < 1e-9)
 
         U0 = [0, 0, 0, 0.5, 1, 1, 1]
         U1 = [0, 0, 0, 0.5, 1, 1, 1]
-        T, _ = LeastSquare.spline2spline(U0, U1)
+        T, E = LeastSquare.spline2spline(U0, U1)
         np.testing.assert_almost_equal(T, np.eye(4))
+        assert np.all(np.abs(E) < 1e-9)
 
     @pytest.mark.order(1)
     @pytest.mark.dependency(depends=["TestLeastSquare::test_begin"])
-    def test_leastsquarespline_error(self):
-        U0 = [0, 0, 1, 1]
-        U1 = [0, 0, 1, 1]  # Same curve
-        _, E = LeastSquare.spline2spline(U0, U1)
-        assert np.all(np.abs(E) < 1e-9)
-
-        U0 = [0, 0, 0, 1, 1, 1]
-        U1 = [0, 0, 0, 1, 1, 1]
-        _, E = LeastSquare.spline2spline(U0, U1)
-        assert np.all(np.abs(E) < 1e-9)
-
-        U0 = [0, 0, 0, 0.5, 1, 1, 1]
-        U1 = [0, 0, 0, 0.5, 1, 1, 1]
-        _, E = LeastSquare.spline2spline(U0, U1)
-        assert np.all(np.abs(E) < 1e-9)
-
+    def test_leastsquarespline_eval_error(self):
         # knot insertion
         U0 = [0, 0, 0, 1, 1, 1]
         U1 = [0, 0, 0, 0.5, 1, 1, 1]
@@ -500,10 +829,8 @@ class TestLeastSquare:
     @pytest.mark.dependency(
         depends=[
             "TestLeastSquare::test_begin",
-            "TestLeastSquare::test_chebyshev_nodes",
-            "TestLeastSquare::test_integral_value",
             "TestLeastSquare::test_leastsquarespline_identity",
-            "TestLeastSquare::test_leastsquarespline_error",
+            "TestLeastSquare::test_leastsquarespline_eval_error",
         ]
     )
     def test_end(self):
@@ -511,6 +838,14 @@ class TestLeastSquare:
 
 
 @pytest.mark.order(1)
-@pytest.mark.dependency(depends=["TestMath::test_end", "TestLeastSquare::test_end"])
+@pytest.mark.dependency(
+    depends=[
+        "TestMath::test_end",
+        "TestLinalg::test_end",
+        "TestNodeSample::test_end",
+        "TestUnidimentionIntegral::test_end",
+        "TestLeastSquare::test_end",
+    ]
+)
 def test_end():
     pass
