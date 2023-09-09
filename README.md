@@ -23,7 +23,7 @@ For now, it supports only 1D-objects (curves).
 * [X] Projection of point in curve
 * [X] Intersection of two curves
 * [X] Derivative of curves
-* [ ] Line Integral
+* [X] Line Integral
 * [X] Curve fitting
 * [X] Function fitting
 * [X] Points fitting
