@@ -1547,7 +1547,7 @@ class IntegratorArray:
         for k, uk in enumerate(nodes):
             for i in range(degree + 1):
                 matrix_bezier[i, k] = (
-                    math.comb(degree, i) * (1 - uk) ** (degree - i) * (uk**i)
+                    Math.comb(degree, i) * (1 - uk) ** (degree - i) * (uk**i)
                 )
         matrix_bezier = totuple(matrix_bezier)
         inverse = Linalg.invert(matrix_bezier)
