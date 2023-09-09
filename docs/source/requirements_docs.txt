@@ -3,3 +3,5 @@ compmec-nurbs>=1.0.0
 sphinx
 sphinx-rtd-theme
 sphinx-gallery
+sphinx-gallery
+sphinx-design
