@@ -123,7 +123,7 @@ class TestNumericalDeriv:
     def test_bezier(self):
         deltau = 1e-6
         usample = np.linspace(2 * deltau, 1 - 2 * deltau, 5)
-        for degree in range(1, 4):
+        for degree in range(0, 4):
             vector = GeneratorKnotVector.bezier(degree)
             curve = Curve(vector)
             points = np.random.uniform(-1, 1, curve.npts)
@@ -140,7 +140,7 @@ class TestNumericalDeriv:
     )
     def test_spline(self):
         deltau = 1e-6
-        for degree in range(1, 4):
+        for degree in range(0, 4):
             for npts in range(degree + 3, degree + 9):
                 vector = GeneratorKnotVector.uniform(degree, npts)
                 knots = vector.knots
@@ -169,7 +169,7 @@ class TestNumericalDeriv:
     def test_rationalbezier(self):
         deltau = 1e-6
         usample = np.linspace(2 * deltau, 1 - 2 * deltau, 5)
-        for degree in range(1, 4):
+        for degree in range(0, 4):
             vector = GeneratorKnotVector.bezier(degree)
             curve = Curve(vector)
             points = np.random.uniform(-1, 1, curve.npts)
@@ -194,7 +194,7 @@ class TestNumericalDeriv:
     )
     def test_rationalspline(self):
         deltau = 1e-6
-        for degree in range(1, 4):
+        for degree in range(0, 4):
             for npts in range(degree + 3, degree + 9):
                 vector = GeneratorKnotVector.uniform(degree, npts)
                 knots = vector.knots
@@ -310,7 +310,9 @@ class TestIntegBezier:
         curve.ctrlpoints = points
 
         test = Integrate.lenght(curve)
-        good = sum(np.linalg.norm(points[i+1] - points[i]) for i in range(curve.npts-1))
+        good = sum(
+            np.linalg.norm(points[i + 1] - points[i]) for i in range(curve.npts - 1)
+        )
 
         assert abs(test - good) < 1e-9
 

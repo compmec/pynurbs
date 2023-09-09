@@ -1,5 +1,5 @@
 from fractions import Fraction
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional
 
 import numpy as np
 
@@ -81,11 +81,6 @@ class Derivate:
         assert isinstance(curve, Curve)
         assert curve.weights is None
         assert curve.degree + 1 != curve.npts
-        if curve.degree == 0:
-            newknotvector = curve.knotvector.limits
-            anypoint = curve.ctrlpoints[0]
-            newctrlpoints = [0 * anypoint]
-            return Curve(newknotvector, newctrlpoints)
 
         knotvector = tuple(curve.knotvector)
         matrix = heavy.Calculus.derivate_nonrational_spline(knotvector)
@@ -216,8 +211,7 @@ class Integrate:
         method: Optional[str] = None,
         nnodes: Optional[int] = None,
     ) -> float:
-        """Computes the integral :math:`I`
-        Computes the integral :math:`I`
+        """Computes the integral I
 
         The operation ``@`` is needed cause ``norm(curve(u)) = numpy.sqrt(curve(u) @ curve(u))``
 
@@ -290,7 +284,7 @@ class Integrate:
         nnodes: Optional[int] = None,
     ) -> float:
         """Computes the integral I
-        
+
         .. math::
             I = \int_{a}^{b} g ( u ) \ du
 

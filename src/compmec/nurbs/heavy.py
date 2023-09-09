@@ -84,8 +84,6 @@ def number_type(number: Union[int, float, Fraction]):
     except TypeError:
         if isinstance(number, (int, np.integer)):
             return int
-        if isinstance(number, (float, np.floating)):
-            return float
         if isinstance(number, Fraction):
             return Fraction
         return float
@@ -1234,19 +1232,6 @@ class MathOperations:
         matrixa = Operations.matrix_transformation(knotvectora, knotvectorc)
         matrixb = Operations.matrix_transformation(knotvectorb, knotvectorc)
         return totuple(matrixa), totuple(matrixb)
-
-    @staticmethod
-    def sub_spline_curve(
-        knotvectora: Tuple[float], knotvectorb: Tuple[float]
-    ) -> Tuple["Matrix2D"]:
-        assert KnotVector.is_valid_vector(knotvectora)
-        assert KnotVector.is_valid_vector(knotvectorb)
-        assert knotvectora[0] == knotvectorb[0]
-        assert knotvectora[-1] == knotvectorb[-1]
-
-        matrixa, matrixb = MathOperations.add_spline_curve(knotvectora, knotvectorb)
-        matrixb = -np.array(matrixb, dtype="object")
-        return matrixa, totuple(matrixb)
 
     @staticmethod
     def mul_spline_curve(

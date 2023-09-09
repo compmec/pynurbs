@@ -992,8 +992,25 @@ class TestOthers:
                 assert tval == gval
 
     @pytest.mark.order(5)
+    @pytest.mark.timeout(10)
+    @pytest.mark.dependency(depends=["TestOthers::test_begin"])
+    def test_fraction_function(self):
+        knotvector = GeneratorKnotVector.uniform(3, 10)
+        curve = Curve(knotvector)
+        curve.ctrlpoints = np.random.uniform(-1, 1, curve.npts)
+
+        num, den = curve.fraction()
+        newcurve = num / den
+        assert curve == newcurve
+
+    @pytest.mark.order(5)
     @pytest.mark.dependency(
-        depends=["TestOthers::test_begin", "TestOthers::test_others"]
+        depends=[
+            "TestOthers::test_begin",
+            "TestOthers::test_others",
+            "TestOthers::test_fractions",
+            "TestOthers::test_fraction_function",
+        ]
     )
     def test_end(self):
         pass
@@ -1009,7 +1026,7 @@ class TestOthers:
         "TestSplitUnite::test_end",
         "TestDegreeOperations::test_end",
         "TestSumSubtract::test_end",
-        "TestOthers::test_others",
+        "TestOthers::test_end",
     ]
 )
 def test_end():
