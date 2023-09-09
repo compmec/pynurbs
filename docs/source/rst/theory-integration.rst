@@ -41,7 +41,7 @@ Although the polynomials are not described in canonical base, the values :math:`
 Integrator array
 ================
 
-The integral over :math:`\left[\bar{u}_j, \ \bar{u}_{j+1}\right]` can be transformed to an equivalent integral on :math:`\left[-1, \ 1\right]` by variable transformation. So we present the method for integrating in :math:`\left[-1, \ 1\right]`
+The integral over :math:`\left[\bar{u}_j, \ \bar{u}_{j+1}\right]` can be transformed to an equivalent integral on :math:`\left[0, \ 1\right]` by variable transformation. So we present the method for integrating in :math:`\left[0, \ 1\right]`
 
 Almost all methods are the same: transforms the integral as a sum of :math:`q` weights :math:`w_k` multiplied by function evaluation at specific nodes :math:`v_k`
 
@@ -57,15 +57,15 @@ We call the **Integrator array** instead of weights because it can confuse with 
 Closed Newton cotes
 -------------------
 
-The closed newton cotes formula states that :math:`v_k` are equally spaced points including the boundary :math:`\left[-1, 1\right]`
+The closed newton cotes formula states that :math:`v_k` are equally spaced points including the boundary :math:`\left[0, 1\right]`
 
 .. math::
-    v_k = -1 + \dfrac{2k}{q-1}
+    v_k = \dfrac{k}{q-1} \ \ \  \forall k = 0,  \ 1,  \  \cdots,  \ q-1
 
 .. math::
     \int_{\bar{u}_j}^{\bar{u}_{j+1}} f(u) \ du  = \sum_{k = 0}^{q-1} w_k \cdot f(v_k)
 
-.. list-table:: Nodes and weights for closed-newton-cotes in :math:`\left[-1, 1\right]`
+.. list-table:: Nodes and weights for closed-newton-cotes in :math:`\left[0, 1\right]`
     :widths: 20 20 20
     :header-rows: 1
     :align: center
@@ -74,14 +74,14 @@ The closed newton cotes formula states that :math:`v_k` are equally spaced point
       - Nodes :math:`v_k`
       - Weights :math:`w_k`
     * - :math:`2`
-      - :math:`-1`, :math:`1`
+      - :math:`0`, :math:`1`
       - :math:`1`, :math:`1`
     * - :math:`3`
-      - :math:`-1`,   :math:`0`,   :math:`1`
-      - :math:`\dfrac{1}{3}`,   :math:`\dfrac{4}{3}`,   :math:`\dfrac{1}{3}`
+      - :math:`0`,   :math:`\dfrac{1}{2}`,   :math:`1`
+      - :math:`\dfrac{1}{6}`,   :math:`\dfrac{2}{3}`,   :math:`\dfrac{1}{6}`
     * - :math:`4`
-      - :math:`-1`,   :math:`\dfrac{-1}{3}`,   :math:`\dfrac{1}{3}`, :math:`1`
-      - :math:`\dfrac{1}{4}`,   :math:`\dfrac{3}{4}`,   :math:`\dfrac{3}{4}`,   :math:`\dfrac{1}{4}`
+      - :math:`0`,   :math:`\dfrac{1}{3}`,   :math:`\dfrac{2}{3}`, :math:`1`
+      - :math:`\dfrac{1}{8}`,   :math:`\dfrac{3}{8}`,   :math:`\dfrac{3}{8}`,   :math:`\dfrac{1}{8}`
 
 The code bellow is an algorithm that uses ``sympy`` to compute the **integrator array** (called as ``weights``) from given nodes. That code can be used for other formulas like **Open Newton Cotes**.
 
@@ -106,7 +106,7 @@ The code bellow is an algorithm that uses ``sympy`` to compute the **integrator 
         return weights
 
     # Closed newton cotes
-    a, b = -1, 1
+    a, b = 0, 1
     print("Closed newton cotes")
     for q in range(2, 5):
         print(f"For q = {q}")
@@ -144,13 +144,13 @@ The nodes and weights are in the table bellow and can be obtained by ``numpy`` (
       - Weights :math:`w_k`
     * - :math:`1`
       - :math:`0`
-      - :math:`2`
+      - :math:`1`
     * - :math:`2`
-      - :math:`-\dfrac{1}{\sqrt{3}}`, :math:`\dfrac{1}{\sqrt{3}}`
-      - :math:`1`, :math:`1`
+      - :math:`\dfrac{1}{2}\left(1-\dfrac{1}{\sqrt{3}}\right)`, :math:`\dfrac{1}{2}\left(1+\dfrac{1}{\sqrt{3}}\right)`
+      - :math:`\dfrac{1}{2}`, :math:`\dfrac{1}{2}`
     * - :math:`3`
-      - :math:`-\sqrt{\dfrac{3}{5}}`,   :math:`0`,   :math:`\sqrt{\dfrac{3}{5}}`
-      - :math:`\dfrac{5}{9}`,   :math:`\dfrac{8}{9}`,   :math:`\dfrac{5}{9}`
+      - :math:`\dfrac{1}{2}\left(1-\sqrt{\dfrac{3}{5}}\right)`,   :math:`\dfrac{1}{2}`,   :math:`\dfrac{1}{2}\left(1+\sqrt{\dfrac{3}{5}}\right)`
+      - :math:`\dfrac{5}{18}`,   :math:`\dfrac{4}{9}`,   :math:`\dfrac{5}{18}`
 
 The python code bellow finds the **nodes** and the **integrator array** (``weights``) 
 
@@ -160,6 +160,8 @@ The python code bellow finds the **nodes** and the **integrator array** (``weigh
 
     for q in range(1, 4):
         nodes, weights = np.polynomial.legendre.leggauss(q)
+        nodes = (1+nodes)/2
+        weights /= 2
         print("  nodes = ", nodes)
         print("weights = ", weights)
 

@@ -70,7 +70,7 @@ Although above the function :math:`B_{i,p}(u)` is described only by :math:`p`, b
 
     .. image:: ../img/basis-functions/bezier-basisfunction-p1.svg
         :width: 100 %
-        :alt: Basis functions for bezier of degree 1
+        :alt: Uniform basis functions for bezier of degree 1
         :align: center
 
 .. dropdown:: Basis functions for degree :math:`p=2`
@@ -189,55 +189,55 @@ Use example
 
 
 
-.. dropdown:: Basis functions for degree :math:`p=0` and :math:`\text{npts}=6`
+.. dropdown:: Uniform basis functions for degree :math:`p=0` and :math:`\text{npts}=6`
 
     .. math::
         \mathbf{U} = \left(0, \ \dfrac{1}{6}, \ \dfrac{2}{6}, \ \dfrac{3}{6}, \ \dfrac{4}{6}, \ \dfrac{5}{6}, \ 1\right)
 
     .. image:: ../img/basis-functions/splines-basisfunction-p0n6.svg
         :width: 100 %
-        :alt: Basis functions for splines of degree 0
+        :alt: Uniform basis functions for splines of degree 0
         :align: center
 
-.. dropdown:: Basis functions for degree :math:`p=1` and :math:`\text{npts}=6`
+.. dropdown:: Uniform basis functions for degree :math:`p=1` and :math:`\text{npts}=6`
 
     .. math::
         \mathbf{U} = \left(0, \ 0, \ \dfrac{1}{5}, \ \dfrac{2}{5}, \ \dfrac{3}{5}, \ \dfrac{4}{5}\ 1, \ 1 \right)
 
     .. image:: ../img/basis-functions/splines-basisfunction-p1n6.svg
         :width: 100 %
-        :alt: Basis functions for splines of degree 1
+        :alt: Uniform basis functions for splines of degree 1
         :align: center
 
-.. dropdown:: Basis functions for degree :math:`p=2` and :math:`\text{npts}=6`
+.. dropdown:: Uniform basis functions for degree :math:`p=2` and :math:`\text{npts}=6`
 
     .. math::
         \mathbf{U} = \left(0, \ 0, \ 0, \ \dfrac{1}{4}, \ \dfrac{2}{4}, \ \dfrac{3}{4}, \ 1, \ 1,  \ 1 \right)
 
     .. image:: ../img/basis-functions/splines-basisfunction-p2n6.svg
         :width: 100 %
-        :alt: Basis functions for splines of degree 2
+        :alt: Uniform basis functions for splines of degree 2
         :align: center
 
-.. dropdown:: Basis functions for degree :math:`p=3` and :math:`\text{npts}=6`
+.. dropdown:: Uniform basis functions for degree :math:`p=3` and :math:`\text{npts}=6`
 
     .. math::
         \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ \dfrac{1}{3}, \ \dfrac{2}{3}, \ 1, \ 1,  \ 1, \ 1 \right)
 
     .. image:: ../img/basis-functions/splines-basisfunction-p3n6.svg
         :width: 100 %
-        :alt: Basis functions for splines of degree 3
+        :alt: Uniform basis functions for splines of degree 3
         :align: center
 
 
-.. dropdown:: Basis functions for degree :math:`p=4` and :math:`\text{npts}=6`
+.. dropdown:: Uniform basis functions for degree :math:`p=4` and :math:`\text{npts}=6`
 
     .. math::
         \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ 0, \ \dfrac{1}{2}, \ 1, \ 1, \ 1,  \ 1, \ 1 \right)
 
     .. image:: ../img/basis-functions/splines-basisfunction-p4n6.svg
         :width: 100 %
-        :alt: Basis functions for splines of degree 4
+        :alt: Uniform basis functions for splines of degree 4
         :align: center
 
 .. dropdown:: Code to generate all the spline basis functions
@@ -318,7 +318,7 @@ Use example
 
 
 
-.. dropdown:: Basis functions for degree :math:`p=0` and :math:`\text{npts}=6`
+.. dropdown:: Uniform basis functions for degree :math:`p=0` and :math:`\text{npts}=6`
 
     .. math::
         \mathbf{U} = \left(0, \ \dfrac{1}{6}, \ \dfrac{2}{6}, \ \dfrac{3}{6}, \ \dfrac{4}{6}, \ \dfrac{5}{6}, \ 1\right)
@@ -328,10 +328,10 @@ Use example
 
     .. image:: ../img/basis-functions/rational-basisfunction-p0n6.svg
         :width: 100 %
-        :alt: Basis functions for rational splines of degree 0
+        :alt: Uniform basis functions for rational splines of degree 0
         :align: center
 
-.. dropdown:: Basis functions for degree :math:`p=1` and :math:`\text{npts}=6`
+.. dropdown:: Uniform basis functions for degree :math:`p=1` and :math:`\text{npts}=6`
 
     .. math::
         \mathbf{U} = \left(0, \ 0, \ \dfrac{1}{5}, \ \dfrac{2}{5}, \ \dfrac{3}{5}, \ \dfrac{4}{5}\ 1, \ 1 \right)
@@ -341,10 +341,10 @@ Use example
 
     .. image:: ../img/basis-functions/rational-basisfunction-p1n6.svg
         :width: 100 %
-        :alt: Basis functions for rational splines of degree 1
+        :alt: Uniform basis functions for rational splines of degree 1
         :align: center
 
-.. dropdown:: Basis functions for degree :math:`p=2` and :math:`\text{npts}=6`
+.. dropdown:: Uniform basis functions for degree :math:`p=2` and :math:`\text{npts}=6`
 
     .. math::
         \mathbf{U} = \left(0, \ 0, \ 0, \ \dfrac{1}{4}, \ \dfrac{2}{4}, \ \dfrac{3}{4}, \ 1, \ 1,  \ 1 \right)
@@ -354,10 +354,10 @@ Use example
 
     .. image:: ../img/basis-functions/rational-basisfunction-p2n6.svg
         :width: 100 %
-        :alt: Basis functions for splines of degree 2
+        :alt: Uniform basis functions for splines of degree 2
         :align: center
 
-.. dropdown:: Basis functions for degree :math:`p=3` and :math:`\text{npts}=6`
+.. dropdown:: Uniform basis functions for degree :math:`p=3` and :math:`\text{npts}=6`
 
     .. math::
         \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ \dfrac{1}{3}, \ \dfrac{2}{3}, \ 1, \ 1,  \ 1, \ 1 \right)
@@ -367,11 +367,11 @@ Use example
 
     .. image:: ../img/basis-functions/rational-basisfunction-p3n6.svg
         :width: 100 %
-        :alt: Basis functions for rational splines of degree 3
+        :alt: Uniform basis functions for rational splines of degree 3
         :align: center
 
 
-.. dropdown:: Basis functions for degree :math:`p=4` and :math:`\text{npts}=6`
+.. dropdown:: Uniform basis functions for degree :math:`p=4` and :math:`\text{npts}=6`
 
     .. math::
         \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ 0, \ \dfrac{1}{2}, \ 1, \ 1, \ 1,  \ 1, \ 1 \right)
@@ -381,7 +381,7 @@ Use example
 
     .. image:: ../img/basis-functions/rational-basisfunction-p4n6.svg
         :width: 100 %
-        :alt: Basis functions for rational splines of degree 4
+        :alt: Uniform basis functions for rational splines of degree 4
         :align: center
 
 .. dropdown:: Code to generate all the rational spline basis functions
@@ -419,3 +419,185 @@ Use example
                     ax.grid()
             fig.tight_layout()
             plt.savefig("rational-basisfunction-p%dn%d.svg"%(degree, nptsmax))
+
+
+
+-----------------------------------------------------------------------
+
+-----------------------------
+Inserting knots in knotvector
+-----------------------------
+
+We get an specific case and start inserting knots at center to see what happens with the basis functions
+
+We start with the bezier of degree 3
+
+.. math::
+    \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ 1, \ 1,  \ 1, \ 1 \right)
+
+.. image:: ../img/basis-functions/insertion_p3step0.svg
+    :width: 100 %
+    :alt: Initial basis functions of test
+    :align: center
+
+
+.. math::
+    \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ 0.5, \ 1, \ 1,  \ 1, \ 1 \right)
+
+.. image:: ../img/basis-functions/insertion_p3step1.svg
+    :width: 100 %
+    :alt: Initial basis functions of test
+    :align: center
+
+
+.. math::
+    \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ 0.5,\ 0.5, \ 1, \ 1,  \ 1, \ 1 \right)
+
+.. image:: ../img/basis-functions/insertion_p3step2.svg
+    :width: 100 %
+    :alt: Initial basis functions of test
+    :align: center
+
+
+.. math::
+    \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ 0.5,\ 0.5, \ 0.5, \ 1, \ 1,  \ 1, \ 1 \right)
+
+.. image:: ../img/basis-functions/insertion_p3step3.svg
+    :width: 100 %
+    :alt: Initial basis functions of test
+    :align: center
+
+.. math::
+    \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ 0.5, \ 0.5,\ 0.5, \ 0.5, \ 1, \ 1,  \ 1, \ 1 \right)
+
+.. image:: ../img/basis-functions/insertion_p3step4.svg
+    :width: 100 %
+    :alt: Initial basis functions of test
+    :align: center
+
+
+.. dropdown:: Code to plot
+
+    
+    .. code-block:: python
+
+        import numpy as np
+        from matplotlib import pyplot as plt
+        from compmec.nurbs import GeneratorKnotVector, Function
+
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        colors = prop_cycle.by_key()['color']
+        uplot = np.linspace(0, 1, 1029)
+
+        knotvector = GeneratorKnotVector.bezier(3)
+        knots_insert = [0.5, 0.5, 0.5, 0.5, 0.75]
+        for k, knot in enumerate(knots_insert):
+            nfigsx = knotvector.npts
+            sizex = nfigsx*4
+            sizey = 3
+            fig, axs = plt.subplots(1, nfigsx, figsize=(sizex,sizey))
+            function = Function(knotvector)
+            allvalues = function(uplot)
+            for i, values in enumerate(allvalues):
+                label = r"$N_{%d,%d}$"%(i,knotvector.degree)
+                color = colors[i]
+                ax = axs[i]
+                ax.plot(uplot, values, label=label, linewidth=3,color=color)
+                ax.set_xlim(-0.1, 1.1)
+                ax.set_ylim(-0.1, 1.1)
+                ax.legend()
+                ax.grid()
+            fig.tight_layout()
+            plt.savefig("insertion_p%dstep%d.svg"%(knotvector.degree, k))
+            knotvector.insert([knot])
+
+-----------------------------------------------------------------------
+
+-------------------
+Non uniform splines
+-------------------
+
+This section shows the basis function when the knotvector is not uniform.
+
+We do it by inserting the knot :math:`0.25` many times by starting with a bezier curve of degree 3
+
+
+
+.. math::
+    \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ 1, \ 1,  \ 1, \ 1 \right)
+
+.. image:: ../img/basis-functions/insertion025_p3step0.svg
+    :width: 100 %
+    :alt: Initial basis functions of test
+    :align: center
+
+
+.. math::
+    \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ 0.25, \ 1, \ 1,  \ 1, \ 1 \right)
+
+.. image:: ../img/basis-functions/insertion025_p3step1.svg
+    :width: 100 %
+    :alt: Initial basis functions of test
+    :align: center
+
+
+.. math::
+    \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ 0.25,\ 0.25, \ 1, \ 1,  \ 1, \ 1 \right)
+
+.. image:: ../img/basis-functions/insertion025_p3step2.svg
+    :width: 100 %
+    :alt: Initial basis functions of test
+    :align: center
+
+
+.. math::
+    \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ 0.25,\ 0.25, \ 0.25, \ 1, \ 1,  \ 1, \ 1 \right)
+
+.. image:: ../img/basis-functions/insertion025_p3step3.svg
+    :width: 100 %
+    :alt: Initial basis functions of test
+    :align: center
+
+.. math::
+    \mathbf{U} = \left(0, \ 0, \ 0, \ 0, \ 0.25, \ 0.25,\ 0.25, \ 0.25, \ 1, \ 1,  \ 1, \ 1 \right)
+
+.. image:: ../img/basis-functions/insertion025_p3step4.svg
+    :width: 100 %
+    :alt: Initial basis functions of test
+    :align: center
+
+
+.. dropdown:: Code to plot
+
+    
+    .. code-block:: python
+
+        import numpy as np
+        from matplotlib import pyplot as plt
+        from compmec.nurbs import GeneratorKnotVector, Function
+
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        colors = prop_cycle.by_key()['color']
+        uplot = np.linspace(0, 1, 1029)
+
+        knotvector = GeneratorKnotVector.bezier(3)
+        knots_insert = [0.25, 0.25, 0.25, 0.25, 0.75]
+        for k, knot in enumerate(knots_insert):
+            nfigsx = knotvector.npts
+            sizex = nfigsx*4
+            sizey = 3
+            fig, axs = plt.subplots(1, nfigsx, figsize=(sizex,sizey))
+            function = Function(knotvector)
+            allvalues = function(uplot)
+            for i, values in enumerate(allvalues):
+                label = r"$N_{%d,%d}$"%(i,knotvector.degree)
+                color = colors[i]
+                ax = axs[i]
+                ax.plot(uplot, values, label=label, linewidth=3,color=color)
+                ax.set_xlim(-0.1, 1.1)
+                ax.set_ylim(-0.1, 1.1)
+                ax.legend()
+                ax.grid()
+            fig.tight_layout()
+            plt.savefig("insertion025_p%dstep%d.svg"%(knotvector.degree, k))
+            knotvector.insert([knot])
