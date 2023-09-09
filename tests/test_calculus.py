@@ -3,10 +3,12 @@ This file is responsible to testing the code inside the file ```calculus.py```
 Its functions are getting derivatives, computing integrals along curves and so on
 """
 
+from fractions import Fraction
+
 import numpy as np
 import pytest
 
-from compmec.nurbs.calculus import Derivate
+from compmec.nurbs.calculus import Derivate, Integrate
 from compmec.nurbs.curves import Curve
 from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
 
@@ -26,15 +28,15 @@ def test_begin():
     pass
 
 
-class TestBezier:
+class TestDerivBezier:
     @pytest.mark.order(7)
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
 
     @pytest.mark.order(7)
-    @pytest.mark.dependency(depends=["TestBezier::test_begin"])
-    def test_derivative_bezier_degree1(self):
+    @pytest.mark.dependency(depends=["TestDerivBezier::test_begin"])
+    def test_bezier_degree1(self):
         curve = Curve(GeneratorKnotVector.bezier(1))
         P = np.random.uniform(-1, 1, curve.npts)
         curve.ctrlpoints = P
@@ -46,8 +48,8 @@ class TestBezier:
         assert test_curve == good_curve
 
     @pytest.mark.order(7)
-    @pytest.mark.dependency(depends=["TestBezier::test_derivative_bezier_degree1"])
-    def test_derivative_bezier_degree2(self):
+    @pytest.mark.dependency(depends=["TestDerivBezier::test_bezier_degree1"])
+    def test_bezier_degree2(self):
         curve = Curve(GeneratorKnotVector.bezier(2))
         P = np.random.uniform(-1, 1, curve.npts)
         curve.ctrlpoints = P
@@ -60,8 +62,8 @@ class TestBezier:
         assert test_curve == good_curve
 
     @pytest.mark.order(7)
-    @pytest.mark.dependency(depends=["TestBezier::test_derivative_bezier_degree2"])
-    def test_derivative_bezier_degree3(self):
+    @pytest.mark.dependency(depends=["TestDerivBezier::test_bezier_degree2"])
+    def test_bezier_degree3(self):
         curve = Curve(GeneratorKnotVector.bezier(3))
         P = np.random.uniform(-1, 1, curve.npts)
         curve.ctrlpoints = P
@@ -78,7 +80,7 @@ class TestBezier:
         assert test_curve == good_curve
 
     @pytest.mark.order(7)
-    @pytest.mark.dependency(depends=["TestBezier::test_derivative_bezier_degree2"])
+    @pytest.mark.dependency(depends=["TestDerivBezier::test_bezier_degree2"])
     def test_random_degree(self):
         for degree in range(1, 7):
             vector = GeneratorKnotVector.bezier(degree)
@@ -99,11 +101,11 @@ class TestBezier:
     @pytest.mark.order(7)
     @pytest.mark.dependency(
         depends=[
-            "TestBezier::test_begin",
-            "TestBezier::test_derivative_bezier_degree1",
-            "TestBezier::test_derivative_bezier_degree2",
-            "TestBezier::test_derivative_bezier_degree3",
-            "TestBezier::test_random_degree",
+            "TestDerivBezier::test_begin",
+            "TestDerivBezier::test_bezier_degree1",
+            "TestDerivBezier::test_bezier_degree2",
+            "TestDerivBezier::test_bezier_degree3",
+            "TestDerivBezier::test_random_degree",
         ]
     )
     def test_end(self):
@@ -225,7 +227,7 @@ class TestNumericalDeriv:
 
 
 @pytest.mark.order(7)
-@pytest.mark.dependency(depends=["TestBezier::test_end"])
+@pytest.mark.dependency(depends=["TestDerivBezier::test_end"])
 def test_derivate_integers_knotvector():
     knotvector = [0, 0, 1, 2, 3, 4, 5, 5]
     knotvector = KnotVector(knotvector)
@@ -241,7 +243,7 @@ def test_derivate_integers_knotvector():
 
 
 @pytest.mark.order(7)
-@pytest.mark.dependency(depends=["TestBezier::test_end"])
+@pytest.mark.dependency(depends=["TestDerivBezier::test_end"])
 def test_example31page94nurbsbook():
     # Example 3.1 at page 94 of Nurbs book
     knotvector = KnotVector([0, 0, 0, 2 / 5, 3 / 5, 1, 1, 1])
@@ -261,14 +263,129 @@ def test_example31page94nurbsbook():
     assert test_curve == good_curve
 
 
+class TestIntegBezier:
+    @pytest.mark.order(7)
+    @pytest.mark.dependency(depends=["test_begin"])
+    def test_begin(self):
+        pass
+
+    @pytest.mark.order(7)
+    @pytest.mark.dependency(depends=["TestIntegBezier::test_begin"])
+    def test_scalar_integral(self):
+        curve = Curve(GeneratorKnotVector.bezier(1))
+        points = np.random.uniform(-1, 1, curve.npts)
+        curve.ctrlpoints = points
+        test = Integrate.scalar(curve)
+        good = sum(points) / 2
+        assert abs(test - good) < 1e-9
+
+        curve = Curve(GeneratorKnotVector.bezier(2))
+        points = np.random.uniform(-1, 1, curve.npts)
+        curve.ctrlpoints = points
+        test = Integrate.scalar(curve)
+        good = sum(points) / 3
+        assert abs(test - good) < 1e-9
+
+        curve = Curve(GeneratorKnotVector.bezier(3))
+        points = np.random.uniform(-1, 1, curve.npts)
+        curve.ctrlpoints = points
+        test = Integrate.scalar(curve)
+        good = sum(points) / 4
+        assert abs(test - good) < 1e-9
+
+    @pytest.mark.order(7)
+    @pytest.mark.dependency(depends=["TestIntegBezier::test_begin"])
+    def test_lenght_integral(self):
+        curve = Curve(GeneratorKnotVector.bezier(1))
+        points = np.random.uniform(-1, 1, (curve.npts, 2))
+        curve.ctrlpoints = points
+
+        test = Integrate.lenght(curve)
+        good = np.linalg.norm(points[1] - points[0])
+
+        assert abs(test - good) < 1e-9
+
+        curve = Curve(GeneratorKnotVector.uniform(1, 3))
+        points = np.random.uniform(-1, 1, (curve.npts, 2))
+        curve.ctrlpoints = points
+
+        test = Integrate.lenght(curve)
+        good = sum(np.linalg.norm(points[i+1] - points[i]) for i in range(curve.npts-1))
+
+        assert abs(test - good) < 1e-9
+
+    @pytest.mark.order(7)
+    @pytest.mark.dependency(depends=["TestIntegBezier::test_begin"])
+    def test_winding_number(self):
+        knotvector = GeneratorKnotVector.uniform(1, 5)
+        curvex = Curve(knotvector, [1, 0, -1, 0, 1])
+        curvey = Curve(knotvector, [0, 1, 0, -1, 0])
+        dcurvex = Derivate(curvex)
+        dcurvey = Derivate(curvey)
+
+        numer = lambda u: curvex(u) * dcurvey(u) - curvey(u) * dcurvex(u)
+        denom = lambda u: 2 * np.pi * (curvex(u) ** 2 + curvey(u) ** 2)
+        function = lambda u: numer(u) / denom(u)
+
+        test = Integrate.function(knotvector, function, "chebyshev")
+        assert abs(test - 1) < 2e-1
+        test = Integrate.function(knotvector, function, nnodes=5)
+        assert abs(test - 1) < 1e-3
+        test = Integrate.function(knotvector, function, "chebyshev", 5)
+        assert abs(test - 1) < 1e-3
+        test = Integrate.function(knotvector, function, "gauss-legendre", 5)
+        assert abs(test - 1) < 1e-3
+        test = Integrate.function(knotvector, function, "chebyshev", 7)
+        assert abs(test - 1) < 1e-3
+        test = Integrate.function(knotvector, function, "gauss-legendre", 7)
+        assert abs(test - 1) < 1e-3
+
+        knotvector = GeneratorKnotVector.uniform(1, 5, Fraction)
+        curvex = Curve(knotvector, [1, 0, -1, 0, 1])
+        curvey = Curve(knotvector, [0, 1, 0, -1, 0])
+        new_knots = [Fraction(1, 8), Fraction(3, 8), Fraction(5, 8), Fraction(7, 8)]
+        curvex.knot_insert(new_knots)
+        curvey.knot_insert(new_knots)
+        knotvector += new_knots
+        dcurvex = Derivate(curvex)
+        dcurvey = Derivate(curvey)
+
+        numer = lambda u: curvex(u) * dcurvey(u) - curvey(u) * dcurvex(u)
+        denom = lambda u: curvex(u) ** 2 + curvey(u) ** 2
+        function = lambda u: numer(u) / denom(u)
+
+        test = Integrate.function(knotvector, function, "closed-newton-cotes", 6)
+        assert abs(test - 2 * np.pi) < 1e-3
+        test = Integrate.function(knotvector, function, "open-newton-cotes", 6)
+        assert abs(test - 2 * np.pi) < 1e-3
+
+        test = Integrate.function(knotvector, function, "closed-newton-cotes")
+        assert abs(test - 2 * np.pi) < 1
+        test = Integrate.function(knotvector, function, "open-newton-cotes")
+        assert abs(test - 2 * np.pi) < 1
+
+    @pytest.mark.order(7)
+    @pytest.mark.dependency(
+        depends=[
+            "TestIntegBezier::test_begin",
+            "TestIntegBezier::test_scalar_integral",
+            "TestIntegBezier::test_lenght_integral",
+            "TestIntegBezier::test_winding_number",
+        ]
+    )
+    def test_end(self):
+        pass
+
+
 @pytest.mark.order(7)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
-        "TestBezier::test_end",
+        "TestDerivBezier::test_end",
         "TestNumericalDeriv::test_end",
         "test_derivate_integers_knotvector",
         "test_example31page94nurbsbook",
+        "TestIntegBezier::test_end",
     ]
 )
 def test_end():

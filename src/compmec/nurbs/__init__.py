@@ -1,5 +1,5 @@
 from compmec.nurbs.advanced import Intersection, Projection
-from compmec.nurbs.calculus import Derivate
+from compmec.nurbs.calculus import Derivate, Integrate
 from compmec.nurbs.curves import Curve
 from compmec.nurbs.functions import Function
 from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector

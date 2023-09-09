@@ -1,7 +1,11 @@
+from fractions import Fraction
+from typing import Any, Callable, Optional, Tuple
+
 import numpy as np
 
 from compmec.nurbs import heavy
 from compmec.nurbs.curves import Curve
+from compmec.nurbs.knotspace import KnotVector
 
 
 class Derivate:
@@ -103,4 +107,245 @@ class Derivate:
 
 
 class Integrate:
-    pass
+    @staticmethod
+    def scalar(
+        curve: Curve,
+        function: Optional[Callable[[float], Any]] = None,
+        method: Optional[str] = None,
+        nnodes: Optional[int] = None,
+    ) -> float:
+        """Computes the integral I
+
+        If no ``function`` is given, it supposes that :math:`g(u)=1`
+
+        If no ``method = (algo, npts)`` is given
+
+        * If ``knotvector`` number type is ``int`` or ``Fraction``
+            * ``npts = 1 + curve.degree``
+            * ``algo = "closed-newton-cotes"``
+        * Else
+            * ``npts = 1 + curve.degree``
+            * ``algo = "chebyshev"``
+
+        Valid algorithms ``algo`` are ``closed-newton-cotes``, ``open-newton-cotes``, ``chebyshev`` or ``gauss-legendre``
+
+        :param curve: The curve :math:`\mathbf{C}(u)` to integrate
+        :type curve: Curve
+        :param function: The weight function :math:`g(u)`, defaults to ``None``
+        :type function: None | callable[[float], Any](, optional)
+        :param method: The integration method, defaults to ``None``
+        :type method: None | tuple[str, int](, optional)
+
+        """
+        nodes_functs = {
+            "closed-newton-cotes": heavy.NodeSample.closed_linspace,
+            "open-newton-cotes": heavy.NodeSample.open_linspace,
+            "chebyshev": heavy.NodeSample.chebyshev,
+            "gauss-legendre": heavy.NodeSample.gauss_legendre,
+        }
+        array_functs = {
+            "closed-newton-cotes": heavy.IntegratorArray.closed_newton_cotes,
+            "open-newton-cotes": heavy.IntegratorArray.open_newton_cotes,
+            "chebyshev": heavy.IntegratorArray.chebyshev,
+            "gauss-legendre": heavy.IntegratorArray.gauss_legendre,
+        }
+        assert isinstance(curve, Curve)
+        if function is None:
+            function = lambda u: 1
+        if method is not None:
+            pass
+        elif isinstance(curve.knotvector[0], (int, Fraction)):
+            method = "open-newton-cotes"
+        else:
+            method = "chebyshev"
+        if nnodes is None:
+            nnodes = 1 + curve.degree
+        nodes_func = nodes_functs[method]
+        integ_array_func = array_functs[method]
+        nodes_0to1 = nodes_func(nnodes)
+        integ_array = integ_array_func(nnodes)
+        knots = curve.knotvector.knots
+        integrals = []
+        for start, end in zip(knots[:-1], knots[1:]):
+            nodes = tuple(start + (end - start) * node for node in nodes_0to1)
+            curve_vals = tuple(curve.eval(node) for node in nodes)
+            function_vals = tuple(function(node) for node in nodes)
+            new_integral = sum(
+                map(np.prod, zip(integ_array, function_vals, curve_vals))
+            )
+            integrals.append((end - start) * new_integral)
+        return sum(integrals)
+
+    @staticmethod
+    def lenght(
+        curve: Curve,
+        function: Optional[Callable[[float], Any]] = None,
+        method: Optional[str] = None,
+        nnodes: Optional[int] = None,
+    ) -> float:
+        """Computes the integral I
+
+        The operation ``@`` is needed cause ``norm(curve(u)) = numpy.sqrt(curve(u) @ curve(u))``
+
+        If no ``function`` is given, it supposes that :math:`g(u)=1`
+
+        If ``method == None``:
+            * If ``knotvector`` number type is ``int`` or ``Fraction``
+                * ``method = "closed-newton-cotes"``
+            * Else
+                * ``npts = 1 + curve.degree``
+                * ``method = "chebyshev"``
+
+        Valid algorithms ``algo`` are ``closed-newton-cotes``, ``open-newton-cotes``, ``chebyshev`` or ``gauss-legendre``
+
+        :param curve: The curve :math:`\mathbf{C}(u)` to integrate
+        :type curve: Curve
+        :param function: The weight function :math:`g(u)`, defaults to ``None``
+        :type function: None | callable[[float], Any](, optional)
+        :param method: The integration method, defaults to ``None``
+        :type method: None | tuple[str, int](, optional)
+
+        """
+        dcurve = Derivate.curve(curve)
+        return Integrate.density(dcurve, function, method, nnodes)
+
+    @staticmethod
+    def density(
+        curve: Curve,
+        function: Optional[Callable[[float], Any]] = None,
+        method: Optional[str] = None,
+        nnodes: Optional[int] = None,
+    ) -> float:
+        """Computes the integral :math:`I`
+        Computes the integral :math:`I`
+
+        The operation ``@`` is needed cause ``norm(curve(u)) = numpy.sqrt(curve(u) @ curve(u))``
+
+        If no ``function`` is given, it supposes that :math:`g(u)=1`
+
+        If no ``method = (algo, npts)`` is given
+
+        * If ``knotvector`` number type is ``int`` or ``Fraction``
+            * ``npts = 1 + curve.degree``
+            * ``algo = "closed-newton-cotes"``
+        * Else
+            * ``npts = 1 + curve.degree``
+            * ``algo = "chebyshev"``
+
+        Valid algorithms ``algo`` are ``closed-newton-cotes``, ``open-newton-cotes``, ``chebyshev`` or ``gauss-legendre``
+
+        :param curve: The curve :math:`\mathbf{C}(u)` to integrate
+        :type curve: Curve
+        :param function: The weight function :math:`g(u)`, defaults to ``None``
+        :type function: None | callable[[float], Any](, optional)
+        :param method: The integration method, defaults to ``None``
+        :type method: None | tuple[str, int](, optional)
+
+        """
+        nodes_functs = {
+            "closed-newton-cotes": heavy.NodeSample.closed_linspace,
+            "open-newton-cotes": heavy.NodeSample.open_linspace,
+            "chebyshev": heavy.NodeSample.chebyshev,
+            "gauss-legendre": heavy.NodeSample.gauss_legendre,
+        }
+        array_functs = {
+            "closed-newton-cotes": heavy.IntegratorArray.closed_newton_cotes,
+            "open-newton-cotes": heavy.IntegratorArray.open_newton_cotes,
+            "chebyshev": heavy.IntegratorArray.chebyshev,
+            "gauss-legendre": heavy.IntegratorArray.gauss_legendre,
+        }
+        assert isinstance(curve, Curve)
+        if function is None:
+            function = lambda u: 1
+        if method is not None:
+            pass
+        elif isinstance(curve.knotvector[0], (int, Fraction)):
+            method = "open-newton-cotes"
+        else:
+            method = "chebyshev"
+        if nnodes is None:
+            nnodes = 1 + curve.degree
+        nodes_func = nodes_functs[method]
+        integ_array_func = array_functs[method]
+        nodes_0to1 = nodes_func(nnodes)
+        integ_array = integ_array_func(nnodes)
+        knots = curve.knotvector.knots
+        integrals = []
+        for start, end in zip(knots[:-1], knots[1:]):
+            nodes = tuple(start + (end - start) * node for node in nodes_0to1)
+            curve_vals = tuple(curve.eval(node) for node in nodes)
+            abscurve_vals = tuple(np.sqrt(val @ val) for val in curve_vals)
+            function_vals = tuple(function(node) for node in nodes)
+            new_integral = sum(
+                map(np.prod, zip(integ_array, function_vals, abscurve_vals))
+            )
+            integrals.append((end - start) * new_integral)
+        return sum(integrals)
+
+    @staticmethod
+    def function(
+        knotvector: KnotVector,
+        function: Optional[Callable[[float], Any]],
+        method: Optional[str] = None,
+        nnodes: Optional[int] = None,
+    ) -> float:
+        """Computes the integral I
+        
+        .. math::
+            I = \int_{a}^{b} g ( u ) \ du
+
+        The operation ``@`` is needed cause ``norm(curve(u)) = numpy.sqrt(curve(u) @ curve(u))``
+
+        If no ``function`` is given, it supposes that :math:`g(u)=1`
+
+        If no ``method = (algo, npts)`` is given
+
+        * If ``knotvector`` number type is ``int`` or ``Fraction``
+            * ``npts = 1 + curve.degree``
+            * ``algo = "closed-newton-cotes"``
+        * Else
+            * ``npts = 1 + curve.degree``
+            * ``algo = "chebyshev"``
+
+        Valid algorithms ``algo`` are ``closed-newton-cotes``, ``open-newton-cotes``, ``chebyshev`` or ``gauss-legendre``
+
+        :param curve: The curve :math:`\mathbf{C}(u)` to integrate
+        :type curve: Curve
+        :param function: The weight function :math:`g(u)`, defaults to ``None``
+        :type function: None | callable[[float], Any](, optional)
+        :param method: The integration method, defaults to ``None``
+        :type method: None | tuple[str, int](, optional)
+
+        """
+        nodes_functs = {
+            "closed-newton-cotes": heavy.NodeSample.closed_linspace,
+            "open-newton-cotes": heavy.NodeSample.open_linspace,
+            "chebyshev": heavy.NodeSample.chebyshev,
+            "gauss-legendre": heavy.NodeSample.gauss_legendre,
+        }
+        array_functs = {
+            "closed-newton-cotes": heavy.IntegratorArray.closed_newton_cotes,
+            "open-newton-cotes": heavy.IntegratorArray.open_newton_cotes,
+            "chebyshev": heavy.IntegratorArray.chebyshev,
+            "gauss-legendre": heavy.IntegratorArray.gauss_legendre,
+        }
+        if method is not None:
+            pass
+        elif isinstance(knotvector[0], (int, Fraction)):
+            method = "open-newton-cotes"
+        else:
+            method = "chebyshev"
+        if nnodes is None:
+            nnodes = 1 + knotvector.degree
+        nodes_func = nodes_functs[method]
+        integ_array_func = array_functs[method]
+        nodes_0to1 = nodes_func(nnodes)
+        integ_array = integ_array_func(nnodes)
+        knots = knotvector.knots
+        integrals = []
+        for start, end in zip(knots[:-1], knots[1:]):
+            nodes = tuple(start + (end - start) * node for node in nodes_0to1)
+            function_vals = tuple(function(node) for node in nodes)
+            new_integral = sum(map(np.prod, zip(integ_array, function_vals)))
+            integrals.append((end - start) * new_integral)
+        return sum(integrals)
