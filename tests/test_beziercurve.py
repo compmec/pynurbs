@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import copy
 from fractions import Fraction as frac
 
 import numpy as np
@@ -86,7 +87,6 @@ class TestInitCurve:
         curve = Curve(knotvector, ctrlpoints)
         curve = Curve(knotvector, ctrlpoints)
         # Functions
-        assert hasattr(curve, "copy")
         assert hasattr(curve, "split")
         assert hasattr(curve, "degree_increase")
         assert hasattr(curve, "degree_decrease")
@@ -122,7 +122,7 @@ class TestInitCurve:
         P4 = np.random.uniform(1, 2, (npts, ndim))
         C1 = Curve(knotvector, P1)
         C2 = Curve(knotvector, P1)
-        C3 = C1.copy()
+        C3 = copy(C1)
         C4 = Curve(knotvector, P4)
         assert id(C1) != id(C2)
         assert C1 == C2

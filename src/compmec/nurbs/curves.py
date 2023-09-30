@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from copy import deepcopy
+from copy import copy
 from fractions import Fraction
 from typing import Any, Callable, Optional, Tuple, Union
 
@@ -47,9 +47,9 @@ class BaseCurve(Intface_BaseCurve):
         if (self.ctrlpoints is None) ^ (other.ctrlpoints is None):
             return False
         newknotvec = self.knotvector | other.knotvector
-        selfcopy = self.copy()
+        selfcopy = copy(self)
         selfcopy.knotvector = newknotvec
-        othercopy = other.copy()
+        othercopy = copy(other)
         othercopy.knotvector = newknotvec
         for poi, qoi in zip(self.ctrlpoints, othercopy.ctrlpoints):
             if norm(poi - qoi) > 1e-9:
@@ -62,7 +62,7 @@ class BaseCurve(Intface_BaseCurve):
     def __neg__(self):
         if self.ctrlpoints is None:
             raise ValueError
-        newcurve = self.copy()
+        newcurve = copy(self)
         newctrlpoints = [-1 * ctrlpt for ctrlpt in newcurve.ctrlpoints]
         newcurve.ctrlpoints = newctrlpoints
         return newcurve
@@ -71,9 +71,9 @@ class BaseCurve(Intface_BaseCurve):
         if self.ctrlpoints is None:
             raise ValueError
         if not isinstance(other, self.__class__):
-            copy = self.copy()
-            copy.ctrlpoints = [other + point for point in self.ctrlpoints]
-            return copy
+            copied = copy(self)
+            copied.ctrlpoints = [other + point for point in self.ctrlpoints]
+            return copied
         if self.knotvector.limits != other.knotvector.limits:
             raise ValueError
         if self.weights is None and other.weights is None:
@@ -101,9 +101,9 @@ class BaseCurve(Intface_BaseCurve):
         if self.ctrlpoints is None:
             raise ValueError
         if not isinstance(other, self.__class__):
-            copy = self.copy()
-            copy.ctrlpoints = [point * other for point in copy.ctrlpoints]
-            return copy
+            copied = copy(self)
+            copied.ctrlpoints = [point * other for point in copied.ctrlpoints]
+            return copied
         if self.knotvector.limits != other.knotvector.limits:
             raise ValueError
         if self.weights is None and other.weights is None:
@@ -124,17 +124,17 @@ class BaseCurve(Intface_BaseCurve):
         if self.ctrlpoints is None:
             raise ValueError
         assert not isinstance(other, self.__class__)
-        copy = self.copy()
-        copy.ctrlpoints = [other * point for point in copy.ctrlpoints]
-        return copy
+        copied = copy(self)
+        copied.ctrlpoints = [other * point for point in copied.ctrlpoints]
+        return copied
 
     def __matmul__(self, other: object):
         if self.ctrlpoints is None:
             raise ValueError
         if not isinstance(other, self.__class__):
-            copy = self.copy()
-            copy.ctrlpoints = [point @ other for point in copy.ctrlpoints]
-            return copy
+            copied = copy(self)
+            copied.ctrlpoints = [point @ other for point in copied.ctrlpoints]
+            return copied
         if self.knotvector.limits != other.knotvector.limits:
             raise ValueError
         if self.weights is None and other.weights is None:
@@ -161,22 +161,22 @@ class BaseCurve(Intface_BaseCurve):
         if self.ctrlpoints is None:
             raise ValueError
         assert not isinstance(other, self.__class__)
-        copy = self.copy()
-        copy.ctrlpoints = [other @ point for point in copy.ctrlpoints]
-        return copy
+        copied = copy(self)
+        copied.ctrlpoints = [other @ point for point in copied.ctrlpoints]
+        return copied
 
     def __truediv__(self, other: object):
         if self.ctrlpoints is None:
             raise ValueError
         if not isinstance(other, self.__class__):
-            copy = self.copy()
-            copy.ctrlpoints = [point / other for point in copy.ctrlpoints]
-            return copy
+            copied = copy(self)
+            copied.ctrlpoints = [point / other for point in copied.ctrlpoints]
+            return copied
         if self.knotvector.limits != other.knotvector.limits:
             raise ValueError
         if self.weights is None and other.weights is None:
-            copyse = self.copy()
-            copyot = other.copy()
+            copyse = copy(self)
+            copyot = copy(other)
             vectora, vectorb = tuple(copyse.knotvector), tuple(copyot.knotvector)
             vectorc = tuple(copyse.knotvector | copyot.knotvector)
             transctrlpts = heavy.Operations.matrix_transformation(vectora, vectorc)
@@ -201,7 +201,7 @@ class BaseCurve(Intface_BaseCurve):
             float(point)
         if self.weights is None:
             newcurve = self.__class__(tuple(self.knotvector))
-            newcurve.weights = [deepcopy(point) for point in self.ctrlpoints]
+            newcurve.weights = [copy(point) for point in self.ctrlpoints]
             newcurve.ctrlpoints = [1 / w for w in newcurve.weights]
             return newcurve
         num, den = self.fraction()
@@ -214,8 +214,8 @@ class BaseCurve(Intface_BaseCurve):
         if umaxleft != uminright:
             error_msg = f"max(Uleft) = {umaxleft} != {uminright} = min(Uright)"
             raise ValueError(error_msg)
-        othercopy = other.copy()
-        selfcopy = self.copy()
+        othercopy = copy(other)
+        selfcopy = copy(self)
         maxdegree = max(self.degree, other.degree)
         selfcopy.degree = maxdegree
         othercopy.degree = maxdegree
@@ -419,30 +419,16 @@ class BaseCurve(Intface_BaseCurve):
 
         self.__ctrlpoints = tuple(newpoints)
 
-    def copy(self) -> Curve:
-        """Returns a copy of the object. The knotvector, control points and weights are also copied.
+    def __copy__(self) -> Curve:
+        return self.__deepcopy__(None)
 
-        :return: An exact copy of the instance.
-        :rtype: Curve
-
-        Example use
-        -----------
-
-        >>> from compmec.nurbs import Curve
-        >>> curveA = Curve([0, 0, 0, 1, 1, 1])
-        >>> curveB = curveA.copy()
-        >>> curveB == curveA
-        True
-        >>> id(curveB) == id(curveA)
-        False
-
-        """
-        knotvector = self.knotvector.copy()
+    def __deepcopy__(self, memo) -> Curve:
+        knotvector = copy(self.knotvector)
         curve = self.__class__(knotvector)
         if self.ctrlpoints is not None:
-            curve.ctrlpoints = [deepcopy(point) for point in self.ctrlpoints]
+            curve.ctrlpoints = [copy(point) for point in self.ctrlpoints]
         if self.weights is not None:
-            curve.weights = [deepcopy(weight) for weight in self.weights]
+            curve.weights = [copy(weight) for weight in self.weights]
         return curve
 
     def fraction(self) -> Tuple[BaseCurve]:
@@ -475,11 +461,11 @@ class BaseCurve(Intface_BaseCurve):
 
         """
         if self.weights is None:
-            numerator = self.copy()
+            numerator = copy(self)
             return numerator, 1
-        ctrlpoints = [deepcopy(point) for point in self.ctrlpoints]
-        numerator = self.__class__(self.knotvector.copy())
-        denominator = self.__class__(self.knotvector.copy())
+        ctrlpoints = [copy(point) for point in self.ctrlpoints]
+        numerator = self.__class__(copy(self.knotvector))
+        denominator = self.__class__(copy(self.knotvector))
         numerator.ctrlpoints = [wi * pt for wi, pt in zip(self.weights, ctrlpoints)]
         denominator.ctrlpoints = self.weights
         return numerator, denominator
@@ -720,7 +706,7 @@ class Curve(BaseCurve):
         nodes = tuple(nodes)
         for node in nodes:
             float(node)
-        newknotvec = self.knotvector.copy() - tuple(nodes)
+        newknotvec = self.knotvector - tuple(nodes)
         knots = newknotvec.knots if newknotvec.degree != 0 else None
         self.update(newknotvec, tolerance, knots)
 
@@ -839,7 +825,7 @@ class Curve(BaseCurve):
         if tolerance is not None:
             float(tolerance)
             assert tolerance >= 0
-        newknotvec = self.knotvector.copy()
+        newknotvec = copy(self.knotvector)
         newknotvec.degree -= times
         knots = newknotvec.knots if newknotvec.degree != 0 else None
         self.update(newknotvec, tolerance, knots)

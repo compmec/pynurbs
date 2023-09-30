@@ -1,3 +1,5 @@
+from copy import copy
+
 import numpy as np
 import pytest
 
@@ -616,7 +618,7 @@ class TestRational:
     def test_compare_spline(self):
         knotvector = [0, 0, 0, 1, 2, 2, 2]
         spline = Function(knotvector)
-        rational = spline.copy()
+        rational = copy(spline)
         rational.weights = np.ones(rational.npts)
 
         assert rational == spline
@@ -625,9 +627,9 @@ class TestRational:
         rational.weights = np.ones(rational.npts)
         assert rational != spline
 
-        copy = rational.copy()
-        assert id(copy) != id(rational)
-        assert copy == rational
+        rat_copy = copy(rational)
+        assert id(rat_copy) != id(rational)
+        assert rat_copy == rational
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(1)
@@ -635,7 +637,7 @@ class TestRational:
     def test_values_rational_equal_spline(self):
         knotvector = [0, 0, 0, 1, 2, 2, 2]
         spline = Function(knotvector)
-        rational = spline.copy()
+        rational = copy(spline)
         rational.weights = np.ones(rational.npts)
 
         nodes_sample = np.linspace(0, 2, 33)
@@ -711,7 +713,7 @@ class TestOthers:
     def test_print(self):
         vector_bezier = GeneratorKnotVector.bezier(3)
         vector_spline = GeneratorKnotVector.uniform(3, 5)
-        vector_rational = vector_spline.copy()
+        vector_rational = copy(vector_spline)
         weights = np.random.uniform(1, 2, 5)
         bezier = Function(vector_bezier)
         spline = Function(vector_spline)

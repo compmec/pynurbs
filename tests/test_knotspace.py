@@ -1,3 +1,4 @@
+from copy import copy
 from fractions import Fraction
 
 import numpy as np
@@ -240,7 +241,7 @@ class TestOperations:
         U3 = KnotVector([1, 1, 3, 3])
         U4 = KnotVector([2, 2, 6, 6])
 
-        U = U1.copy()
+        U = copy(U1)
         assert U == U1
         assert U != U2
         U.scale(2)
@@ -262,7 +263,7 @@ class TestOperations:
         assert U == U1
         assert U != U2
 
-        U = U3.copy()
+        U = copy(U3)
         assert U == U3
         assert U != U2
         U.scale(2)
@@ -290,23 +291,23 @@ class TestOperations:
     def test_shift(self):
         U1 = KnotVector([0, 0, 1, 1])
         U2 = KnotVector([1, 1, 2, 2])
-        U = U1.copy()
+        U = copy(U1)
         assert U == U1
         assert U != U2
         U.shift(1)  # Shift all vector
         assert U == U2
 
-        U = U1.copy()
+        U = copy(U1)
         U += 1
         assert U == U2
 
-        U = U2.copy()
+        U = copy(U2)
         assert U == U2
         assert U != U1
         U.shift(-1)
         assert U == U1
 
-        U = U2.copy()
+        U = copy(U2)
         U -= 1
         assert U == U1
 

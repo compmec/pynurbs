@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from copy import deepcopy
+from copy import copy
 from typing import Tuple, Union
 
 import numpy as np
@@ -162,45 +162,27 @@ class BaseFunction(Intface_BaseFunction):
             raise ValueError(error_msg)
         self.__weights = value
 
-    def copy(self) -> BaseFunction:
-        """Returns a copy of the object.
-        The internal knots are also copied.
+    def __copy__(self) -> BaseFunction:
+        return self.__deepcopy__(None)
 
-        :return: A copy of the object
-        :rtype: BaseFunction
-
-        Example use
-        -----------
-
-        >>> from compmec.nurbs import KnotVector
-        >>> knotvector = KnotVector([0, 0, 1, 1])
-        >>> basis0 = Function(knotvector)
-        >>> basis1 = basis0.copy()
-        >>> basis1 == basis0
-        True
-        >>> id(basis1) == id(basis0)
-        False
-
-        """
-        knotvector = self.knotvector.copy()
+    def __deepcopy__(self, memo) -> BaseFunction:
+        knotvector = copy(self.knotvector)
         newfunc = self.__class__(knotvector)
         if self.weights is not None:
-            newfunc.weights = [deepcopy(weight) for weight in self.weights]
+            newfunc.weights = [copy(weight) for weight in self.weights]
         return newfunc
 
 
 class FunctionEvaluator(Intface_Evaluator):
     def __init__(self, func: BaseFunction, i: Union[int, slice], j: int):
-        self.__knotvector = func.knotvector
+        vector = func.knotvector
+        self.__knotvector = vector
         self.__weights = func.weights
         self.__first_index = i
         self.__second_index = j
-        self.__matrix = heavy.BasisFunction.speval_matrix(tuple(self.__knotvector), j)
-        self.__knots = heavy.KnotVector.find_knots(tuple(self.__knotvector))
-        self.__spans = np.zeros(len(self.__knots), dtype="int16")
-        for k, knot in enumerate(self.__knots):
-            self.__spans[k] = heavy.KnotVector.find_span(knot, tuple(self.__knotvector))
-        self.__spans = tuple(self.__spans)
+        self.__matrix = heavy.BasisFunction.speval_matrix(tuple(vector), j)
+        self.__knots = vector.knots
+        self.__spans = vector.span(vector.knots)
 
     def __compute_vector_spline(self, node: float, span: int) -> np.ndarray:
         """

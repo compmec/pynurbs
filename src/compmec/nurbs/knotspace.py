@@ -120,25 +120,25 @@ class KnotVector(Intface_KnotVector):
 
     def __add__(self, other: Union[float, Tuple[float]]):
         """Shifts all the knots by same given amout"""
-        return self.copy().__iadd__(other)
+        return deepcopy(self).__iadd__(other)
 
     def __sub__(self, other: Union[float, Tuple[float]]):
-        return self.copy().__isub__(other)
+        return deepcopy(self).__isub__(other)
 
     def __mul__(self, other: float):
-        return self.copy().__imul__(other)
+        return deepcopy(self).__imul__(other)
 
     def __rmul__(self, other: float):
-        return self.copy().__imul__(other)
+        return deepcopy(self).__imul__(other)
 
     def __truediv__(self, other: float):
-        return self.copy().__itruediv__(other)
+        return deepcopy(self).__itruediv__(other)
 
     def __or__(self, other: float):
-        return self.copy().__ior__(other)
+        return deepcopy(self).__ior__(other)
 
     def __and__(self, other: float):
-        return self.copy().__iand__(other)
+        return deepcopy(self).__iand__(other)
 
     def __eq__(self, other: object):
         if not isinstance(other, self.__class__):
@@ -156,8 +156,12 @@ class KnotVector(Intface_KnotVector):
                 return False
         return True
 
-    def __ne__(self, other: object) -> bool:
-        return not self == other
+    def __copy__(self) -> KnotVector:
+        return self.__deepcopy__(None)
+
+    def __deepcopy__(self, memo) -> KnotVector:
+        knotvector = [deepcopy(knot) for knot in self]
+        return self.__class__(knotvector)
 
     @property
     def degree(self) -> int:
