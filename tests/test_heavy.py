@@ -614,8 +614,6 @@ class TestUnidimentionIntegral:
             )
             test = (b - a) * np.inner(weights, funcvals)
 
-            print("test = ", test, float(test))
-            print("good = ", good, float(good))
             assert abs(test - good) < 1e-9
 
     @pytest.mark.order(1)

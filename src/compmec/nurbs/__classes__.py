@@ -26,10 +26,6 @@ class Intface_KnotVector(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def __ne__(self, obj: object) -> bool:
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def shift(self, value: float):
         raise NotImplementedError
 

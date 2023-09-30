@@ -82,10 +82,15 @@ class Derivate:
         assert curve.weights is None
         assert curve.degree + 1 != curve.npts
 
-        knotvector = tuple(curve.knotvector)
-        matrix = heavy.Calculus.derivate_nonrational_spline(knotvector)
+        knotvector = curve.knotvector
+        matrix = heavy.Calculus.derivate_nonrational_spline(tuple(knotvector))
         ctrlpoints = np.dot(matrix, curve.ctrlpoints)
-        newvector = heavy.KnotVector.derivate(knotvector)
+        nodes = tuple(
+            knot
+            for knot in knotvector.knots
+            if knotvector.mult(knot) == knotvector.degree + 1
+        )
+        newvector = knotvector - nodes
         newcurve = curve.__class__(newvector, ctrlpoints)
         return newcurve
 

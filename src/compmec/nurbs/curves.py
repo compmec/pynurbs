@@ -643,7 +643,7 @@ class Curve(BaseCurve):
         except TypeError:
             nodes = (nodes,)
             onevalue = True
-        self.knotvector.valid_nodes(nodes)
+        self.knotvector.valid(nodes)
         result = self.__eval(nodes)
         return result[0] if onevalue else result
 
@@ -785,10 +785,10 @@ class Curve(BaseCurve):
         """
         if not isinstance(times, int) or times <= 0:
             raise ValueError
-        oldvector = tuple(self.knotvector)
         nodes = self.knotvector.knots
         newnodes = times * nodes
-        newvector = heavy.KnotVector.insert_knots(oldvector, newnodes)
+        newvector = self.knotvector + newnodes
+        oldvector = tuple(self.knotvector)
         matrix = heavy.Operations.degree_increase(oldvector, times)
         self.apply(newvector, matrix)
 
@@ -938,12 +938,12 @@ class Curve(BaseCurve):
         (0.8, 0.8, 0.8, 1.0, 1.0, 1.0)
 
         """
-        vector = tuple(self.knotvector)
         if nodes is None:
             nodes = self.knotvector.knots
         nodes = tuple(nodes)
+        newvectors = self.knotvector.split(nodes)
+        vector = tuple(self.knotvector)
         matrices = heavy.Operations.split_curve(vector, nodes)
-        newvectors = heavy.KnotVector.split(vector, nodes)
         newcurves = []
         for newvector, matrix in zip(newvectors, matrices):
             matrix = np.array(matrix)

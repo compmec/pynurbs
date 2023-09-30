@@ -152,7 +152,7 @@ def test_findspans_single():
         U.span(-0.1)  # Outside interval
     with pytest.raises(ValueError):
         U.span(1.1)  # Outside interval
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         U.span("asd")  # Not a number
 
 
@@ -179,7 +179,7 @@ def test_findmult_single():
         U.mult(-0.1)  # Outside interval
     with pytest.raises(ValueError):
         U.mult(1.1)  # Outside interval
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         U.mult("asd")  # Not a number
 
 
@@ -573,40 +573,42 @@ class TestGenerator:
         ]
     )
     def test_clstype(self):
+        cls_types = [int, float, Fraction]
         # bezier
         for degree in range(0, 7):
-            for cls in [int, float, Fraction]:
+            for cls in cls_types:
                 knotvector = GeneratorKnotVector.bezier(degree, cls)
                 for knot in knotvector:
                     assert isinstance(knot, cls)
         # integers
         for degree in range(0, 7):
             for npts in range(degree + 1, degree + 11):
-                for cls in [int, float, Fraction]:
+                for cls in cls_types:
                     knotvector = GeneratorKnotVector.integer(degree, npts, cls)
                     for knot in knotvector:
                         assert isinstance(knot, cls)
+        # weight
+        for degree in range(0, 7):
+            for npts in range(degree + 1, degree + 11):
+                for cls in cls_types:
+                    vector = np.random.randint(1, 5, npts - degree)
+                    vector = [cls(number) for number in vector]
+                    knotvector = GeneratorKnotVector.weight(degree, vector)
+                    for knot in knotvector:
+                        assert isinstance(knot, cls)
+        cls_types = [float, Fraction]
         # uniform
         for degree in range(0, 7):
             for npts in range(degree + 1, degree + 11):
-                for cls in [float, Fraction]:
+                for cls in cls_types:
                     knotvector = GeneratorKnotVector.uniform(degree, npts, cls)
                     for knot in knotvector:
                         assert isinstance(knot, cls)
         # random
         for degree in range(0, 7):
             for npts in range(degree + 1, degree + 11):
-                for cls in [float, Fraction]:
+                for cls in cls_types:
                     knotvector = GeneratorKnotVector.random(degree, npts, cls)
-                    for knot in knotvector:
-                        assert isinstance(knot, cls)
-        # weight
-        for degree in range(0, 7):
-            for npts in range(degree + 1, degree + 11):
-                for cls in [int, float, Fraction]:
-                    vector = np.random.randint(1, 5, npts - degree)
-                    vector = [cls(number) for number in vector]
-                    knotvector = GeneratorKnotVector.weight(degree, vector)
                     for knot in knotvector:
                         assert isinstance(knot, cls)
 
@@ -767,7 +769,7 @@ def test_insert_knot_remove():
     assert Uo == U0
 
     Uo = KnotVector(Uinc3)
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         U0 -= ["asd"]
     with pytest.raises(ValueError):
         U0 -= [-0.5]

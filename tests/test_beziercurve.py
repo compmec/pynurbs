@@ -766,7 +766,6 @@ class TestAddSubMulDiv:
         usample = [frac(i, denmax) for i in range(denmax + 1)]
         points = curve(usample)
         points = np.array(points, dtype="float64")
-        print("points = ", points.shape)
 
         scalar = (1, -2)
         test_curve = scalar @ curve

@@ -1,8 +1,8 @@
-from compmec.nurbs.advanced import Intersection, Projection
-from compmec.nurbs.calculus import Derivate, Integrate
-from compmec.nurbs.curves import Curve
-from compmec.nurbs.functions import Function
-from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
+from .advanced import Intersection, Projection
+from .calculus import Derivate, Integrate
+from .curves import Curve
+from .functions import Function
+from .knotspace import GeneratorKnotVector, KnotVector
 
 __version__ = "1.0.7"
 

@@ -24,6 +24,9 @@ class CustomFloat:
     def __init__(self, number: float):
         self.internal = float(number)
 
+    def __hash__(self):
+        return hash(self.internal)
+
     def __str__(self) -> str:
         return str(self.internal)
 

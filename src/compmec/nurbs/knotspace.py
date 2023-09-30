@@ -11,8 +11,8 @@ from typing import Optional, Tuple, Union
 
 import numpy as np
 
-from compmec.nurbs import heavy
 from compmec.nurbs.__classes__ import Intface_KnotVector
+from compmec.nurbs.heavy import ImmutableKnotVector
 
 
 class KnotVector(Intface_KnotVector):
@@ -31,70 +31,31 @@ class KnotVector(Intface_KnotVector):
 
     """
 
-    def __init__(self, knotvector: Tuple[float]):
-        """Constructor method of KnotVector
+    def __init__(self, vector: Tuple[float], degree: Optional[int] = None):
+        vector = ImmutableKnotVector(vector, degree)
+        self.internal = vector
 
-        :raises ValueError: Input is not a valid knot vector
-        """
-        self.__safe_init(knotvector)
+    def __iter__(self):
+        for item in self.internal:
+            yield item
 
-    def __safe_init(self, vector: Tuple[float]) -> KnotVector:
-        """Private method to initialize a instance with verifications
+    def __getitem__(self, index: int):
+        return self.internal[index]
 
-        :param newvector: The vector of values
-        :type file_loc: tuple[float]
-        :raises ValueError: If the given knotvector is not valid
-        :return: The same instance
-        :rtype: KnotVector
-        """
-        if isinstance(vector, self.__class__):
-            self.__unsafe_init(tuple(vector))
-        elif not heavy.KnotVector.is_valid_vector(vector):
-            msg = f"Invalid KnotVector of type {type(vector)} = {vector}"
-            raise ValueError(msg)
-        return self.__unsafe_init(vector)
-
-    def __unsafe_init(self, vector: Tuple[float]) -> KnotVector:
-        """Private method to initialize a instance without verifications
-
-        :param newvector: The vector of values
-        :type file_loc: tuple[float]
-        :return: The same instance
-        :rtype: KnotVector
-        """
-        self.__degree = None
-        self.__npts = None
-        self.__internal_vector = tuple(vector)
-        return self
-
-    def __str__(self) -> str:
-        items = [str(item) for item in self]
-        return "(" + ", ".join(items) + ")"
-
-    def __repr__(self) -> str:
-        return str(self)
-
-    def __iter__(self) -> float:
-        for knot in self.__internal_vector:
-            yield knot
-
-    def __getitem__(self, index):
-        return self.__internal_vector[index]
-
-    def __len__(self) -> int:
-        return len(self.__internal_vector)
+    def __len__(self):
+        return len(self.internal)
 
     def __iadd__(self, other: float) -> KnotVector:
         try:
             return self.shift(other)
         except TypeError:
-            return self.insert(tuple(other))
+            return self.insert(other)
 
     def __isub__(self, other: Union[float, Tuple[float]]):
         try:
             return self.shift(-other)
         except TypeError:
-            return self.remove(tuple(other))
+            return self.remove(other)
 
     def __imul__(self, other: float):
         return self.scale(other)
@@ -103,20 +64,12 @@ class KnotVector(Intface_KnotVector):
         return self.scale(1 / other)
 
     def __ior__(self, other: KnotVector) -> KnotVector:
-        try:
-            newvector = heavy.KnotVector.unite_vectors(tuple(self), tuple(other))
-        except AssertionError:
-            error_msg = f"Cannot use __or__ between {self} and {other}"
-            raise ValueError(error_msg)
-        return self.__safe_init(newvector)
+        self.internal |= other
+        return self
 
     def __iand__(self, other: KnotVector) -> KnotVector:
-        try:
-            newvector = heavy.KnotVector.intersect_vectors(tuple(self), tuple(other))
-        except AssertionError:
-            error_msg = f"Cannot use __and__ between {self} and {other}"
-            raise ValueError(error_msg)
-        return self.__safe_init(newvector)
+        self.internal &= other
+        return self
 
     def __add__(self, other: Union[float, Tuple[float]]):
         """Shifts all the knots by same given amout"""
@@ -141,20 +94,11 @@ class KnotVector(Intface_KnotVector):
         return deepcopy(self).__iand__(other)
 
     def __eq__(self, other: object):
-        if not isinstance(other, self.__class__):
-            # Will try to cenvert other
-            try:
-                other = self.__class__(other)
-            except ValueError:
-                return False
-        if self.npts != other.npts:
+        try:
+            other = self.__class__(other)
+        except ValueError:
             return False
-        if self.degree != other.degree:
-            return False
-        for i, val in enumerate(self):
-            if val != other[i]:
-                return False
-        return True
+        return self.internal == other.internal
 
     def __copy__(self) -> KnotVector:
         return self.__deepcopy__(None)
@@ -162,6 +106,10 @@ class KnotVector(Intface_KnotVector):
     def __deepcopy__(self, memo) -> KnotVector:
         knotvector = [deepcopy(knot) for knot in self]
         return self.__class__(knotvector)
+
+    @property
+    def internal(self) -> ImmutableKnotVector:
+        return self.__internal
 
     @property
     def degree(self) -> int:
@@ -189,9 +137,7 @@ class KnotVector(Intface_KnotVector):
         (1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3)
 
         """
-        if self.__degree is None:
-            self.__degree = heavy.KnotVector.find_degree(tuple(self))
-        return int(self.__degree)
+        return self.internal.degree
 
     @property
     def npts(self) -> int:
@@ -213,9 +159,7 @@ class KnotVector(Intface_KnotVector):
         3
 
         """
-        if self.__npts is None:
-            self.__npts = heavy.KnotVector.find_npts(tuple(self))
-        return int(self.__npts)
+        return self.internal.npts
 
     @property
     def knots(self) -> Tuple[float]:
@@ -239,7 +183,7 @@ class KnotVector(Intface_KnotVector):
         (0, 1, 2, 3)
 
         """
-        return heavy.KnotVector.find_knots(tuple(self))
+        return self.internal.knots
 
     @property
     def limits(self) -> Tuple[float]:
@@ -261,7 +205,7 @@ class KnotVector(Intface_KnotVector):
         (1, 3)
 
         """
-        return (self[0], self[-1])
+        return self.internal.limits
 
     @degree.setter
     def degree(self, value: int):
@@ -272,77 +216,10 @@ class KnotVector(Intface_KnotVector):
         if 0 < diff:  # Increase degree
             self.insert(diff * knots)
 
-    def __span(self, nodes: Tuple[float]) -> Tuple[int]:
-        """
-        Private method of self.span, doesn't raise errors
-        """
-        spans = []
-        vector = tuple(self)
-        for node in nodes:
-            newspan = heavy.KnotVector.find_span(node, vector)
-            spans.append(newspan)
-        return tuple(spans)
-
-    def __mult(self, nodes: Tuple[float]) -> Tuple[int]:
-        """Private method of mult"""
-        mults = []
-        vector = tuple(self)
-        for node in nodes:
-            newmult = heavy.KnotVector.find_mult(node, vector)
-            mults.append(newmult)
-        return tuple(mults)
-
-    def __valid_node(self, node: float):
-        """
-        Method of to verify if a node is
-        - Is a number
-        - inside the interval
-        """
-        if isinstance(node, (str, dict, tuple, list)):
-            raise TypeError
-        float(node)  # Verify if it's a number
-        if node < self[0] or self[-1] < node:
-            return False
-        return True
-
-    def __insert(self, nodes: Tuple[float]):
-        try:
-            assert self.valid_nodes(nodes)
-            newvector = heavy.KnotVector.insert_knots(tuple(self), nodes)
-        except AssertionError:
-            error_msg = f"Cannot insert nodes {nodes} in knotvector {self}"
-            raise ValueError(error_msg)
-        return self.__safe_init(newvector)
-
-    def __remove(self, nodes: Tuple[float]):
-        try:
-            assert self.valid_nodes(nodes)
-            newvector = heavy.KnotVector.remove_knots(tuple(self), nodes)
-        except AssertionError:
-            error_msg = f"Cannot remove nodes {nodes} in knotvector {self}"
-            raise ValueError(error_msg)
-        return self.__safe_init(newvector)
-
-    def copy(self) -> KnotVector:
-        """Returns a copy of the object. The internal knots are also copied.
-
-        :return: An exact copy of the instance.
-        :rtype: KnotVector
-
-        Example use
-        -----------
-
-        >>> from compmec.nurbs import KnotVector
-        >>> vector0 = GeneratorKnotVector.random(2, 5)
-        >>> vector1 = vector0.copy()
-        >>> vector1 == vector0
-        True
-        >>> id(vector1) == id(vector0)
-        False
-
-        """
-        knotvector = [deepcopy(knot) for knot in self]
-        return self.__class__(knotvector)
+    @internal.setter
+    def internal(self, vector: Tuple[float]):
+        vector = ImmutableKnotVector(vector)
+        self.__internal = vector
 
     def shift(self, value: float) -> KnotVector:
         """Add ``value`` to each knot
@@ -370,9 +247,9 @@ class KnotVector(Intface_KnotVector):
         (1., 1., 2., 2.)
 
         """
-        float(value)  # Verify if it's a number
-        newvector = tuple([knoti + value for knoti in self])
-        return self.__safe_init(newvector)
+        vector = tuple(knoti + value for knoti in self)
+        self.internal = ImmutableKnotVector(vector)
+        return self
 
     def scale(self, value: float) -> KnotVector:
         """Multiplies every knot by amount ``value``
@@ -401,8 +278,8 @@ class KnotVector(Intface_KnotVector):
         """
         float(value)  # Verify if it's a number
         assert value > 0
-        newvector = tuple([knoti * value for knoti in self])
-        return self.__safe_init(newvector)
+        self.internal = ImmutableKnotVector(knoti * value for knoti in self)
+        return self
 
     def convert(self, cls: type, tolerance: Optional[float] = 1e-9) -> KnotVector:
         """Convert the knots from current type to given type.
@@ -442,7 +319,8 @@ class KnotVector(Intface_KnotVector):
                 error_msg %= str(knot), str(type(knot)), str(cls)
                 raise ValueError(error_msg)
             new_vector.append(new_knot)
-        self.__safe_init(new_vector)
+        self.internal = new_vector
+        return self
 
     def normalize(self) -> KnotVector:
         """Shift and scale the vector to match the interval [0, 1]
@@ -493,7 +371,8 @@ class KnotVector(Intface_KnotVector):
         (0, 0, 1, 2, 2, 3, 3)
 
         """
-        return self.__insert(nodes)
+        self.internal += nodes
+        return self
 
     def remove(self, nodes: Tuple[float]) -> KnotVector:
         """Remove given nodes inside knotvector
@@ -518,7 +397,8 @@ class KnotVector(Intface_KnotVector):
         (0, 0, 3, 3)
 
         """
-        return self.__remove(nodes)
+        self.internal -= nodes
+        return self
 
     def span(self, nodes: Union[float, Tuple[float]]) -> Union[int, Tuple[int]]:
         """Finds the index position of a ``node`` such
@@ -548,17 +428,7 @@ class KnotVector(Intface_KnotVector):
         >>> knotvector.span([0, 0.5, 1, 1.5, 2])
         (1, 1, 2, 2, 2)
         """
-        onevalue = True
-        try:
-            iter(nodes)
-            onevalue = False
-        except TypeError:
-            nodes = (nodes,)
-        if not self.valid_nodes(nodes):
-            error_msg = f"The nodes {nodes} are not valid"
-            raise ValueError(error_msg)
-        spans = self.__span(nodes)
-        return spans[0] if onevalue else spans
+        return self.internal.span(nodes)
 
     def mult(self, nodes: Union[float, Tuple[float]]) -> Union[int, Tuple[int]]:
         """Counts how many times a node is inside the knotvector
@@ -587,19 +457,9 @@ class KnotVector(Intface_KnotVector):
         >>> knotvector.mult([0, 0.5, 1, 1.2, 1.8, 2])
         (2, 0, 1, 0, 0, 2)
         """
-        onevalue = True
-        try:
-            iter(nodes)
-            onevalue = False
-        except TypeError:
-            nodes = (nodes,)
-        if not self.valid_nodes(nodes):
-            error_msg = f"The nodes {nodes} are not valid"
-            raise ValueError(error_msg)
-        mults = self.__mult(nodes)
-        return mults[0] if onevalue else mults
+        return self.internal.mult(nodes)
 
-    def valid_nodes(self, nodes: Tuple[float]) -> bool:
+    def valid(self, nodes: Tuple[float]) -> bool:
         """Tells if all given nodes are valid
 
         :param nodes: The list of nodes
@@ -618,10 +478,11 @@ class KnotVector(Intface_KnotVector):
         >>> knotvector.valid_nodes([-1, 0.5, 1])
         False
         """
-        for node in nodes:
-            if not self.__valid_node(node):
-                return False
-        return True
+        return self.internal.valid(nodes)
+
+    def split(self, nodes: Tuple[float]) -> Tuple[KnotVector]:
+        vectors = self.internal.split(nodes)
+        return tuple(map(self.__class__, vectors))
 
 
 class GeneratorKnotVector:
@@ -764,7 +625,7 @@ class GeneratorKnotVector:
         assert degree >= 0
         assert npts > degree
         weights = np.random.randint(1, 1000, npts - degree)
-        weights = [cls(weight) for weight in weights]
+        weights = [cls(int(weight)) for weight in weights]
         knotvector = GeneratorKnotVector.weight(degree, weights)
         knotvector.normalize()
         return knotvector
