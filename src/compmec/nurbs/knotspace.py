@@ -113,6 +113,21 @@ class KnotVector(Intface_KnotVector):
 
     @property
     def internal(self) -> ImmutableKnotVector:
+        """Internal immutable knotvector
+
+        :getter: Returns the immutable knot vector instance
+        :setter: Sets as new knot vector instance
+        :type: ImmutableKnotVector
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import KnotVector
+        >>> knotvector = KnotVector([0., 1.])
+        >>> knotvector.internal
+        (0., 1.)
+
+        """
         return self.__internal
 
     @property
@@ -486,6 +501,23 @@ class KnotVector(Intface_KnotVector):
         return self.internal.valid(nodes)
 
     def split(self, nodes: Tuple[float]) -> Tuple[KnotVector]:
+        """Split the knot vector at given nodes
+
+        :param nodes: The list of nodes
+        :type nodes: tuple[float]
+        :raises TypeError: If ``nodes`` is not a list of numbers
+        :return: The list of splited knot vectors
+        :rtype: tuple[KnotVector]
+
+        Example use
+        -----------
+
+        >>> from compmec.nurbs import KnotVector
+        >>> knotvector = KnotVector([0, 0, 1, 1])
+        >>> knotvector.split([0.5])
+        ((0, 0, 0.5, 0.5), (0.5, 0.5, 1, 1))
+
+        """
         vectors = self.internal.split(nodes)
         return tuple(map(self.__class__, vectors))
 
