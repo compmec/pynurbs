@@ -25,7 +25,7 @@ class CustomFloat:
         self.internal = float(number)
 
     def __hash__(self):
-        return hash(self.internal)
+        return id(self)
 
     def __str__(self) -> str:
         return str(self.internal)
@@ -94,6 +94,9 @@ class CustomFloat:
 
     def __ge__(self, other):
         return self.__eq__(other) or self.__gt__(other)
+
+    def __abs__(self):
+        return self.__class__(self.internal if self.internal > 0 else -self.internal)
 
 
 class CustomPoint:

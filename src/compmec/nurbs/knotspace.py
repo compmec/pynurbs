@@ -39,6 +39,13 @@ class KnotVector(Intface_KnotVector):
         instance.internal = vector
         return instance
 
+    def __str__(self) -> str:
+        return "(" + ", ".join(map(str, self)) + ")"
+
+    def __repr__(self) -> str:
+        return str(self)
+        return f"KV({self.degree}, {self.npts})"
+
     def __iter__(self):
         for item in self.internal:
             yield item

@@ -16,6 +16,18 @@ import numpy as np
 
 class ImmutableKnotVector(tuple):
     @staticmethod
+    def __get_unique(vector: Tuple[float]):
+        unique = []
+        for node in vector:
+            for knot in unique:
+                if abs(node - knot) < 1e-6:
+                    break
+            else:
+                unique.append(node)
+        unique.sort()
+        return tuple(unique)
+
+    @staticmethod
     def __is_valid(vector: Tuple[float], degree: Union[int, None]):
         try:
             for knot in vector:
@@ -35,7 +47,7 @@ class ImmutableKnotVector(tuple):
         npts = lenght - degree - 1
         if not degree < npts:
             return False
-        knots = tuple(set(vector[degree : npts + 1]))
+        knots = ImmutableKnotVector.__get_unique(vector[degree : npts + 1])
         for knot in knots:
             mult = vector.count(knot)
             if mult > degree + 1:
@@ -75,7 +87,8 @@ class ImmutableKnotVector(tuple):
         other = ImmutableKnotVector(other)
         if self.limits != other.limits:
             raise ValueError
-        all_knots = list(set(self.knots) | set(other.knots))
+        all_knots = list(self.knots) + list(other.knots)
+        all_knots = ImmutableKnotVector.__get_unique(all_knots)
         all_mults = [0] * len(all_knots)
         for vector in [self, other]:
             for knot in vector:
@@ -118,7 +131,8 @@ class ImmutableKnotVector(tuple):
 
     @property
     def knots(self) -> Tuple[float]:
-        return tuple(sorted(set(self[self.degree : self.npts + 1])))
+        vector = self[self.degree : self.npts + 1]
+        return ImmutableKnotVector.__get_unique(vector)
 
     @property
     def limits(self) -> Tuple[float]:
