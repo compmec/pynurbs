@@ -13,6 +13,11 @@ from compmec.nurbs.curves import Curve
 
 
 class Projection:
+    """
+    Projection class to evaluate the nearest point/curve with respect
+    to another point/curve
+    """
+
     @staticmethod
     def __newton_point_on_curve(
         point: Tuple[float], curves: Tuple[Curve], initparam: float
@@ -45,6 +50,9 @@ class Projection:
 
     @staticmethod
     def point_on_bezier(point: Tuple[float], bezier: Curve) -> Tuple[float]:
+        """Finds the parameters t* such
+        bezier(t*) is the near point
+        """
         umin, umax = bezier.knotvector.limits
         curves = [bezier]
         curves.append(Derivate(curves[0]))
@@ -145,6 +153,7 @@ class Intersection:
 
     @staticmethod
     def filter_pairs(pairs: Tuple[Tuple[float]], tolerance: float = 1e-9):
+        """Filter the repeted knots within a given tolerance"""
         pairs = np.array(pairs, dtype="float64")
         filteredpairs = []
         for pair in pairs:
@@ -154,18 +163,21 @@ class Intersection:
                     inside = True
             if not inside:
                 filteredpairs.append(pair)
-        filteredpairs = tuple([tuple(pair) for pair in filteredpairs])
+        filteredpairs = tuple(map(tuple, filteredpairs))
         return filteredpairs
 
     @staticmethod
     def pairs_min_distance(
         pairs: Tuple[float], curvea: Curve, curveb: Curve, tolerance: float = 1e-9
     ):
+        """
+        Filter the pairs (t*, u*) such abs(curvea(t*) - curveb(u*)) > tolerance
+        """
         pairs = heavy.totuple(pairs)
         distances = np.empty(len(pairs), dtype="float64")
-        for k, (ti, uj) in enumerate(pairs):
-            pointati = curvea.eval(ti)
-            pointbuj = curveb.eval(uj)
+        for k, (pti, puj) in enumerate(pairs):
+            pointati = curvea.eval(pti)
+            pointbuj = curveb.eval(puj)
             distances[k] = np.linalg.norm(pointati - pointbuj)
         distances = np.abs(distances)
         matchs = np.abs(distances - np.min(distances)) < tolerance
@@ -179,10 +191,15 @@ class Intersection:
         curvesb: Tuple[Curve],
         limits: Tuple[float],
     ):
-        """We supose pair is inside limits"""
+        """
+        Uses newton iterations to get the intersection
+        between two bezier curves.
+
+        We supose pair is inside limits
+        """
         tmin, tmax = limits[0]
         umin, umax = limits[1]
-        for niter in range(10):
+        for _ in range(10):
             diff = curvesa[0].eval(pair[0])
             dati = curvesa[1].eval(pair[0])
             ddati = curvesa[2].eval(pair[0])
@@ -247,19 +264,19 @@ class Intersection:
         uamin, uamax = beziera.knotvector.limits
         ubmin, ubmax = bezierb.knotvector.limits
         limits = ((uamin, uamax), (ubmin, ubmax))
-        uasample = [0] + [(2 * i + 1) / (2 * nsma) for i in range(nsma)] + [1]
-        ubsample = [0] + [(2 * i + 1) / (2 * nsmb) for i in range(nsmb)] + [1]
-        uasample = [uamin + (uamax - uamin) * ua for ua in uasample]
-        ubsample = [ubmin + (ubmax - ubmin) * ub for ub in ubsample]
+        nodes_a_sample = [0] + [(2 * i + 1) / (2 * nsma) for i in range(nsma)] + [1]
+        nodes_b_sample = [0] + [(2 * i + 1) / (2 * nsmb) for i in range(nsmb)] + [1]
+        uasample = [uamin + (uamax - uamin) * node for node in nodes_a_sample]
+        ubsample = [ubmin + (ubmax - ubmin) * node for node in nodes_b_sample]
         pairs = set()
-        for ua in uasample:
-            for ub in ubsample:
+        for nodea in uasample:
+            for nodeb in ubsample:
                 # Newton's iteration
-                pair = np.array((ua, ub), dtype="float64")
+                pair = np.array((nodea, nodeb), dtype="float64")
                 pair = Intersection.__newton_bcurve_and_bcurve(
                     pair, curvesa, curvesb, limits
                 )
-                if len(pair):
+                if len(pair) != 0:
                     pairs |= set((pair,))
         if len(pairs) == 0:
             return tuple()
