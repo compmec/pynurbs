@@ -52,7 +52,7 @@ class ImmutableKnotVector(tuple):
         except TypeError:
             raise ValueError
         if not cls.__is_valid(knotvector, degree):
-            raise ValueError
+            raise ValueError("Invalid knot vector")
         if degree is None:
             degree = 0
             while knotvector[degree] == knotvector[degree + 1]:

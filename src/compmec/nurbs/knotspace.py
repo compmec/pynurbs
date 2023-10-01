@@ -28,12 +28,16 @@ class KnotVector(Intface_KnotVector):
     >>> KnotVector([0, 0, 0.5, 1, 1])
     (0, 0, 0.5, 1, 1)
 
-
     """
 
-    def __init__(self, vector: Tuple[float], degree: Optional[int] = None):
-        vector = ImmutableKnotVector(vector, degree)
-        self.internal = vector
+    def __new__(cls, vector: Tuple[float], degree: Optional[int] = None):
+        if isinstance(vector, cls):
+            return vector
+        instance = super(KnotVector, cls).__new__(cls)
+        if not isinstance(vector, ImmutableKnotVector):
+            vector = ImmutableKnotVector(vector, degree)
+        instance.internal = vector
+        return instance
 
     def __iter__(self):
         for item in self.internal:
@@ -218,7 +222,8 @@ class KnotVector(Intface_KnotVector):
 
     @internal.setter
     def internal(self, vector: Tuple[float]):
-        vector = ImmutableKnotVector(vector)
+        if not isinstance(vector, ImmutableKnotVector):
+            vector = ImmutableKnotVector(vector)
         self.__internal = vector
 
     def shift(self, value: float) -> KnotVector:
@@ -473,9 +478,9 @@ class KnotVector(Intface_KnotVector):
 
         >>> from compmec.nurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 1, 1])
-        >>> knotvector.valid_nodes([0, 0.5, 1])
+        >>> knotvector.valid([0, 0.5, 1])
         True
-        >>> knotvector.valid_nodes([-1, 0.5, 1])
+        >>> knotvector.valid([-1, 0.5, 1])
         False
         """
         return self.internal.valid(nodes)

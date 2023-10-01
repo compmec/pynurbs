@@ -937,7 +937,7 @@ class TestOthers:
         knotvector = KnotVector([1, 1, 2, 2])
         curve = Curve(knotvector)
         assert curve.knotvector == knotvector
-        assert id(curve.knotvector) != id(knotvector)
+        assert id(curve.knotvector) == id(knotvector)
 
         newvector = copy(knotvector)
         newvector += [1.5]
