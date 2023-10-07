@@ -535,6 +535,7 @@ class BaseCurve(Intface_BaseCurve):
         ControlPoints = [4, 0, 0]
 
         """
+        newknotvector = KnotVector(newknotvector)
         oldctrlpoints = self.ctrlpoints
         oldweights = self.weights
         if oldctrlpoints is None and oldweights is None:
@@ -595,7 +596,7 @@ class Curve(BaseCurve):
         """
         Private method to evaluate points in the curve
         """
-        vector = tuple(self.knotvector)
+        vector = self.knotvector.internal
         nodes = tuple(nodes)
         degree = int(self.knotvector.degree)
         if self.weights is None:
@@ -643,7 +644,9 @@ class Curve(BaseCurve):
         except TypeError:
             nodes = (nodes,)
             onevalue = True
-        self.knotvector.valid(nodes)
+        if not self.knotvector.valid(nodes):
+            msg = f"Received invalid nodes to eval: {nodes}"
+            raise ValueError(msg)
         result = self.__eval(nodes)
         return result[0] if onevalue else result
 
@@ -667,8 +670,8 @@ class Curve(BaseCurve):
 
         """
         nodes = tuple(nodes)
-        oldvector = tuple(self.knotvector)
-        newvector = tuple(self.knotvector + nodes)
+        oldvector = self.knotvector.internal
+        newvector = oldvector.insert(nodes)
         if self.ctrlpoints is None and self.weights is None:
             self.knotvector = newvector
         matrix = heavy.Operations.knot_insert(oldvector, nodes)
@@ -703,12 +706,10 @@ class Curve(BaseCurve):
         ControlPoints = [1.0, 2.0, -3.0]
 
         """
-        nodes = tuple(nodes)
-        for node in nodes:
-            float(node)
-        newknotvec = self.knotvector - tuple(nodes)
-        knots = newknotvec.knots if newknotvec.degree != 0 else None
-        self.update(newknotvec, tolerance, knots)
+        old_vector = self.knotvector.internal
+        new_vector = old_vector.remove(nodes)
+        knots = new_vector.knots if new_vector.degree != 0 else None
+        self.update(new_vector, tolerance, knots)
 
     def knot_clean(
         self, nodes: Optional[Tuple[float]] = None, tolerance: Optional[float] = 1e-9
@@ -785,12 +786,10 @@ class Curve(BaseCurve):
         """
         if not isinstance(times, int) or times <= 0:
             raise ValueError
-        nodes = self.knotvector.knots
-        newnodes = times * nodes
-        newvector = self.knotvector + newnodes
-        oldvector = tuple(self.knotvector)
-        matrix = heavy.Operations.degree_increase(oldvector, times)
-        self.apply(newvector, matrix)
+        old_vector = self.knotvector.internal
+        new_vector = old_vector.increase(times)
+        matrix = heavy.Operations.degree_increase(old_vector, times)
+        self.apply(new_vector, matrix)
 
     def degree_decrease(
         self, times: Optional[int] = 1, tolerance: Optional[float] = 1e-9
@@ -825,10 +824,10 @@ class Curve(BaseCurve):
         if tolerance is not None:
             float(tolerance)
             assert tolerance >= 0
-        newknotvec = copy(self.knotvector)
-        newknotvec.degree -= times
-        knots = newknotvec.knots if newknotvec.degree != 0 else None
-        self.update(newknotvec, tolerance, knots)
+        old_vector = self.knotvector.internal
+        new_vector = old_vector.decrease(times)
+        knots = new_vector.knots if new_vector.degree != 0 else None
+        self.update(new_vector, tolerance, knots)
 
     def degree_clean(self, tolerance: float = 1e-9):
         """Reduces au maximum the degree of the curve for given tolerance.

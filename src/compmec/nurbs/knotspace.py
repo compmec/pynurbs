@@ -236,11 +236,10 @@ class KnotVector(Intface_KnotVector):
     @degree.setter
     def degree(self, value: int):
         diff = int(value) - self.degree
-        knots = tuple(self.knots)
         if diff < 0:  # Decrease degree
-            self.remove((-diff) * knots)
+            self.decrease(-diff)
         if 0 < diff:  # Increase degree
-            self.insert(diff * knots)
+            self.increase(diff)
 
     @internal.setter
     def internal(self, vector: Tuple[float]):
@@ -398,7 +397,7 @@ class KnotVector(Intface_KnotVector):
         (0, 0, 1, 2, 2, 3, 3)
 
         """
-        self.internal += nodes
+        self.internal = self.internal.insert(nodes)
         return self
 
     def remove(self, nodes: Tuple[float]) -> KnotVector:
@@ -424,7 +423,15 @@ class KnotVector(Intface_KnotVector):
         (0, 0, 3, 3)
 
         """
-        self.internal -= nodes
+        self.internal = self.internal.remove(nodes)
+        return self
+
+    def increase(self, times: int) -> KnotVector:
+        self.internal = self.internal.increase(times)
+        return self
+
+    def decrease(self, times: int) -> KnotVector:
+        self.internal = self.internal.decrease(times)
         return self
 
     def span(self, nodes: Union[float, Tuple[float]]) -> Union[int, Tuple[int]]:

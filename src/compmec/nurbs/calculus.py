@@ -59,7 +59,7 @@ class Derivate:
         assert curve.weights is not None
         assert np.all(np.array(curve.weights) != 0)
 
-        knotvector = tuple(curve.knotvector)
+        knotvector = curve.knotvector.internal
         matrixup, matrixdo = heavy.Calculus.derivate_rational_bezier(knotvector)
         num, den = curve.fraction()
         matrixup = np.dot(matrixup, den.ctrlpoints)
@@ -82,16 +82,15 @@ class Derivate:
         assert curve.weights is None
         assert curve.degree + 1 != curve.npts
 
-        knotvector = curve.knotvector
-        matrix = heavy.Calculus.derivate_nonrational_spline(tuple(knotvector))
+        knotvector = curve.knotvector.internal
+        matrix = heavy.Calculus.derivate_nonrational_spline(knotvector)
         ctrlpoints = np.dot(matrix, curve.ctrlpoints)
-        nodes = tuple(
-            knot
-            for knot in knotvector.knots
-            if knotvector.mult(knot) == knotvector.degree + 1
-        )
-        newvector = knotvector - nodes
-        newcurve = curve.__class__(newvector, ctrlpoints)
+        new_vector = list(knotvector)
+        for knot in knotvector.knots:
+            if knotvector.mult(knot) <= knotvector.degree:
+                continue
+            new_vector.remove(knot)
+        newcurve = curve.__class__(new_vector, ctrlpoints)
         return newcurve
 
     @staticmethod
