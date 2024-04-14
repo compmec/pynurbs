@@ -4,7 +4,7 @@ from fractions import Fraction
 import numpy as np
 import pytest
 
-from compmec.nurbs import GeneratorKnotVector, KnotVector
+from pynurbs import GeneratorKnotVector, KnotVector
 
 
 @pytest.mark.order(2)

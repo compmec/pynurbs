@@ -4,7 +4,7 @@ from fractions import Fraction
 import numpy as np
 import pytest
 
-from compmec.nurbs.heavy import IntegratorArray, LeastSquare, Linalg, Math, NodeSample
+from pynurbs.heavy import IntegratorArray, LeastSquare, Linalg, Math, NodeSample
 
 
 @pytest.mark.order(1)

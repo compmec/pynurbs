@@ -1,12 +1,12 @@
 .. image:: img/logo.svg
   :width: 100 %
-  :alt: compmec-nurbs
+  :alt: pynurbs
   :align: center
 
 Documentation
 =============
 
-**compmec-nurbs** is a python package for geometry parametrization that provides easy-to-use data structures to describe parametric curves and allows the use of :ref:`custom-objects`.
+**pynurbs** is a python package for geometry parametrization that provides easy-to-use data structures to describe parametric curves and allows the use of :ref:`custom-objects`.
 
 .. toctree::
   :maxdepth: 2
@@ -50,9 +50,9 @@ Support
 -------
 
 Raise an issue on the `GitHub issue tracker
-<https://github.com/compmec/nurbs/issues>`_ or contact me at
+<https://github.com/pynurbs/issues>`_ or contact me at
 `compmecgit@gmail.com <mailto:compmecgit@gmail.com>`_.
-If you have a request for a feature to be added to the *compmec-nurbs* package, please don't hesitate to get in touch
+If you have a request for a feature to be added to the *pynurbs* package, please don't hesitate to get in touch
 
 License
 -------

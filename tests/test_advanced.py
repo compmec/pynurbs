@@ -6,8 +6,8 @@ Its functions are getting derivatives, computing integrals along curves and so o
 import numpy as np
 import pytest
 
-from compmec.nurbs.advanced import Intersection, Projection
-from compmec.nurbs.curves import Curve
+from pynurbs.advanced import Intersection, Projection
+from pynurbs.curves import Curve
 
 
 @pytest.mark.order(8)

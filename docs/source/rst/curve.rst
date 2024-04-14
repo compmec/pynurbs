@@ -12,7 +12,7 @@ You find a simple example bellow with a curve of degree 2 and 4
 
     import numpy as np
     from matplotlib import pyplot as plt
-    from compmec.nurbs import GeneratorKnotVector, Curve
+    from pynurbs import GeneratorKnotVector, Curve
     
     # Define curve
     knotvector = GeneratorKnotVector.uniform(degree = 2, npts = 4)
@@ -44,7 +44,7 @@ For example, take fractional knots.
 .. code-block:: python
 
     from fractions import Fraction
-    from compmec.nurbs import KnotVector
+    from pynurbs import KnotVector
     zero, half, one = Fraction(0), Fraction(1, 2), Fraction(1)
 
     vector = [zero, zero, half, one, one]

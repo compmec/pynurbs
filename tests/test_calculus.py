@@ -8,9 +8,9 @@ from fractions import Fraction
 import numpy as np
 import pytest
 
-from compmec.nurbs.calculus import Derivate, Integrate
-from compmec.nurbs.curves import Curve
-from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
+from pynurbs.calculus import Derivate, Integrate
+from pynurbs.curves import Curve
+from pynurbs.knotspace import GeneratorKnotVector, KnotVector
 
 
 @pytest.mark.order(7)

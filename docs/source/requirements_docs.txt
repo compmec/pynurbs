@@ -1,5 +1,5 @@
 numpy
-compmec-nurbs>=1.0.0
+pynurbs>=1.0.0
 sphinx
 sphinx-rtd-theme
 sphinx-gallery

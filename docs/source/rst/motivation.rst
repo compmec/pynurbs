@@ -2,7 +2,7 @@
 Motivation
 ==========
 
-**compmec-nurbs** is a python object-oriented library with the purpuse of
+**pynurbs** is a python object-oriented library with the purpuse of
 
 1. Easy-use
 2. Highly reliable

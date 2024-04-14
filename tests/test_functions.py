@@ -3,9 +3,9 @@ from copy import copy
 import numpy as np
 import pytest
 
-from compmec.nurbs import Function
-from compmec.nurbs.heavy import binom
-from compmec.nurbs.knotspace import GeneratorKnotVector
+from pynurbs import Function
+from pynurbs.heavy import binom
+from pynurbs.knotspace import GeneratorKnotVector
 
 
 @pytest.mark.order(3)

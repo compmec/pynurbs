@@ -11,8 +11,8 @@ from typing import Optional, Tuple, Union
 
 import numpy as np
 
-from compmec.nurbs.__classes__ import Intface_KnotVector
-from compmec.nurbs.heavy import ImmutableKnotVector
+from pynurbs.__classes__ import Intface_KnotVector
+from pynurbs.heavy import ImmutableKnotVector
 
 
 class KnotVector(Intface_KnotVector):
@@ -129,7 +129,7 @@ class KnotVector(Intface_KnotVector):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0., 1.])
         >>> knotvector.internal
         (0., 1.)
@@ -148,7 +148,7 @@ class KnotVector(Intface_KnotVector):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0., 1.])
         >>> knotvector.degree
         0
@@ -176,7 +176,7 @@ class KnotVector(Intface_KnotVector):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0., 1.])
         >>> knotvector.npts
         1
@@ -197,7 +197,7 @@ class KnotVector(Intface_KnotVector):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0., 1.])
         >>> knotvector.knots
         (0., 1.)
@@ -222,7 +222,7 @@ class KnotVector(Intface_KnotVector):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0., 1.])
         >>> knotvector.limits
         (0., 1.)
@@ -236,11 +236,10 @@ class KnotVector(Intface_KnotVector):
     @degree.setter
     def degree(self, value: int):
         diff = int(value) - self.degree
-        knots = tuple(self.knots)
         if diff < 0:  # Decrease degree
-            self.remove((-diff) * knots)
+            self.decrease(-diff)
         if 0 < diff:  # Increase degree
-            self.insert(diff * knots)
+            self.increase(diff)
 
     @internal.setter
     def internal(self, vector: Tuple[float]):
@@ -260,7 +259,7 @@ class KnotVector(Intface_KnotVector):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 1, 1])
         >>> knotvector.shift(1)
         (1, 1, 2, 2)
@@ -291,7 +290,7 @@ class KnotVector(Intface_KnotVector):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([1, 1, 2, 2])
         >>> knotvector.scale(2)
         (2, 2, 4, 4)
@@ -325,7 +324,7 @@ class KnotVector(Intface_KnotVector):
         -----------
 
         >>> from fractions import Fraction
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([1., 1., 2., 3., 3.])
         >>> knotvector.convert(int)
         (1, 1, 2, 3, 3)
@@ -359,7 +358,7 @@ class KnotVector(Intface_KnotVector):
         -----------
 
         >>> from fractions import Fraction
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> vector = [1, 1, 2, 3, 3]
         >>> knotvector = KnotVector(vector)
         >>> knotvector.normalize()
@@ -388,7 +387,7 @@ class KnotVector(Intface_KnotVector):
         -----------
 
         >>> from fractions import Fraction
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 2, 3, 3])
         >>> knotvector.insert([2])
         (0, 0, 2, 2, 3, 3)
@@ -398,7 +397,7 @@ class KnotVector(Intface_KnotVector):
         (0, 0, 1, 2, 2, 3, 3)
 
         """
-        self.internal += nodes
+        self.internal = self.internal.insert(nodes)
         return self
 
     def remove(self, nodes: Tuple[float]) -> KnotVector:
@@ -414,7 +413,7 @@ class KnotVector(Intface_KnotVector):
         -----------
 
         >>> from fractions import Fraction
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 1, 2, 3, 3])
         >>> knotvector.remove([2])
         (0, 0, 1, 3, 3)
@@ -424,7 +423,15 @@ class KnotVector(Intface_KnotVector):
         (0, 0, 3, 3)
 
         """
-        self.internal -= nodes
+        self.internal = self.internal.remove(nodes)
+        return self
+
+    def increase(self, times: int) -> KnotVector:
+        self.internal = self.internal.increase(times)
+        return self
+
+    def decrease(self, times: int) -> KnotVector:
+        self.internal = self.internal.decrease(times)
         return self
 
     def span(self, nodes: Union[float, Tuple[float]]) -> Union[int, Tuple[int]]:
@@ -443,7 +450,7 @@ class KnotVector(Intface_KnotVector):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> vector = [0, 0, 1, 2, 2]
         >>> knotvector = KnotVector(vector)
         >>> knotvector.span(0)
@@ -472,7 +479,7 @@ class KnotVector(Intface_KnotVector):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> vector = [0, 0, 1, 2, 2]
         >>> knotvector = KnotVector(vector)
         >>> knotvector.mult(0)
@@ -498,7 +505,7 @@ class KnotVector(Intface_KnotVector):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 1, 1])
         >>> knotvector.valid([0, 0.5, 1])
         True
@@ -519,7 +526,7 @@ class KnotVector(Intface_KnotVector):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 1, 1])
         >>> knotvector.split([0.5])
         ((0, 0, 0.5, 0.5), (0.5, 0.5, 1, 1))
@@ -550,7 +557,7 @@ class GeneratorKnotVector:
         Example use
         -----------
 
-        >>> from compmec.nurbs import GeneratorKnotVector
+        >>> from pynurbs import GeneratorKnotVector
         >>> GeneratorKnotVector.bezier(1)
         (0, 0, 1, 1)
         >>> GeneratorKnotVector.bezier(2)
@@ -583,7 +590,7 @@ class GeneratorKnotVector:
         Example use
         -----------
 
-        >>> from compmec.nurbs import GeneratorKnotVector
+        >>> from pynurbs import GeneratorKnotVector
         >>> GeneratorKnotVector.integer(1, 2)
         (0, 0, 1, 1)
         >>> GeneratorKnotVector.integer(1, 3)
@@ -623,7 +630,7 @@ class GeneratorKnotVector:
         -----------
 
         >>> from fractions import Fraction
-        >>> from compmec.nurbs import GeneratorKnotVector
+        >>> from pynurbs import GeneratorKnotVector
         >>> GeneratorKnotVector.uniform(1, 2)
         (0, 0, 1, 1)
         >>> GeneratorKnotVector.uniform(1, 3)
@@ -655,7 +662,7 @@ class GeneratorKnotVector:
         Example use
         -----------
 
-        >>> from compmec.nurbs import GeneratorKnotVector
+        >>> from pynurbs import GeneratorKnotVector
         >>> GeneratorKnotVector.random(1, 2)
         (0, 0, 1, 1)
         >>> GeneratorKnotVector.random(1, 3)
@@ -691,7 +698,7 @@ class GeneratorKnotVector:
         Example use
         -----------
 
-        >>> from compmec.nurbs import GeneratorKnotVector
+        >>> from pynurbs import GeneratorKnotVector
         >>> GeneratorKnotVector.weights(1, [1])
         (0, 0, 1, 1)
         >>> GeneratorKnotVector.weights(2, [1])

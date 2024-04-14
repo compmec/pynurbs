@@ -7,9 +7,9 @@ from typing import Any, Tuple
 
 import numpy as np
 
-from compmec.nurbs import heavy
-from compmec.nurbs.calculus import Derivate
-from compmec.nurbs.curves import Curve
+from pynurbs import heavy
+from pynurbs.calculus import Derivate
+from pynurbs.curves import Curve
 
 
 class Projection:

@@ -64,7 +64,8 @@ class ImmutableKnotVector(tuple):
         except TypeError:
             raise ValueError
         if not cls.__is_valid(knotvector, degree):
-            raise ValueError("Invalid knot vector")
+            msg = f"Invalid knot vector (deg {degree}): {knotvector}"
+            raise ValueError(msg)
         if degree is None:
             degree = 0
             while knotvector[degree] == knotvector[degree + 1]:
@@ -73,15 +74,6 @@ class ImmutableKnotVector(tuple):
         instance._ImmutableKnotVector__degree = degree
         instance._ImmutableKnotVector__npts = len(knotvector) - degree - 1
         return instance
-
-    def __add__(self, nodes: Tuple[float]) -> ImmutableKnotVector:
-        return self.__class__(sorted(list(self) + list(nodes)))
-
-    def __sub__(self, nodes: Tuple[float]) -> ImmutableKnotVector:
-        lista = list(self)
-        for node in nodes:
-            lista.remove(node)
-        return self.__class__(lista)
 
     def __or__(self, other: ImmutableKnotVector) -> ImmutableKnotVector:
         other = ImmutableKnotVector(other)
@@ -120,6 +112,12 @@ class ImmutableKnotVector(tuple):
         for knot, mult in zip(all_knots, all_mults):
             final_vector += [knot] * mult
         return ImmutableKnotVector(sorted(final_vector))
+
+    def __add__(self, other):
+        raise ValueError
+
+    def __sub__(self, other):
+        raise ValueError
 
     @property
     def degree(self) -> int:
@@ -224,6 +222,36 @@ class ImmutableKnotVector(tuple):
             newknotvect = ImmutableKnotVector(newknotvect)
             retorno.append(newknotvect)
         return tuple(retorno)
+
+    def increase(self, times: int) -> ImmutableKnotVector:
+        """Degree increase"""
+        vector = sorted(list(self) + times * list(self.knots))
+        return self.__class__(vector, self.degree + times)
+
+    def decrease(self, times: int) -> ImmutableKnotVector:
+        """Degree decrease"""
+        vector = list(self)
+        knots = self.knots[1:-1]
+        for _ in range(times):
+            vector.pop(0)
+            vector.pop(-1)
+            for node in knots:
+                vector.remove(node)
+            vector = sorted(vector)
+        return self.__class__(vector, self.degree - times)
+
+    def remove(self, nodes: Tuple[float]) -> ImmutableKnotVector:
+        """Remove knots"""
+        vector = list(self)
+        for node in nodes:
+            vector.remove(node)
+        vector = sorted(vector)
+        return self.__class__(vector, self.degree)
+
+    def insert(self, nodes: Tuple[float]) -> ImmutableKnotVector:
+        """Insert knots"""
+        vector = sorted(list(self) + list(nodes))
+        return self.__class__(vector, self.degree)
 
 
 class Math:
@@ -418,11 +446,17 @@ def eval_spline_nodes(
     M.shape = (npts, len(nodes))
     """
     knotvector = ImmutableKnotVector(knotvector)
-    assert isinstance(nodes, (tuple, list))
-    maxdegree = knotvector.degree
-    assert isinstance(degree, int)
-    assert 0 <= degree
-    assert degree <= maxdegree
+    if not knotvector.valid(nodes):
+        msg = f"Invalid nodes {nodes} in knotvector {knotvector}"
+        raise ValueError(msg)
+    if not isinstance(degree, int):
+        msg = f"Degree must be int, received {degree}"
+        print(msg)
+        raise ValueError(msg)
+    if degree < 0 or knotvector.degree < degree:
+        msg = f"Degree {degree} must be in the interval [0, {knotvector.degree}]"
+        print(msg)
+        raise ValueError(msg)
 
     npts = knotvector.npts
     knots = knotvector.knots
@@ -453,14 +487,22 @@ def eval_rational_nodes(
     Returns a matrix M of which M_{ij} = N_{i,p}(node_j)
     M.shape = (len(weights), len(nodes))
     """
-    knotvector = ImmutableKnotVector(knotvector)
-    assert isinstance(weights, (tuple, list))
-    assert isinstance(nodes, (tuple, list))
-    maxdegree = knotvector.degree
-    degree = maxdegree if (degree is None) else degree
-    assert isinstance(degree, int)
-    assert 0 <= degree
-    assert degree <= maxdegree
+    try:
+        knotvector = ImmutableKnotVector(knotvector)
+        weights = tuple(weights)
+        nodes = tuple(nodes)
+    except (ValueError, TypeError):
+        msg = "Invalid inputs: \n"
+        msg += "knotvector = %s\n" % str(knotvector)
+        msg += "weights = %s\n" % str(weights)
+        msg += "nodes = %s\n" % str(nodes)
+        raise ValueError(msg)
+    if not isinstance(degree, int):
+        msg = f"Degree must be int, received {degree}"
+        raise ValueError(msg)
+    if degree < 0 or knotvector.degree < degree:
+        msg = f"Degree {degree} must be in the interval [0, {knotvector.degree}]"
+        raise ValueError(msg)
 
     rationalvals = eval_spline_nodes(knotvector, nodes, degree)
     rationalvals = np.array(rationalvals)
@@ -694,6 +736,8 @@ class LeastSquare:
         newknotvector = tuple(
             Fraction(node) if isinstance(node, int) else node for node in newknotvector
         )
+        oldknotvector = ImmutableKnotVector(oldknotvector, olddegree)
+        newknotvector = ImmutableKnotVector(newknotvector, newdegree)
 
         if fit_nodes and len(fit_nodes) > newnpts:
             raise NotImplementedError
@@ -710,7 +754,7 @@ class LeastSquare:
             nodes0to1 = NodeSample.chebyshev(nptsinteg)
             integrator = IntegratorArray.chebyshev(nptsinteg)
         nodes0to1 = np.array(nodes0to1)
-        integrator = np.array(integrator)
+        integrator = np.array(integrator, dtype=numbtype)
 
         FF = np.zeros((oldnpts, oldnpts), dtype=numbtype)  # F*F
         GF = np.zeros((newnpts, oldnpts), dtype=numbtype)  # F*G
@@ -791,10 +835,11 @@ class BasisFunction:
             - j is the requested degree
         """
         knotvector = ImmutableKnotVector(knotvector)
-        assert isinstance(reqdegree, int)
-        assert 0 <= reqdegree
-        maxdegree = knotvector.degree
-        assert reqdegree <= maxdegree
+        if not isinstance(reqdegree, int):
+            raise TypeError("reqdegree must be integer")
+        if reqdegree < 0 or knotvector.degree < reqdegree:
+            msg = f"reqdegree must be in [0, {knotvector.degree}]"
+            raise ValueError(msg)
         knots = knotvector.knots
         spans = knotvector.span(knots)
         j = reqdegree
@@ -856,11 +901,9 @@ class Operations:
             - Repeted nodes are ignored, [0.5, 0.5] is the same as [0.5]
         """
         knotvector = ImmutableKnotVector(knotvector)
-        assert isinstance(nodes, (tuple, list))
-        for node in nodes:
-            float(node)
-            assert knotvector[0] <= node
-            assert node <= knotvector[-1]
+        if not knotvector.valid(nodes):
+            msg = f"Invalid nodes {nodes} in knotvector {knotvector}"
+            raise ValueError(msg)
         degree = knotvector.degree
         nodes = set(nodes)  # Remove repeted nodes
         nodes -= set([knotvector[0], knotvector[-1]])  # Take out extremities
@@ -869,7 +912,7 @@ class Operations:
         for node in nodes:
             mult = knotvector.mult(node)
             manynodes += [node] * (degree + 1 - mult)
-        bigvector = knotvector + manynodes
+        bigvector = knotvector.insert(manynodes)
         bigmatrix = Operations.knot_insert(knotvector, manynodes)
         newvectors = bigvector.split(nodes)
         matrices = []
@@ -897,9 +940,9 @@ class Operations:
             [Q] = [T] @ [P]
         """
         knotvector = ImmutableKnotVector(knotvector)
-        float(node)
-        assert knotvector[0] <= node
-        assert node <= knotvector[-1]
+        if not knotvector.valid(node):
+            msg = f"Invalid nodes {node} in knotvector {knotvector}"
+            raise ValueError(msg)
 
         oldnpts = knotvector.npts
         degree = knotvector.degree
@@ -933,17 +976,21 @@ class Operations:
             [Q] = [T] @ [P]
         """
         knotvector = ImmutableKnotVector(knotvector)
-        float(node)
-        assert knotvector[0] <= node
-        assert node <= knotvector[-1]
-        assert isinstance(times, int)
-        assert 0 < times
+        if not knotvector.valid(node):
+            msg = f"Invalid node {node} in knotvector {knotvector}"
+            raise ValueError(msg)
+        if not isinstance(times, int):
+            msg = f"Times must be an int, not {times}"
+            raise TypeError(msg)
+        if times <= 0:
+            msg = f"Times must be positive! Received {times}"
+            raise ValueError(msg)
         oldnpts = knotvector.npts
         matrix = np.eye(oldnpts, dtype="object")
-        for i in range(times):
+        for _ in range(times):
             incmatrix = Operations.one_knot_insert_once(knotvector, node)
             matrix = incmatrix @ matrix
-            knotvector = knotvector + [node]
+            knotvector = knotvector.insert([node])
         return totuple(matrix)
 
     def knot_insert(knotvector: ImmutableKnotVector, nodes: Tuple[float]) -> "Matrix2D":
@@ -963,11 +1010,9 @@ class Operations:
         """
 
         knotvector = ImmutableKnotVector(knotvector)
-        assert isinstance(nodes, (tuple, list))
-        for node in nodes:
-            float(node)
-            assert knotvector[0] <= node
-            assert node <= knotvector[-1]
+        if not knotvector.valid(nodes):
+            msg = f"Invalid nodes {nodes} in knotvector {knotvector}"
+            raise ValueError(msg)
         nodes = tuple(nodes)
         setnodes = tuple(sorted(set(nodes) - set([knotvector[0], knotvector[-1]])))
         oldnpts = knotvector.npts
@@ -978,19 +1023,16 @@ class Operations:
             times = nodes.count(node)
             incmatrix = Operations.one_knot_insert(knotvector, node, times)
             matrix = incmatrix @ matrix
-            knotvector = knotvector + times * [node]
+            knotvector = knotvector.insert(times * [node])
         return totuple(matrix)
 
     def knot_remove(knotvector: ImmutableKnotVector, nodes: Tuple[float]) -> "Matrix2D":
         """ """
         knotvector = ImmutableKnotVector(knotvector)
-        assert isinstance(nodes, (tuple, list))
-        for node in nodes:
-            float(node)
-            assert knotvector[0] <= node
-            assert node <= knotvector[-1]
-        nodes = tuple(nodes)
-        newknotvector = knotvector - nodes
+        if not knotvector.valid(nodes):
+            msg = f"Invalid nodes {nodes} in knotvector {knotvector}"
+            raise ValueError(msg)
+        newknotvector = knotvector.remove(nodes)
         matrix, _ = LeastSquare.spline2spline(knotvector, newknotvector)
         return totuple(matrix)
 
@@ -1020,14 +1062,18 @@ class Operations:
             B(u) = sum_{i=0}^{p+t} B_{i,p+t}(u) * Q_i
         """
         knotvector = ImmutableKnotVector(knotvector)
-        assert isinstance(times, int)
-        assert times >= 0
+        if not isinstance(times, int):
+            msg = f"Times must be an int, not {times}"
+            raise TypeError(msg)
+        if times <= 0:
+            msg = f"Times must be positive! Received {times}"
+            raise ValueError(msg)
         degree = knotvector.degree
         matrix = np.eye(degree + 1, dtype="object")
         for i in range(times):
             elevateonce = Operations.degree_increase_bezier_once(knotvector)
             matrix = elevateonce @ matrix
-            knotvector = knotvector + knotvector.limits
+            knotvector = knotvector.increase(1)
         return totuple(matrix)
 
     def degree_increase(knotvector: ImmutableKnotVector, times: int) -> "Matrix2D":
@@ -1036,12 +1082,16 @@ class Operations:
         to do a degree elevation
         """
         knotvector = ImmutableKnotVector(knotvector)
-        assert isinstance(times, int)
-        assert times >= 0
+        if not isinstance(times, int):
+            msg = f"Times must be an int, not {times}"
+            raise TypeError(msg)
+        if times == 0:
+            return totuple(np.eye(knotvector.npts, dtype="object"))
+        elif times < 0:
+            msg = f"Times must be >= 0! Received {times}"
+            raise ValueError(msg)
         degree = knotvector.degree
         npts = knotvector.npts
-        if times == 0:
-            return totuple(np.eye(npts, dtype="object"))
         if degree + 1 == npts:
             return Operations.degree_increase_bezier(knotvector, times)
         nodes = knotvector.knots
@@ -1061,8 +1111,8 @@ class Operations:
         for node in nodes:
             mult = knotvector.mult(node)
             insertednodes += (degree + 1 - mult) * [node]
-        bigvector = knotvector + insertednodes
-        incbigvector = bigvector + times * nodes
+        bigvector = knotvector.insert(insertednodes)
+        incbigvector = bigvector.increase(times)
         removematrix = Operations.knot_remove(incbigvector, insertednodes)
 
         bigmatrix = np.array(bigmatrix)
@@ -1093,7 +1143,7 @@ class Operations:
         knotsa = knotvectora.knots
         assert degreea <= degreeb
         matrix_deginc = Operations.degree_increase(knotvectora, degreeb - degreea)
-        knotvectora = knotvectora + (degreeb - degreea) * knotsa
+        knotvectora = knotvectora.increase(degreeb - degreea)
 
         nodes2ins = []
         for knot in knotvectorb.knots:
@@ -1332,6 +1382,7 @@ class Calculus:
             C'(u) = (A'(u) * w(u) - A(u) * w'(u))/(w(u)^2)
             C'(u) = (sum_{i=0}^{2p} B_{i,2p} * D_i)/(sum_{i=0}^{2p} B_{i,2p} * z_i)
         """
+        knotvector = ImmutableKnotVector(knotvector)
         matrixmult = MathOperations.mult_nonrat_bezier(knotvector, knotvector)
         # matrixderi = Calculus.derivate_nonrational_bezier(knotvector, False)
         matrixderi = Calculus.derivate_nonrational_bezier(knotvector)
