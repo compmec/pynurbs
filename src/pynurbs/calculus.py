@@ -3,9 +3,9 @@ from typing import Any, Callable, Optional
 
 import numpy as np
 
-from compmec.nurbs import heavy
-from compmec.nurbs.curves import Curve
-from compmec.nurbs.knotspace import KnotVector
+from pynurbs import heavy
+from pynurbs.curves import Curve
+from pynurbs.knotspace import KnotVector
 
 
 class Derivate:

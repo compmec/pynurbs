@@ -18,7 +18,7 @@ For example, you can use fractional knots and ctrlpoints to get a fractional poi
 
     import numpy as np
     from fractions import Fraction
-    from compmec.nurbs import Curve
+    from pynurbs import Curve
 
     zero, half, one = Fraction(0), Fraction(1, 2), Fraction(1)
     knotvector = [zero, zero, zero, half, one, one, one]
@@ -48,7 +48,7 @@ You can also define a custom point, for example ``Point2D`` defined bellow:
 .. code-block:: python
 
     from __future__ import annotations
-    from compmec.nurbs import Curve
+    from pynurbs import Curve
 
     class Point2D:
 
@@ -78,7 +78,7 @@ You can also define a custom point, for example ``Point2D`` defined bellow:
     print(curve(1.0))  # pt(0.0, 1.0)
 
 .. note::
-    I tried to keep the requirements of custom point at minimum. As example, ``nurbs`` package doesn't require ``Point2D`` to have many methods (like ``__sub__`` or ``__eq__``) to work, only the mandatory methods ``__add__`` (add two points), ``__rmul__`` (multiply by scalar) and ``__getitem__`` (get coordinates, to compute the norm).
+    I tried to keep the requirements of custom point at minimum. As example, ``pynurbs`` package doesn't require ``Point2D`` to have many methods (like ``__sub__`` or ``__eq__``) to work, only the mandatory methods ``__add__`` (add two points), ``__rmul__`` (multiply by scalar) and ``__getitem__`` (get coordinates, to compute the norm).
 
 
 -------------
@@ -90,7 +90,7 @@ You can also use third party packages, for example, ``clifford`` supports the su
 .. code-block:: python
 
     from clifford.g2 import e1, e2, e12
-    from compmec.nurbs import Curve 
+    from pynurbs import Curve 
 
     # Define knot vector
     knotvector = [0, 0, 0, 1, 2, 2, 2]
@@ -121,7 +121,7 @@ If you want to increase the float precision, you can use the library ``mpmath``
 .. code-block:: python
 
     import mpmath
-    from compmec.nurbs import Curve 
+    from pynurbs import Curve 
 
     mpmath.mp.dps = 50  # Set precision to 50 digits
 

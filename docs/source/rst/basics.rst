@@ -26,7 +26,7 @@ As direct example, we present a simple code to plot a spline curve
 .. code-block:: python
 
     import numpy as np
-    from compmec.nurbs import GeneratorKnotVector, Curve
+    from pynurbs import GeneratorKnotVector, Curve
     
     # Define the knotvector (0, 0, 0, 0.5, 1, 1, 1)
     knotvector = GeneratorKnotVector.uniform(degree = 2, npts = 4)
@@ -63,7 +63,7 @@ Use ``curve(nodes)`` is the same as ``curve.eval(nodes)``
 
     import numpy as np
     from matplotlib import pyplot as plt
-    from compmec.nurbs import GeneratorKnotVector, Curve
+    from pynurbs import GeneratorKnotVector, Curve
     
     # Create the curve
     knotvector = GeneratorKnotVector.uniform(2, 4)
@@ -104,7 +104,7 @@ The steps to construct a **rational bspline curve** is the same as to construct 
 
     import numpy as np
     from matplotlib import pyplot as plt
-    from compmec.nurbs import GeneratorKnotVector, Curve
+    from pynurbs import GeneratorKnotVector, Curve
     
     knotvector = GeneratorKnotVector.uniform(2, 4)
     ctrlpoints = np.array([(2, 4), (1, 1), (3, 2), (0, 3)])
@@ -129,7 +129,7 @@ Two of the main features are ``knot_insert`` and ``knot_remove``, which don't mo
 .. code-block:: python
 
     import numpy as np
-    from compmec.nurbs import GeneratorKnotVector, Curve
+    from pynurbs import GeneratorKnotVector, Curve
 
     knotvector = GeneratorKnotVector.uniform(2, 4)
     ctrlpoints = np.array([(2, 4), (1, 1), (3, 2), (0, 3)])
@@ -147,7 +147,7 @@ Trying to remove non-possible knots raises a ``ValueError``
 .. code-block:: python
 
     import numpy as np
-    from compmec.nurbs import GeneratorKnotVector, Curve
+    from pynurbs import GeneratorKnotVector, Curve
 
     knotvector = GeneratorKnotVector.uniform(2, 4)
     ctrlpoints = np.array([(2, 4), (1, 1), (3, 2), (0, 3)])
@@ -163,7 +163,7 @@ It's possible to force knot removal by changing the value of ``tolerance`` or se
 .. code-block:: python
 
     import numpy as np
-    from compmec.nurbs import GeneratorKnotVector, Curve
+    from pynurbs import GeneratorKnotVector, Curve
 
     knotvector = GeneratorKnotVector.uniform(2, 4)
     ctrlpoints = np.array([(2, 4), (1, 1), (3, 2), (0, 3)])
@@ -189,7 +189,7 @@ Other two of the main features are ``degree_increase`` and ``degree_decrease`` w
 .. code-block:: python
 
     import numpy as np
-    from compmec.nurbs import GeneratorKnotVector, Curve
+    from pynurbs import GeneratorKnotVector, Curve
 
     knotvector = GeneratorKnotVector.uniform(2, 4)
     ctrlpoints = np.array([(2, 4), (1, 1), (3, 2), (0, 3)])
@@ -207,7 +207,7 @@ You can also change the value of ``tolerance`` or set it to ``None`` (infinite t
 .. code-block:: python
 
     import numpy as np
-    from compmec.nurbs import GeneratorKnotVector, Curve
+    from pynurbs import GeneratorKnotVector, Curve
 
     knotvector = [0, 0, 0, 0, 1/3, 1/3, 1/3, 2/3, 2/3, 2/3, 1, 1, 1, 1]
     ctrlpoints = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0),
@@ -238,7 +238,7 @@ It's usefull when there are unecessary knots caused by **knot insertion** or **d
 .. code-block:: python
 
     import numpy as np
-    from compmec.nurbs import GeneratorKnotVector, Curve
+    from pynurbs import GeneratorKnotVector, Curve
 
     knotvector = GeneratorKnotVector.uniform(2, 4)
     ctrlpoints = np.array([(2, 4), (1, 1), (3, 2), (0, 3)])
@@ -266,7 +266,7 @@ It's possible to ``split`` and unite curves.
 .. code-block:: python
 
     import numpy as np
-    from compmec.nurbs import GeneratorKnotVector, Curve
+    from pynurbs import GeneratorKnotVector, Curve
 
     knotvector = GeneratorKnotVector.uniform(2, 4)
     ctrlpoints = np.array([(2, 4), (1, 1), (3, 2), (0, 3)])
@@ -303,7 +303,7 @@ The ``Curve``'s objects allow operations using the symbols ``+``, ``-``, ``*``, 
 
 .. code-block:: python
 
-    from compmec.nurbs import GeneratorKnotVector, Curve
+    from pynurbs import GeneratorKnotVector, Curve
 
     knotvector = GeneratorKnotVector.uniform(2, 4)
     curveA = Curve(knotvector, [1, 4, -2, 3])
@@ -343,7 +343,7 @@ The ``Curve``'s objects has the functions ``fit_curve``, ``fit_function`` and ``
 
 .. code-block:: python
 
-    from compmec.nurbs import Curve
+    from pynurbs import Curve
 
     # Create knot vector
     knotvector = (0, 0, 0.5, 1, 1)
@@ -373,8 +373,8 @@ It's possible to derivate a curve
 
 .. code-block:: python
 
-    from compmec.nurbs import Curve
-    from compmec.nurbs.calculus import Derivate
+    from pynurbs import Curve
+    from pynurbs.calculus import Derivate
 
     # Create knot vector
     knotvector = (0, 0, 0, 0.2, 0.5, 0.7, 1, 1, 1)
@@ -409,7 +409,7 @@ Since it's possible to have more than one parameters :math:`u^{\star}` with equa
 
 .. code-block:: python
 
-    from compmec.nurbs import Curve, Projection
+    from pynurbs import Curve, Projection
 
     # Create knot vector
     knotvector = (0, 0, 0, 0.2, 0.5, 0.7, 1, 1, 1)
@@ -444,8 +444,8 @@ Finds all the pairs  :math:`\left(u^{\star}, \ v^{\star} \right)` such :math:`\|
 .. code-block:: python
 
     import numpy as np
-    from compmec.nurbs import Curve
-    from compmec.nurbs.advanced import Intersection
+    from pynurbs import Curve
+    from pynurbs.advanced import Intersection
 
     # Create first curve
     pointsa = [(2, 1), (2, -1), (-1, -2), (1, -2)]

@@ -2,7 +2,7 @@
 Features
 ========
 
-**compmec-nurbs** contains the following fundamental geometric algorithms:
+**pynurbs** contains the following fundamental geometric algorithms:
 
 * :ref:`evaluate-points`
 * :ref:`insert-remove-knots`

@@ -5,9 +5,9 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from compmec.nurbs import heavy
-from compmec.nurbs.__classes__ import Intface_BaseFunction, Intface_Evaluator
-from compmec.nurbs.knotspace import KnotVector
+from pynurbs import heavy
+from pynurbs.__classes__ import Intface_BaseFunction, Intface_Evaluator
+from pynurbs.knotspace import KnotVector
 
 
 class BaseFunction(Intface_BaseFunction):
@@ -43,13 +43,13 @@ class BaseFunction(Intface_BaseFunction):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 2, 3, 3])
         >>> basis = Function(knotvector)
         >>> basis.knotvector
         (0, 0, 2, 3, 3)
         >>> type(basis.knotvector)
-        <class 'compmec.nurbs.knotspace.KnotVector'>
+        <class 'pynurbs.knotspace.KnotVector'>
 
         """
         return self.__knotvector
@@ -65,7 +65,7 @@ class BaseFunction(Intface_BaseFunction):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 2, 3, 3])
         >>> basis = Function(knotvector)
         >>> basis.degree
@@ -85,7 +85,7 @@ class BaseFunction(Intface_BaseFunction):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 2, 3, 3])
         >>> basis = Function(knotvector)
         >>> basis.npts
@@ -105,7 +105,7 @@ class BaseFunction(Intface_BaseFunction):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 2, 3, 3])
         >>> basis = Function(knotvector)
         >>> basis.knots
@@ -126,7 +126,7 @@ class BaseFunction(Intface_BaseFunction):
         Example use
         -----------
 
-        >>> from compmec.nurbs import KnotVector
+        >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 2, 3, 3])
         >>> basis = Function(knotvector)
         >>> basis.weights
@@ -315,7 +315,7 @@ class Function(IndexableFunction):
     -----------
 
     >>> import numpy as np
-    >>> from compmec.nurbs import Function
+    >>> from pynurbs import Function
     >>> knotvector = [0, 0, 1, 1]
     >>> basis = Function(knotvector)
     >>> basis.degree

@@ -32,7 +32,7 @@ Use example
 
     import numpy as np
     from matplotlib import pyplot as plt
-    from compmec.nurbs import GeneratorKnotVector, Function
+    from pynurbs import GeneratorKnotVector, Function
 
     degree = 2
     knotvector = GeneratorKnotVector.bezier(degree)
@@ -119,7 +119,7 @@ Although above the function :math:`B_{i,p}(u)` is described only by :math:`p`, b
 
         import numpy as np
         from matplotlib import pyplot as plt
-        from compmec.nurbs import GeneratorKnotVector, Function
+        from pynurbs import GeneratorKnotVector, Function
 
         prop_cycle = plt.rcParams['axes.prop_cycle']
         colors = prop_cycle.by_key()['color']
@@ -168,7 +168,7 @@ Use example
 
     import numpy as np
     from matplotlib import pyplot as plt
-    from compmec.nurbs import GeneratorKnotVector, Function
+    from pynurbs import GeneratorKnotVector, Function
     
     degree, npts = 2, 5
     knotvector = GeneratorKnotVector.uniform(degree, npts)
@@ -246,7 +246,7 @@ Use example
 
         import numpy as np
         from matplotlib import pyplot as plt
-        from compmec.nurbs import GeneratorKnotVector, Function
+        from pynurbs import GeneratorKnotVector, Function
 
         prop_cycle = plt.rcParams['axes.prop_cycle']
         colors = prop_cycle.by_key()['color']
@@ -297,7 +297,7 @@ Use example
 
     import numpy as np
     from matplotlib import pyplot as plt
-    from compmec.nurbs import GeneratorKnotVector, Function
+    from pynurbs import GeneratorKnotVector, Function
     
     degree, npts = 2, 5
     knotvector = GeneratorKnotVector.uniform(degree, npts)
@@ -390,7 +390,7 @@ Use example
 
         import numpy as np
         from matplotlib import pyplot as plt
-        from compmec.nurbs import GeneratorKnotVector, Function
+        from pynurbs import GeneratorKnotVector, Function
 
         prop_cycle = plt.rcParams['axes.prop_cycle']
         colors = prop_cycle.by_key()['color']
@@ -483,7 +483,7 @@ We start with the bezier of degree 3
 
         import numpy as np
         from matplotlib import pyplot as plt
-        from compmec.nurbs import GeneratorKnotVector, Function
+        from pynurbs import GeneratorKnotVector, Function
 
         prop_cycle = plt.rcParams['axes.prop_cycle']
         colors = prop_cycle.by_key()['color']
@@ -574,7 +574,7 @@ We do it by inserting the knot :math:`0.25` many times by starting with a bezier
 
         import numpy as np
         from matplotlib import pyplot as plt
-        from compmec.nurbs import GeneratorKnotVector, Function
+        from pynurbs import GeneratorKnotVector, Function
 
         prop_cycle = plt.rcParams['axes.prop_cycle']
         colors = prop_cycle.by_key()['color']

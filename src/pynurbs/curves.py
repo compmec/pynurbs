@@ -6,9 +6,9 @@ from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 
-from compmec.nurbs import heavy
-from compmec.nurbs.__classes__ import Intface_BaseCurve
-from compmec.nurbs.knotspace import KnotVector
+from pynurbs import heavy
+from pynurbs.__classes__ import Intface_BaseCurve
+from pynurbs.knotspace import KnotVector
 
 
 def norm(object: Union[float, Tuple[float]], L: int = 0) -> float:
@@ -243,7 +243,7 @@ class BaseCurve(Intface_BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0., 0., 1., 1.])
         >>> curve.knotvector
         (0., 0., 1., 1.)
@@ -266,7 +266,7 @@ class BaseCurve(Intface_BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0., 0., 1., 1.], [1, 2])
         >>> curve.degree = 3  # From 1 to 3
         >>> print(curve.ctrlpoints)
@@ -289,7 +289,7 @@ class BaseCurve(Intface_BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0., 0., 1., 1.], [1, 2])
         >>> curve.npts
         2
@@ -317,7 +317,7 @@ class BaseCurve(Intface_BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0., 0., 1., 1.], [1, 2])
         >>> curve.weights = [1, 2]
         (1, 2)
@@ -342,7 +342,7 @@ class BaseCurve(Intface_BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0., 0., 1., 1.])
         >>> curve.ctrlpoints = [1, 2]
         >>> curve.ctrlpoints
@@ -445,7 +445,7 @@ class BaseCurve(Intface_BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0, 0, 0.5, 1, 1])
         >>> curve.ctrlpoints = [2, 4, 2]
         >>> curve.weights = [1, 3, 2]
@@ -488,7 +488,7 @@ class BaseCurve(Intface_BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0, 0, 1, 1], [1, 2])
         >>> curve.update([0, 0, 0.5, 1, 1])  # Insert knot [0.5]
         >>> curve = Curve([0, 0, 1, 1], [1, 2])
@@ -524,7 +524,7 @@ class BaseCurve(Intface_BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0, 0, 0.5, 1, 1])
         >>> curve.ctrlpoints = [2, 4, 2]
         >>> matrix = [(0, 1, 0), (-1, 0, 1), (2, -1, 0)]
@@ -622,7 +622,7 @@ class Curve(BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0, 0, 0.5, 1, 1])
         >>> curve.ctrlpoints = (1, 2, -3)
         >>> curve(0)
@@ -661,7 +661,7 @@ class Curve(BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0, 0, 0.5, 1, 1])
         >>> curve.ctrlpoints = (1, 2, -3)
         >>> curve.knot_insert([0.2, 0.7])
@@ -692,7 +692,7 @@ class Curve(BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0, 0, 0, 0.5, 1, 1, 1])
         >>> curve.ctrlpoints = [1, 1.5, -0.5, -3]
         >>> print(curve)
@@ -735,7 +735,7 @@ class Curve(BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0, 0, 0, 0.5, 1, 1, 1])
         >>> curve.ctrlpoints = [1, 1.5, -0.5, -3]
         >>> print(curve)
@@ -771,7 +771,7 @@ class Curve(BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0, 0, 0, 0.5, 1, 1, 1])
         >>> curve.ctrlpoints = [1, 1.5, -0.5, -3]
         >>> print(curve)
@@ -805,8 +805,8 @@ class Curve(BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1])
         >>> curve.ctrlpoints = [1, 4/3, 7/6, -1/6, -4/3, -3]
         >>> print(curve)
@@ -841,8 +841,8 @@ class Curve(BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1])
         >>> curve.ctrlpoints = [1, 4/3, 7/6, -1/6, -4/3, -3]
         >>> print(curve)
@@ -875,8 +875,8 @@ class Curve(BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
+        >>> from pynurbs import Curve
         >>> curve = Curve([0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1])
         >>> curve.ctrlpoints = [1, 4/3, 7/6, -1/6, -4/3, -3]
         >>> print(curve)
@@ -922,7 +922,7 @@ class Curve(BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> knotvector = (0, 0, 0, 0.5, 1, 1, 1)
         >>> ctrlpoints = [2, 1, 3, 0]
         >>> curve = Curve(knotvector, ctrlpoints)
@@ -974,7 +974,7 @@ class Curve(BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> knotvector = (0, 0, 0, 0.5, 1, 1, 1)
         >>> ctrlpoints = [2, 1, 3, 0]
         >>> curvea = Curve(knotvector, ctrlpoints)
@@ -1033,7 +1033,7 @@ class Curve(BaseCurve):
         Example use
         -----------
 
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> knotvector = (0, 0, 0.5, 1, 1)
         >>> curve = Curve(knotvector)
         >>> function = lambda x: 1 + x**2
@@ -1084,7 +1084,7 @@ class Curve(BaseCurve):
         -----------
 
         >>> import numpy as np
-        >>> from compmec.nurbs import Curve
+        >>> from pynurbs import Curve
         >>> knotvector = (0, 0, 0.5, 1, 1)
         >>> curve = Curve(knotvector)
         >>> function = lambda x: 1 + x**2

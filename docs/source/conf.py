@@ -19,14 +19,14 @@ from sphinx_gallery.scrapers import matplotlib_scraper
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../../src/compmec/"))
-from compmec.nurbs import __version__ as ver
+sys.path.insert(0, os.path.abspath("../../src"))
+from pynurbs import __version__ as ver
 
 autodoc_mock_imports = []
 
 # -- Project information -----------------------------------------------------
 
-project = "compmec-nurbs"
+project = "pynurbs"
 copyright = "2023, Carlos Adir"
 author = "Carlos Adir"
 
@@ -115,7 +115,7 @@ html_static_path = []
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "compmec-nurbs-doc"
+htmlhelp_basename = "pynurbs-doc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -141,8 +141,8 @@ latex_elements = {
 latex_documents = [
     (
         master_doc,
-        "compmec-nurbs.tex",
-        "compmec-nurbs Documentation",
+        "pynurbs.tex",
+        "pynurbs Documentation",
         "Carlos Adir",
         "manual",
     ),
@@ -153,7 +153,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual nurbs).
-man_pages = [(master_doc, "compmec-nurbs", "compmec-nurbs Documentation", [author], 1)]
+man_pages = [(master_doc, "pynurbs", "pynurbs Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -164,10 +164,10 @@ man_pages = [(master_doc, "compmec-nurbs", "compmec-nurbs Documentation", [autho
 texinfo_documents = [
     (
         master_doc,
-        "compmec-nurbs",
-        "compmec-nurbs Documentation",
+        "pynurbs",
+        "pynurbs Documentation",
         author,
-        "compmec-nurbs",
+        "pynurbs",
         "Parametric geometry 2D library",
         "Miscellaneous",
     ),
@@ -192,7 +192,7 @@ sphinx_gallery_conf = {
     # directory where function granular galleries are stored
     "backreferences_dir": None,
     # Modules for which function level galleries are created.  In
-    "doc_module": "compmec-nurbs",
+    "doc_module": "pynurbs",
     "image_scrapers": ("matplotlib",),
     "first_notebook_cell": ("%matplotlib inline\n"),
 }

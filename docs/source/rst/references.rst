@@ -1,26 +1,26 @@
 This page contains all the documentation of the classes and methods.
 
-.. autoclass:: nurbs.GeneratorKnotVector
+.. autoclass:: pynurbs.GeneratorKnotVector
     :members:
 
-.. autoclass:: nurbs.KnotVector
+.. autoclass:: pynurbs.KnotVector
     :members:
 
-.. autoclass:: nurbs.Function
+.. autoclass:: pynurbs.Function
     :members:
 
-.. autoclass:: nurbs.Curve
+.. autoclass:: pynurbs.Curve
     :members:
 
-.. autoclass:: nurbs.calculus.Derivate
+.. autoclass:: pynurbs.calculus.Derivate
     :members:
 
-.. autoclass:: nurbs.calculus.Integrate
+.. autoclass:: pynurbs.calculus.Integrate
     :members:
 
-.. autoclass:: nurbs.advanced.Projection
+.. autoclass:: pynurbs.advanced.Projection
     :members:
 
-.. autoclass:: nurbs.advanced.Intersection
+.. autoclass:: pynurbs.advanced.Intersection
     :members:
 

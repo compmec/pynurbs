@@ -5,8 +5,8 @@ from fractions import Fraction as frac
 import numpy as np
 import pytest
 
-from compmec.nurbs.curves import Curve
-from compmec.nurbs.knotspace import GeneratorKnotVector
+from pynurbs.curves import Curve
+from pynurbs.knotspace import GeneratorKnotVector
 
 
 @pytest.mark.order(6)

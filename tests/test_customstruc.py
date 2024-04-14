@@ -14,10 +14,10 @@ Example 1:
 import numpy as np
 import pytest
 
-from compmec.nurbs import calculus
-from compmec.nurbs.curves import Curve
-from compmec.nurbs.functions import Function
-from compmec.nurbs.knotspace import GeneratorKnotVector, KnotVector
+from pynurbs import calculus
+from pynurbs.curves import Curve
+from pynurbs.functions import Function
+from pynurbs.knotspace import GeneratorKnotVector, KnotVector
 
 
 class CustomFloat:

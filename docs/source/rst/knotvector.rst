@@ -9,7 +9,7 @@ A Generator can be used to create these knotvectors by passing the ``degree`` an
 
 .. code-block:: python
 
-    from compmec.nurbs import GeneratorKnotVector
+    from pynurbs import GeneratorKnotVector
 
     GeneratorKnotVector.bezier(degree=1)
     # [0, 0, 1, 1]
@@ -31,7 +31,7 @@ For example, take fractional knots.
 .. code-block:: python
 
     from fractions import Fraction
-    from compmec.nurbs import KnotVector
+    from pynurbs import KnotVector
     
     zero, half, one = Fraction(0), Fraction(1, 2), Fraction(1)
     vector = [zero, zero, half, one, one]
@@ -44,7 +44,7 @@ Another way is to use the ``GeneratorKnotVector`` with the specific type you wan
 .. code-block:: python
 
     from fractions import Fraction
-    from compmec.nurbs import GeneratorKnotVector
+    from pynurbs import GeneratorKnotVector
     
     knotvector = GeneratorKnotVector.uniform(degree = 1, npts = 3, cls = Fraction)
     print(knotvector.degree)  # 1
