@@ -177,6 +177,23 @@ class Polynomial:
 
 
 def scale(polynomial: Polynomial, amount: Real) -> Polynomial:
+    """
+    Transforms the polynomial p(x) into p(A*x) by
+    scaling the argument of the polynomial by 'A'.
+
+    p(x) = a0 + a1 * x + ... + ap * x^p
+    p(A * x) = a0 + a1 * (A*x) + ... + ap * (A * x)^p
+             = b0 + b1 * x + ... + bp * x^p
+
+    Example
+    -------
+    >>> old_poly = Polynomial([0, 0, 0, 1])
+    >>> print(old_poly)
+    x^3
+    >>> new_poly = scale(poly, 1)  # transform to (x-1)^3
+    >>> print(new_poly)
+    - 1 + 3 * x - 3 * x^2 + x^3
+    """
     coefs = tuple(coef * amount**i for i, coef in enumerate(polynomial))
     return Polynomial(coefs)
 
@@ -184,7 +201,7 @@ def scale(polynomial: Polynomial, amount: Real) -> Polynomial:
 def shift(polynomial: Polynomial, amount: Real) -> Polynomial:
     """
     Transforms the polynomial p(x) into p(x-d) by
-    translating the curve by 'd' to the right.
+    translating the polynomial by 'd' to the right.
 
     p(x) = a0 + a1 * x + ... + ap * x^p
     p(x-d) = a0 + a1 * (x-d) + ... + ap * (x-d)^p
@@ -195,7 +212,7 @@ def shift(polynomial: Polynomial, amount: Real) -> Polynomial:
     >>> old_poly = Polynomial([0, 0, 0, 1])
     >>> print(old_poly)
     x^3
-    >>> new_poly = poly.shift(1)  # transform to (x-1)^3
+    >>> new_poly = shift(poly, 1)  # transform to (x-1)^3
     >>> print(new_poly)
     - 1 + 3 * x - 3 * x^2 + x^3
     """
