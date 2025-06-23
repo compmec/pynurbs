@@ -44,6 +44,11 @@ class Polynomial:
         """
         return len(self.__coefs) - 1
 
+    def __eq__(self, value: object) -> bool:
+        if isinstance(value, Polynomial):
+            return tuple(self) == tuple(value)
+        return self.degree == 0 and value == self[0]
+
     def __iter__(self):
         yield from self.__coefs
 
