@@ -84,13 +84,56 @@ def test_add():
     for _ in range(ntests):
         dega = np.random.randint(0, maxdeg + 1)
         coefsa = np.random.uniform(-1, 1, dega + 1)
-        const = np.random.uniform(-1, 1, 1)
+        const = np.random.uniform(-1, 1)
         polya = Polynomial(coefsa)
         polyb = polya + const
+        polyc = const + polya
         valuesa = polya(tsample)
         valuesb = polyb(tsample)
+        valuesc = polyc(tsample)
 
         np.testing.assert_allclose(valuesa + const, valuesb)
+        np.testing.assert_allclose(const + valuesa, valuesc)
+
+
+@pytest.mark.order(1)
+@pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
+def test_sub():
+    """
+    Function to test if the polynomials coefficients
+    are correctly computed
+    """
+    import numpy as np
+
+    ntests = 100
+    maxdeg = 6
+    tsample = np.linspace(-1, 1, 17)
+    for _ in range(ntests):
+        dega, degb = np.random.randint(0, maxdeg + 1, 2)
+        coefsa = np.random.uniform(-1, 1, dega + 1)
+        coefsb = np.random.uniform(-1, 1, degb + 1)
+        polya = Polynomial(coefsa)
+        polyb = Polynomial(coefsb)
+        polyc = polya - polyb
+        valuesa = polya(tsample)
+        valuesb = polyb(tsample)
+        valuesc = polyc(tsample)
+
+        np.testing.assert_allclose(valuesa - valuesb, valuesc)
+
+    for _ in range(ntests):
+        dega = np.random.randint(0, maxdeg + 1)
+        coefsa = np.random.uniform(-1, 1, dega + 1)
+        const = np.random.uniform(-1, 1)
+        polya = Polynomial(coefsa)
+        polyb = polya - const
+        polyc = const - polya
+        valuesa = polya(tsample)
+        valuesb = polyb(tsample)
+        valuesc = polyc(tsample)
+
+        np.testing.assert_allclose(valuesa - const, valuesb)
+        np.testing.assert_allclose(const - valuesa, valuesc)
 
 
 @pytest.mark.order(1)
@@ -124,10 +167,13 @@ def test_mul():
         const = np.random.uniform(-1, 1)
         polya = Polynomial(coefsa)
         polyb = polya * const
+        polyc = const * polya
         valuesa = polya(tsample)
         valuesb = polyb(tsample)
+        valuesc = polyc(tsample)
 
         np.testing.assert_allclose(valuesa * const, valuesb)
+        np.testing.assert_allclose(const * valuesa, valuesc)
 
 
 @pytest.mark.order(1)
@@ -150,6 +196,15 @@ def test_truediv():
 
 
 @pytest.mark.order(1)
+@pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
+def test_pow():
+    poly = Polynomial([-1, 1])
+    assert poly**2 == Polynomial([1, -2, 1])
+    assert poly**3 == Polynomial([-1, 3, -3, 1])
+    assert poly**4 == Polynomial([1, -4, 6, -4, 1])
+
+
+@pytest.mark.order(1)
 @pytest.mark.dependency(
     depends=["test_build", "test_degree", "test_evaluate", "test_add", "test_mul"]
 )
@@ -166,6 +221,33 @@ def test_derivate():
     assert derivate(poly, 1) == Polynomial([1, 2, 3, 4])
     assert derivate(poly, 2) == Polynomial([2, 6, 12])
     assert derivate(poly, 3) == Polynomial([6, 24])
+
+
+@pytest.mark.order(1)
+@pytest.mark.dependency(
+    depends=[
+        "test_build",
+        "test_degree",
+        "test_evaluate",
+        "test_add",
+        "test_mul",
+        "test_derivate",
+    ]
+)
+def test_evaluate_derivate():
+    import numpy as np
+
+    ntests = 100
+    maxdeg = 6
+    tvalues = np.linspace(-1, 1, 129)
+    for _ in range(ntests):
+        dega = np.random.randint(0, maxdeg + 1)
+        coefsa = np.random.uniform(-1, 1, dega + 1)
+        polya = Polynomial(coefsa)
+        for times in range(dega + 1):
+            dpolya = derivate(polya, times)
+            for tval in tvalues:
+                assert polya.eval(tval, times) == dpolya.eval(tval, 0)
 
 
 @pytest.mark.order(1)
@@ -219,6 +301,18 @@ def test_scale():
 
 
 @pytest.mark.order(1)
+@pytest.mark.dependency(depends=["test_build"])
+def test_print():
+    poly = Polynomial([0])
+    assert str(poly) == "0"
+    poly = Polynomial([1])
+    assert str(poly) == "1"
+    poly = Polynomial([0, 1])
+    assert str(poly) == "x"
+    repr(poly)
+
+
+@pytest.mark.order(1)
 @pytest.mark.dependency(
     depends=[
         "test_build",
@@ -226,8 +320,10 @@ def test_scale():
         "test_evaluate",
         "test_neg",
         "test_add",
+        "test_sub",
         "test_mul",
         "test_truediv",
+        "test_pow",
         "test_derivate",
         "test_shift",
         "test_scale",
