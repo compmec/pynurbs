@@ -1,6 +1,6 @@
 import pytest
 
-from pynurbs.polynomial import Polynomial, scale, shift
+from pynurbs.polynomial import Polynomial, derivate, scale, shift
 
 
 @pytest.mark.order(1)
@@ -49,6 +49,15 @@ def test_evaluate():
 
 @pytest.mark.order(1)
 @pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
+def test_neg():
+    polya = Polynomial([1, 2, 3, 4])
+    polyb = Polynomial([-1, -2, -3, -4])
+
+    assert -polya == polyb
+
+
+@pytest.mark.order(1)
+@pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
 def test_add():
     """
     Function to test if the polynomials coefficients
@@ -71,6 +80,17 @@ def test_add():
         valuesc = polyc(tsample)
 
         np.testing.assert_allclose(valuesa + valuesb, valuesc)
+
+    for _ in range(ntests):
+        dega = np.random.randint(0, maxdeg + 1)
+        coefsa = np.random.uniform(-1, 1, dega + 1)
+        const = np.random.uniform(-1, 1, 1)
+        polya = Polynomial(coefsa)
+        polyb = polya + const
+        valuesa = polya(tsample)
+        valuesb = polyb(tsample)
+
+        np.testing.assert_allclose(valuesa + const, valuesb)
 
 
 @pytest.mark.order(1)
@@ -97,6 +117,55 @@ def test_mul():
         valuesc = polyc(tsample)
 
         np.testing.assert_allclose(valuesa * valuesb, valuesc)
+
+    for _ in range(ntests):
+        dega = np.random.randint(0, maxdeg + 1)
+        coefsa = np.random.uniform(-1, 1, dega + 1)
+        const = np.random.uniform(-1, 1)
+        polya = Polynomial(coefsa)
+        polyb = polya * const
+        valuesa = polya(tsample)
+        valuesb = polyb(tsample)
+
+        np.testing.assert_allclose(valuesa * const, valuesb)
+
+
+@pytest.mark.order(1)
+@pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
+def test_truediv():
+    """
+    Function to test if the polynomials coefficients
+    are correctly computed
+    """
+    import numpy as np
+
+    ntests = 100
+    maxdeg = 6
+    for _ in range(ntests):
+        dega = np.random.randint(0, maxdeg + 1)
+        coefsa = np.random.uniform(-1, 1, dega + 1)
+        divisor = np.random.randint(1, 10)
+        coefsb = [coef / divisor for coef in coefsa]
+        assert Polynomial(coefsa) / divisor == Polynomial(coefsb)
+
+
+@pytest.mark.order(1)
+@pytest.mark.dependency(
+    depends=["test_build", "test_degree", "test_evaluate", "test_add", "test_mul"]
+)
+def test_derivate():
+    poly = Polynomial([0])
+    assert derivate(poly, 1) == 0
+    assert derivate(poly, 2) == 0
+
+    poly = Polynomial([3])
+    assert derivate(poly, 1) == 0
+    assert derivate(poly, 2) == 0
+
+    poly = Polynomial([1, 1, 1, 1, 1])
+    assert derivate(poly, 1) == Polynomial([1, 2, 3, 4])
+    assert derivate(poly, 2) == Polynomial([2, 6, 12])
+    assert derivate(poly, 3) == Polynomial([6, 24])
 
 
 @pytest.mark.order(1)
@@ -147,3 +216,22 @@ def test_scale():
         valuesb = polyb(tsample)
 
         np.testing.assert_allclose(valuesb, valuesa)
+
+
+@pytest.mark.order(1)
+@pytest.mark.dependency(
+    depends=[
+        "test_build",
+        "test_degree",
+        "test_evaluate",
+        "test_neg",
+        "test_add",
+        "test_mul",
+        "test_truediv",
+        "test_derivate",
+        "test_shift",
+        "test_scale",
+    ]
+)
+def test_all():
+    pass
