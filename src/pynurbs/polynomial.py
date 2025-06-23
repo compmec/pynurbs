@@ -56,8 +56,7 @@ class Polynomial:
         return self.__coefs[index]
 
     def __neg__(self) -> Polynomial:
-        coefs = tuple(-coef for coef in self)
-        return self.__class__(coefs)
+        return self.__class__(-coef for coef in self)
 
     def __add__(self, other: Union[Real, Polynomial]) -> Polynomial:
         if isinstance(other, Polynomial):
@@ -107,6 +106,8 @@ class Polynomial:
         return self.eval(node, 0)
 
     def __str__(self):
+        if self.degree == 0:
+            return str(self[0])
         msgs: List[str] = []
         flag = False
         for i, coef in enumerate(self):
@@ -134,7 +135,7 @@ class Polynomial:
     def __repr__(self) -> str:
         return str(self)
 
-    def eval(self, node: Real, derivate: int = 0) -> Real:
+    def eval(self, node: Real, times: int = 0) -> Real:
         """
         Evaluates the polynomial at given node
 
@@ -150,14 +151,12 @@ class Polynomial:
         >>> poly.eval(1, 2)
         0
         """
-        if not derivate:
-            coefs = self.__coefs
-        else:
-            coefs = tuple(self.derivate(derivate))
-        if len(coefs) == 1:
-            return coefs[0]
-        result: Real = 0 * coefs[0]
-        for coef in coefs[::-1]:
+        if times:
+            return derivate(self, times).eval(node, 0)
+        if self.degree == 0:
+            return self[0]
+        result: Real = 0 * self[0]
+        for coef in self[::-1]:
             result = node * result + coef
         return result
 
