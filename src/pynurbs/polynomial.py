@@ -156,25 +156,6 @@ class Polynomial:
             result = node * result + coef
         return result
 
-    def derivate(self, times: int = 1) -> Polynomial:
-        """
-        Derivate the polynomial curve, giving a new one
-
-        Example
-        -------
-        >>> poly = Polynomial([1, 2, 5])
-        >>> print(poly)
-        1 + 2 * x + 5 * x^2
-        >>> dpoly = poly.derivate()
-        >>> print(dpoly)
-        2 + 10 * x
-        """
-        coefs = (
-            math.factorial(n + times) * coef / math.factorial(n)
-            for n, coef in enumerate(self[times:])
-        )
-        return self.__class__(coefs)
-
 
 def scale(polynomial: Polynomial, amount: Real) -> Polynomial:
     """
@@ -225,3 +206,23 @@ def shift(polynomial: Polynomial, amount: Real) -> Polynomial:
                 value *= -1
             newcoefs[j] += coef * value
     return Polynomial(newcoefs)
+
+
+def derivate(polynomial: Polynomial, times: int = 1) -> Polynomial:
+    """
+    Derivate the polynomial curve, giving a new one
+
+    Example
+    -------
+    >>> poly = Polynomial([1, 2, 5])
+    >>> print(poly)
+    1 + 2 * x + 5 * x^2
+    >>> dpoly = poly.derivate()
+    >>> print(dpoly)
+    2 + 10 * x
+    """
+    coefs = (
+        math.factorial(n + times) // math.factorial(n) * coef
+        for n, coef in enumerate(polynomial[times:])
+    )
+    return Polynomial(coefs)
