@@ -234,12 +234,6 @@ def test_CompareImmutableKnotVector():
         "test_findmult_single",
         "test_findspans_array",
         "test_findmult_array",
-        "test_compare_ImmutableKnotVectors_fail",
-        "test_insert_knot_remove",
-        "test_degree_change",
-        "test_or_and",
-        "test_others",
-        "test_fractions",
     ]
 )
 def test_end():

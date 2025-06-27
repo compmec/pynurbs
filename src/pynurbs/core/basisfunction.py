@@ -24,7 +24,8 @@ def spectral_matrix(
         - m is the number of segments: len(knots)-1
         - j is the requested degree
     """
-    knotvector = ImmutableKnotVector(knotvector)
+    if not isinstance(knotvector, ImmutableKnotVector):
+        raise TypeError
     if not isinstance(reqdegree, int):
         raise TypeError("reqdegree must be integer")
     if reqdegree < 0 or knotvector.degree < reqdegree:
@@ -66,12 +67,24 @@ class ImmutableBasisFunction:
     def __init__(
         self, knotvector: ImmutableKnotVector, degree: Union[int, None] = None
     ):
+        if not isinstance(knotvector, ImmutableKnotVector):
+            raise TypeError
         degree = degree or knotvector.degree
         self.__matrix = tuple(
             tuple(tuple(Polynomial(coefs) for coefs in all_coefs))
             for all_coefs in spectral_matrix(knotvector, degree)
         )
+        self.__degree = degree
+        self.__npts = knotvector.npts
         self.__knotvector = knotvector
+
+    @property
+    def degree(self) -> int:
+        return self.__degree
+
+    @property
+    def npts(self) -> int:
+        return self.__npts
 
     @property
     def knots(self) -> Tuple[Real, ...]:
@@ -98,3 +111,6 @@ class ImmutableBasisFunction:
             polynomial = self.__matrix[ind][y]
             result[i] = polynomial.eval(shifnode, times)
         return tuple(result)
+
+    def __call__(self, node: Real) -> Tuple[Real, ...]:
+        return self.eval(node, 0)
