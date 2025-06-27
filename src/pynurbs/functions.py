@@ -5,8 +5,8 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from pynurbs import heavy
 from pynurbs.__classes__ import Intface_BaseFunction, Intface_Evaluator
+from pynurbs.core.basisfunction import spectral_matrix
 from pynurbs.knotspace import KnotVector
 
 
@@ -180,7 +180,7 @@ class FunctionEvaluator(Intface_Evaluator):
         self.__weights = func.weights
         self.__first_index = i
         self.__second_index = j
-        self.__matrix = heavy.BasisFunction.speval_matrix(vector.internal, j)
+        self.__matrix = spectral_matrix(vector.internal, j)
         self.__knots = vector.knots
         self.__spans = vector.span(vector.knots)
 

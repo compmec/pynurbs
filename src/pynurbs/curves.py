@@ -10,6 +10,8 @@ from pynurbs import heavy
 from pynurbs.__classes__ import Intface_BaseCurve
 from pynurbs.knotspace import KnotVector
 
+from .core.basisfunction import ImmutableBasisFunction
+
 
 def norm(object: Union[float, Tuple[float]], L: int = 0) -> float:
     """
@@ -598,14 +600,11 @@ class Curve(BaseCurve):
         """
         vector = self.knotvector.internal
         nodes = tuple(nodes)
-        degree = int(self.knotvector.degree)
-        if self.weights is None:
-            eval = heavy.eval_spline_nodes
-            matrix = eval(vector, nodes, degree)
-        else:
-            eval = heavy.eval_rational_nodes
-            weights = tuple(self.weights)
-            matrix = eval(vector, weights, nodes, degree)
+        basis = ImmutableBasisFunction(vector)
+        matrix = np.transpose(tuple(map(basis, nodes)))
+        if self.weights is not None:
+            denominators = 1 / np.dot(self.weights, matrix)
+            matrix = np.einsum("j,ij,i->ij", denominators, matrix, self.weights)
         result = np.moveaxis(matrix, 0, -1) @ self.ctrlpoints
         return tuple(result)
 

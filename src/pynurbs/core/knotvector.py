@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Optional, Tuple, Union
 
+import numpy as np
+
 
 class ImmutableKnotVector(tuple):
     @staticmethod
@@ -202,7 +204,7 @@ class ImmutableKnotVector(tuple):
         if len(nodes) == 0:
             return (self,)
         nodes = tuple(sorted(nodes | set(self.limits)))
-        vector = np.array(self)
+        vector = np.array(tuple(self))
 
         retorno = []
         for a, b in zip(nodes[:-1], nodes[1:]):

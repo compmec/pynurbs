@@ -12,7 +12,8 @@ from typing import Optional, Tuple, Union
 import numpy as np
 
 from .cmath import IntegratorArray, Linalg, NodeSample, number_type, totuple
-from .knotspace import ImmutableKnotVector
+from .core.basisfunction import ImmutableBasisFunction
+from .core.knotvector import ImmutableKnotVector
 
 
 def find_roots(
@@ -98,6 +99,33 @@ def find_roots(
     return tuple(sorted(filtered_roots))
 
 
+def eval_spline_nodes(
+    knotvector: ImmutableKnotVector, nodes: Tuple[float], degree: int
+) -> Tuple[Tuple[float]]:
+    """
+    Returns a matrix M of which M_{ij} = N_{i,degree}(node_j)
+    M.shape = (npts, len(nodes))
+    """
+    knotvector = ImmutableKnotVector(knotvector)
+    basis = ImmutableBasisFunction(knotvector, degree)
+    return np.transpose(tuple(map(basis, nodes)))
+
+
+def eval_rational_nodes(
+    knotvector: ImmutableKnotVector,
+    weights: Tuple[float],
+    nodes: Tuple[float],
+    degree: int,
+) -> Tuple[Tuple[float]]:
+    """
+    Returns a matrix M of which M_{ij} = N_{i,p}(node_j)
+    M.shape = (len(weights), len(nodes))
+    """
+    matrix = eval_spline_nodes(knotvector, nodes, degree)
+    denominators = 1 / np.dot(weights, matrix)
+    return np.einsum("j,ij,i->ij", denominators, matrix, weights)
+
+
 class LeastSquare:
     """
     Given two hypotetic curves C0 and C1, which are associated
@@ -140,14 +168,12 @@ class LeastSquare:
             [P] = [M] * [f(nodes)]
         """
         knotvector = ImmutableKnotVector(knotvector)
-        npts = knotvector.npts
-        degree = knotvector.degree
-        assert len(nodes) >= npts
-        if weights is None:
-            funcvals = eval_spline_nodes(knotvector, nodes, degree)
-        else:
-            funcvals = eval_rational_nodes(knotvector, weights, nodes, degree)
-        return Linalg.lstsq(np.transpose(funcvals))
+        basis = ImmutableBasisFunction(knotvector)
+        matrix = np.transpose(tuple(map(basis, nodes)))
+        if weights is not None:
+            denominators = 1 / np.dot(weights, matrix)
+            matrix = np.einsum("j,ij->ij", denominators, matrix)
+        return Linalg.lstsq(np.transpose(matrix))
 
     @staticmethod
     def spline2spline(
