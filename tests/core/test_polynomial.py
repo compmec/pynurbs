@@ -1,6 +1,6 @@
 import pytest
 
-from pynurbs.polynomial import Polynomial, derivate, scale, shift
+from pynurbs.core.polynomial import Polynomial, derivate, scale, shift
 
 
 @pytest.mark.order(1)

@@ -3,8 +3,8 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from .cmath import totuple
-from .knotspace import ImmutableKnotVector
+from ..cmath import totuple
+from .knotvector import ImmutableKnotVector
 from .piecepoly import PiecewisePolynomial
 from .polynomial import Polynomial
 
