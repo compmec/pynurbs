@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from pynurbs import Function
-from pynurbs.heavy import binom
+from pynurbs.cmath import binom
 from pynurbs.knotspace import GeneratorKnotVector
 
 
