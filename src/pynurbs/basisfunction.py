@@ -1,0 +1,100 @@
+from numbers import Real
+from typing import Tuple, Union
+
+import numpy as np
+
+from .cmath import totuple
+from .knotspace import ImmutableKnotVector
+from .piecepoly import PiecewisePolynomial
+from .polynomial import Polynomial
+
+
+def spectral_matrix(
+    knotvector: ImmutableKnotVector, reqdegree: int
+) -> Tuple[Tuple[Tuple[Real, ...], ...], ...]:
+    """
+    Given a knotvector, it has properties like
+        - number of points: npts
+        - polynomial degree: degree
+        - knots: A list of non-repeted knots
+        - spans: The span of each knot
+    This function returns a matrix of size
+        (m) x (j+1) x (j+1)
+    which
+        - m is the number of segments: len(knots)-1
+        - j is the requested degree
+    """
+    knotvector = ImmutableKnotVector(knotvector)
+    if not isinstance(reqdegree, int):
+        raise TypeError("reqdegree must be integer")
+    if reqdegree < 0 or knotvector.degree < reqdegree:
+        msg = f"reqdegree must be in [0, {knotvector.degree}]"
+        raise ValueError(msg)
+    knots = knotvector.knots
+    spans = knotvector.span(knots)
+    j = reqdegree
+
+    ninter = len(knots) - 1
+    matrix = [[[0 * knots[0]] * (j + 1)] * (j + 1)] * ninter
+    matrix = np.array(matrix, dtype="object")
+    if j == 0:
+        matrix.fill(1)
+        return matrix
+    matrix_less1 = spectral_matrix(knotvector, j - 1)
+    matrix_less1 = np.array(matrix_less1).tolist()
+    for y in range(j):
+        for z, sz in enumerate(spans[:-1]):
+            i = y + sz - j + 1
+            denom = knotvector[i + j] - knotvector[i]
+            for k in range(j):
+                matrix_less1[z][y][k] /= denom
+
+            a0 = knots[z] - knotvector[i]
+            a1 = knots[z + 1] - knots[z]
+            b0 = knotvector[i + j] - knots[z]
+            b1 = knots[z] - knots[z + 1]
+            for k in range(j):
+                matrix[z][y][k] += b0 * matrix_less1[z][y][k]
+                matrix[z][y][k + 1] += b1 * matrix_less1[z][y][k]
+                matrix[z][y + 1][k] += a0 * matrix_less1[z][y][k]
+                matrix[z][y + 1][k + 1] += a1 * matrix_less1[z][y][k]
+    return totuple(matrix)
+
+
+class ImmutableBasisFunction:
+
+    def __init__(
+        self, knotvector: ImmutableKnotVector, degree: Union[int, None] = None
+    ):
+        degree = degree or knotvector.degree
+        self.__matrix = tuple(
+            tuple(tuple(Polynomial(coefs) for coefs in all_coefs))
+            for all_coefs in spectral_matrix(knotvector, degree)
+        )
+        self.__knotvector = knotvector
+
+    @property
+    def knots(self) -> Tuple[Real, ...]:
+        return self.__knotvector.knots
+
+    def __getitem__(self, index: int) -> PiecewisePolynomial:
+        functions = self.__matrix[index]
+        return PiecewisePolynomial(functions, self.knots)
+
+    def eval(self, node: Real, times: int = 0) -> Tuple[Real, ...]:
+
+        npts = self.__knotvector.npts
+        knots = self.__knotvector.knots
+        spans = self.__knotvector.span(knots)
+        degree = self.__knotvector.degree
+        result = [0] * npts
+
+        span = self.__knotvector.span(node)
+        ind = spans.index(span)
+        shifnode = node - knots[ind]
+        shifnode /= knots[ind + 1] - knots[ind]
+        for y in range(self.__knotvector.degree + 1):
+            i = y + span - degree
+            polynomial = self.__matrix[ind][y]
+            result[i] = polynomial.eval(shifnode, times)
+        return tuple(result)
