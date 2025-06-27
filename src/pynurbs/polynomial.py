@@ -34,7 +34,7 @@ class Polynomial:
     def __init__(self, coefs: Iterable[Real]):
         coefs = tuple(coefs)
         if len(coefs) == 0:
-            coefs = (0,)
+            raise ValueError("Cannot receive an empty tuple")
         self.__coefs = tuple(coefs)
 
     @property
@@ -225,6 +225,8 @@ def derivate(polynomial: Polynomial, times: int = 1) -> Polynomial:
     >>> print(dpoly)
     2 + 10 * x
     """
+    if polynomial.degree < times:
+        return Polynomial([0 * polynomial[0]])
     coefs = (
         math.factorial(n + times) // math.factorial(n) * coef
         for n, coef in enumerate(polynomial[times:])

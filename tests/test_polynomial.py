@@ -6,7 +6,7 @@ from pynurbs.polynomial import Polynomial, derivate, scale, shift
 @pytest.mark.order(1)
 @pytest.mark.dependency()
 def test_build():
-    Polynomial([])  # p(x) = 0
+    Polynomial([0])  # p(x) = 0
     Polynomial([1])  # p(x) = 1
     Polynomial([1, 2])  # p(x) = 1 + 2 * x
     Polynomial([1, 2, 3])  # p(x) = 1 + 2 * x + 3 * x^2
@@ -16,7 +16,7 @@ def test_build():
 @pytest.mark.order(1)
 @pytest.mark.dependency(depends=["test_build"])
 def test_degree():
-    poly = Polynomial([])  # p(x) = 0
+    poly = Polynomial([0])  # p(x) = 0
     assert poly.degree == 0
     poly = Polynomial([1])  # p(x) = 1
     assert poly.degree == 0
@@ -29,7 +29,7 @@ def test_degree():
 @pytest.mark.order(1)
 @pytest.mark.dependency(depends=["test_build", "test_degree"])
 def test_evaluate():
-    poly = Polynomial([])  # p(x) = 0
+    poly = Polynomial([0])  # p(x) = 0
     assert poly.eval(0) == 0
     assert poly.eval(-1) == 0
     assert poly.eval(2) == 0
