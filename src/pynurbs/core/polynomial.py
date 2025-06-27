@@ -35,7 +35,8 @@ class Polynomial:
         coefs = tuple(coefs)
         if len(coefs) == 0:
             raise ValueError("Cannot receive an empty tuple")
-        self.__coefs = tuple(coefs)
+        degree = max((i for i, v in enumerate(coefs) if v), default=0)
+        self.__coefs = tuple(coefs[: degree + 1])
 
     @property
     def degree(self) -> int:
