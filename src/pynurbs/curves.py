@@ -11,6 +11,12 @@ from pynurbs.__classes__ import Intface_BaseCurve
 from pynurbs.knotspace import KnotVector
 
 from .core.basisfunction import ImmutableBasisFunction
+from .core.operations import (
+    decrease_degree,
+    increase_degree,
+    insert_knots,
+    remove_knots,
+)
 
 
 def norm(object: Union[float, Tuple[float]], L: int = 0) -> float:
@@ -670,7 +676,7 @@ class Curve(BaseCurve):
         """
         nodes = tuple(nodes)
         oldvector = self.knotvector.internal
-        newvector = oldvector.insert(nodes)
+        newvector = insert_knots(oldvector, nodes)
         if self.ctrlpoints is None and self.weights is None:
             self.knotvector = newvector
         matrix = heavy.Operations.knot_insert(oldvector, nodes)
@@ -706,7 +712,7 @@ class Curve(BaseCurve):
 
         """
         old_vector = self.knotvector.internal
-        new_vector = old_vector.remove(nodes)
+        new_vector = remove_knots(old_vector, nodes)
         knots = new_vector.knots if new_vector.degree != 0 else None
         self.update(new_vector, tolerance, knots)
 
@@ -786,7 +792,7 @@ class Curve(BaseCurve):
         if not isinstance(times, int) or times <= 0:
             raise ValueError
         old_vector = self.knotvector.internal
-        new_vector = old_vector.increase(times)
+        new_vector = increase_degree(old_vector, times)
         matrix = heavy.Operations.degree_increase(old_vector, times)
         self.apply(new_vector, matrix)
 
@@ -824,7 +830,7 @@ class Curve(BaseCurve):
             float(tolerance)
             assert tolerance >= 0
         old_vector = self.knotvector.internal
-        new_vector = old_vector.decrease(times)
+        new_vector = decrease_degree(old_vector, times)
         knots = new_vector.knots if new_vector.degree != 0 else None
         self.update(new_vector, tolerance, knots)
 

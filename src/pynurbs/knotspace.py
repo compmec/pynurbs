@@ -15,6 +15,15 @@ import numpy as np
 from pynurbs.__classes__ import Intface_KnotVector
 
 from .core import ImmutableKnotVector
+from .core.operations import (
+    decrease_degree,
+    increase_degree,
+    insert_knots,
+    intersect_knotvectors,
+    remove_knots,
+    split_knotvector,
+    union_knotvectors,
+)
 
 
 class KnotVector(Intface_KnotVector):
@@ -77,11 +86,11 @@ class KnotVector(Intface_KnotVector):
         return self.scale(1 / other)
 
     def __ior__(self, other: KnotVector) -> KnotVector:
-        self.internal |= other
+        self.internal = union_knotvectors([self.internal, other.internal])
         return self
 
     def __iand__(self, other: KnotVector) -> KnotVector:
-        self.internal &= other
+        self.internal = intersect_knotvectors([self.internal, other.internal])
         return self
 
     def __add__(self, other: Union[float, Tuple[float]]):
@@ -399,7 +408,7 @@ class KnotVector(Intface_KnotVector):
         (0, 0, 1, 2, 2, 3, 3)
 
         """
-        self.internal = self.internal.insert(nodes)
+        self.internal = insert_knots(self.internal, nodes)
         return self
 
     def remove(self, nodes: Tuple[float]) -> KnotVector:
@@ -425,15 +434,15 @@ class KnotVector(Intface_KnotVector):
         (0, 0, 3, 3)
 
         """
-        self.internal = self.internal.remove(nodes)
+        self.internal = remove_knots(self.internal, nodes)
         return self
 
     def increase(self, times: int) -> KnotVector:
-        self.internal = self.internal.increase(times)
+        self.internal = increase_degree(self.internal, times)
         return self
 
     def decrease(self, times: int) -> KnotVector:
-        self.internal = self.internal.decrease(times)
+        self.internal = decrease_degree(self.internal, times)
         return self
 
     def span(self, nodes: Union[float, Tuple[float]]) -> Union[int, Tuple[int]]:
@@ -534,7 +543,7 @@ class KnotVector(Intface_KnotVector):
         ((0, 0, 0.5, 0.5), (0.5, 0.5, 1, 1))
 
         """
-        vectors = self.internal.split(nodes)
+        vectors = split_knotvector(self.internal, nodes)
         return tuple(map(self.__class__, vectors))
 
 

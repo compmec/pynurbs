@@ -1,19 +1,26 @@
 """
 This module contains very low level functions that can be easily change to another language such as C/C++ (further may be).
-They are 'heavy' functions that are called many times and don't require any special package 
+They are 'heavy' functions that are called many times and don't require any special package
 Most of these functions works only with integers, floats and tuples.
 """
 
 from __future__ import annotations
 
 from fractions import Fraction
-from typing import Optional, Tuple, Union
+from typing import Tuple, Union
 
 import numpy as np
 
 from .cmath import IntegratorArray, Linalg, NodeSample, number_type, totuple
 from .core.basisfunction import ImmutableBasisFunction
 from .core.knotvector import ImmutableKnotVector
+from .core.operations import (
+    increase_degree,
+    insert_knots,
+    remove_knots,
+    split_knotvector,
+    union_knotvectors,
+)
 
 
 def find_roots(
@@ -338,9 +345,9 @@ class Operations:
         for node in nodes:
             mult = knotvector.mult(node)
             manynodes += [node] * (degree + 1 - mult)
-        bigvector = knotvector.insert(manynodes)
+        bigvector = insert_knots(knotvector, manynodes)
         bigmatrix = Operations.knot_insert(knotvector, manynodes)
-        newvectors = bigvector.split(nodes)
+        newvectors = split_knotvector(bigvector, nodes)
         matrices = []
         for newvector in newvectors:
             umin = newvector.limits[0]
@@ -416,7 +423,7 @@ class Operations:
         for _ in range(times):
             incmatrix = Operations.one_knot_insert_once(knotvector, node)
             matrix = incmatrix @ matrix
-            knotvector = knotvector.insert([node])
+            knotvector = insert_knots(knotvector, [node])
         return totuple(matrix)
 
     def knot_insert(knotvector: ImmutableKnotVector, nodes: Tuple[float]) -> "Matrix2D":
@@ -449,7 +456,7 @@ class Operations:
             times = nodes.count(node)
             incmatrix = Operations.one_knot_insert(knotvector, node, times)
             matrix = incmatrix @ matrix
-            knotvector = knotvector.insert(times * [node])
+            knotvector = insert_knots(knotvector, times * [node])
         return totuple(matrix)
 
     def knot_remove(knotvector: ImmutableKnotVector, nodes: Tuple[float]) -> "Matrix2D":
@@ -458,7 +465,7 @@ class Operations:
         if not knotvector.valid(nodes):
             msg = f"Invalid nodes {nodes} in knotvector {knotvector}"
             raise ValueError(msg)
-        newknotvector = knotvector.remove(nodes)
+        newknotvector = remove_knots(knotvector, nodes)
         matrix, _ = LeastSquare.spline2spline(knotvector, newknotvector)
         return totuple(matrix)
 
@@ -499,7 +506,7 @@ class Operations:
         for i in range(times):
             elevateonce = Operations.degree_increase_bezier_once(knotvector)
             matrix = elevateonce @ matrix
-            knotvector = knotvector.increase(1)
+            knotvector = increase_degree(knotvector, 1)
         return totuple(matrix)
 
     def degree_increase(knotvector: ImmutableKnotVector, times: int) -> "Matrix2D":
@@ -521,7 +528,7 @@ class Operations:
         if degree + 1 == npts:
             return Operations.degree_increase_bezier(knotvector, times)
         nodes = knotvector.knots
-        newvectors = knotvector.split(nodes)
+        newvectors = split_knotvector(knotvector, nodes)
         matrices = Operations.split_curve(knotvector, nodes)
 
         bigmatrix = []
@@ -537,8 +544,8 @@ class Operations:
         for node in nodes:
             mult = knotvector.mult(node)
             insertednodes += (degree + 1 - mult) * [node]
-        bigvector = knotvector.insert(insertednodes)
-        incbigvector = bigvector.increase(times)
+        bigvector = insert_knots(knotvector, insertednodes)
+        incbigvector = increase_degree(bigvector, times)
         removematrix = Operations.knot_remove(incbigvector, insertednodes)
 
         bigmatrix = np.array(bigmatrix)
@@ -566,10 +573,10 @@ class Operations:
 
         degreea = knotvectora.degree
         degreeb = knotvectorb.degree
-        knotsa = knotvectora.knots
         assert degreea <= degreeb
         matrix_deginc = Operations.degree_increase(knotvectora, degreeb - degreea)
-        knotvectora = knotvectora.increase(degreeb - degreea)
+        if degreea < degreeb:
+            knotvectora = increase_degree(knotvectora, degreeb - degreea)
 
         nodes2ins = []
         for knot in knotvectorb.knots:
@@ -653,7 +660,7 @@ class MathOperations:
         knotvectorb = ImmutableKnotVector(knotvectorb)
         assert knotvectora.limits == knotvectorb.limits
 
-        knotvectorc = knotvectora | knotvectorb
+        knotvectorc = union_knotvectors([knotvectora, knotvectorb])
         matrixa = Operations.matrix_transformation(knotvectora, knotvectorc)
         matrixb = Operations.matrix_transformation(knotvectorb, knotvectorc)
         return totuple(matrixa), totuple(matrixb)
