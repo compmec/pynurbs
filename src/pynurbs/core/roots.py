@@ -2,7 +2,11 @@
 Finds the roots of polynomials
 """
 
+from fractions import Fraction
+from numbers import Real
 from typing import Tuple
+
+import numpy as np
 
 from .polynomial import Polynomial
 
@@ -32,3 +36,22 @@ def division(poly: Polynomial, doly: Polynomial) -> Tuple[Polynomial, Polynomial
         roly = poly - doly * qoly
         index -= 1
     return qoly, Polynomial(roly[: doly.degree])
+
+
+def roots(poly: Polynomial) -> Tuple[Real, ...]:
+    """
+    Finds the real roots of the given polynomial
+
+    Example
+    -------
+    >>> x = Polynomial([0, 1])
+    >>> roots(x**2 + 3*x + 2)
+    (-2, -1)
+    >>> roots(x**3 - 6*x**2 + 11*x - 6)
+    (1, 2, 3)
+    """
+    values = sorted(np.roots(tuple(poly)[::-1]))
+    for i, value in enumerate(values):
+        if abs(round(1440 * value, 0) - 1440 * value) < 1e-6:
+            values[i] = Fraction(round(1440 * value), 1440)
+    return tuple(values)

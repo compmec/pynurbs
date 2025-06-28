@@ -1,7 +1,7 @@
 import pytest
 
 from pynurbs.core.polynomial import Polynomial
-from pynurbs.core.roots import division
+from pynurbs.core.roots import division, roots
 
 
 @pytest.mark.order(3)
@@ -11,6 +11,12 @@ from pynurbs.core.roots import division
     ],
     scope="session",
 )
+def test_begin():
+    pass
+
+
+@pytest.mark.order(3)
+@pytest.mark.dependency(depends=["test_begin"])
 def test_division():
     poly = Polynomial([0, 1])
     doly = Polynomial([1])
@@ -55,3 +61,21 @@ def test_division():
             qoly, roly = division(poly, doly)
             diff = doly * qoly + roly - poly
             assert all(abs(coef) < 1e-9 for coef in diff)
+
+
+@pytest.mark.order(3)
+@pytest.mark.dependency(depends=["test_begin"])
+def test_roots():
+    x = Polynomial([0, 1])
+    values = roots(x**2 + 3 * x + 2)
+    print(values)
+    assert values == (-2, -1)
+    values = roots(x**3 - 6 * x**2 + 11 * x - 6)
+    print(values)
+    assert values == (1, 2, 3)
+
+
+@pytest.mark.order(3)
+@pytest.mark.dependency(depends=["test_division", "test_roots"])
+def test_all():
+    pass
