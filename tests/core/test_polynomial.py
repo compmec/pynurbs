@@ -1,6 +1,6 @@
 import pytest
 
-from pynurbs.core.polynomial import Polynomial, derivate, scale, shift
+from pynurbs.core.polynomial import Polynomial, derivate, integrate, scale, shift
 
 
 @pytest.mark.order(1)
@@ -225,6 +225,21 @@ def test_derivate():
 
 @pytest.mark.order(1)
 @pytest.mark.dependency(
+    depends=["test_build", "test_degree", "test_evaluate", "test_add", "test_mul"]
+)
+def test_integrate():
+    poly = Polynomial([1])
+    assert integrate(poly, (-3, 4)) == 7
+
+    poly = Polynomial([1, -2])
+    assert integrate(poly, (-3, 3)) == 6
+
+    poly = Polynomial([1, 2, 5])
+    assert integrate(poly, (-2, 1)) == 15
+
+
+@pytest.mark.order(1)
+@pytest.mark.dependency(
     depends=[
         "test_build",
         "test_degree",
@@ -325,6 +340,7 @@ def test_print():
         "test_truediv",
         "test_pow",
         "test_derivate",
+        "test_integrate",
         "test_shift",
         "test_scale",
     ]

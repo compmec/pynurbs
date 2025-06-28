@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import math
 from numbers import Real
-from typing import Iterable, List, Union
+from typing import Iterable, List, Tuple, Union
 
 
 class Polynomial:
@@ -233,3 +233,21 @@ def derivate(polynomial: Polynomial, times: int = 1) -> Polynomial:
         for n, coef in enumerate(polynomial[times:])
     )
     return Polynomial(coefs)
+
+
+def integrate(polynomial: Polynomial, domain: Tuple[Real, Real]) -> Real:
+    """
+    Computes the definite integral of a polynomial
+
+    Example
+    -------
+    >>> poly = Polynomial([1, 2, 5])
+    >>> print(poly)
+    1 + 2 * x + 5 * x^2
+    >>> integrate(poly, (-2, 1))
+    15
+    """
+    return sum(
+        coef * (domain[1] ** (n + 1) - domain[0] ** (n + 1)) / (n + 1)
+        for n, coef in enumerate(polynomial)
+    )
