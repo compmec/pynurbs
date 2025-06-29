@@ -4,7 +4,7 @@ from fractions import Fraction
 import numpy as np
 import pytest
 
-from pynurbs.cmath import IntegratorArray, Linalg, Math, NodeSample
+from pynurbs.core.custom_math import IntegratorArray, Linalg, Math, NodeSample
 
 
 @pytest.mark.order(1)

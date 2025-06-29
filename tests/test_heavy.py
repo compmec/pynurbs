@@ -5,7 +5,9 @@ from pynurbs.heavy import LeastSquare
 
 
 @pytest.mark.order(1)
-@pytest.mark.dependency(depends=["tests/test_cmath.py::test_end"], scope="session")
+@pytest.mark.dependency(
+    depends=["tests/test_custom_math.py::test_end"], scope="session"
+)
 def test_begin():
     pass
 

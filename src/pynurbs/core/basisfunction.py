@@ -3,7 +3,7 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from ..cmath import totuple
+from .custom_math import totuple
 from .knotvector import ImmutableKnotVector
 from .piecepoly import PiecewisePolynomial
 from .polynomial import Polynomial

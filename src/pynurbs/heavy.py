@@ -11,7 +11,7 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from .cmath import IntegratorArray, Linalg, NodeSample, number_type, totuple
+from .core.custom_math import IntegratorArray, Linalg, NodeSample, number_type, totuple
 from .core.basisfunction import ImmutableBasisFunction
 from .core.knotvector import ImmutableKnotVector
 from .core.operations import (
