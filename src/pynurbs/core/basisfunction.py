@@ -69,7 +69,7 @@ class ImmutableBasisFunction:
     ):
         if not isinstance(knotvector, ImmutableKnotVector):
             raise TypeError
-        degree = degree or knotvector.degree
+        degree = degree if degree is not None else knotvector.degree
         self.__matrix = tuple(
             tuple(tuple(Polynomial(coefs) for coefs in all_coefs))
             for all_coefs in spectral_matrix(knotvector, degree)
@@ -99,14 +99,14 @@ class ImmutableBasisFunction:
         npts = self.__knotvector.npts
         knots = self.__knotvector.knots
         spans = self.__knotvector.span(knots)
-        degree = self.__knotvector.degree
+        degree = self.__degree
         result = [0] * npts
 
         span = self.__knotvector.span(node)
         ind = spans.index(span)
         shifnode = node - knots[ind]
         shifnode /= knots[ind + 1] - knots[ind]
-        for y in range(self.__knotvector.degree + 1):
+        for y in range(self.__degree + 1):
             i = y + span - degree
             polynomial = self.__matrix[ind][y]
             result[i] = polynomial.eval(shifnode, times)
