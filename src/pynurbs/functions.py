@@ -6,7 +6,7 @@ from typing import Tuple, Union
 import numpy as np
 
 from pynurbs.__classes__ import Intface_BaseFunction, Intface_Evaluator
-from pynurbs.core.basisfunction import spectral_matrix
+from pynurbs.core.basisfunction import ImmutableBasisFunction
 from pynurbs.knotspace import KnotVector
 
 from .core.tools import vectorize
@@ -180,30 +180,10 @@ class BaseFunction(Intface_BaseFunction):
 class FunctionEvaluator(Intface_Evaluator):
     def __init__(self, func: BaseFunction, i: Union[int, slice], j: int):
         vector = func.knotvector
-        self.__knotvector = vector
         self.__weights = func.weights
         self.__first_index = i
-        self.__second_index = j
-        self.__matrix = spectral_matrix(vector.internal, j)
-        self.__knots = vector.knots
-        self.__spans = vector.span(vector.knots)
+        self.__basis = ImmutableBasisFunction(vector.internal, j)
 
-    def __compute_vector_spline(self, node: float, span: int) -> np.ndarray:
-        """
-        Given a 'u' float, it returns the vector with all Spline Basis Functions:
-        compute_vector(u, span) = [N_{0j}(u), N_{1j}(u), ..., N_{npts-1,j}(u)]
-        """
-        npts = self.__knotvector.npts
-        result = [0 * node] * npts
-        z = self.__spans.index(span)
-        denom = self.__knots[z + 1] - self.__knots[z]
-        shifnode = (node - self.__knots[z]) / denom
-        for y in range(self.__second_index + 1):
-            i = y + span - self.__second_index
-            for k in range(self.__second_index, -1, -1):
-                result[i] *= shifnode
-                result[i] += self.__matrix[z][y][k]
-        return result
 
     @vectorize(1, 0)
     def eval(self, node: float) -> Union[float, Tuple[float]]:
@@ -213,8 +193,7 @@ class FunctionEvaluator(Intface_Evaluator):
         If i is slice, u is float -> Tuple[float]
         if i is slice, u is Tuple[float], ndim = k -> Tuple[Tuple[float]], ndim = k+1
         """
-        span = self.__knotvector.span(node)
-        result = self.__compute_vector_spline(node, span)
+        result = self.__basis.eval(node)
         if self.__weights is not None:
             result *= self.__weights
             result *= 1 / sum(result)
