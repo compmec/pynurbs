@@ -5,21 +5,20 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from pynurbs.__classes__ import Intface_BaseFunction, Intface_Evaluator
 from pynurbs.core.basisfunction import ImmutableBasisFunction
 from pynurbs.knotspace import KnotVector
 
 from .core.tools import vectorize
 
 
-class BaseFunction(Intface_BaseFunction):
+class BaseFunction:
     def __init__(self, knotvector: KnotVector):
         self.knotvector = knotvector
         self.weights = None
 
-    def __eq__(self, other: Intface_BaseFunction) -> bool:
-        if not isinstance(other, Intface_BaseFunction):
-            return False
+    def __eq__(self, other: BaseFunction) -> bool:
+        if not isinstance(other, BaseFunction):
+            return NotImplemented
         if self.knotvector != other.knotvector:
             return False
         weightleft = self.weights
@@ -27,9 +26,6 @@ class BaseFunction(Intface_BaseFunction):
         weightleft = np.ones(self.npts) if self.weights is None else self.weights
         weightrigh = np.ones(self.npts) if weightrigh is None else weightrigh
         return np.all(weightleft == weightrigh)
-
-    def __ne__(self, other: Intface_BaseFunction) -> bool:
-        return not self.__eq__(other)
 
     def __call__(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         return self.eval(nodes)
@@ -177,13 +173,12 @@ class BaseFunction(Intface_BaseFunction):
         return newfunc
 
 
-class FunctionEvaluator(Intface_Evaluator):
+class FunctionEvaluator:
     def __init__(self, func: BaseFunction, i: Union[int, slice], j: int):
         vector = func.knotvector
         self.__weights = func.weights
         self.__first_index = i
         self.__basis = ImmutableBasisFunction(vector.internal, j)
-
 
     @vectorize(1, 0)
     def eval(self, node: float) -> Union[float, Tuple[float]]:
@@ -199,10 +194,9 @@ class FunctionEvaluator(Intface_Evaluator):
             result *= 1 / sum(result)
         return result[self.__first_index]
 
-    def __call__(
-        self, nodes: Union[float, Tuple[float]]
-    ) -> Union[float, Tuple[float], Tuple[Tuple[float]]]:
-        return self.eval(nodes)
+    @vectorize(1, 0)
+    def __call__(self, node: float) -> Union[float, Tuple[float]]:
+        return self.eval(node)
 
 
 class IndexableFunction(BaseFunction):
@@ -242,8 +236,11 @@ class IndexableFunction(BaseFunction):
 
     def eval(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         """Evaluate the given nodes"""
-        evaluator = self[:, self.degree]
-        return evaluator(nodes)
+        return self[:, self.degree](nodes)
+
+    @vectorize(1, 0)
+    def __call__(self, node: float) -> Union[float, Tuple[float]]:
+        return self.eval(node)
 
 
 class Function(IndexableFunction):

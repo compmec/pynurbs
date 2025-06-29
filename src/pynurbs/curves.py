@@ -7,7 +7,6 @@ from typing import Any, Callable, Optional, Tuple, Union
 import numpy as np
 
 from pynurbs import heavy
-from pynurbs.__classes__ import Intface_BaseCurve
 from pynurbs.knotspace import KnotVector
 
 from .core.basisfunction import ImmutableBasisFunction
@@ -36,7 +35,7 @@ def norm(object: Union[float, Tuple[float]], L: int = 0) -> float:
         return abs(object)
 
 
-class BaseCurve(Intface_BaseCurve):
+class BaseCurve:
     def __init__(self, knotvector: KnotVector):
         self.__ctrlpoints = None
         self.__weights = None

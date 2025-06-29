@@ -12,8 +12,6 @@ from typing import Optional, Tuple, Union
 
 import numpy as np
 
-from pynurbs.__classes__ import Intface_KnotVector
-
 from .core import ImmutableKnotVector
 from .core.operations import (
     decrease_degree,
@@ -26,7 +24,7 @@ from .core.operations import (
 )
 
 
-class KnotVector(Intface_KnotVector):
+class KnotVector:
     """Creates a KnotVector instance
 
     Examples
