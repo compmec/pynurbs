@@ -9,6 +9,8 @@ from pynurbs.__classes__ import Intface_BaseFunction, Intface_Evaluator
 from pynurbs.core.basisfunction import spectral_matrix
 from pynurbs.knotspace import KnotVector
 
+from .core.tools import vectorize
+
 
 class BaseFunction(Intface_BaseFunction):
     def __init__(self, knotvector: KnotVector):
@@ -146,7 +148,9 @@ class BaseFunction(Intface_BaseFunction):
 
     @knotvector.setter
     def knotvector(self, value: KnotVector):
-        self.__knotvector = KnotVector(value)
+        if not isinstance(value, KnotVector):
+            value = KnotVector(value)
+        self.__knotvector = value
 
     @weights.setter
     def weights(self, value: Tuple[float]):
@@ -201,65 +205,20 @@ class FunctionEvaluator(Intface_Evaluator):
                 result[i] += self.__matrix[z][y][k]
         return result
 
-    def __compute_vector(self, node: float, span: int) -> np.ndarray:
-        """
-        Given a 'u' float, it returns the vector with all BasicFunctions:
-        compute_vector(u, span) = [F_{0j}(u), F_{1j}(u), ..., F_{npts-1,j}(u)]
-        """
-        result = self.__compute_vector_spline(node, span)
-        if self.__weights is None:
-            return result
-        return self.__weights * result / np.inner(self.__weights, result)
-
-    def __compute_matrix(
-        self, nodes: Tuple[float], spans: Tuple[int]
-    ) -> Tuple[Tuple[float]]:
-        """
-        Receives an 1D array of nodes, and returns a 2D array.
-        nodes.shape = (len(nodes), )
-        result.shape = (npts, len(nodes))
-        """
-        nodes = tuple(nodes)
-        npts = self.__knotvector.npts
-        matrix = np.empty((npts, len(nodes)), dtype="object")
-        for j, (nodej, spanj) in enumerate(zip(nodes, spans)):
-            values = self.__compute_vector(nodej, spanj)
-            for i in range(npts):
-                matrix[i][j] = values[i]
-        matrix = matrix.tolist()
-        for i, line in enumerate(matrix):
-            matrix[i] = tuple(line)
-        return tuple(matrix)
-
-    def __eval(self, nodes: Tuple[float]) -> Tuple[Tuple[float]]:
-        """
-        Private and unprotected method of eval
-        """
-        nodes = tuple(nodes)
-        spans = self.__knotvector.span(nodes)
-        matrix = self.__compute_matrix(nodes, spans)
-        return matrix
-
-    def eval(
-        self, nodes: Union[float, Tuple[float]]
-    ) -> Union[float, Tuple[float], Tuple[Tuple[float]]]:
+    @vectorize(1, 0)
+    def eval(self, node: float) -> Union[float, Tuple[float]]:
         """
         If i is integer, u is float -> float
         If i is integer, u is Tuple[float], ndim = k -> np.ndarray, ndim = k
         If i is slice, u is float -> Tuple[float]
         if i is slice, u is Tuple[float], ndim = k -> Tuple[Tuple[float]], ndim = k+1
         """
-        singlenode = True
-        try:
-            iter(nodes)
-            singlenode = False
-        except TypeError:
-            nodes = (nodes,)
-        matrix = self.__eval(nodes)
-        if singlenode:
-            matrix = tuple([ri[0] for ri in matrix])
-        result = matrix[self.__first_index]
-        return result
+        span = self.__knotvector.span(node)
+        result = self.__compute_vector_spline(node, span)
+        if self.__weights is not None:
+            result *= self.__weights
+            result *= 1 / sum(result)
+        return result[self.__first_index]
 
     def __call__(
         self, nodes: Union[float, Tuple[float]]

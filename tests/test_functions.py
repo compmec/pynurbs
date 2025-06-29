@@ -109,7 +109,7 @@ class TestBezier:
                     assert values.shape == (npts,)
                 matrix = bezier[:, j](nodes_test)
                 matrix = np.array(matrix, dtype="float64")
-                assert matrix.shape == (npts, npts_sample)
+                assert matrix.shape == (npts_sample, npts)
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(5)
@@ -127,10 +127,10 @@ class TestBezier:
             for j in range(degree + 1):
                 matrix = bezier[:, j](nodes_test)
                 matrix = np.array(matrix, dtype="float64")
-                assert matrix.shape == (npts, npts_sample)
+                assert matrix.shape == (npts_sample, npts)
                 assert np.all(matrix >= 0)
                 for k in range(npts_sample):
-                    assert abs(np.sum(matrix[:, k]) - 1) < 1e-9
+                    assert abs(np.sum(matrix[k]) - 1) < 1e-9
 
     @pytest.mark.order(3)
     @pytest.mark.timeout(5)
@@ -230,11 +230,11 @@ class TestBezier:
         nodes_test = np.linspace(0, 1, 11)
 
         matrix_test = bezier[:, 0](nodes_test)
-        matrix_good = [[0] * 11, [1] * 11]
+        matrix_good = np.transpose([[0] * 11, [1] * 11])
         np.testing.assert_allclose(matrix_test, matrix_good)
 
         matrix_test = bezier[:, 1](nodes_test)
-        matrix_good = [np.linspace(1, 0, 11), np.linspace(0, 1, 11)]
+        matrix_good = np.transpose([1 - nodes_test, nodes_test])
         np.testing.assert_allclose(matrix_test, matrix_good)
 
     @pytest.mark.order(3)
@@ -252,21 +252,27 @@ class TestBezier:
         nodes_test = np.linspace(0, 1, 11)
 
         matrix_test = bezier[:, 0](nodes_test)
-        matrix_good = np.array([[0] * 11, [0] * 11, [1] * 11])
+        matrix_good = np.transpose([[0] * 11, [0] * 11, [1] * 11])
         np.testing.assert_allclose(matrix_test, matrix_good)
 
         matrix_test = bezier[:, 1](nodes_test)
-        matrix_good = [[0] * 11, np.linspace(1, 0, 11), np.linspace(0, 1, 11)]
+        matrix_good = np.transpose([[0] * 11, 1 - nodes_test, nodes_test])
         np.testing.assert_allclose(matrix_test, matrix_good)
 
         matrix_test = bezier[:, 2](nodes_test)
-        matrix_good = np.array(
-            [
-                [1.0, 0.81, 0.64, 0.49, 0.36, 0.25, 0.16, 0.09, 0.04, 0.01, 0.0],
-                [0.0, 0.18, 0.32, 0.42, 0.48, 0.50, 0.48, 0.42, 0.32, 0.18, 0.0],
-                [0.0, 0.01, 0.04, 0.09, 0.16, 0.25, 0.36, 0.49, 0.64, 0.81, 1.0],
-            ]
-        )
+        matrix_good = [
+            [1.0, 0.0, 0.0],
+            [0.81, 0.18, 0.01],
+            [0.64, 0.32, 0.04],
+            [0.49, 0.42, 0.09],
+            [0.36, 0.48, 0.16],
+            [0.25, 0.5, 0.25],
+            [0.16, 0.48, 0.36],
+            [0.09, 0.42, 0.49],
+            [0.04, 0.32, 0.64],
+            [0.01, 0.18, 0.81],
+            [0.0, 0.0, 1.0],
+        ]
         np.testing.assert_allclose(matrix_test, matrix_good)
 
     @pytest.mark.order(3)
@@ -286,11 +292,11 @@ class TestBezier:
 
             nodestest = np.linspace(0, 1, 11)
             matrix_test = bezier[:, degree](nodestest)
-            matrix_good = np.zeros((degree + 1, len(nodestest)))
+            matrix_good = np.zeros((len(nodestest), degree + 1))
             for i, node in enumerate(nodestest):
                 for j in range(degree + 1):
                     value = binom(degree, j) * (1 - node) ** (degree - j) * node**j
-                    matrix_good[j, i] = value
+                    matrix_good[i, j] = value
             np.testing.assert_allclose(matrix_test, matrix_good)
 
     @pytest.mark.order(3)
@@ -310,11 +316,11 @@ class TestBezier:
             nodesgood = np.linspace(0, 1, 11)
             nodestest = np.linspace(knotvector[0], knotvector[-1], 11)
             matrix_test = bezier[:, degree](nodestest)
-            matrix_good = np.zeros((degree + 1, len(nodestest)))
+            matrix_good = np.zeros((len(nodestest), degree + 1))
             for i, node in enumerate(nodesgood):
                 for j in range(degree + 1):
                     value = binom(degree, j) * (1 - node) ** (degree - j) * node**j
-                    matrix_good[j, i] = value
+                    matrix_good[i, j] = value
             np.testing.assert_allclose(matrix_test, matrix_good)
 
     @pytest.mark.order(3)
@@ -423,17 +429,33 @@ class TestSpline:
 
         matrix_test = spline[:, 0](nodes_test)
         matrix_good = [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+            [0, 1, 0],
+            [0, 1, 0],
+            [0, 1, 0],
+            [0, 1, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+            [0, 0, 1],
+            [0, 0, 1],
+            [0, 0, 1],
+            [0, 0, 1],
+            [0, 0, 1],
         ]
         np.testing.assert_allclose(matrix_test, matrix_good)
 
         matrix_test = spline[:, 1](nodes_test)
         matrix_good = [
-            [1.0, 0.8, 0.6, 0.4, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.2, 0.0],
-            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+            [1.0, 0.0, 0.0],
+            [0.8, 0.2, 0.0],
+            [0.6, 0.4, 0.0],
+            [0.4, 0.6, 0.0],
+            [0.2, 0.8, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.8, 0.2],
+            [0.0, 0.6, 0.4],
+            [0.0, 0.4, 0.6],
+            [0.0, 0.2, 0.8],
+            [0.0, 0.0, 1.0],
         ]
         np.testing.assert_allclose(matrix_test, matrix_good)
 
@@ -448,28 +470,49 @@ class TestSpline:
 
         matrix_test = spline[:, 0](nodes_test)
         matrix_good = [
-            [0] * 11,
-            [0] * 11,
-            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+            [0, 0, 1, 0],
+            [0, 0, 1, 0],
+            [0, 0, 1, 0],
+            [0, 0, 1, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+            [0, 0, 0, 1],
+            [0, 0, 0, 1],
+            [0, 0, 0, 1],
+            [0, 0, 0, 1],
+            [0, 0, 0, 1],
         ]
         np.testing.assert_allclose(matrix_test, matrix_good)
 
         matrix_test = spline[:, 1](nodes_test)
         matrix_good = [
-            [0] * 11,
-            [1.0, 0.8, 0.6, 0.4, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.2, 0.0],
-            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.8, 0.2, 0.0],
+            [0.0, 0.6, 0.4, 0.0],
+            [0.0, 0.4, 0.6, 0.0],
+            [0.0, 0.2, 0.8, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.8, 0.2],
+            [0.0, 0.0, 0.6, 0.4],
+            [0.0, 0.0, 0.4, 0.6],
+            [0.0, 0.0, 0.2, 0.8],
+            [0.0, 0.0, 0.0, 1.0],
         ]
         np.testing.assert_allclose(matrix_test, matrix_good)
 
         matrix_test = spline[:, 2](nodes_test)
         matrix_good = [
-            [1, 0.64, 0.36, 0.16, 0.04, 0.0, 0.00, 0.00, 0.00, 0.00, 0],
-            [0, 0.34, 0.56, 0.66, 0.64, 0.5, 0.32, 0.18, 0.08, 0.02, 0],
-            [0, 0.02, 0.08, 0.18, 0.32, 0.5, 0.64, 0.66, 0.56, 0.34, 0],
-            [0, 0.00, 0.00, 0.00, 0.00, 0.0, 0.04, 0.16, 0.36, 0.64, 1],
+            [1.0, 0.0, 0.0, 0.0],
+            [0.64, 0.34, 0.02, 0.0],
+            [0.36, 0.56, 0.08, 0.0],
+            [0.16, 0.66, 0.18, 0.0],
+            [0.04, 0.64, 0.32, 0.0],
+            [0.0, 0.5, 0.5, 0.0],
+            [0.0, 0.32, 0.64, 0.04],
+            [0.0, 0.18, 0.66, 0.16],
+            [0.0, 0.08, 0.56, 0.36],
+            [0.0, 0.02, 0.34, 0.64],
+            [0.0, 0.0, 0.0, 1.0],
         ]
         np.testing.assert_allclose(matrix_test, matrix_good)
 
@@ -485,41 +528,65 @@ class TestSpline:
 
         matrix_test = spline[:, 0](nodes_test)
         matrix_good = [
-            [0] * 11,
-            [0] * 11,
-            [0] * 11,
-            [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+            [0, 0, 0, 1, 0],
+            [0, 0, 0, 1, 0],
+            [0, 0, 0, 1, 0],
+            [0, 0, 0, 1, 0],
+            [0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 1],
         ]
         np.testing.assert_allclose(matrix_test, matrix_good)
 
         matrix_test = spline[:, 1](nodes_test)
         matrix_good = [
-            [0] * 11,
-            [0] * 11,
-            [1.0, 0.8, 0.6, 0.4, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.2, 0.0],
-            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+            [0.0, 0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 0.8, 0.2, 0.0],
+            [0.0, 0.0, 0.6, 0.4, 0.0],
+            [0.0, 0.0, 0.4, 0.6, 0.0],
+            [0.0, 0.0, 0.2, 0.8, 0.0],
+            [0.0, 0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 0.8, 0.2],
+            [0.0, 0.0, 0.0, 0.6, 0.4],
+            [0.0, 0.0, 0.0, 0.4, 0.6],
+            [0.0, 0.0, 0.0, 0.2, 0.8],
+            [0.0, 0.0, 0.0, 0.0, 1.0],
         ]
         np.testing.assert_allclose(matrix_test, matrix_good)
 
         matrix_test = spline[:, 2](nodes_test)
         matrix_good = [
-            [0] * 11,
-            [1, 0.64, 0.36, 0.16, 0.04, 0.0, 0.00, 0.00, 0.00, 0.00, 0],
-            [0, 0.34, 0.56, 0.66, 0.64, 0.5, 0.32, 0.18, 0.08, 0.02, 0],
-            [0, 0.02, 0.08, 0.18, 0.32, 0.5, 0.64, 0.66, 0.56, 0.34, 0],
-            [0, 0.00, 0.00, 0.00, 0.00, 0.0, 0.04, 0.16, 0.36, 0.64, 1],
+            [0.0, 1.0, 0.0, 0.0, 0.0],
+            [0.0, 0.64, 0.34, 0.02, 0.0],
+            [0.0, 0.36, 0.56, 0.08, 0.0],
+            [0.0, 0.16, 0.66, 0.18, 0.0],
+            [0.0, 0.04, 0.64, 0.32, 0.0],
+            [0.0, 0.0, 0.5, 0.5, 0.0],
+            [0.0, 0.0, 0.32, 0.64, 0.04],
+            [0.0, 0.0, 0.18, 0.66, 0.16],
+            [0.0, 0.0, 0.08, 0.56, 0.36],
+            [0.0, 0.0, 0.02, 0.34, 0.64],
+            [0.0, 0.0, 0.0, 0.0, 1.0],
         ]
         np.testing.assert_allclose(matrix_test, matrix_good)
 
         matrix_test = spline[:, 3](nodes_test)
         matrix_good = [
-            [1, 0.512, 0.216, 0.064, 0.008, 0.000, 0.000, 0.000, 0.000, 0.000, 0],
-            [0, 0.434, 0.592, 0.558, 0.416, 0.250, 0.128, 0.054, 0.016, 0.002, 0],
-            [0, 0.052, 0.176, 0.324, 0.448, 0.500, 0.448, 0.324, 0.176, 0.052, 0],
-            [0, 0.002, 0.016, 0.054, 0.128, 0.250, 0.416, 0.558, 0.592, 0.434, 0],
-            [0, 0.000, 0.000, 0.000, 0.000, 0.000, 0.008, 0.064, 0.216, 0.512, 1],
+            [1.0, 0.0, 0.0, 0.0, 0.0],
+            [0.512, 0.434, 0.052, 0.002, 0.0],
+            [0.216, 0.592, 0.176, 0.016, 0.0],
+            [0.064, 0.558, 0.324, 0.054, 0.0],
+            [0.008, 0.416, 0.448, 0.128, 0.0],
+            [0.0, 0.25, 0.5, 0.25, 0.0],
+            [0.0, 0.128, 0.448, 0.416, 0.008],
+            [0.0, 0.054, 0.324, 0.558, 0.064],
+            [0.0, 0.016, 0.176, 0.592, 0.216],
+            [0.0, 0.002, 0.052, 0.434, 0.512],
+            [0.0, 0.0, 0.0, 0.0, 1.0],
         ]
         np.testing.assert_allclose(matrix_test, matrix_good)
 
@@ -659,7 +726,7 @@ class TestRational:
             2 * nodes_sample * (1 - nodes_sample),
             2 * nodes_sample**2,
         ]
-        good_matrix = np.array(good_matrix) / (1 + nodes_sample**2)
+        good_matrix = np.transpose(good_matrix / (1 + nodes_sample**2))
         test_matrix = rational(nodes_sample)
         np.testing.assert_allclose(test_matrix, good_matrix)
 
@@ -680,7 +747,7 @@ class TestRational:
         ]
         denomin = 2 * (1 - 2 * nodes_sample + 2 * nodes_sample**2)
         denomin += 2 * np.sqrt(2) * nodes_sample * (1 - nodes_sample)
-        good_matrix = np.array(good_matrix) / denomin
+        good_matrix = np.transpose(good_matrix / denomin)
         test_matrix = rational(nodes_sample)
         np.testing.assert_allclose(test_matrix, good_matrix)
 
