@@ -81,6 +81,16 @@ class Polynomial:
             coefs = tuple(other * coef for coef in self)
         return self.__class__(coefs)
 
+    def __matmul__(self, other: Union[Real, Polynomial]) -> Polynomial:
+        if isinstance(other, Polynomial):
+            coefs = [0] * (self.degree + other.degree + 1)
+            for i, coefi in enumerate(self):
+                for j, coefj in enumerate(other):
+                    coefs[i + j] += coefi @ coefj
+        else:
+            coefs = tuple(other @ coef for coef in self)
+        return self.__class__(coefs)
+
     def __truediv__(self, other: Real) -> Polynomial:
         coefs = (coef / other for coef in self)
         return self.__class__(coefs)
@@ -102,6 +112,9 @@ class Polynomial:
 
     def __rmul__(self, other: Real) -> Polynomial:
         return self.__mul__(other)
+
+    def __rmatmul__(self, other: Real) -> Polynomial:
+        return self.__matmul__(other)
 
     def __call__(self, node: Real) -> Real:
         if self.degree == 0:
