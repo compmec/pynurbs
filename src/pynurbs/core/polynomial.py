@@ -104,7 +104,12 @@ class Polynomial:
         return self.__mul__(other)
 
     def __call__(self, node: Real) -> Real:
-        return self.eval(node, 0)
+        if self.degree == 0:
+            return self[0]
+        result: Real = 0 * self[0]
+        for coef in self[::-1]:
+            result = node * result + coef
+        return result
 
     def __str__(self):
         if self.degree == 0:
@@ -135,31 +140,6 @@ class Polynomial:
 
     def __repr__(self) -> str:
         return str(self)
-
-    def eval(self, node: Real, times: int = 0) -> Real:
-        """
-        Evaluates the polynomial at given node
-
-        Example
-        -------
-        >>> poly = Polynomial([1, 2])
-        >>> poly.eval(0)
-        1
-        >>> poly.eval(1)
-        3
-        >>> poly.eval(1, 1)
-        2
-        >>> poly.eval(1, 2)
-        0
-        """
-        if times:
-            return derivate(self, times).eval(node, 0)
-        if self.degree == 0:
-            return self[0]
-        result: Real = 0 * self[0]
-        for coef in self[::-1]:
-            result = node * result + coef
-        return result
 
 
 def scale(polynomial: Polynomial, amount: Real) -> Polynomial:

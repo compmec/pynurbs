@@ -101,7 +101,7 @@ class ImmuntableManifold:
         if len(node) != self.ndim:
             raise ValueError
         result = 0 * self.__ctrlpoints[*(0,) * self.ndim]
-        basivalues = [basis.eval(nodei) for nodei, basis in zip(node, self.__allbasis)]
+        basivalues = [basis(nodei) for nodei, basis in zip(node, self.__allbasis)]
         for indexs in permutations(self.shape):
             scalar = 1
             for i, index in enumerate(indexs):

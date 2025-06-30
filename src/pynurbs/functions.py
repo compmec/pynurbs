@@ -27,9 +27,6 @@ class BaseFunction:
         weightrigh = np.ones(self.npts) if weightrigh is None else weightrigh
         return np.all(weightleft == weightrigh)
 
-    def __call__(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
-        return self.eval(nodes)
-
     @property
     def knotvector(self) -> KnotVector:
         """The knotvector of the current basis function
@@ -181,22 +178,12 @@ class FunctionEvaluator:
         self.__basis = ImmutableBasisFunction(vector.internal, j)
 
     @vectorize(1, 0)
-    def eval(self, node: float) -> Union[float, Tuple[float]]:
-        """
-        If i is integer, u is float -> float
-        If i is integer, u is Tuple[float], ndim = k -> np.ndarray, ndim = k
-        If i is slice, u is float -> Tuple[float]
-        if i is slice, u is Tuple[float], ndim = k -> Tuple[Tuple[float]], ndim = k+1
-        """
-        result = self.__basis.eval(node)
+    def __call__(self, node: float) -> Union[float, Tuple[float]]:
+        result = self.__basis(node)
         if self.__weights is not None:
             result *= self.__weights
             result *= 1 / sum(result)
         return result[self.__first_index]
-
-    @vectorize(1, 0)
-    def __call__(self, node: float) -> Union[float, Tuple[float]]:
-        return self.eval(node)
 
 
 class IndexableFunction(BaseFunction):
@@ -234,13 +221,9 @@ class IndexableFunction(BaseFunction):
         self.__valid_second_index(j)
         return FunctionEvaluator(self, i, j)
 
-    def eval(self, nodes: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
-        """Evaluate the given nodes"""
-        return self[:, self.degree](nodes)
-
     @vectorize(1, 0)
     def __call__(self, node: float) -> Union[float, Tuple[float]]:
-        return self.eval(node)
+        return self[:, self.degree](node)
 
 
 class Function(IndexableFunction):

@@ -29,9 +29,9 @@ class PiecewisePolynomial:
         nsegs = len(self.functions)
         mask = self.knots[nsegs - 1] <= node
         mask *= node < self.knots[nsegs]
-        result = mask * self.functions[-1].eval(node, times)
+        result = mask * self.functions[-1](node, times)
         for i in range(nsegs - 1):
             mask = self.knots[i] <= node
             mask *= node < self.knots[i + 1]
-            result += mask * self.functions[i].eval(node, times)
+            result += mask * self.functions[i](node, times)
         return result

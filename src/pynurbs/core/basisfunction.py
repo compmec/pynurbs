@@ -94,8 +94,7 @@ class ImmutableBasisFunction:
         functions = self.__matrix[index]
         return PiecewisePolynomial(functions, self.knots)
 
-    def eval(self, node: Real, times: int = 0) -> Tuple[Real, ...]:
-
+    def __call__(self, node: Real) -> Tuple[Real, ...]:
         npts = self.__knotvector.npts
         knots = self.__knotvector.knots
         spans = self.__knotvector.span(knots)
@@ -109,8 +108,5 @@ class ImmutableBasisFunction:
         for y in range(self.__degree + 1):
             i = y + span - degree
             polynomial = self.__matrix[ind][y]
-            result[i] = polynomial.eval(shifnode, times)
+            result[i] = polynomial(shifnode)
         return tuple(result)
-
-    def __call__(self, node: Real) -> Tuple[Real, ...]:
-        return self.eval(node, 0)
