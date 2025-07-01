@@ -7,15 +7,15 @@ from typing import Any, Callable, Optional, Tuple, Union
 import numpy as np
 
 from pynurbs import heavy
-from pynurbs.knotspace import KnotVector
 
-from .core.basisfunction import ImmutableBasisFunction
-from .operations.knotvector import (
+from ..core.basisfunction import ImmutableBasisFunction
+from ..operations.knotvector import (
     decrease_degree,
     increase_degree,
     insert_knots,
     remove_knots,
 )
+from .knotspace import KnotVector
 
 
 def norm(object: Union[float, Tuple[float]], L: int = 0) -> float:

@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from pynurbs.advanced import Intersection, Projection
-from pynurbs.curves import Curve
+from pynurbs.responsive.curves import Curve
 
 
 @pytest.mark.order(8)

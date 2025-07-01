@@ -1,4 +1,3 @@
-from copy import copy
 from fractions import Fraction
 
 import numpy as np
@@ -6,7 +5,6 @@ import pytest
 
 from pynurbs.core.basisfunction import ImmutableBasisFunction
 from pynurbs.core.knotvector import ImmutableKnotVector
-from pynurbs.knotspace import GeneratorKnotVector
 
 
 def binom(n: int, i: int):

@@ -6,9 +6,9 @@ from typing import Tuple, Union
 import numpy as np
 
 from pynurbs.core.basisfunction import ImmutableBasisFunction
-from pynurbs.knotspace import KnotVector
 
-from .operations.tools import vectorize
+from ..operations.tools import vectorize
+from .knotspace import KnotVector
 
 
 class BaseFunction:

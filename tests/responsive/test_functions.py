@@ -3,9 +3,9 @@ from copy import copy
 import numpy as np
 import pytest
 
-from pynurbs import Function
 from pynurbs.core.custom_math import binom
-from pynurbs.knotspace import GeneratorKnotVector
+from pynurbs.responsive.functions import Function
+from pynurbs.responsive.knotspace import GeneratorKnotVector
 
 
 @pytest.mark.order(3)

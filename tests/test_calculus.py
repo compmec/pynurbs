@@ -9,8 +9,8 @@ import numpy as np
 import pytest
 
 from pynurbs.calculus import Derivate, Integrate
-from pynurbs.curves import Curve
-from pynurbs.knotspace import GeneratorKnotVector, KnotVector
+from pynurbs.responsive.curves import Curve
+from pynurbs.responsive.knotspace import GeneratorKnotVector, KnotVector
 
 
 @pytest.mark.order(7)

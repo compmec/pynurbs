@@ -14,10 +14,8 @@ Example 1:
 import numpy as np
 import pytest
 
-from pynurbs import calculus
-from pynurbs.curves import Curve
-from pynurbs.functions import Function
-from pynurbs.knotspace import GeneratorKnotVector, KnotVector
+from pynurbs.responsive.functions import Function
+from pynurbs.responsive.knotspace import KnotVector
 
 
 class CustomFloat:
