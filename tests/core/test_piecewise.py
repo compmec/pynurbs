@@ -23,7 +23,7 @@ def get_random_knots(
     return tuple(nodes)
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(13)
 @pytest.mark.dependency(
     depends=[
         "tests/core/test_knotvector.py::test_end",
@@ -34,7 +34,7 @@ def test_begin():
     pass
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(13)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_find_span():
     knots = [0, 1, 2, 3, 4]
@@ -50,7 +50,7 @@ def test_find_span():
     assert find_span(3.5, knots) == 3
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(13)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_build():
     x = Polynomial([0, 1])
@@ -58,7 +58,7 @@ def test_build():
     PiecewisePolynomial(polys, range(1 + len(polys)))
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(13)
 @pytest.mark.dependency(depends=["test_build", "test_find_span"])
 def test_evaluate():
     x = Polynomial([0, 1])
@@ -75,7 +75,7 @@ def test_evaluate():
     assert piece(4) == -61
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(13)
 @pytest.mark.dependency(depends=["test_build"])
 def test_compare():
     x = Polynomial([0, 1])
@@ -89,7 +89,7 @@ def test_compare():
     assert piecea != pieceb
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(13)
 @pytest.mark.dependency(depends=["test_build", "test_evaluate"])
 def test_add():
     nsegs, degree = 6, 4
@@ -108,7 +108,7 @@ def test_add():
         assert abs(piecea(x) + pieceb(x) - piecec(x)) < 1e-9
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(13)
 @pytest.mark.dependency(depends=["test_build", "test_evaluate"])
 def test_neg():
     nsegs, degree = 6, 4
@@ -121,7 +121,7 @@ def test_neg():
         assert pieceb(x) == -piecea(x)
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(13)
 @pytest.mark.dependency(depends=["test_build", "test_evaluate", "test_add", "test_neg"])
 def test_sub():
     nsegs, degree = 6, 4
@@ -142,7 +142,7 @@ def test_sub():
         assert abs(piecea(x) - pieceb(x) - pieced(x)) < 1e-9
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(13)
 @pytest.mark.dependency(
     depends=["test_build", "test_evaluate", "test_neg", "test_add", "test_sub"]
 )
@@ -163,7 +163,7 @@ def test_mul():
         assert abs(piecea(x) * pieceb(x) - piecec(x)) < 1e-9
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(13)
 @pytest.mark.dependency(
     depends=["test_build", "test_neg", "test_add", "test_sub", "test_mul"]
 )
@@ -184,7 +184,7 @@ def test_matmul():
         assert abs(piecea(x) @ pieceb(x) - piecec(x)) < 1e-9
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(13)
 @pytest.mark.dependency(
     depends=[
         "test_build",
@@ -235,7 +235,7 @@ def test_scalar_operation():
             assert abs(piecea(node) @ const - pieceb(node)) < 1e-9
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(13)
 @pytest.mark.dependency(
     depends=[
         "test_build",
@@ -250,7 +250,7 @@ def test_print():
     repr(piecewise)
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(13)
 @pytest.mark.dependency(
     depends=[
         "test_begin",

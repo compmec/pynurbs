@@ -4,13 +4,13 @@ import pytest
 from pynurbs.core import ImmutableKnotVector
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency()
 def test_begin():
     pass
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_Creation():
@@ -38,7 +38,7 @@ def test_Creation():
     ImmutableKnotVector([0.0, 0.0, 0.5, 0.5, 1.0, 1.0])
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_Creation"])
 def test_FailCreation():
@@ -74,7 +74,7 @@ def test_FailCreation():
         ImmutableKnotVector([0, 0, 0.5, 0.5, 0.5, 0.5, 1, 1])
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_Creation", "test_FailCreation"])
 def test_ValuesDegree():
@@ -99,7 +99,7 @@ def test_ValuesDegree():
     assert V.degree == 3
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_Creation", "test_FailCreation"])
 def test_ValuesNumberPoints():
@@ -126,7 +126,7 @@ def test_ValuesNumberPoints():
     assert V.npts == 6
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_ValuesDegree", "test_ValuesNumberPoints"])
 def test_findspans_single():
@@ -153,7 +153,7 @@ def test_findspans_single():
         U.span("asd")  # Not a number
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_ValuesDegree", "test_ValuesNumberPoints"])
 def test_findmult_single():
@@ -180,7 +180,7 @@ def test_findmult_single():
         U.mult("asd")  # Not a number
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_findspans_single"])
 def test_findspans_array():
@@ -193,7 +193,7 @@ def test_findspans_array():
     np.testing.assert_equal(suposedspans, correctspans)
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_findmult_single"])
 def test_findmult_array():
@@ -206,7 +206,7 @@ def test_findmult_array():
     np.testing.assert_equal(suposedmults, correctmults)
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.timeout(4)
 @pytest.mark.dependency(depends=["test_ValuesDegree", "test_ValuesNumberPoints"])
 def test_CompareImmutableKnotVector():
@@ -222,7 +222,7 @@ def test_CompareImmutableKnotVector():
     assert U1 != "asad"
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(
     depends=[
         "test_begin",

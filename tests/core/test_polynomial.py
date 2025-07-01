@@ -3,7 +3,7 @@ import pytest
 from pynurbs.core.polynomial import Polynomial, derivate, integrate, scale, shift
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency()
 def test_build():
     Polynomial([0])  # p(x) = 0
@@ -13,7 +13,7 @@ def test_build():
     Polynomial([1.0, 2, -3.0])  # p(x) = 1.0 + 2 * x - 3.0 * x^2
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(depends=["test_build"])
 def test_degree():
     poly = Polynomial([0])  # p(x) = 0
@@ -26,7 +26,7 @@ def test_degree():
     assert poly.degree == 2
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(depends=["test_build", "test_degree"])
 def test_evaluate():
     poly = Polynomial([0])  # p(x) = 0
@@ -47,7 +47,7 @@ def test_evaluate():
     assert poly(2) == 1 + 2 * (+2) + 3 * (+2) * (+2)
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
 def test_neg():
     polya = Polynomial([1, 2, 3, 4])
@@ -56,7 +56,7 @@ def test_neg():
     assert -polya == polyb
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
 def test_add():
     """
@@ -96,7 +96,7 @@ def test_add():
         np.testing.assert_allclose(const + valuesa, valuesc)
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
 def test_sub():
     """
@@ -136,7 +136,7 @@ def test_sub():
         np.testing.assert_allclose(const - valuesa, valuesc)
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
 def test_mul():
     """
@@ -176,7 +176,7 @@ def test_mul():
         np.testing.assert_allclose(const * valuesa, valuesc)
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
 def test_truediv():
     """
@@ -195,7 +195,7 @@ def test_truediv():
         assert Polynomial(coefsa) / divisor == Polynomial(coefsb)
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
 def test_pow():
     poly = Polynomial([-1, 1])
@@ -204,7 +204,7 @@ def test_pow():
     assert poly**4 == Polynomial([1, -4, 6, -4, 1])
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(
     depends=["test_build", "test_degree", "test_evaluate", "test_add", "test_mul"]
 )
@@ -223,7 +223,7 @@ def test_derivate():
     assert derivate(poly, 3) == Polynomial([6, 24])
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(
     depends=["test_build", "test_degree", "test_evaluate", "test_add", "test_mul"]
 )
@@ -238,7 +238,7 @@ def test_integrate():
     assert integrate(poly, (-2, 1)) == 15
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(
     depends=["test_build", "test_degree", "test_evaluate", "test_add", "test_mul"]
 )
@@ -263,7 +263,7 @@ def test_shift():
         np.testing.assert_allclose(valuese, valuesa)
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(
     depends=["test_build", "test_degree", "test_evaluate", "test_add", "test_mul"]
 )
@@ -288,7 +288,7 @@ def test_scale():
         np.testing.assert_allclose(valuesb, valuesa)
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(depends=["test_build"])
 def test_print():
     poly = Polynomial([0])
@@ -300,7 +300,7 @@ def test_print():
     repr(poly)
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(12)
 @pytest.mark.dependency(
     depends=[
         "test_build",

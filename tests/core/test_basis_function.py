@@ -21,7 +21,7 @@ def binom(n: int, i: int):
     return int(prod)
 
 
-@pytest.mark.order(3)
+@pytest.mark.order(13)
 @pytest.mark.dependency(
     depends=[
         "tests/core/test_knotvector.py::test_end",
@@ -34,12 +34,12 @@ def test_begin():
 
 
 class TestBezier:
-    @pytest.mark.order(3)
+    @pytest.mark.order(13)
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(13)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestBezier::test_begin"])
     def test_creation(self):
@@ -69,7 +69,7 @@ class TestBezier:
             assert bezier.degree == degree
             assert bezier.npts == npts
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(13)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_creation"])
     def test_sum_equal_to_1(self):
@@ -111,7 +111,7 @@ class TestBezier:
                 assert all(result >= 0 for result in results)
                 assert sum(results) == 1
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(13)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(
         depends=[
@@ -158,7 +158,7 @@ class TestBezier:
                 )
                 assert bezier(node) == tuple(goods)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(13)
     @pytest.mark.dependency(
         depends=[
             "TestBezier::test_begin",
@@ -172,12 +172,12 @@ class TestBezier:
 
 
 class TestSpline:
-    @pytest.mark.order(3)
+    @pytest.mark.order(13)
     @pytest.mark.dependency(depends=["TestBezier::test_all"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(13)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestSpline::test_begin"])
     def test_creation(self):
@@ -205,7 +205,7 @@ class TestSpline:
         assert spline.degree == 2
         assert spline.npts == 4
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(13)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestSpline::test_creation"])
     def test_tablevalues_degree1npts3(self):
@@ -232,7 +232,7 @@ class TestSpline:
         for node, good in zip(nodes_test, matrix_good):
             np.testing.assert_allclose(spline(node), good)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(13)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestSpline::test_tablevalues_degree1npts3"])
     def test_tablevalues_degree2npts4(self):
@@ -260,7 +260,7 @@ class TestSpline:
         for node, good in zip(nodes_test, matrix_good):
             np.testing.assert_allclose(spline(node), good)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(13)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestSpline::test_tablevalues_degree2npts4"])
     def test_tablevalues_degree3npts5(self):
@@ -287,7 +287,7 @@ class TestSpline:
         for node, good in zip(nodes_test, matrix_good):
             np.testing.assert_allclose(spline(node), good)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(13)
     @pytest.mark.dependency(
         depends=[
             "TestSpline::test_begin",
@@ -301,7 +301,7 @@ class TestSpline:
         pass
 
 
-@pytest.mark.order(3)
+@pytest.mark.order(13)
 @pytest.mark.dependency(
     depends=[
         "test_begin",

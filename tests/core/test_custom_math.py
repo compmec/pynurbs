@@ -7,19 +7,19 @@ import pytest
 from pynurbs.core.custom_math import IntegratorArray, Linalg, Math, NodeSample
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(11)
 @pytest.mark.dependency()
 def test_begin():
     pass
 
 
 class TestMath:
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestMath::test_begin"])
     def test_gcd(self):
         assert Math.gcd(0) == 0
@@ -35,7 +35,7 @@ class TestMath:
         assert Math.gcd(2, 3, 4) == 1
         assert Math.gcd(6, 9, 12) == 3
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestMath::test_begin", "TestMath::test_gcd"])
     def test_lcm(self):
         assert Math.lcm(0) == 0
@@ -52,7 +52,7 @@ class TestMath:
         assert Math.lcm(2, 3, 4) == 12
         assert Math.lcm(6, 9, 12) == 36
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestMath::test_begin"])
     def test_comb(self):
         assert Math.comb(1, 0) == 1
@@ -65,7 +65,7 @@ class TestMath:
         assert Math.comb(3, 2) == 3
         assert Math.comb(3, 3) == 1
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestMath::test_begin",
@@ -79,19 +79,19 @@ class TestMath:
 
 
 class TestLinalg:
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["test_begin", "TestMath::test_end"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestLinalg::test_begin"])
     def test_invert_float(self):
         identit = np.eye(4)
         inverse = Linalg.invert(identit)
         np.testing.assert_allclose(inverse, identit)
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=["TestLinalg::test_begin", "TestLinalg::test_invert_float"]
     )
@@ -142,7 +142,7 @@ class TestLinalg:
             np.testing.assert_allclose(np.dot(inverse, matrix), np.eye(side))
             np.testing.assert_allclose(np.dot(matrix, inverse), np.eye(side))
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestLinalg::test_begin",
@@ -209,7 +209,7 @@ class TestLinalg:
         product = np.array(product, dtype="float64")
         np.testing.assert_allclose(product, np.eye(size))
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=["TestLinalg::test_begin", "TestLinalg::test_invert_fraction"]
     )
@@ -220,7 +220,7 @@ class TestLinalg:
         solution = Linalg.solve(matrix, force)
         np.testing.assert_allclose(np.dot(matrix, solution), force)
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=["TestLinalg::test_begin", "TestLinalg::test_solve_float"]
     )
@@ -271,7 +271,7 @@ class TestLinalg:
             mult = np.dot(matrix, solution)
             np.testing.assert_allclose(mult, force)
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestLinalg::test_begin",
@@ -304,7 +304,7 @@ class TestLinalg:
             np.testing.assert_allclose(np.dot(inverse, matrix), np.eye(side))
             np.testing.assert_allclose(np.dot(matrix, inverse), np.eye(side))
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestLinalg::test_begin",
@@ -354,7 +354,7 @@ class TestLinalg:
         diff = np.array(mult - B, dtype="float64")
         np.testing.assert_allclose(diff, np.zeros(B.shape))
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestLinalg::test_begin",
@@ -387,7 +387,7 @@ class TestLinalg:
         prod = np.dot(inverse, matrix).astype("float64")
         np.testing.assert_allclose(prod, np.eye(3))
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestLinalg::test_begin",
@@ -405,14 +405,14 @@ class TestLinalg:
 
 
 class TestNodeSample:
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=["test_begin", "TestMath::test_end", "TestLinalg::test_end"]
     )
     def test_begin(self):
         pass
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestNodeSample::test_begin"])
     def test_closed_linspace(self):
         nodes = NodeSample.closed_linspace(2)
@@ -432,7 +432,7 @@ class TestNodeSample:
         good = (0, 1 / 4, 2 / 4, 3 / 4, 1)
         assert nodes == good
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestNodeSample::test_begin"])
     def test_open_linspace(self):
         nodes = NodeSample.open_linspace(1)
@@ -457,7 +457,7 @@ class TestNodeSample:
         good = (1 / 10, 3 / 10, 5 / 10, 7 / 10, 9 / 10)
         np.testing.assert_allclose(nodes, good)
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestNodeSample::test_begin"])
     def test_chebyshev(self):
         nodes = NodeSample.chebyshev(1)
@@ -483,7 +483,7 @@ class TestNodeSample:
         good = np.sin(np.pi * np.array([1 / 20, 3 / 20, 5 / 20, 7 / 20, 9 / 20])) ** 2
         np.testing.assert_allclose(nodes, good)
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestNodeSample::test_begin"])
     def test_gauss_legendre(self):
         nodes = NodeSample.gauss_legendre(1)
@@ -517,7 +517,7 @@ class TestNodeSample:
         ]
         np.testing.assert_allclose(nodes, good)
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestNodeSample::test_begin",
@@ -532,7 +532,7 @@ class TestNodeSample:
 
 
 class TestUnidimentionIntegral:
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "test_begin",
@@ -544,7 +544,7 @@ class TestUnidimentionIntegral:
     def test_begin(self):
         pass
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestUnidimentionIntegral::test_begin"])
     def test_closed_newton_cotes(self):
         a, b = Fraction(3), Fraction(5)
@@ -568,7 +568,7 @@ class TestUnidimentionIntegral:
 
             assert test == good
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestUnidimentionIntegral::test_begin"])
     def test_open_newton_cotes(self):
         a, b = Fraction(3), Fraction(5)
@@ -592,7 +592,7 @@ class TestUnidimentionIntegral:
 
             assert test == good
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestUnidimentionIntegral::test_begin"])
     def test_chebyshev(self):
         a, b = Fraction(3), Fraction(7)
@@ -616,7 +616,7 @@ class TestUnidimentionIntegral:
 
             assert abs(test - good) < 1e-9
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestUnidimentionIntegral::test_begin"])
     def test_gauss_legendre(self):
         a, b = Fraction(3), Fraction(7)
@@ -640,7 +640,7 @@ class TestUnidimentionIntegral:
 
             assert abs(test - good) < 1e-9
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestUnidimentionIntegral::test_begin",
@@ -699,7 +699,7 @@ class TestUnidimentionIntegral:
             test = (b - a) * np.inner(weights, funcvals)
             assert abs(test - good) < 1e-9
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestUnidimentionIntegral::test_begin",
@@ -757,7 +757,7 @@ class TestUnidimentionIntegral:
             test = (b - a) * np.inner(weights, funcvals)
             assert abs(test - good) < 1e-9
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestUnidimentionIntegral::test_begin",
@@ -773,7 +773,7 @@ class TestUnidimentionIntegral:
         pass
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(11)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
