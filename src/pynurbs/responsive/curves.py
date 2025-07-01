@@ -7,6 +7,7 @@ from typing import Any, Callable, Optional, Tuple, Union
 import numpy as np
 
 from ..core.basisfunction import ImmutableBasisFunction
+from ..core.custom_math import number_type
 from ..operations import heavy
 from ..operations.knotvector import (
     decrease_degree,
@@ -14,7 +15,7 @@ from ..operations.knotvector import (
     insert_knots,
     remove_knots,
 )
-from ..operations.least_square import func2func, spline2spline
+from ..operations.least_square import fit_function, func2func, spline2spline
 from .knotspace import KnotVector
 
 
@@ -902,9 +903,7 @@ class Curve(BaseCurve):
         knotvector = tuple(self.knotvector)
         weights = tuple(self.weights)
         ctrlpoints = tuple(self.ctrlpoints)
-        mattrans, materror = heavy.LeastSquare.func2func(
-            knotvector, weights, knotvector, [1] * self.npts
-        )
+        mattrans, materror = func2func(knotvector, weights, knotvector, [1] * self.npts)
         error = np.dot(np.moveaxis(ctrlpoints, 0, -1), np.dot(materror, ctrlpoints))
         error = np.max(abs(error))
         error = max(error, np.dot(weights, np.dot(materror, weights)))
@@ -1054,7 +1053,7 @@ class Curve(BaseCurve):
         knots = self.knotvector.knots
         npts_each = 1 + int(np.ceil(self.degree * self.npts / (len(knots) - 1)))
         nodes = []
-        numbtype = heavy.number_type(knots)
+        numbtype = number_type(knots)
         if numbtype in (float, np.floating):
             funcnodes = heavy.NodeSample.chebyshev
         else:
@@ -1102,7 +1101,6 @@ class Curve(BaseCurve):
 
         """
         assert len(points) >= self.npts
-        fitfunc = heavy.LeastSquare.fit_function
         if nodes is None:
             umin, umax = self.knotvector.limits
             if isinstance(umin, (int, Fraction)):
@@ -1114,7 +1112,7 @@ class Curve(BaseCurve):
         knotvector = tuple(self.knotvector)
         nodes = tuple(nodes)
         weights = None if self.weights is None else tuple(self.weights)
-        matrix = fitfunc(knotvector, nodes, weights)
+        matrix = fit_function(knotvector, nodes, weights)
         ctrlpoints = np.dot(matrix, points)
         self.ctrlpoints = tuple(ctrlpoints)
 
