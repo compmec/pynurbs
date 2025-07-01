@@ -238,6 +238,21 @@ def test_scalar_operation():
 @pytest.mark.order(1)
 @pytest.mark.dependency(
     depends=[
+        "test_build",
+    ]
+)
+def test_print():
+    x = Polynomial([0, 1])
+    knots = [0, 1, 2]
+    polys = [x, 1 - x]
+    piecewise = PiecewisePolynomial(polys, knots)
+    assert str(piecewise) == r"{[0, 1): x, [1, 2]: 1 - x}"
+    repr(piecewise)
+
+
+@pytest.mark.order(1)
+@pytest.mark.dependency(
+    depends=[
         "test_begin",
         "test_build",
         "test_evaluate",
@@ -247,6 +262,7 @@ def test_scalar_operation():
         "test_mul",
         "test_matmul",
         "test_scalar_operation",
+        "test_print",
     ]
 )
 def test_all():

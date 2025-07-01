@@ -70,7 +70,9 @@ class PiecewisePolynomial:
             knota, knotb = self.knots[i], self.knots[i + 1]
             if i + 1 != len(self.functions):
                 msgs.append(f"[{knota}, {knotb}): {functioni}")
-        return " ".join(msgs)
+            else:
+                msgs.append(f"[{knota}, {knotb}]: {functioni}")
+        return "{" + ", ".join(msgs) + "}"
 
     def __repr__(self) -> str:
         msgs = []
@@ -78,7 +80,9 @@ class PiecewisePolynomial:
             knota, knotb = self.knots[i], self.knots[i + 1]
             if i + 1 != len(self.functions):
                 msgs.append(f"[{knota}, {knotb}): {repr(functioni)}")
-        return " ".join(msgs)
+            else:
+                msgs.append(f"[{knota}, {knotb}]: {repr(functioni)}")
+        return "{" + ", ".join(msgs) + "}"
 
     @vectorize(1, 0)
     def __call__(self, node: Real) -> Real:
