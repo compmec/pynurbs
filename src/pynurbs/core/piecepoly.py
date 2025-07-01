@@ -39,8 +39,8 @@ def find_span(node: Real, knots: Tuple[Real, ...]):
         return -1
     if knots[-1] < node:
         return len(knots) - 1
-    for i, knot in enumerate(knots[:-1]):
-        if knot <= node:
+    for i, knot in enumerate(knots[1:]):
+        if node < knot:
             return i
     return len(knots) - 2
 
@@ -51,8 +51,12 @@ class PiecewisePolynomial:
     """
 
     def __init__(self, functions: Iterable[Polynomial], knots: Iterable[Real]) -> None:
-        self.__functions = tuple(functions)
-        self.__knots = tuple(knots)
+        functions = tuple(functions)
+        knots = tuple(knots)
+        if len(knots) != 1 + len(functions):
+            raise ValueError(f"{len(knots)} != 1 + {len(functions)}")
+        self.__functions = functions
+        self.__knots = knots
 
     @property
     def knots(self) -> Tuple[Real, ...]:
@@ -61,6 +65,22 @@ class PiecewisePolynomial:
     @property
     def functions(self) -> Tuple[Polynomial, ...]:
         return self.__functions
+
+    def __str__(self) -> str:
+        msgs = []
+        for i, functioni in enumerate(self.functions):
+            knota, knotb = self.knots[i], self.knots[i + 1]
+            if i + 1 != len(self.functions):
+                msgs.append(f"[{knota}, {knotb}): {functioni}")
+        return " ".join(msgs)
+
+    def __repr__(self) -> str:
+        msgs = []
+        for i, functioni in enumerate(self.functions):
+            knota, knotb = self.knots[i], self.knots[i + 1]
+            if i + 1 != len(self.functions):
+                msgs.append(f"[{knota}, {knotb}): {repr(functioni)}")
+        return " ".join(msgs)
 
     @vectorize(1, 0)
     def __call__(self, node: Real) -> Real:
@@ -81,7 +101,7 @@ class PiecewisePolynomial:
         for i, (knota, knotb) in enumerate(zip(allknots, allknots[1:])):
             midknot = (knota + knotb) / 2
             spana = find_span(midknot, self.knots)
-            spanb = find_span(midknot, self.knots)
+            spanb = find_span(midknot, other.knots)
             functions[i] = self.functions[spana] + other.functions[spanb]
         return self.__class__(functions, allknots)
 
@@ -95,7 +115,7 @@ class PiecewisePolynomial:
         for i, (knota, knotb) in enumerate(zip(allknots, allknots[1:])):
             midknot = (knota + knotb) / 2
             spana = find_span(midknot, self.knots)
-            spanb = find_span(midknot, self.knots)
+            spanb = find_span(midknot, other.knots)
             functions[i] = self.functions[spana] * other.functions[spanb]
         return self.__class__(functions, allknots)
 
@@ -109,7 +129,7 @@ class PiecewisePolynomial:
         for i, (knota, knotb) in enumerate(zip(allknots, allknots[1:])):
             midknot = (knota + knotb) / 2
             spana = find_span(midknot, self.knots)
-            spanb = find_span(midknot, self.knots)
+            spanb = find_span(midknot, other.knots)
             functions[i] = self.functions[spana] @ other.functions[spanb]
         return self.__class__(functions, allknots)
 
