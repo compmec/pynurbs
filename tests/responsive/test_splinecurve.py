@@ -10,9 +10,9 @@ from pynurbs.responsive.knotspace import GeneratorKnotVector, KnotVector
 @pytest.mark.order(34)
 @pytest.mark.dependency(
     depends=[
-        "tests/test_knotspace.py::test_end",
-        "tests/test_functions.py::test_end",
-        "tests/test_beziercurve.py::test_end",
+        "tests/responsive/test_knotspace.py::test_end",
+        "tests/responsive/test_functions.py::test_end",
+        "tests/responsive/test_beziercurve.py::test_end",
     ],
     scope="session",
 )
