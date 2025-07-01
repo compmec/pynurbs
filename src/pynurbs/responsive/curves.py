@@ -14,6 +14,7 @@ from ..operations.knotvector import (
     insert_knots,
     remove_knots,
 )
+from ..operations.least_square import func2func, spline2spline
 from .knotspace import KnotVector
 
 
@@ -992,12 +993,12 @@ class Curve(BaseCurve):
         assert isinstance(other, self.__class__)
         vectora, vectorb = tuple(self.knotvector), tuple(other.knotvector)
         if self.weights is None and other.weights is None:
-            lstsq = heavy.LeastSquare.spline2spline
+            lstsq = spline2spline
             transmat, materror = lstsq(vectorb, vectora, nodes)
         else:
             weightsa = self.weights if self.weights else [1] * self.npts
             weightsb = other.weights if other.weights else [1] * other.npts
-            lstsq = heavy.LeastSquare.func2func
+            lstsq = func2func
             transmat, materror = lstsq(vectorb, weightsb, vectora, weightsa, nodes)
         transmat = np.array(transmat)
         ctrlpoints = np.dot(transmat, other.ctrlpoints)
