@@ -31,7 +31,33 @@ import numpy as np
 from ..core.basisfunction import ImmutableBasisFunction
 from ..core.custom_math import IntegratorArray, Linalg, NodeSample, number_type, totuple
 from ..core.knotvector import ImmutableKnotVector
-from .heavy import eval_rational_nodes
+
+
+def eval_spline_nodes(
+    knotvector: ImmutableKnotVector, nodes: Tuple[float], degree: int
+) -> Tuple[Tuple[float]]:
+    """
+    Returns a matrix M of which M_{ij} = N_{i,degree}(node_j)
+    M.shape = (npts, len(nodes))
+    """
+    knotvector = ImmutableKnotVector(knotvector)
+    basis = ImmutableBasisFunction(knotvector, degree)
+    return np.transpose(tuple(map(basis, nodes)))
+
+
+def eval_rational_nodes(
+    knotvector: ImmutableKnotVector,
+    weights: Tuple[float],
+    nodes: Tuple[float],
+    degree: int,
+) -> Tuple[Tuple[float]]:
+    """
+    Returns a matrix M of which M_{ij} = N_{i,p}(node_j)
+    M.shape = (len(weights), len(nodes))
+    """
+    matrix = eval_spline_nodes(knotvector, nodes, degree)
+    denominators = 1 / np.dot(weights, matrix)
+    return np.einsum("j,ij,i->ij", denominators, matrix, weights)
 
 
 def fit_function(

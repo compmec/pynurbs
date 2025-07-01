@@ -6,13 +6,11 @@ Most of these functions works only with integers, floats and tuples.
 
 from __future__ import annotations
 
-from fractions import Fraction
-from typing import Tuple, Union
+from typing import Tuple
 
 import numpy as np
 
-from ..core.basisfunction import ImmutableBasisFunction
-from ..core.custom_math import IntegratorArray, Linalg, NodeSample, number_type, totuple
+from ..core.custom_math import Linalg, NodeSample, totuple
 from ..core.knotvector import ImmutableKnotVector
 from ..operations.knotvector import (
     increase_degree,
@@ -21,6 +19,7 @@ from ..operations.knotvector import (
     split_knotvector,
     union_knotvectors,
 )
+from .least_square import eval_spline_nodes, spline2spline
 
 
 def find_roots(
@@ -104,33 +103,6 @@ def find_roots(
         else:
             filtered_roots.append(root)
     return tuple(sorted(filtered_roots))
-
-
-def eval_spline_nodes(
-    knotvector: ImmutableKnotVector, nodes: Tuple[float], degree: int
-) -> Tuple[Tuple[float]]:
-    """
-    Returns a matrix M of which M_{ij} = N_{i,degree}(node_j)
-    M.shape = (npts, len(nodes))
-    """
-    knotvector = ImmutableKnotVector(knotvector)
-    basis = ImmutableBasisFunction(knotvector, degree)
-    return np.transpose(tuple(map(basis, nodes)))
-
-
-def eval_rational_nodes(
-    knotvector: ImmutableKnotVector,
-    weights: Tuple[float],
-    nodes: Tuple[float],
-    degree: int,
-) -> Tuple[Tuple[float]]:
-    """
-    Returns a matrix M of which M_{ij} = N_{i,p}(node_j)
-    M.shape = (len(weights), len(nodes))
-    """
-    matrix = eval_spline_nodes(knotvector, nodes, degree)
-    denominators = 1 / np.dot(weights, matrix)
-    return np.einsum("j,ij,i->ij", denominators, matrix, weights)
 
 
 class Operations:
@@ -295,7 +267,7 @@ class Operations:
             msg = f"Invalid nodes {nodes} in knotvector {knotvector}"
             raise ValueError(msg)
         newknotvector = remove_knots(knotvector, nodes)
-        matrix, _ = LeastSquare.spline2spline(knotvector, newknotvector)
+        matrix, _ = spline2spline(knotvector, newknotvector)
         return totuple(matrix)
 
     def degree_increase_bezier_once(knotvector: ImmutableKnotVector) -> "Matrix2D":
