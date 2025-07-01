@@ -107,7 +107,7 @@ class PiecewisePolynomial:
         self, other: Union[Real, Polynomial, PiecewisePolynomial]
     ) -> PiecewisePolynomial:
         if not isinstance(other, PiecewisePolynomial):
-            return self.__class__((func + other for func in self.functions), self.knots)
+            return self.__class__((func * other for func in self.functions), self.knots)
         allknots = sorted(set(self.knots) | set(other.knots))
         functions = [None] * (len(allknots) - 1)
         for i, (knota, knotb) in enumerate(zip(allknots, allknots[1:])):
@@ -121,7 +121,7 @@ class PiecewisePolynomial:
         self, other: Union[Real, Polynomial, PiecewisePolynomial]
     ) -> PiecewisePolynomial:
         if not isinstance(other, PiecewisePolynomial):
-            return self.__class__((func + other for func in self.functions), self.knots)
+            return self.__class__((func @ other for func in self.functions), self.knots)
         allknots = sorted(set(self.knots) | set(other.knots))
         functions = [None] * (len(allknots) - 1)
         for i, (knota, knotb) in enumerate(zip(allknots, allknots[1:])):
@@ -144,6 +144,3 @@ class PiecewisePolynomial:
 
     def __rmul__(self, other: Real) -> PiecewisePolynomial:
         return self.__mul__(other)
-
-    def __rmatmul__(self, other: Real) -> PiecewisePolynomial:
-        return self.__matmul__(other)
