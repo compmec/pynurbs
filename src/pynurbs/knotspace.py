@@ -13,7 +13,7 @@ from typing import Optional, Tuple, Union
 import numpy as np
 
 from .core import ImmutableKnotVector
-from .core.operations import (
+from .operations.knotvector import (
     decrease_degree,
     increase_degree,
     insert_knots,

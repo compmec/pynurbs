@@ -10,7 +10,7 @@ from pynurbs import heavy
 from pynurbs.knotspace import KnotVector
 
 from .core.basisfunction import ImmutableBasisFunction
-from .core.operations import (
+from .operations.knotvector import (
     decrease_degree,
     increase_degree,
     insert_knots,

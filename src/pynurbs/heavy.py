@@ -14,7 +14,7 @@ import numpy as np
 from .core.basisfunction import ImmutableBasisFunction
 from .core.custom_math import IntegratorArray, Linalg, NodeSample, number_type, totuple
 from .core.knotvector import ImmutableKnotVector
-from .core.operations import (
+from .operations.knotvector import (
     increase_degree,
     insert_knots,
     remove_knots,
