@@ -8,7 +8,9 @@ from pynurbs.responsive.knotspace import GeneratorKnotVector, KnotVector
 
 
 @pytest.mark.order(30)
-@pytest.mark.dependency(depends=["tests/test_heavy.py::test_end"], scope="session")
+@pytest.mark.dependency(
+    depends=["tests/core/test_knotvector.py::test_end"], scope="session"
+)
 def test_begin():
     pass
 
