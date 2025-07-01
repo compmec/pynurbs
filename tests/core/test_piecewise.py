@@ -187,6 +187,57 @@ def test_matmul():
 @pytest.mark.order(1)
 @pytest.mark.dependency(
     depends=[
+        "test_build",
+        "test_neg",
+        "test_add",
+        "test_sub",
+        "test_mul",
+        "test_matmul",
+    ]
+)
+def test_scalar_operation():
+    nsegs, degree = 6, 4
+
+    knotsa = get_random_knots(0, 1, nsegs)
+    nodes = np.linspace(0, 1, 129)
+
+    for _ in range(10):  # number of tests
+        const = np.random.randint(-10, 11)
+        coefsa = np.random.randint(-10, 11, (nsegs, degree + 1))
+        piecea = PiecewisePolynomial(map(Polynomial, coefsa), knotsa)
+
+        pieceb = piecea + const
+        piecec = const + piecea
+        for node in nodes:
+            assert abs(piecea(node) + const - pieceb(node)) < 1e-9
+            assert abs(const + piecea(node) - piecec(node)) < 1e-9
+
+        pieceb = piecea - const
+        piecec = const - piecea
+        for node in nodes:
+            assert abs(piecea(node) - const - pieceb(node)) < 1e-9
+            assert abs(const - piecea(node) - piecec(node)) < 1e-9
+
+        pieceb = piecea * const
+        piecec = const * piecea
+        for node in nodes:
+            assert abs(piecea(node) * const - pieceb(node)) < 1e-9
+            assert abs(const * piecea(node) - piecec(node)) < 1e-9
+
+    ndim = 3
+    for _ in range(10):  # number of tests
+        const = np.random.randint(-10, 11, (ndim,))
+        coefsa = np.random.randint(-10, 11, (nsegs, degree + 1, ndim))
+        piecea = PiecewisePolynomial(map(Polynomial, coefsa), knotsa)
+
+        pieceb = piecea @ const
+        for node in nodes:
+            assert abs(piecea(node) @ const - pieceb(node)) < 1e-9
+
+
+@pytest.mark.order(1)
+@pytest.mark.dependency(
+    depends=[
         "test_begin",
         "test_build",
         "test_evaluate",
@@ -195,6 +246,7 @@ def test_matmul():
         "test_sub",
         "test_mul",
         "test_matmul",
+        "test_scalar_operation",
     ]
 )
 def test_all():
