@@ -6,9 +6,8 @@ from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 
-from pynurbs import heavy
-
 from ..core.basisfunction import ImmutableBasisFunction
+from ..operations import heavy
 from ..operations.knotvector import (
     decrease_degree,
     increase_degree,

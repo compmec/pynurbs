@@ -6,7 +6,7 @@ Its functions are getting derivatives, computing integrals along curves and so o
 import numpy as np
 import pytest
 
-from pynurbs.advanced import Intersection, Projection
+from pynurbs.operations.advanced import Intersection, Projection
 from pynurbs.responsive.curves import Curve
 
 

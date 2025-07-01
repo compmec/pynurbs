@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pynurbs.heavy import LeastSquare
+from pynurbs.operations.heavy import LeastSquare
 
 
 @pytest.mark.order(1)

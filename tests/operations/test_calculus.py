@@ -8,7 +8,7 @@ from fractions import Fraction
 import numpy as np
 import pytest
 
-from pynurbs.calculus import Derivate, Integrate
+from pynurbs.operations.calculus import Derivate, Integrate
 from pynurbs.responsive.curves import Curve
 from pynurbs.responsive.knotspace import GeneratorKnotVector, KnotVector
 

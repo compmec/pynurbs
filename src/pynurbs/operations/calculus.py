@@ -3,9 +3,9 @@ from typing import Any, Callable, Optional
 
 import numpy as np
 
+from ..responsive.curves import Curve
+from ..responsive.knotspace import KnotVector
 from . import heavy
-from .responsive.curves import Curve
-from .responsive.knotspace import KnotVector
 
 
 class Derivate:

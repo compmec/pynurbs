@@ -11,7 +11,6 @@ Example 1:
     We expect all final computations returns CustomFloats
 """
 
-import numpy as np
 import pytest
 
 from pynurbs.responsive.functions import Function
