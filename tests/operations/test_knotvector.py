@@ -1,7 +1,7 @@
 import pytest
 
 from pynurbs.core.knotvector import ImmutableKnotVector
-from pynurbs.core.operations import (
+from pynurbs.operations.knotvector import (
     decrease_degree,
     increase_degree,
     insert_knots,

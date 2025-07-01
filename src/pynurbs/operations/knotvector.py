@@ -1,7 +1,7 @@
 from numbers import Real
 from typing import Iterable
 
-from .knotvector import ImmutableKnotVector
+from ..core.knotvector import ImmutableKnotVector
 
 
 def insert_knots(
