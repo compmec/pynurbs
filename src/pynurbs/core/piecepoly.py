@@ -35,10 +35,8 @@ def find_span(node: Real, knots: Tuple[Real, ...]):
     >>> find_span(5, knots)
     3
     """
-    if node < knots[0]:
-        return -1
-    if knots[-1] < node:
-        return len(knots) - 1
+    if node < knots[0] or knots[-1] < node:
+        raise ValueError(f"Node not inside [{knots[0]}, {knots[-1]}]")
     for i, knot in enumerate(knots[1:]):
         if node < knot:
             return i
