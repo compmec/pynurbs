@@ -8,19 +8,19 @@ from pynurbs.responsive.functions import Function
 from pynurbs.responsive.knotspace import GeneratorKnotVector
 
 
-@pytest.mark.order(3)
+@pytest.mark.order(32)
 @pytest.mark.dependency(depends=["tests/test_knotspace.py::test_end"], scope="session")
 def test_begin():
     pass
 
 
 class TestBezier:
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestBezier::test_begin"])
     def test_creation(self):
@@ -33,7 +33,7 @@ class TestBezier:
         assert bezier.degree == 2
         assert bezier.npts == 3
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestBezier::test_creation"])
     def test_random_creation(self):
@@ -44,7 +44,7 @@ class TestBezier:
             assert bezier.degree == degree
             assert bezier.npts == degree + 1
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_random_creation"])
     def test_evalfuncs_degree1(self):
@@ -59,7 +59,7 @@ class TestBezier:
         assert callable(bezier[:, 1])
         assert callable(bezier[:])
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_random_creation"])
     def test_evalfuncs_degree2(self):
@@ -80,7 +80,7 @@ class TestBezier:
         assert callable(bezier[:, 2])
         assert callable(bezier[:])
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(
         depends=[
@@ -111,7 +111,7 @@ class TestBezier:
                 matrix = np.array(matrix, dtype="float64")
                 assert matrix.shape == (npts_sample, npts)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_shape_calls"])
     def test_sum_equal_to_1(self):
@@ -132,7 +132,7 @@ class TestBezier:
                 for k in range(npts_sample):
                     assert abs(np.sum(matrix[k]) - 1) < 1e-9
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_shape_calls"])
     def test_standard_index(self):
@@ -152,7 +152,7 @@ class TestBezier:
             np.testing.assert_allclose(matrix_dire, matrix_degr)
             np.testing.assert_allclose(matrix_none, matrix_degr)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(
         depends=[
@@ -176,7 +176,7 @@ class TestBezier:
         assert bezier[1, 1](0.5) == 0.5
         assert bezier[1, 1](1.0) == 1
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(
         depends=[
@@ -215,7 +215,7 @@ class TestBezier:
         assert bezier[2, 2](0.5) == 0.25
         assert bezier[2, 2](1.0) == 1
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(
         depends=[
@@ -237,7 +237,7 @@ class TestBezier:
         matrix_good = np.transpose([1 - nodes_test, nodes_test])
         np.testing.assert_allclose(matrix_test, matrix_good)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(
         depends=[
@@ -275,7 +275,7 @@ class TestBezier:
         ]
         np.testing.assert_allclose(matrix_test, matrix_good)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(
         depends=[
@@ -299,7 +299,7 @@ class TestBezier:
                     matrix_good[i, j] = value
             np.testing.assert_allclose(matrix_test, matrix_good)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_tablevalues_random_degree"])
     def test_shifted_scaled_bezier(self):
@@ -323,7 +323,7 @@ class TestBezier:
                     matrix_good[i, j] = value
             np.testing.assert_allclose(matrix_test, matrix_good)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_shifted_scaled_bezier"])
     def test_degree_operations(self):
@@ -338,7 +338,7 @@ class TestBezier:
         assert bezier.degree == 1
         assert bezier.npts == 2
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.dependency(
         depends=[
             "TestBezier::test_begin",
@@ -363,12 +363,12 @@ class TestBezier:
 
 
 class TestSpline:
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.dependency(depends=["TestBezier::test_end"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestSpline::test_begin"])
     def test_creation(self):
@@ -389,7 +389,7 @@ class TestSpline:
         assert spline.degree == 2
         assert spline.npts == 4
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestSpline::test_creation"])
     def test_random_creation(self):
@@ -401,7 +401,7 @@ class TestSpline:
             assert spline.degree == degree
             assert spline.npts == npts
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestSpline::test_random_creation"])
     def test_evalfuncs_degree1npts3(self):
@@ -418,7 +418,7 @@ class TestSpline:
         assert callable(spline[:, 1])
         assert callable(spline[:])
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestSpline::test_evalfuncs_degree1npts3"])
     def test_tablevalues_degree1npts3(self):
@@ -459,7 +459,7 @@ class TestSpline:
         ]
         np.testing.assert_allclose(matrix_test, matrix_good)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestSpline::test_tablevalues_degree1npts3"])
     def test_tablevalues_degree2npts4(self):
@@ -516,7 +516,7 @@ class TestSpline:
         ]
         np.testing.assert_allclose(matrix_test, matrix_good)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestSpline::test_tablevalues_degree2npts4"])
     def test_tablevalues_degree3npts5(self):
@@ -590,7 +590,7 @@ class TestSpline:
         ]
         np.testing.assert_allclose(matrix_test, matrix_good)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.dependency(
         depends=[
             "TestSpline::test_tablevalues_degree3npts5",
@@ -629,7 +629,7 @@ class TestSpline:
         assert spline.npts == 9
         assert spline.knotvector == [0, 0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 3, 3]
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.dependency(
         depends=[
             "TestSpline::test_begin",
@@ -647,12 +647,12 @@ class TestSpline:
 
 
 class TestRational:
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.dependency(depends=["TestSpline::test_end"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestRational::test_begin"])
     def test_creation(self):
@@ -665,7 +665,7 @@ class TestRational:
             assert rational.degree == degree
             assert rational.npts == npts
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestRational::test_creation"])
     def test_fail_creation(self):
@@ -679,7 +679,7 @@ class TestRational:
         with pytest.raises(ValueError):
             rational.weights = -1 * np.ones(npts)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestRational::test_begin"])
     def test_compare_spline(self):
@@ -698,7 +698,7 @@ class TestRational:
         assert id(rat_copy) != id(rational)
         assert rat_copy == rational
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestRational::test_begin"])
     def test_values_rational_equal_spline(self):
@@ -711,7 +711,7 @@ class TestRational:
         for node in nodes_sample:
             assert np.all(rational(node) == spline(node))
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestRational::test_begin"])
     def test_quarter_circle_standard(self):
@@ -730,7 +730,7 @@ class TestRational:
         test_matrix = rational(nodes_sample)
         np.testing.assert_allclose(test_matrix, good_matrix)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestRational::test_quarter_circle_standard"])
     def test_quarter_circle_symmetric(self):
@@ -751,7 +751,7 @@ class TestRational:
         test_matrix = rational(nodes_sample)
         np.testing.assert_allclose(test_matrix, good_matrix)
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.dependency(
         depends=[
             "TestRational::test_begin",
@@ -768,7 +768,7 @@ class TestRational:
 
 
 class TestOthers:
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(
         depends=[
@@ -794,7 +794,7 @@ class TestOthers:
         spline.__repr__()
         rational.__repr__()
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_creation"])
     def test_specific_cases(self):
@@ -806,7 +806,7 @@ class TestOthers:
         assert bezier.knots[0] == 0
         assert bezier.knots[1] == 1
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_creation"])
     def test_fail_getitem_index(self):
@@ -822,7 +822,7 @@ class TestOthers:
         with pytest.raises(TypeError):
             bezier[0, "asd"]
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_creation"])
     def test_fractions(self):
@@ -839,7 +839,7 @@ class TestOthers:
         assert type(bezier[0](0.5)) is float
         assert type(bezier[1](0.5)) is float
 
-    @pytest.mark.order(3)
+    @pytest.mark.order(32)
     @pytest.mark.dependency(
         depends=[
             "TestOthers::test_print",
@@ -852,7 +852,7 @@ class TestOthers:
         pass
 
 
-@pytest.mark.order(3)
+@pytest.mark.order(32)
 @pytest.mark.dependency(
     depends=[
         "test_begin",

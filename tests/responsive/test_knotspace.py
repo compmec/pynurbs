@@ -7,13 +7,13 @@ import pytest
 from pynurbs.responsive.knotspace import GeneratorKnotVector, KnotVector
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.dependency(depends=["tests/test_heavy.py::test_end"], scope="session")
 def test_begin():
     pass
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_Creation():
@@ -41,7 +41,7 @@ def test_Creation():
     KnotVector([0.0, 0.0, 0.5, 0.5, 1.0, 1.0])
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_Creation"])
 def test_FailCreation():
@@ -77,7 +77,7 @@ def test_FailCreation():
         KnotVector([0, 0, 0.5, 0.5, 0.5, 0.5, 1, 1])
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_Creation", "test_FailCreation"])
 def test_ValuesDegree():
@@ -102,7 +102,7 @@ def test_ValuesDegree():
     assert V.degree == 3
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_Creation", "test_FailCreation"])
 def test_ValuesNumberPoints():
@@ -129,7 +129,7 @@ def test_ValuesNumberPoints():
     assert V.npts == 6
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_ValuesDegree", "test_ValuesNumberPoints"])
 def test_findspans_single():
@@ -156,7 +156,7 @@ def test_findspans_single():
         U.span("asd")  # Not a number
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_ValuesDegree", "test_ValuesNumberPoints"])
 def test_findmult_single():
@@ -183,7 +183,7 @@ def test_findmult_single():
         U.mult("asd")  # Not a number
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_findspans_single"])
 def test_findspans_array():
@@ -196,7 +196,7 @@ def test_findspans_array():
     np.testing.assert_equal(suposedspans, correctspans)
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(2)
 @pytest.mark.dependency(depends=["test_findmult_single"])
 def test_findmult_array():
@@ -209,7 +209,7 @@ def test_findmult_array():
     np.testing.assert_equal(suposedmults, correctmults)
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(4)
 @pytest.mark.dependency(depends=["test_ValuesDegree", "test_ValuesNumberPoints"])
 def test_CompareKnotvector():
@@ -226,13 +226,13 @@ def test_CompareKnotvector():
 
 
 class TestOperations:
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(2)
     @pytest.mark.dependency(depends=["test_CompareKnotvector"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(4)
     @pytest.mark.dependency(depends=["TestOperations::test_begin"])
     def test_scale(self):
@@ -285,7 +285,7 @@ class TestOperations:
         assert U == U3
         assert U != U4
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(4)
     @pytest.mark.dependency(depends=["TestOperations::test_begin"])
     def test_shift(self):
@@ -311,7 +311,7 @@ class TestOperations:
         U -= 1
         assert U == U1
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(4)
     @pytest.mark.dependency(depends=["TestOperations::test_begin"])
     def test_normalize(self):
@@ -323,7 +323,7 @@ class TestOperations:
         knotvector.normalize()
         assert knotvector == [0, 0, 0.5, 1, 1]
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(4)
     @pytest.mark.dependency(depends=["TestOperations::test_begin"])
     def test_convert(self):
@@ -344,7 +344,7 @@ class TestOperations:
             assert isinstance(knot, Fraction)
         assert knotvector == [0, 0, 0.5, 1, 1]
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(4)
     @pytest.mark.dependency(
         depends=[
@@ -360,7 +360,7 @@ class TestOperations:
         with pytest.raises(ValueError):
             knotvector.convert(int)
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(4)
     @pytest.mark.dependency(
         depends=[
@@ -377,7 +377,7 @@ class TestOperations:
 
 
 class TestGenerator:
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(2)
     @pytest.mark.dependency(
         depends=["test_CompareKnotvector", "TestOperations::test_end"]
@@ -385,7 +385,7 @@ class TestGenerator:
     def test_begin(self):
         pass
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(2)
     @pytest.mark.dependency(depends=["TestGenerator::test_begin"])
     def test_bezier(self):
@@ -416,7 +416,7 @@ class TestGenerator:
         for knot in Utest:
             assert isinstance(knot, int)
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(2)
     @pytest.mark.dependency(
         depends=["TestGenerator::test_begin", "TestGenerator::test_bezier"]
@@ -460,7 +460,7 @@ class TestGenerator:
             for knot in Utest:
                 assert isinstance(knot, int)
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(2)
     @pytest.mark.dependency(
         depends=[
@@ -500,7 +500,7 @@ class TestGenerator:
             assert Utest.npts == npts
             assert Utest.degree == degree
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(4)
     @pytest.mark.dependency(
         depends=[
@@ -520,7 +520,7 @@ class TestGenerator:
             assert knotvect.npts == npts
             assert knotvect.degree == degree
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(4)
     @pytest.mark.dependency(
         depends=[
@@ -560,7 +560,7 @@ class TestGenerator:
         assert isinstance(Utest, KnotVector)
         assert Utest == Ugood
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(2)
     @pytest.mark.dependency(
         depends=[
@@ -612,7 +612,7 @@ class TestGenerator:
                     for knot in knotvector:
                         assert isinstance(knot, cls)
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(2)
     @pytest.mark.dependency(
         depends=[
@@ -655,7 +655,7 @@ class TestGenerator:
         with pytest.raises(AssertionError):
             GeneratorKnotVector.random(degree=2.0, npts=3)
 
-    @pytest.mark.order(2)
+    @pytest.mark.order(30)
     @pytest.mark.timeout(4)
     @pytest.mark.dependency(
         depends=[
@@ -673,7 +673,7 @@ class TestGenerator:
         pass
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(4)
 @pytest.mark.dependency(depends=["TestGenerator::test_end"])
 def test_compare_knotvectors_fail():
@@ -700,7 +700,7 @@ def test_compare_knotvectors_fail():
     assert U4 != U5
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(4)
 @pytest.mark.dependency(depends=["TestGenerator::test_end"])
 def test_insert_knot_remove():
@@ -782,7 +782,7 @@ def test_insert_knot_remove():
         U0 -= [0]  # Take out one extremity
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(4)
 @pytest.mark.dependency(depends=["TestGenerator::test_end"])
 def test_degree_change():
@@ -821,7 +821,7 @@ def test_degree_change():
     assert U == [0, 0, 0, 0, 2, 2, 2, 2]
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(4)
 @pytest.mark.dependency(depends=["TestGenerator::test_end"])
 def test_or_and():
@@ -854,7 +854,7 @@ def test_or_and():
         U1 & U2
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(4)
 @pytest.mark.dependency(
     depends=[
@@ -882,7 +882,7 @@ def test_others():
     knotvect.__repr__()
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.timeout(4)
 @pytest.mark.dependency(
     depends=[
@@ -914,7 +914,7 @@ def test_fractions():
         assert type(knot) is frac
 
 
-@pytest.mark.order(2)
+@pytest.mark.order(30)
 @pytest.mark.dependency(
     depends=[
         "test_begin",

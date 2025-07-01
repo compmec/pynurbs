@@ -10,7 +10,7 @@ from pynurbs.responsive.curves import Curve
 from pynurbs.responsive.knotspace import GeneratorKnotVector, KnotVector
 
 
-@pytest.mark.order(4)
+@pytest.mark.order(33)
 @pytest.mark.dependency(
     depends=[
         "tests/test_knotspace.py::test_end",
@@ -23,12 +23,12 @@ def test_begin():
 
 
 class TestInitCurve:
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestInitCurve::test_begin"])
     def test_build_scalar(self):
@@ -37,7 +37,7 @@ class TestInitCurve:
         ctrlpoints = np.random.uniform(-1, 1, npts)
         Curve(knotvector, ctrlpoints)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestInitCurve::test_begin"])
     def test_build_vectorial(self):
@@ -47,7 +47,7 @@ class TestInitCurve:
         ctrlpoints = np.random.uniform(-1, 1, (npts, ndim))
         Curve(knotvector, ctrlpoints)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestInitCurve::test_build_scalar"])
     def test_failbuild(self):
@@ -63,7 +63,7 @@ class TestInitCurve:
         with pytest.raises(TypeError):
             Curve(knotvector, 1)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(depends=["TestInitCurve::test_build_scalar"])
     def test_attributes(self):
         degree, npts = 3, 4
@@ -78,7 +78,7 @@ class TestInitCurve:
         assert hasattr(curve, "knotvector")
         assert hasattr(curve, "knots")
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(depends=["TestInitCurve::test_build_scalar"])
     def test_functions(self):
         degree, npts = 3, 4
@@ -97,7 +97,7 @@ class TestInitCurve:
         assert hasattr(curve, "__str__")
         assert callable(curve)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(depends=["TestInitCurve::test_attributes"])
     def test_atributesgood(self):
         degree, npts = 3, 4
@@ -110,7 +110,7 @@ class TestInitCurve:
         np.testing.assert_allclose(curve.ctrlpoints, ctrlpoints)
         assert curve.knots == knotvector.knots
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(depends=["TestInitCurve::test_build_vectorial"])
     def test_compare_two_curves(self):
@@ -130,7 +130,7 @@ class TestInitCurve:
         assert C1 == C3
         assert C1 != C4
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(depends=["TestInitCurve::test_build_scalar"])
     def test_print(self):
@@ -140,7 +140,7 @@ class TestInitCurve:
         bezier.ctrlpoints = [2, 4, 3, 1]
         str(bezier)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(
         depends=[
             "TestInitCurve::test_begin",
@@ -157,12 +157,12 @@ class TestInitCurve:
 
 
 class TestCompare:
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(depends=["TestInitCurve::test_end"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(depends=["TestCompare::test_begin"])
     def test_knotvector(self):
         degree, npts = 3, 4
@@ -187,7 +187,7 @@ class TestCompare:
         curve1 = Curve(knotvector1, ctrlpoints)
         assert curve0 != curve1
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(depends=["TestCompare::test_begin"])
     def test_controlpoints(self):
         npts = 7
@@ -199,7 +199,7 @@ class TestCompare:
         curve1 = Curve(knotvector1, ctrlpoints1)
         assert curve0 != curve1
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(depends=["TestCompare::test_begin"])
     def test_userentry(self):
         npts = 7
@@ -212,7 +212,7 @@ class TestCompare:
         assert curve != ctrlpoints
         assert curve != []
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(
         depends=[
             "TestCompare::test_begin",
@@ -225,14 +225,14 @@ class TestCompare:
 
 
 class TestCallShape:
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(
         depends=["TestCompare::test_end", "TestInitCurve::test_end"]
     )
     def test_begin(self):
         pass
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(depends=["TestCallShape::test_begin"])
     def test_build_scalar(self):
@@ -242,7 +242,7 @@ class TestCallShape:
             ctrlpoints = np.random.uniform(-1, 1, npts)
             Curve(knotvector, ctrlpoints)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(depends=["TestCallShape::test_begin"])
     def test_build_vectorial(self):
@@ -253,7 +253,7 @@ class TestCallShape:
                 ctrlpoints = np.random.uniform(-1, 1, (npts, ndim))
                 Curve(knotvector, ctrlpoints)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(10)
     @pytest.mark.dependency(
         depends=[
@@ -273,7 +273,7 @@ class TestCallShape:
             curvevalues = curve(tparam)
             assert type(curvevalues) == type(ctrlpoints[0])
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(10)
     @pytest.mark.dependency(
         depends=[
@@ -295,7 +295,7 @@ class TestCallShape:
                 assert type(curvevalues) == type(ctrlpoints[0])
                 assert type(curvevalues[0]) == type(ctrlpoints[0][0])
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(10)
     @pytest.mark.dependency(
         depends=[
@@ -320,7 +320,7 @@ class TestCallShape:
             assert len(Cval) == nsample
             assert type(Cval[0]) == type(ctrlpoints[0])
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(
         depends=[
@@ -347,7 +347,7 @@ class TestCallShape:
                 assert type(curvevalues[0]) == type(ctrlpoints[0])
                 assert np.array(curvevalues).shape == (nsample, ndim)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(
         depends=[
@@ -363,7 +363,7 @@ class TestCallShape:
 
 
 class TestDegreeOperations:
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(
         depends=[
@@ -374,7 +374,7 @@ class TestDegreeOperations:
     def test_begin(self):
         pass
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(
         depends=[
@@ -393,7 +393,7 @@ class TestDegreeOperations:
         correctctrlpoints = matrix @ ctrlpoints
         np.testing.assert_allclose(curve.ctrlpoints, correctctrlpoints)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(
         depends=[
@@ -413,7 +413,7 @@ class TestDegreeOperations:
         correctctrlpoints = matrix @ ctrlpoints
         np.testing.assert_allclose(curve.ctrlpoints, correctctrlpoints)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(
         depends=[
@@ -440,7 +440,7 @@ class TestDegreeOperations:
         Pgood = matrix @ ctrlpoints
         np.testing.assert_allclose(curve.ctrlpoints, Pgood)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(
         depends=[
@@ -471,7 +471,7 @@ class TestDegreeOperations:
         correctctrlpoints = matrix @ ctrlpoints
         np.testing.assert_allclose(curve.ctrlpoints, correctctrlpoints)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(
         depends=[
@@ -494,7 +494,7 @@ class TestDegreeOperations:
                 np.testing.assert_allclose(curve.ctrlpoints[0], ctrlpoints[0])
                 np.testing.assert_allclose(curve.ctrlpoints[-1], ctrlpoints[-1])
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(15)
     @pytest.mark.dependency(
         depends=[
@@ -514,7 +514,7 @@ class TestDegreeOperations:
                 np.testing.assert_allclose(curve.ctrlpoints[0], ctrlpoints[0])
                 np.testing.assert_allclose(curve.ctrlpoints[-1], ctrlpoints[-1])
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(10)
     @pytest.mark.dependency(
         depends=[
@@ -536,7 +536,7 @@ class TestDegreeOperations:
             assert curve.degree == degree
             np.testing.assert_allclose(curve.ctrlpoints, curve.ctrlpoints)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(10)
     @pytest.mark.dependency(
         depends=[
@@ -555,7 +555,7 @@ class TestDegreeOperations:
             curve.degree_clean()
             assert curve.degree == degree
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.timeout(10)
     @pytest.mark.dependency(
         depends=["TestDegreeOperations::test_begin", "TestDegreeOperations::test_clean"]
@@ -583,7 +583,7 @@ class TestDegreeOperations:
         with pytest.raises(ValueError):
             curve.degree_increase(0)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(
         depends=[
             "TestDegreeOperations::test_begin",
@@ -596,7 +596,7 @@ class TestDegreeOperations:
 
 
 class TestAddSubMulDiv:
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(
         depends=[
             "TestCompare::test_end",
@@ -607,7 +607,7 @@ class TestAddSubMulDiv:
     def test_begin(self):
         pass
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(depends=["TestAddSubMulDiv::test_begin"])
     def test_addsub_curves(self):
         """
@@ -638,7 +638,7 @@ class TestAddSubMulDiv:
         np.testing.assert_allclose(points0 - points1, ptssub0)
         np.testing.assert_allclose(points1 - points0, ptssub1)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(depends=["TestAddSubMulDiv::test_addsub_curves"])
     def test_muldiv_curves(self):
         """
@@ -681,7 +681,7 @@ class TestAddSubMulDiv:
         np.testing.assert_allclose(points0 / points1, ptsdiv0)
         np.testing.assert_allclose(points1 / points0, ptsdiv1)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(depends=["TestAddSubMulDiv::test_begin"])
     def test_addsub_scalar(self):
         """
@@ -710,7 +710,7 @@ class TestAddSubMulDiv:
         np.testing.assert_allclose(points - c, ptssub0)
         np.testing.assert_allclose(d - points, ptssub1)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(depends=["TestAddSubMulDiv::test_begin"])
     def test_muldiv_scalar(self):
         """
@@ -736,7 +736,7 @@ class TestAddSubMulDiv:
         np.testing.assert_allclose(b * points, ptsmul1)
         np.testing.assert_allclose(points / c, ptsdiv0)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(
         depends=[
             "TestAddSubMulDiv::test_begin",
@@ -777,7 +777,7 @@ class TestAddSubMulDiv:
         good = [pt @ scalar for pt in points]
         np.testing.assert_allclose(test, good)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(
         depends=[
             "TestAddSubMulDiv::test_begin",
@@ -826,7 +826,7 @@ class TestAddSubMulDiv:
         good = [pt1 @ pt0 for pt0, pt1 in zip(points0, points1)]
         np.testing.assert_allclose(test, good)
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(
         depends=[
             "TestAddSubMulDiv::test_begin",
@@ -907,7 +907,7 @@ class TestAddSubMulDiv:
         with pytest.raises(ValueError):
             curve0 @ curve1
 
-    @pytest.mark.order(4)
+    @pytest.mark.order(33)
     @pytest.mark.dependency(
         depends=[
             "TestAddSubMulDiv::test_begin",
@@ -924,7 +924,7 @@ class TestAddSubMulDiv:
         pass
 
 
-@pytest.mark.order(4)
+@pytest.mark.order(33)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
