@@ -35,7 +35,10 @@ class Polynomial:
         coefs = tuple(coefs)
         if len(coefs) == 0:
             raise ValueError("Cannot receive an empty tuple")
-        degree = max((i for i, v in enumerate(coefs) if v), default=0)
+        if isinstance(coefs[0], Real):
+            degree = max((i for i, v in enumerate(coefs) if v), default=0)
+        else:
+            degree = len(coefs) - 1
         self.__coefs = tuple(coefs[: degree + 1])
 
     @property
@@ -128,6 +131,13 @@ class Polynomial:
         if self.degree == 0:
             return str(self[0])
         msgs: List[str] = []
+        if not isinstance(self[0], Real):
+            msgs.append(f"({self[0]})")
+            if self.degree > 0:
+                msgs.append(f"({self[1]}) * x")
+            for i, coef in enumerate(self[2:]):
+                msgs.append(f"({coef}) * x^{i+2}")
+            return " + ".join(msgs)
         flag = False
         for i, coef in enumerate(self):
             if coef == 0:
