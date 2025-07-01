@@ -8,7 +8,7 @@ import numpy as np
 from pynurbs.core.basisfunction import ImmutableBasisFunction
 from pynurbs.knotspace import KnotVector
 
-from .core.tools import vectorize
+from .operations.tools import vectorize
 
 
 class BaseFunction:

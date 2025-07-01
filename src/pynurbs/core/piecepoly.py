@@ -8,7 +8,6 @@ from numbers import Real
 from typing import Iterable, Tuple, Union
 
 from .polynomial import Polynomial
-from .tools import vectorize
 
 
 def find_span(node: Real, knots: Tuple[Real, ...]):
@@ -84,7 +83,6 @@ class PiecewisePolynomial:
                 msgs.append(f"[{knota}, {knotb}]: {repr(functioni)}")
         return "{" + ", ".join(msgs) + "}"
 
-    @vectorize(1, 0)
     def __call__(self, node: Real) -> Real:
         span = find_span(node, self.knots)
         function = self.functions[span]

@@ -8,7 +8,7 @@ from typing import Tuple
 
 import numpy as np
 
-from .polynomial import Polynomial
+from ..core.polynomial import Polynomial
 
 
 def division(poly: Polynomial, doly: Polynomial) -> Tuple[Polynomial, Polynomial]:

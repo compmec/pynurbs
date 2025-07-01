@@ -1,7 +1,7 @@
 import pytest
 
 from pynurbs.core.polynomial import Polynomial
-from pynurbs.core.roots import division, roots
+from pynurbs.operations.roots import division, roots
 
 
 @pytest.mark.order(3)

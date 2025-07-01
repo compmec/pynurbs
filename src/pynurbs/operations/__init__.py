@@ -1,1 +1,1 @@
-from .knotvector import insert_knots, increase_degree, remove_knots, decrease_degree
+from .knotvector import decrease_degree, increase_degree, insert_knots, remove_knots
