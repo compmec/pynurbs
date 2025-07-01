@@ -109,7 +109,7 @@ class CustomPoint:
         return self.__class__(other * self.internal)
 
 
-@pytest.mark.order(7)
+@pytest.mark.order(41)
 @pytest.mark.dependency(
     depends=[
         "tests/test_knotspace.py::test_end",
@@ -124,7 +124,7 @@ def test_begin():
     pass
 
 
-@pytest.mark.order(7)
+@pytest.mark.order(41)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_custom_float():
     a = CustomFloat(1)
@@ -153,12 +153,12 @@ def test_custom_float():
 
 
 class TestKnotVector:
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["test_begin", "test_custom_float"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestKnotVector::test_begin"])
     def test_creation(self):
@@ -170,7 +170,7 @@ class TestKnotVector:
         assert type(vector[3]) is CustomFloat
         tuple(vector)
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=["TestKnotVector::test_begin", "TestKnotVector::test_creation"]
     )
@@ -179,12 +179,12 @@ class TestKnotVector:
 
 
 class TestBasisFunctions:
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["test_begin", "TestKnotVector::test_end"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.timeout(1)
     # @pytest.mark.skip(reason="Needs correction")
     @pytest.mark.dependency(depends=["TestBasisFunctions::test_begin"])
@@ -195,7 +195,7 @@ class TestBasisFunctions:
         assert type(N[0](a)) is CustomFloat
         assert type(N[0](b)) is CustomFloat
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=["TestBasisFunctions::test_begin", "TestBasisFunctions::test_creation"]
     )
@@ -203,7 +203,7 @@ class TestBasisFunctions:
         pass
 
 
-@pytest.mark.order(7)
+@pytest.mark.order(41)
 @pytest.mark.dependency(
     depends=["test_begin", "TestKnotVector::test_end", "TestBasisFunctions::test_end"]
 )

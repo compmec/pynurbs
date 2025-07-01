@@ -13,7 +13,7 @@ from pynurbs.responsive.curves import Curve
 from pynurbs.responsive.knotspace import GeneratorKnotVector, KnotVector
 
 
-@pytest.mark.order(7)
+@pytest.mark.order(41)
 @pytest.mark.dependency(
     depends=[
         "tests/test_knotspace.py::test_end",
@@ -29,12 +29,12 @@ def test_begin():
 
 
 class TestDerivBezier:
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["TestDerivBezier::test_begin"])
     def test_bezier_degree1(self):
         curve = Curve(GeneratorKnotVector.bezier(1))
@@ -47,7 +47,7 @@ class TestDerivBezier:
 
         assert test_curve == good_curve
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["TestDerivBezier::test_bezier_degree1"])
     def test_bezier_degree2(self):
         curve = Curve(GeneratorKnotVector.bezier(2))
@@ -61,7 +61,7 @@ class TestDerivBezier:
 
         assert test_curve == good_curve
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["TestDerivBezier::test_bezier_degree2"])
     def test_bezier_degree3(self):
         curve = Curve(GeneratorKnotVector.bezier(3))
@@ -79,7 +79,7 @@ class TestDerivBezier:
 
         assert test_curve == good_curve
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["TestDerivBezier::test_bezier_degree2"])
     def test_random_degree(self):
         for degree in range(1, 7):
@@ -98,7 +98,7 @@ class TestDerivBezier:
 
             assert test_curve == good_curve
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=[
             "TestDerivBezier::test_begin",
@@ -113,12 +113,12 @@ class TestDerivBezier:
 
 
 class TestNumericalDeriv:
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["TestNumericalDeriv::test_begin"])
     def test_bezier(self):
         deltau = 1e-6
@@ -134,7 +134,7 @@ class TestNumericalDeriv:
                 dnumer = (curve(node + deltau) - curve(node - deltau)) / (2 * deltau)
                 assert np.abs(dcurve(node) - dnumer) < 1e-6
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=["TestNumericalDeriv::test_begin", "TestNumericalDeriv::test_bezier"]
     )
@@ -158,7 +158,7 @@ class TestNumericalDeriv:
                         )
                         assert np.abs(dcurve(node) - dnumer) < 1e-6
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=[
             "TestNumericalDeriv::test_begin",
@@ -183,7 +183,7 @@ class TestNumericalDeriv:
                 dnumer /= 2 * deltau
                 assert np.abs(dcurve(node) - dnumer) < 1e-6
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=[
             "TestNumericalDeriv::test_begin",
@@ -212,7 +212,7 @@ class TestNumericalDeriv:
                         dnumer /= 2 * deltau
                         assert np.abs(dcurve(node) - dnumer) < 1e-6
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=[
             "TestNumericalDeriv::test_begin",
@@ -226,7 +226,7 @@ class TestNumericalDeriv:
         pass
 
 
-@pytest.mark.order(7)
+@pytest.mark.order(41)
 @pytest.mark.dependency(depends=["TestDerivBezier::test_end"])
 def test_derivate_integers_knotvector():
     knotvector = [0, 0, 1, 2, 3, 4, 5, 5]
@@ -242,7 +242,7 @@ def test_derivate_integers_knotvector():
         assert np.abs((points[i + 1] - points[i]) - dcurve(node)) < 1e-9
 
 
-@pytest.mark.order(7)
+@pytest.mark.order(41)
 @pytest.mark.dependency(depends=["TestDerivBezier::test_end"])
 def test_example31page94nurbsbook():
     # Example 3.1 at page 94 of Nurbs book
@@ -264,12 +264,12 @@ def test_example31page94nurbsbook():
 
 
 class TestIntegBezier:
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["TestIntegBezier::test_begin"])
     def test_scalar_integral(self):
         curve = Curve(GeneratorKnotVector.bezier(1))
@@ -293,7 +293,7 @@ class TestIntegBezier:
         good = sum(points) / 4
         assert abs(test - good) < 1e-9
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["TestIntegBezier::test_begin"])
     def test_lenght_integral(self):
         curve = Curve(GeneratorKnotVector.bezier(1))
@@ -316,7 +316,7 @@ class TestIntegBezier:
 
         assert abs(test - good) < 1e-9
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["TestIntegBezier::test_begin"])
     def test_winding_number(self):
         knotvector = GeneratorKnotVector.uniform(1, 5)
@@ -366,7 +366,7 @@ class TestIntegBezier:
         test = Integrate.function(knotvector, function, "open-newton-cotes")
         assert abs(test - 2 * np.pi) < 1
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=[
             "TestIntegBezier::test_begin",
@@ -379,7 +379,7 @@ class TestIntegBezier:
         pass
 
 
-@pytest.mark.order(7)
+@pytest.mark.order(41)
 @pytest.mark.dependency(
     depends=[
         "test_begin",

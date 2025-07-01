@@ -10,7 +10,7 @@ from pynurbs.operations.advanced import Intersection, Projection
 from pynurbs.responsive.curves import Curve
 
 
-@pytest.mark.order(8)
+@pytest.mark.order(42)
 @pytest.mark.dependency(
     depends=[
         "tests/test_knotspace.py::test_end",
@@ -26,12 +26,12 @@ def test_begin():
 
 
 class TestProjection:
-    @pytest.mark.order(8)
+    @pytest.mark.order(42)
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(8)
+    @pytest.mark.order(42)
     @pytest.mark.timeout(4)
     @pytest.mark.dependency(depends=["TestProjection::test_begin"])
     def test_point_on_curve(self):
@@ -69,7 +69,7 @@ class TestProjection:
         np.testing.assert_allclose(project((1, 2)), (4,))
         np.testing.assert_allclose(project((1, 0)), (1.5, 2.5))
 
-    @pytest.mark.order(8)
+    @pytest.mark.order(42)
     @pytest.mark.dependency(
         depends=["TestProjection::test_begin", "TestProjection::test_point_on_curve"]
     )
@@ -78,12 +78,12 @@ class TestProjection:
 
 
 class TestIntersection:
-    @pytest.mark.order(8)
+    @pytest.mark.order(42)
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(8)
+    @pytest.mark.order(42)
     @pytest.mark.timeout(4)
     @pytest.mark.dependency(depends=["TestIntersection::test_begin"])
     def test_bcurve_and_bcurve(self):
@@ -103,7 +103,7 @@ class TestIntersection:
         assert len(inters) == 1
         np.testing.assert_allclose(inters[0], (0.5, 0.5))
 
-    @pytest.mark.order(8)
+    @pytest.mark.order(42)
     @pytest.mark.timeout(50)
     @pytest.mark.dependency(
         depends=[
@@ -136,7 +136,7 @@ class TestIntersection:
         root = 1 / np.sqrt(3)
         np.testing.assert_allclose(inters[0], (root, root))
 
-    @pytest.mark.order(8)
+    @pytest.mark.order(42)
     @pytest.mark.timeout(50)
     @pytest.mark.dependency(
         depends=[
@@ -158,7 +158,7 @@ class TestIntersection:
         root = (np.sqrt(3) - 1) / 2
         np.testing.assert_allclose(inters[0], (root, root))
 
-    @pytest.mark.order(8)
+    @pytest.mark.order(42)
     @pytest.mark.timeout(50)
     @pytest.mark.dependency(
         depends=[
@@ -194,7 +194,7 @@ class TestIntersection:
             distance = np.abs(pointa - pointb)
             assert np.all(distance < 1e-9)
 
-    @pytest.mark.order(8)
+    @pytest.mark.order(42)
     @pytest.mark.dependency(
         depends=[
             "TestIntersection::test_begin",
@@ -208,7 +208,7 @@ class TestIntersection:
         pass
 
 
-@pytest.mark.order(8)
+@pytest.mark.order(42)
 @pytest.mark.dependency(
     depends=["test_begin", "TestProjection::test_end", "TestIntersection::test_end"]
 )

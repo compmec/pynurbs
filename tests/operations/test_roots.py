@@ -4,7 +4,7 @@ from pynurbs.core.polynomial import Polynomial
 from pynurbs.operations.roots import division, roots
 
 
-@pytest.mark.order(3)
+@pytest.mark.order(21)
 @pytest.mark.dependency(
     depends=[
         "tests/core/test_polynomial.py::test_all",
@@ -15,7 +15,7 @@ def test_begin():
     pass
 
 
-@pytest.mark.order(3)
+@pytest.mark.order(21)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_division():
     poly = Polynomial([0, 1])
@@ -63,7 +63,7 @@ def test_division():
             assert all(abs(coef) < 1e-9 for coef in diff)
 
 
-@pytest.mark.order(3)
+@pytest.mark.order(21)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_roots():
     x = Polynomial([0, 1])
@@ -75,7 +75,7 @@ def test_roots():
     assert values == (1, 2, 3)
 
 
-@pytest.mark.order(3)
+@pytest.mark.order(21)
 @pytest.mark.dependency(depends=["test_division", "test_roots"])
 def test_all():
     pass
