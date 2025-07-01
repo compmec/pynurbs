@@ -6,14 +6,14 @@ from pynurbs.operations.least_square import spline2spline
 
 @pytest.mark.order(21)
 @pytest.mark.dependency(
-    depends=["tests/test_custom_math.py::test_end"], scope="session"
+    depends=["tests/core/test_custom_math.py::test_end"], scope="session"
 )
 def test_begin():
     pass
 
 
 @pytest.mark.order(21)
-@pytest.mark.dependency(depends=["TestLeastSquare::test_begin"])
+@pytest.mark.dependency(depends=["test_begin"])
 def test_leastsquarespline_identity():
     U0 = [0, 0, 1, 1]
     U1 = [0, 0, 1, 1]
@@ -35,7 +35,7 @@ def test_leastsquarespline_identity():
 
 
 @pytest.mark.order(21)
-@pytest.mark.dependency(depends=["TestLeastSquare::test_begin"])
+@pytest.mark.dependency(depends=["test_begin"])
 def test_leastsquarespline_eval_error():
     # knot insertion
     U0 = [0, 0, 0, 1, 1, 1]
