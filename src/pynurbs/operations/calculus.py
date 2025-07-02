@@ -114,7 +114,7 @@ class Integrate:
         method: Optional[str] = None,
         nnodes: Optional[int] = None,
     ) -> float:
-        """Computes the integral I
+        r"""Computes the integral I
 
         If no ``function`` is given, it supposes that :math:`g(u)=1`
 
@@ -183,7 +183,7 @@ class Integrate:
         method: Optional[str] = None,
         nnodes: Optional[int] = None,
     ) -> float:
-        """Computes the integral I
+        r"""Computes the integral I
 
         The operation ``@`` is needed cause ``norm(curve(u)) = numpy.sqrt(curve(u) @ curve(u))``
 
@@ -216,7 +216,7 @@ class Integrate:
         method: Optional[str] = None,
         nnodes: Optional[int] = None,
     ) -> float:
-        """Computes the integral I
+        r"""Computes the integral I
 
         The operation ``@`` is needed cause ``norm(curve(u)) = numpy.sqrt(curve(u) @ curve(u))``
 
@@ -288,7 +288,7 @@ class Integrate:
         method: Optional[str] = None,
         nnodes: Optional[int] = None,
     ) -> float:
-        """Computes the integral I
+        r"""Computes the integral I
 
         .. math::
             I = \int_{a}^{b} g ( u ) \ du
