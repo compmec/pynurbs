@@ -3,6 +3,7 @@ from typing import Any, Callable, Optional
 
 import numpy as np
 
+from ..core.custom_math import IntegratorArray, NodeSample
 from ..responsive.curves import Curve
 from ..responsive.knotspace import KnotVector
 from . import heavy
@@ -137,16 +138,16 @@ class Integrate:
 
         """
         nodes_functs = {
-            "closed-newton-cotes": heavy.NodeSample.closed_linspace,
-            "open-newton-cotes": heavy.NodeSample.open_linspace,
-            "chebyshev": heavy.NodeSample.chebyshev,
-            "gauss-legendre": heavy.NodeSample.gauss_legendre,
+            "closed-newton-cotes": NodeSample.closed_linspace,
+            "open-newton-cotes": NodeSample.open_linspace,
+            "chebyshev": NodeSample.chebyshev,
+            "gauss-legendre": NodeSample.gauss_legendre,
         }
         array_functs = {
-            "closed-newton-cotes": heavy.IntegratorArray.closed_newton_cotes,
-            "open-newton-cotes": heavy.IntegratorArray.open_newton_cotes,
-            "chebyshev": heavy.IntegratorArray.chebyshev,
-            "gauss-legendre": heavy.IntegratorArray.gauss_legendre,
+            "closed-newton-cotes": IntegratorArray.closed_newton_cotes,
+            "open-newton-cotes": IntegratorArray.open_newton_cotes,
+            "chebyshev": IntegratorArray.chebyshev,
+            "gauss-legendre": IntegratorArray.gauss_legendre,
         }
         assert isinstance(curve, Curve)
         if function is None:
@@ -241,16 +242,16 @@ class Integrate:
 
         """
         nodes_functs = {
-            "closed-newton-cotes": heavy.NodeSample.closed_linspace,
-            "open-newton-cotes": heavy.NodeSample.open_linspace,
-            "chebyshev": heavy.NodeSample.chebyshev,
-            "gauss-legendre": heavy.NodeSample.gauss_legendre,
+            "closed-newton-cotes": NodeSample.closed_linspace,
+            "open-newton-cotes": NodeSample.open_linspace,
+            "chebyshev": NodeSample.chebyshev,
+            "gauss-legendre": NodeSample.gauss_legendre,
         }
         array_functs = {
-            "closed-newton-cotes": heavy.IntegratorArray.closed_newton_cotes,
-            "open-newton-cotes": heavy.IntegratorArray.open_newton_cotes,
-            "chebyshev": heavy.IntegratorArray.chebyshev,
-            "gauss-legendre": heavy.IntegratorArray.gauss_legendre,
+            "closed-newton-cotes": IntegratorArray.closed_newton_cotes,
+            "open-newton-cotes": IntegratorArray.open_newton_cotes,
+            "chebyshev": IntegratorArray.chebyshev,
+            "gauss-legendre": IntegratorArray.gauss_legendre,
         }
         assert isinstance(curve, Curve)
         if function is None:
@@ -316,16 +317,16 @@ class Integrate:
 
         """
         nodes_functs = {
-            "closed-newton-cotes": heavy.NodeSample.closed_linspace,
-            "open-newton-cotes": heavy.NodeSample.open_linspace,
-            "chebyshev": heavy.NodeSample.chebyshev,
-            "gauss-legendre": heavy.NodeSample.gauss_legendre,
+            "closed-newton-cotes": NodeSample.closed_linspace,
+            "open-newton-cotes": NodeSample.open_linspace,
+            "chebyshev": NodeSample.chebyshev,
+            "gauss-legendre": NodeSample.gauss_legendre,
         }
         array_functs = {
-            "closed-newton-cotes": heavy.IntegratorArray.closed_newton_cotes,
-            "open-newton-cotes": heavy.IntegratorArray.open_newton_cotes,
-            "chebyshev": heavy.IntegratorArray.chebyshev,
-            "gauss-legendre": heavy.IntegratorArray.gauss_legendre,
+            "closed-newton-cotes": IntegratorArray.closed_newton_cotes,
+            "open-newton-cotes": IntegratorArray.open_newton_cotes,
+            "chebyshev": IntegratorArray.chebyshev,
+            "gauss-legendre": IntegratorArray.gauss_legendre,
         }
         if method is not None:
             pass
