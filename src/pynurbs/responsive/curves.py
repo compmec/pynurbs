@@ -409,12 +409,8 @@ class BaseCurve:
         if newpoints is None:
             self.__ctrlpoints = None
             return
-        if isinstance(newpoints, str):
-            raise TypeError
-        try:
-            iter(newpoints)
-        except Exception:
-            raise TypeError
+        if not all(map(supports_linear_operation, newpoints)):
+            raise ValueError
         for point in newpoints:  # Verify if operations are valid for each node
             for knot in self.knotvector.knots:
                 knot * point

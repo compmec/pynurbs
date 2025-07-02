@@ -9,7 +9,7 @@ import math
 from numbers import Real
 from typing import Iterable, List, Tuple, Union
 
-from .custom_math import isnumber
+from .custom_math import isnumber, supports_linear_operation
 
 
 class Polynomial:
@@ -41,6 +41,9 @@ class Polynomial:
             degree = max((i for i, v in enumerate(coefs) if v), default=0)
         else:
             degree = len(coefs) - 1
+        coefs = coefs[: degree + 1]
+        if not all(map(supports_linear_operation, coefs)):
+            raise ValueError
         self.__coefs = tuple(coefs[: degree + 1])
 
     @property

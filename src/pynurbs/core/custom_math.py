@@ -123,6 +123,22 @@ def isnumber(obj: Any) -> bool:
         return False
 
 
+def supports_linear_operation(obj: Any) -> bool:
+    """
+    Tells if an object suports a linear operations like
+    sum and multiplication by scalar
+    """
+    if isinstance(obj, Real):
+        return True
+    if isinstance(obj, (str, tuple, list, set, dict)):
+        return False
+    try:
+        0 * obj + 0.4 * obj + (-4) * obj
+        return True
+    except Exception:
+        return False
+
+
 class NodeSample:
     __cheby = {1: (Fraction(1, 2),)}
     __gauss = {1: (Fraction(1, 2),)}
