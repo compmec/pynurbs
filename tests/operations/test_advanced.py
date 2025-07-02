@@ -13,11 +13,11 @@ from pynurbs.responsive.curves import Curve
 @pytest.mark.order(42)
 @pytest.mark.dependency(
     depends=[
-        "tests/test_knotspace.py::test_end",
-        "tests/test_functions.py::test_end",
-        "tests/test_beziercurve.py::test_end",
-        "tests/test_splinecurve.py::test_end",
-        "tests/test_calculus.py::test_end",
+        "tests/responsive/test_knotspace.py::test_end",
+        "tests/responsive/test_functions.py::test_end",
+        "tests/responsive/test_beziercurve.py::test_end",
+        "tests/responsive/test_splinecurve.py::test_end",
+        "tests/operations/test_calculus.py::test_end",
     ],
     scope="session",
 )
