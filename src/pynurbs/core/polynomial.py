@@ -9,6 +9,8 @@ import math
 from numbers import Real
 from typing import Iterable, List, Tuple, Union
 
+from .custom_math import isnumber
+
 
 class Polynomial:
     """
@@ -35,7 +37,7 @@ class Polynomial:
         coefs = tuple(coefs)
         if len(coefs) == 0:
             raise ValueError("Cannot receive an empty tuple")
-        if isinstance(coefs[0], Real):
+        if isnumber(coefs[0]):
             degree = max((i for i, v in enumerate(coefs) if v), default=0)
         else:
             degree = len(coefs) - 1
@@ -132,7 +134,7 @@ class Polynomial:
         if self.degree == 0:
             return str(self[0])
         msgs: List[str] = []
-        if not isinstance(self[0], Real):
+        if not isnumber(self[0]):
             msgs.append(f"({self[0]})")
             if self.degree > 0:
                 msgs.append(f"({self[1]}) * x")

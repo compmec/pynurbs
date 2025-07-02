@@ -4,6 +4,8 @@ from collections import Counter
 from numbers import Real
 from typing import Iterable, Tuple, Union
 
+from .custom_math import isnumber
+
 
 def find_degree(vector: Tuple[Real, ...]) -> int:
     return max(Counter(vector).values()) - 1
@@ -20,7 +22,7 @@ class ImmutableKnotVector:
             vector = tuple(vector)
         except Exception:
             raise ValueError(f"Wrong argument: '{vector}'")
-        if not all(isinstance(val, Real) for val in vector):
+        if not all(map(isnumber, vector)):
             raise ValueError(f"Cannot create KnotVector with {vector}")
         if not is_sorted(vector):
             raise ValueError(f"Cannot create KnotVector with {vector}")
@@ -80,7 +82,7 @@ class ImmutableKnotVector:
             return NotImplemented
 
     def span(self, node: Real) -> int:
-        if not isinstance(node, Real):
+        if not isnumber(node):
             raise ValueError(f"Node '{node}' must be Real instance")
         if node < self[self.degree] or self[self.npts] < node:
             raise ValueError(f"Node {node} outside [{self.knots[0], self.knots[-1]}]")
@@ -98,7 +100,7 @@ class ImmutableKnotVector:
                 return mid
 
     def mult(self, node: Real) -> int:
-        if not isinstance(node, Real):
+        if not isnumber(node):
             raise ValueError(f"Node '{node}' must be Real instance")
         if node < self[self.degree] or self[self.npts] < node:
             raise ValueError(f"Node {node} outside [{self.knots[0], self.knots[-1]}]")

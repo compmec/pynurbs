@@ -1,7 +1,8 @@
 import math
 from copy import deepcopy
 from fractions import Fraction
-from typing import Optional, Tuple, Union
+from numbers import Real
+from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 
@@ -105,6 +106,21 @@ def binom(n: int, i: int):
     for j in range(i):
         prod *= (n - j) / (i - j)
     return int(prod)
+
+
+def isnumber(obj: Any) -> bool:
+    """
+    Tells if an object is a number
+    """
+    if isinstance(obj, Real):
+        return True
+    if isinstance(obj, (str, tuple, list, set, dict)):
+        return False
+    try:
+        (1.0 * float(obj) + 0) / 4.0
+        return True
+    except Exception:
+        return False
 
 
 class NodeSample:
