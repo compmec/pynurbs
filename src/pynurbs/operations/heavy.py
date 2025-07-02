@@ -214,8 +214,7 @@ class Operations:
             msg = f"Times must be an int, not {times}"
             raise TypeError(msg)
         if times <= 0:
-            msg = f"Times must be positive! Received {times}"
-            raise ValueError(msg)
+            raise ValueError(f"Times must be positive! Received {times}")
         oldnpts = knotvector.npts
         matrix = np.eye(oldnpts, dtype="object")
         for _ in range(times):
@@ -300,8 +299,7 @@ class Operations:
             msg = f"Times must be an int, not {times}"
             raise TypeError(msg)
         if times <= 0:
-            msg = f"Times must be positive! Received {times}"
-            raise ValueError(msg)
+            raise ValueError(f"Times must be positive! Received {times}")
         degree = knotvector.degree
         matrix = np.eye(degree + 1, dtype="object")
         for i in range(times):
@@ -322,8 +320,7 @@ class Operations:
         if times == 0:
             return totuple(np.eye(knotvector.npts, dtype="object"))
         elif times < 0:
-            msg = f"Times must be >= 0! Received {times}"
-            raise ValueError(msg)
+            raise ValueError(f"Times must be >= 0! Received {times}")
         degree = knotvector.degree
         npts = knotvector.npts
         if degree + 1 == npts:

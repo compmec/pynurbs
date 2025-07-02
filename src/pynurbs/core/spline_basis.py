@@ -29,8 +29,7 @@ def spectral_matrix(
     if not isinstance(reqdegree, int):
         raise TypeError("reqdegree must be integer")
     if reqdegree < 0 or knotvector.degree < reqdegree:
-        msg = f"reqdegree must be in [0, {knotvector.degree}]"
-        raise ValueError(msg)
+        raise ValueError(f"reqdegree must be in [0, {knotvector.degree}]")
     knots = knotvector.knots
     spans = tuple(map(knotvector.span, knots))
     j = reqdegree

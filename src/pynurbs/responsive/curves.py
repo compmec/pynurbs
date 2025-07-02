@@ -649,8 +649,7 @@ class Curve(BaseCurve):
             nodes = (nodes,)
             onevalue = True
         if not self.knotvector.valid(nodes):
-            msg = f"Received invalid nodes to eval: {nodes}"
-            raise ValueError(msg)
+            raise ValueError(f"Received invalid nodes to eval: {nodes}")
         result = self.__eval(nodes)
         return result[0] if onevalue else result
 
