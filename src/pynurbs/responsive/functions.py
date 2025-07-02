@@ -5,7 +5,7 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from pynurbs.core.basisfunction import ImmutableBasisFunction
+from pynurbs.core.spline_basis import ImmutableSplineBasis
 
 from ..operations.tools import vectorize
 from .knotspace import KnotVector
@@ -175,7 +175,7 @@ class FunctionEvaluator:
         vector = func.knotvector
         self.__weights = func.weights
         self.__first_index = i
-        self.__basis = ImmutableBasisFunction(vector.internal, j)
+        self.__basis = ImmutableSplineBasis(vector.internal, j)
 
     @vectorize(1, 0)
     def __call__(self, node: float) -> Union[float, Tuple[float]]:

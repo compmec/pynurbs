@@ -3,8 +3,8 @@ from fractions import Fraction
 import numpy as np
 import pytest
 
-from pynurbs.core.basisfunction import ImmutableBasisFunction
 from pynurbs.core.knotvector import ImmutableKnotVector
+from pynurbs.core.spline_basis import ImmutableSplineBasis
 
 
 def binom(n: int, i: int):
@@ -44,19 +44,19 @@ class TestBezier:
     @pytest.mark.dependency(depends=["TestBezier::test_begin"])
     def test_creation(self):
         knotvector = ImmutableKnotVector([0, 0, 1, 1])
-        bezier = ImmutableBasisFunction(knotvector)
+        bezier = ImmutableSplineBasis(knotvector)
         assert callable(bezier)
         assert bezier.degree == 1
         assert bezier.npts == 2
 
         knotvector = ImmutableKnotVector([0, 0, 0, 1, 1, 1])
-        bezier = ImmutableBasisFunction(knotvector)
+        bezier = ImmutableSplineBasis(knotvector)
         assert callable(bezier)
         assert bezier.degree == 2
         assert bezier.npts == 3
 
         knotvector = ImmutableKnotVector([0, 0, 0, 0, 1, 1, 1, 1])
-        bezier = ImmutableBasisFunction(knotvector)
+        bezier = ImmutableSplineBasis(knotvector)
         assert callable(bezier)
         assert bezier.degree == 3
         assert bezier.npts == 4
@@ -64,7 +64,7 @@ class TestBezier:
         for degree in range(0, 8):
             npts = degree + 1
             knotvector = ImmutableKnotVector([0] * npts + [1] * npts)
-            bezier = ImmutableBasisFunction(knotvector)
+            bezier = ImmutableSplineBasis(knotvector)
             assert callable(bezier)
             assert bezier.degree == degree
             assert bezier.npts == npts
@@ -74,7 +74,7 @@ class TestBezier:
     @pytest.mark.dependency(depends=["TestBezier::test_creation"])
     def test_sum_equal_to_1(self):
         knotvector = ImmutableKnotVector([0, 0, 1, 1])
-        bezier = ImmutableBasisFunction(knotvector)
+        bezier = ImmutableSplineBasis(knotvector)
         assert sum(bezier(0.00)) == 1
         assert sum(bezier(0.25)) == 1
         assert sum(bezier(0.50)) == 1
@@ -82,7 +82,7 @@ class TestBezier:
         assert sum(bezier(1.00)) == 1
 
         knotvector = ImmutableKnotVector([0, 0, 0, 1, 1, 1])
-        bezier = ImmutableBasisFunction(knotvector)
+        bezier = ImmutableSplineBasis(knotvector)
         assert sum(bezier(0.00)) == 1
         assert sum(bezier(0.25)) == 1
         assert sum(bezier(0.50)) == 1
@@ -90,7 +90,7 @@ class TestBezier:
         assert sum(bezier(1.00)) == 1
 
         knotvector = ImmutableKnotVector([0, 0, 0, 0, 1, 1, 1, 1])
-        bezier = ImmutableBasisFunction(knotvector)
+        bezier = ImmutableSplineBasis(knotvector)
         assert sum(bezier(0.00)) == 1
         assert sum(bezier(0.25)) == 1
         assert sum(bezier(0.50)) == 1
@@ -101,7 +101,7 @@ class TestBezier:
         for degree in range(0, 6):
             npts = degree + 1
             knotvector = ImmutableKnotVector([0] * npts + [1] * npts)
-            bezier = ImmutableBasisFunction(knotvector)
+            bezier = ImmutableSplineBasis(knotvector)
             assert bezier.degree == degree
             assert bezier.npts == npts
 
@@ -122,21 +122,21 @@ class TestBezier:
     def test_single_values(self):
         # degree = 1, npts = 2
         knotvector = ImmutableKnotVector([0, 0, 1, 1])
-        bezier = ImmutableBasisFunction(knotvector)
+        bezier = ImmutableSplineBasis(knotvector)
         assert bezier(0) == (1, 0)
         assert bezier(0.5) == (0.5, 0.5)
         assert bezier(1) == (0, 1)
 
         # degree = 2, npts = 3
         knotvector = ImmutableKnotVector([0, 0, 0, 1, 1, 1])
-        bezier = ImmutableBasisFunction(knotvector)
+        bezier = ImmutableSplineBasis(knotvector)
         assert bezier(0) == (1, 0, 0)
         assert bezier(0.5) == (0.25, 0.5, 0.25)
         assert bezier(1) == (0, 0, 1)
 
         # degree = 3, npts = 3
         knotvector = ImmutableKnotVector([0, 0, 0, 0, 1, 1, 1, 1])
-        bezier = ImmutableBasisFunction(knotvector)
+        bezier = ImmutableSplineBasis(knotvector)
         assert bezier(0) == (1, 0, 0, 0)
         assert bezier(0.25) == (27 / 64, 27 / 64, 9 / 64, 1 / 64)
         assert bezier(0.5) == (1 / 8, 3 / 8, 3 / 8, 1 / 8)
@@ -148,7 +148,7 @@ class TestBezier:
             npts = degree + 1
             knotvector = [Fraction(0)] * npts + [Fraction(1)] * npts
             knotvector = ImmutableKnotVector(knotvector)
-            bezier = ImmutableBasisFunction(knotvector)
+            bezier = ImmutableSplineBasis(knotvector)
             for j in range(divisions + 1):
                 node = Fraction(j, divisions)
                 minu = 1 - node
@@ -182,25 +182,25 @@ class TestSpline:
     @pytest.mark.dependency(depends=["TestSpline::test_begin"])
     def test_creation(self):
         knotvector = ImmutableKnotVector([0, 0, 1, 1])
-        spline = ImmutableBasisFunction(knotvector)
+        spline = ImmutableSplineBasis(knotvector)
         assert callable(spline)
         assert spline.degree == 1
         assert spline.npts == 2
 
         knotvector = ImmutableKnotVector([0, 0, 0.5, 1, 1])
-        spline = ImmutableBasisFunction(knotvector)
+        spline = ImmutableSplineBasis(knotvector)
         assert callable(spline)
         assert spline.degree == 1
         assert spline.npts == 3
 
         knotvector = ImmutableKnotVector([0, 0, 0, 1, 1, 1])
-        spline = ImmutableBasisFunction(knotvector)
+        spline = ImmutableSplineBasis(knotvector)
         assert callable(spline)
         assert spline.degree == 2
         assert spline.npts == 3
 
         knotvector = ImmutableKnotVector([0, 0, 0, 0.5, 1, 1, 1])
-        spline = ImmutableBasisFunction(knotvector)
+        spline = ImmutableSplineBasis(knotvector)
         assert callable(spline)
         assert spline.degree == 2
         assert spline.npts == 4
@@ -210,7 +210,7 @@ class TestSpline:
     @pytest.mark.dependency(depends=["TestSpline::test_creation"])
     def test_tablevalues_degree1npts3(self):
         knotvector = ImmutableKnotVector([0, 0, 0.5, 1, 1])
-        spline = ImmutableBasisFunction(knotvector)
+        spline = ImmutableSplineBasis(knotvector)
         assert spline.degree == 1
         assert spline.npts == 3
 
@@ -238,7 +238,7 @@ class TestSpline:
     def test_tablevalues_degree2npts4(self):
         knotvector = [0, 0, 0, 0.5, 1, 1, 1]
         knotvector = ImmutableKnotVector(knotvector)
-        spline = ImmutableBasisFunction(knotvector)
+        spline = ImmutableSplineBasis(knotvector)
         assert spline.degree == 2
         assert spline.npts == 4
         nodes_test = np.linspace(0, 1, 11)
@@ -266,7 +266,7 @@ class TestSpline:
     def test_tablevalues_degree3npts5(self):
         knotvector = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]
         knotvector = ImmutableKnotVector(knotvector)
-        spline = ImmutableBasisFunction(knotvector)
+        spline = ImmutableSplineBasis(knotvector)
         assert spline.degree == 3
         assert spline.npts == 5
         nodes_test = np.linspace(0, 1, 11)

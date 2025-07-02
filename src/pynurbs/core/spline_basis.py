@@ -62,7 +62,7 @@ def spectral_matrix(
     return totuple(matrix)
 
 
-class ImmutableBasisFunction:
+class ImmutableSplineBasis:
 
     def __init__(
         self, knotvector: ImmutableKnotVector, degree: Union[int, None] = None

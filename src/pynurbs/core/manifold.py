@@ -3,7 +3,7 @@ from typing import Any, Generic, Iterable, Tuple, Union
 
 import numpy as np
 
-from .basisfunction import ImmutableBasisFunction
+from .spline_basis import ImmutableSplineBasis
 
 
 def permutations(numbers: Tuple[int, ...]) -> Iterable[Tuple[int, ...]]:
@@ -74,11 +74,11 @@ class ImmuntableManifold:
     """
 
     def __init__(
-        self, allbasis: Iterable[ImmutableBasisFunction], ctrlpoints: Container[Any]
+        self, allbasis: Iterable[ImmutableSplineBasis], ctrlpoints: Container[Any]
     ):
 
         allbasis = tuple(allbasis)
-        if not all(isinstance(fun, ImmutableBasisFunction) for fun in allbasis):
+        if not all(isinstance(fun, ImmutableSplineBasis) for fun in allbasis):
             raise TypeError
         if isinstance(ctrlpoints, Container):
             if ctrlpoints.ndim != len(allbasis):

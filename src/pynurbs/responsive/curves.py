@@ -6,8 +6,8 @@ from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 
-from ..core.basisfunction import ImmutableBasisFunction
 from ..core.custom_math import number_type
+from ..core.spline_basis import ImmutableSplineBasis
 from ..operations import heavy
 from ..operations.knotvector import (
     decrease_degree,
@@ -606,7 +606,7 @@ class Curve(BaseCurve):
         """
         vector = self.knotvector.internal
         nodes = tuple(nodes)
-        basis = ImmutableBasisFunction(vector)
+        basis = ImmutableSplineBasis(vector)
         matrix = np.transpose(tuple(map(basis, nodes)))
         if self.weights is not None:
             denominators = 1 / np.dot(self.weights, matrix)

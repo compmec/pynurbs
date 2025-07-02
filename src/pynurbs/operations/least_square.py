@@ -28,9 +28,9 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from ..core.basisfunction import ImmutableBasisFunction
 from ..core.custom_math import IntegratorArray, Linalg, NodeSample, number_type, totuple
 from ..core.knotvector import ImmutableKnotVector
+from ..core.spline_basis import ImmutableSplineBasis
 
 
 def eval_spline_nodes(
@@ -41,7 +41,7 @@ def eval_spline_nodes(
     M.shape = (npts, len(nodes))
     """
     knotvector = ImmutableKnotVector(knotvector)
-    basis = ImmutableBasisFunction(knotvector, degree)
+    basis = ImmutableSplineBasis(knotvector, degree)
     return np.transpose(tuple(map(basis, nodes)))
 
 
@@ -77,7 +77,7 @@ def fit_function(
         [P] = [M] * [f(nodes)]
     """
     knotvector = ImmutableKnotVector(knotvector)
-    basis = ImmutableBasisFunction(knotvector)
+    basis = ImmutableSplineBasis(knotvector)
     matrix = np.transpose(tuple(map(basis, nodes)))
     if weights is not None:
         denominators = 1 / np.dot(weights, matrix)
