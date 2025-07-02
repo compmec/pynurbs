@@ -186,11 +186,10 @@ def test_findmult_single():
 def test_findspans_array():
     U = ImmutableKnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])
     array = np.linspace(0, 1, 11)  # (0, 0.1, 0.2, ..., 0.9, 1.0)
-    suposedspans = U.span(array)
-    correctspans = [1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 6]
+    correctspans = (1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 6)
     assert U.degree == 1
     assert U.npts == 7
-    np.testing.assert_equal(suposedspans, correctspans)
+    assert tuple(map(U.span, array)) == correctspans
 
 
 @pytest.mark.order(12)
@@ -199,11 +198,10 @@ def test_findspans_array():
 def test_findmult_array():
     U = ImmutableKnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])
     array = np.linspace(0, 1, 11)  # (0, 0.1, 0.2, ..., 0.9, 1.0)
-    suposedmults = U.mult(array)
-    correctmults = [2, 0, 1, 0, 1, 1, 1, 0, 1, 0, 2]
+    correctmults = (2, 0, 1, 0, 1, 1, 1, 0, 1, 0, 2)
     assert U.degree == 1
     assert U.npts == 7
-    np.testing.assert_equal(suposedmults, correctmults)
+    assert tuple(map(U.mult, array)) == correctmults
 
 
 @pytest.mark.order(12)

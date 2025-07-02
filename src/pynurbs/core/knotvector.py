@@ -1,76 +1,47 @@
 from __future__ import annotations
 
-from typing import Optional, Tuple, Union
+from collections import Counter
+from numbers import Real
+from typing import Iterable, Tuple, Union
 
-import numpy as np
+
+def find_degree(vector: Tuple[Real, ...]) -> int:
+    return max(Counter(vector).values()) - 1
 
 
-class ImmutableKnotVector(tuple):
-    @staticmethod
-    def __get_unique(vector: Tuple[float]):
-        unique = []
-        for node in vector:
-            for knot in unique:
-                if abs(node - knot) < 1e-6:
-                    break
-            else:
-                unique.append(node)
-        unique.sort()
-        return tuple(unique)
+def is_sorted(vector: Tuple[Real, ...]) -> bool:
+    return all(val <= vector[i + 1] for i, val in enumerate(vector[:-1]))
 
-    @staticmethod
-    def __is_valid(vector: Tuple[float], degree: Union[int, None]):
+
+class ImmutableKnotVector:
+
+    def __init__(self, vector: Iterable[Real], degree: Union[None, int] = None):
         try:
-            for knot in vector:
-                float(knot)
-        except TypeError:
-            return False
-        lenght = len(vector)
-        if lenght < 2:
-            return False
-        for i in range(lenght - 1):
-            if not vector[i] <= vector[i + 1]:
-                return False
+            vector = tuple(vector)
+        except Exception:
+            raise ValueError(f"Wrong argument: '{vector}'")
+        if not all(isinstance(val, Real) for val in vector):
+            raise ValueError(f"Cannot create KnotVector with {vector}")
+        if not is_sorted(vector):
+            raise ValueError(f"Cannot create KnotVector with {vector}")
         if degree is None:
-            degree = 0
-            while vector[degree] == vector[degree + 1]:
-                degree += 1
-        npts = lenght - degree - 1
-        if not degree < npts:
-            return False
-        knots = ImmutableKnotVector.__get_unique(vector[degree : npts + 1])
-        for knot in knots:
-            mult = vector.count(knot)
-            if mult > degree + 1:
-                return False
-        if vector.count(vector[degree]) != vector.count(vector[npts]):
-            return False
-        return True
-
-    def __new__(cls, knotvector: Tuple[float], degree: Optional[int] = None):
-        if isinstance(knotvector, ImmutableKnotVector):
-            return knotvector
-        try:
-            knotvector = tuple(knotvector)
-        except TypeError:
-            raise ValueError
-        if not cls.__is_valid(knotvector, degree):
-            msg = f"Invalid knot vector (deg {degree}): {knotvector}"
-            raise ValueError(msg)
-        if degree is None:
-            degree = 0
-            while knotvector[degree] == knotvector[degree + 1]:
-                degree += 1
-        instance = super(ImmutableKnotVector, cls).__new__(cls, tuple(knotvector))
-        instance._ImmutableKnotVector__degree = degree
-        instance._ImmutableKnotVector__npts = len(knotvector) - degree - 1
-        return instance
-
-    def __add__(self, other):
-        raise ValueError
-
-    def __sub__(self, other):
-        raise ValueError
+            degree = find_degree(vector)
+        elif int(degree) < find_degree(vector):
+            raise ValueError(f"Cannot create KnotVector with {vector}")
+        npts = len(vector) - degree - 1
+        if degree >= npts:
+            raise ValueError(f"Cannot have {degree} <= {npts}")
+        knots = tuple(sorted(set(vector[degree : npts + 1])))
+        if len(knots) < 2:
+            raise ValueError(f"Cannot create KnotVector with {vector}")
+        if vector[degree] == vector[degree + 1]:
+            raise ValueError(f"Cannot create KnotVector with {vector}")
+        if degree != 0 and vector[npts - 1] == vector[npts]:
+            raise ValueError(f"Cannot create KnotVector with {vector}")
+        self.__degree = degree
+        self.__npts = npts
+        self.__knots = knots
+        self.__vector = vector
 
     @property
     def degree(self) -> int:
@@ -81,15 +52,32 @@ class ImmutableKnotVector(tuple):
         return self.__npts
 
     @property
-    def knots(self) -> Tuple[float]:
-        vector = self[self.degree : self.npts + 1]
-        return ImmutableKnotVector.__get_unique(vector)
+    def knots(self) -> Tuple[Real, ...]:
+        return self.__knots
 
     @property
-    def limits(self) -> Tuple[float]:
+    def limits(self) -> Tuple[Real, Real]:
         return (self[self.degree], self[self.npts])
 
-    def __span_single(self, node: float) -> int:
+    def __getitem__(self, index):
+        return self.__vector[index]
+
+    def __len__(self) -> int:
+        return len(self.__vector)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, ImmutableKnotVector):
+            return self.degree == other.degree and tuple(self) == tuple(other)
+        try:
+            return tuple(self) == tuple(other)
+        except Exception:
+            return NotImplemented
+
+    def span(self, node: Real) -> int:
+        if not isinstance(node, Real):
+            raise ValueError(f"Node '{node}' must be Real instance")
+        if node < self[self.degree] or self[self.npts] < node:
+            raise ValueError(f"Node {node} outside [{self.knots[0], self.knots[-1]}]")
         if node == self[self.npts]:  # Special case
             return self.npts - 1
         low, high = self.degree, self.npts + 1  # Do binary search
@@ -103,42 +91,9 @@ class ImmutableKnotVector(tuple):
             if self[mid] <= node < self[mid + 1]:
                 return mid
 
-    def __mult_single(self, node: Tuple[float]) -> Tuple[int]:
+    def mult(self, node: Real) -> int:
+        if not isinstance(node, Real):
+            raise ValueError(f"Node '{node}' must be Real instance")
+        if node < self[self.degree] or self[self.npts] < node:
+            raise ValueError(f"Node {node} outside [{self.knots[0], self.knots[-1]}]")
         return sum(abs(node - knot) < 1e-9 for knot in self)
-
-    def __valid_single(self, node: float) -> bool:
-        try:
-            float(node)  # Verify if it's a number
-        except TypeError:
-            return False
-        umin, umax = self.limits
-        if node < umin or umax < node:
-            return False
-        return True
-
-    def span(self, nodes: Union[float, Tuple[float]]) -> Union[int, Tuple[int]]:
-        if not self.valid(nodes):
-            raise ValueError
-        try:
-            return tuple(map(self.span, nodes))
-        except TypeError:
-            return self.__span_single(nodes)
-
-    def mult(self, nodes: Union[float, Tuple[float]]) -> Union[int, Tuple[int]]:
-        if not self.valid(nodes):
-            raise ValueError
-        try:
-            return tuple(map(self.mult, nodes))
-        except TypeError:
-            return self.__mult_single(nodes)
-
-    def valid(self, nodes: Tuple[float]) -> bool:
-        if isinstance(nodes, str):
-            return False
-        try:
-            for node in nodes:
-                if not self.valid(node):
-                    return False
-            return True
-        except TypeError:
-            return self.__valid_single(nodes)

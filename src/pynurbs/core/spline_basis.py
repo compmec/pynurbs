@@ -32,7 +32,7 @@ def spectral_matrix(
         msg = f"reqdegree must be in [0, {knotvector.degree}]"
         raise ValueError(msg)
     knots = knotvector.knots
-    spans = knotvector.span(knots)
+    spans = tuple(map(knotvector.span, knots))
     j = reqdegree
 
     ninter = len(knots) - 1
@@ -97,7 +97,7 @@ class ImmutableSplineBasis:
     def __call__(self, node: Real) -> Tuple[Real, ...]:
         npts = self.__knotvector.npts
         knots = self.__knotvector.knots
-        spans = self.__knotvector.span(knots)
+        spans = tuple(map(self.__knotvector.span, knots))
         degree = self.__degree
         result = [0] * npts
 
