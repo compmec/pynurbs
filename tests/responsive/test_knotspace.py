@@ -865,18 +865,17 @@ def test_or_and():
     ]
 )
 def test_others():
-    knotvect = [0, 0.2, 0.4, 0.4, 0.8, 1]
-    with pytest.raises(ValueError):
-        KnotVector(knotvect)
+    KnotVector([0, 0.2, 0.4, 0.4, 0.8, 1])
+
     knotvect = [0, 0, 0.5, 1, 1]
     knotvect = KnotVector(knotvect)
     knotvect = KnotVector(knotvect)
 
-    newvect = knotvect + 1
-    newvect = knotvect - 1
-    newvect = knotvect * 2
-    newvect = knotvect / 2
-    newvect = 2 * knotvect
+    knotvect + 1
+    knotvect - 1
+    knotvect * 2
+    knotvect / 2
+    2 * knotvect
 
     np.testing.assert_allclose(knotvect.knots, [0, 0.5, 1])
 
