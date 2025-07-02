@@ -12,13 +12,7 @@ import numpy as np
 
 from ..core.custom_math import Linalg, NodeSample, totuple
 from ..core.knotvector import ImmutableKnotVector
-from ..operations.knotvector import (
-    increase_degree,
-    insert_knots,
-    remove_knots,
-    split_knotvector,
-    union_knotvectors,
-)
+from ..operations import knotvector as opekv
 from .least_square import eval_spline_nodes, spline2spline
 
 
@@ -135,9 +129,11 @@ class Operations:
             - Repeted nodes are ignored, [0.5, 0.5] is the same as [0.5]
         """
         knotvector = ImmutableKnotVector(knotvector)
-        if not knotvector.valid(nodes):
-            msg = f"Invalid nodes {nodes} in knotvector {knotvector}"
-            raise ValueError(msg)
+        nodes = tuple(
+            node
+            for node in nodes
+            if knotvector.knots[0] <= node <= knotvector.knots[-1]
+        )
         degree = knotvector.degree
         nodes = set(nodes)  # Remove repeted nodes
         nodes -= set([knotvector[0], knotvector[-1]])  # Take out extremities
@@ -146,9 +142,9 @@ class Operations:
         for node in nodes:
             mult = knotvector.mult(node)
             manynodes += [node] * (degree + 1 - mult)
-        bigvector = insert_knots(knotvector, manynodes)
+        bigvector = opekv.insert_knots(knotvector, manynodes)
         bigmatrix = Operations.knot_insert(knotvector, manynodes)
-        newvectors = split_knotvector(bigvector, nodes)
+        newvectors = opekv.split_knotvector(bigvector, nodes)
         matrices = []
         for newvector in newvectors:
             umin = newvector.limits[0]
@@ -174,9 +170,8 @@ class Operations:
             [Q] = [T] @ [P]
         """
         knotvector = ImmutableKnotVector(knotvector)
-        if not knotvector.valid(node):
-            msg = f"Invalid nodes {node} in knotvector {knotvector}"
-            raise ValueError(msg)
+        if not (knotvector.knots[0] <= node <= knotvector.knots[-1]):
+            raise ValueError(f"Invalid nodes {node} in knotvector {knotvector}")
 
         oldnpts = knotvector.npts
         degree = knotvector.degree
@@ -210,9 +205,8 @@ class Operations:
             [Q] = [T] @ [P]
         """
         knotvector = ImmutableKnotVector(knotvector)
-        if not knotvector.valid(node):
-            msg = f"Invalid node {node} in knotvector {knotvector}"
-            raise ValueError(msg)
+        if not (knotvector.knots[0] <= node <= knotvector.knots[-1]):
+            raise ValueError(f"Invalid node {node} in knotvector {knotvector}")
         if not isinstance(times, int):
             msg = f"Times must be an int, not {times}"
             raise TypeError(msg)
@@ -224,7 +218,7 @@ class Operations:
         for _ in range(times):
             incmatrix = Operations.one_knot_insert_once(knotvector, node)
             matrix = incmatrix @ matrix
-            knotvector = insert_knots(knotvector, [node])
+            knotvector = opekv.insert_knots(knotvector, [node])
         return totuple(matrix)
 
     def knot_insert(knotvector: ImmutableKnotVector, nodes: Tuple[float]) -> "Matrix2D":
@@ -244,9 +238,11 @@ class Operations:
         """
 
         knotvector = ImmutableKnotVector(knotvector)
-        if not knotvector.valid(nodes):
-            msg = f"Invalid nodes {nodes} in knotvector {knotvector}"
-            raise ValueError(msg)
+
+        if not all(
+            knotvector.knots[0] <= node <= knotvector.knots[-1] for node in nodes
+        ):
+            raise ValueError(f"Invalid nodes {nodes} in knotvector {knotvector}")
         nodes = tuple(nodes)
         setnodes = tuple(sorted(set(nodes) - set([knotvector[0], knotvector[-1]])))
         oldnpts = knotvector.npts
@@ -257,16 +253,17 @@ class Operations:
             times = nodes.count(node)
             incmatrix = Operations.one_knot_insert(knotvector, node, times)
             matrix = incmatrix @ matrix
-            knotvector = insert_knots(knotvector, times * [node])
+            knotvector = opekv.insert_knots(knotvector, times * [node])
         return totuple(matrix)
 
     def knot_remove(knotvector: ImmutableKnotVector, nodes: Tuple[float]) -> "Matrix2D":
         """ """
         knotvector = ImmutableKnotVector(knotvector)
-        if not knotvector.valid(nodes):
-            msg = f"Invalid nodes {nodes} in knotvector {knotvector}"
-            raise ValueError(msg)
-        newknotvector = remove_knots(knotvector, nodes)
+        if not all(
+            knotvector.knots[0] <= node <= knotvector.knots[-1] for node in nodes
+        ):
+            raise ValueError(f"Invalid nodes {nodes} in knotvector {knotvector}")
+        newknotvector = opekv.remove_knots(knotvector, nodes)
         matrix, _ = spline2spline(knotvector, newknotvector)
         return totuple(matrix)
 
@@ -307,7 +304,7 @@ class Operations:
         for i in range(times):
             elevateonce = Operations.degree_increase_bezier_once(knotvector)
             matrix = elevateonce @ matrix
-            knotvector = increase_degree(knotvector, 1)
+            knotvector = opekv.increase_degree(knotvector, 1)
         return totuple(matrix)
 
     def degree_increase(knotvector: ImmutableKnotVector, times: int) -> "Matrix2D":
@@ -329,7 +326,7 @@ class Operations:
         if degree + 1 == npts:
             return Operations.degree_increase_bezier(knotvector, times)
         nodes = knotvector.knots
-        newvectors = split_knotvector(knotvector, nodes)
+        newvectors = opekv.split_knotvector(knotvector, nodes)
         matrices = Operations.split_curve(knotvector, nodes)
 
         bigmatrix = []
@@ -345,8 +342,8 @@ class Operations:
         for node in nodes:
             mult = knotvector.mult(node)
             insertednodes += (degree + 1 - mult) * [node]
-        bigvector = insert_knots(knotvector, insertednodes)
-        incbigvector = increase_degree(bigvector, times)
+        bigvector = opekv.insert_knots(knotvector, insertednodes)
+        incbigvector = opekv.increase_degree(bigvector, times)
         removematrix = Operations.knot_remove(incbigvector, insertednodes)
 
         bigmatrix = np.array(bigmatrix)
@@ -377,7 +374,7 @@ class Operations:
         assert degreea <= degreeb
         matrix_deginc = Operations.degree_increase(knotvectora, degreeb - degreea)
         if degreea < degreeb:
-            knotvectora = increase_degree(knotvectora, degreeb - degreea)
+            knotvectora = opekv.increase_degree(knotvectora, degreeb - degreea)
 
         nodes2ins = []
         for knot in knotvectorb.knots:
@@ -461,7 +458,7 @@ class MathOperations:
         knotvectorb = ImmutableKnotVector(knotvectorb)
         assert knotvectora.limits == knotvectorb.limits
 
-        knotvectorc = union_knotvectors([knotvectora, knotvectorb])
+        knotvectorc = opekv.union_knotvectors([knotvectora, knotvectorb])
         matrixa = Operations.matrix_transformation(knotvectora, knotvectorc)
         matrixb = Operations.matrix_transformation(knotvectorb, knotvectorc)
         return totuple(matrixa), totuple(matrixb)
