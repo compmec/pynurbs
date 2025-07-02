@@ -59,6 +59,12 @@ class ImmutableKnotVector:
     def limits(self) -> Tuple[Real, Real]:
         return (self[self.degree], self[self.npts])
 
+    def __str__(self) -> str:
+        return "(" + ", ".join(map(str, self)) + ")"
+
+    def __repr__(self) -> str:
+        return "(" + ", ".join(map(repr, self)) + ")"
+
     def __getitem__(self, index):
         return self.__vector[index]
 
