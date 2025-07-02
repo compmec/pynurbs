@@ -6,7 +6,7 @@ from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 
-from ..core.custom_math import number_type
+from ..core.custom_math import isnumber, number_type, supports_linear_operation
 from ..core.spline_basis import ImmutableSplineBasis
 from ..operations import heavy
 from ..operations.knotvector import (
@@ -389,13 +389,11 @@ class BaseCurve:
         if value is None:
             self.__weights = None
             return
-        try:
-            value = tuple(value)
-            for val in value:
-                float(val)
-        except TypeError:
-            msg = f"Weights must be a vector of floats, received {value}"
-            raise ValueError(msg)
+        if not all(map(isnumber, value)):
+            raise ValueError
+        if not all(number > 0 for number in value):
+            raise ValueError
+
         # Verify if there's roots
         vector = tuple(self.knotvector)
         roots = heavy.find_roots(vector, value)

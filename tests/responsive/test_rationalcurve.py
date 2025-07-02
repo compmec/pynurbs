@@ -37,7 +37,7 @@ class TestBuild:
         npts = np.random.randint(degree + 1, degree + 3)
         knotvector = GeneratorKnotVector.random(degree, npts)
         curve = Curve(knotvector)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             curve.weights = 1
         with pytest.raises(ValueError):
             curve.weights = "asd"

@@ -10,7 +10,7 @@ from typing import Tuple
 
 import numpy as np
 
-from ..core.custom_math import Linalg, NodeSample, totuple
+from ..core.custom_math import Linalg, NodeSample, isnumber, totuple
 from ..core.knotvector import ImmutableKnotVector
 from ..operations import knotvector as opekv
 from .least_square import eval_spline_nodes, spline2spline
@@ -27,6 +27,9 @@ def find_roots(
 
     We do it by sampling
     """
+    ctrlvalues = tuple(ctrlvalues)
+    if not all(map(isnumber, ctrlvalues)):
+        raise ValueError
     knotvector = ImmutableKnotVector(knotvector)
     assert isinstance(ctrlvalues, tuple)
     tolerance = 1e-8
