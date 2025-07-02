@@ -40,7 +40,9 @@ class BaseCurve:
     def __init__(self, knotvector: KnotVector):
         self.__ctrlpoints = None
         self.__weights = None
-        self.__knotvector = KnotVector(knotvector)
+        if not isinstance(knotvector, KnotVector):
+            knotvector = KnotVector(knotvector)
+        self.__knotvector = knotvector
 
     def __call__(self, nodes: np.ndarray) -> np.ndarray:
         return self.eval(nodes)
@@ -367,7 +369,8 @@ class BaseCurve:
 
     @knotvector.setter
     def knotvector(self, value: KnotVector):
-        value = KnotVector(value)
+        if not isinstance(value, KnotVector):
+            value = KnotVector(value)
         self.update(value)
 
     @degree.setter
@@ -505,7 +508,8 @@ class BaseCurve:
         >>> curve.update([0, 0, 1, 1], nodes = (0, 1))  # Remove knot [0.5]
 
         """
-        newknotvector = KnotVector(newknotvector)
+        if not isinstance(newknotvector, KnotVector):
+            newknotvector = KnotVector(newknotvector)
         if newknotvector == self.knotvector:
             return
         if self.ctrlpoints is None:
@@ -543,7 +547,8 @@ class BaseCurve:
         ControlPoints = [4, 0, 0]
 
         """
-        newknotvector = KnotVector(newknotvector)
+        if not isinstance(newknotvector, KnotVector):
+            newknotvector = KnotVector(newknotvector)
         oldctrlpoints = self.ctrlpoints
         oldweights = self.weights
         if oldctrlpoints is None and oldweights is None:
