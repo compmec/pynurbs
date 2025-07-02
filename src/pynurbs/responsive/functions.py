@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import copy
+from numbers import Real
 from typing import Tuple, Union
 
 import numpy as np
@@ -12,9 +13,11 @@ from .knotspace import KnotVector
 
 
 class BaseFunction:
-    def __init__(self, knotvector: KnotVector):
+    def __init__(
+        self, knotvector: KnotVector, weights: Union[None, Tuple[Real, ...]] = None
+    ):
         self.knotvector = knotvector
-        self.weights = None
+        self.weights = weights
 
     def __eq__(self, other: BaseFunction) -> bool:
         if not isinstance(other, BaseFunction):
@@ -90,7 +93,7 @@ class BaseFunction:
         return self.knotvector.npts
 
     @property
-    def knots(self) -> Tuple[float]:
+    def knots(self) -> Tuple[Real, ...]:
         """The knots of the knotvector
 
         :getter: knot of the knotvector
@@ -110,7 +113,7 @@ class BaseFunction:
         return self.knotvector.knots
 
     @property
-    def weights(self) -> Union[Tuple[float], None]:
+    def weights(self) -> Union[None, Tuple[Real, ...]]:
         """Weights of the current function. If it's ``None``, it means
         the basis function is not rational
 
@@ -136,28 +139,26 @@ class BaseFunction:
 
     @degree.setter
     def degree(self, value: int):
-        value = int(value)
         self.knotvector.degree = value
 
     @knotvector.setter
     def knotvector(self, value: KnotVector):
         if not isinstance(value, KnotVector):
             value = KnotVector(value)
+        self.__basis = ImmutableSplineBasis(value.internal)
         self.__knotvector = value
 
     @weights.setter
-    def weights(self, value: Tuple[float]):
-        if value is None:
+    def weights(self, weights: Union[None, Tuple[Real, ...]]):
+        if weights is None:
             self.__weights = None
             return
-        value = np.array(value, dtype="object")
-        if not np.all(value > 0):
-            error_msg = "All weights must be positive!"
-            raise ValueError(error_msg)
-        if value.shape != (self.npts,):
-            error_msg = f"Weights shape invalid! {value.shape} != ({self.npts})"
-            raise ValueError(error_msg)
-        self.__weights = value
+        weights = tuple(weights)
+        if len(weights) != self.npts:
+            raise ValueError(f"Weights must have len {self.npts} != {len(weights)}")
+        if not all(float(weight) > 0 for weight in weights):
+            raise ValueError("All weights must be positive!")
+        self.__weights = weights
 
     def __copy__(self) -> BaseFunction:
         return self.__deepcopy__(None)
@@ -179,11 +180,12 @@ class FunctionEvaluator:
 
     @vectorize(1, 0)
     def __call__(self, node: float) -> Union[float, Tuple[float]]:
-        result = self.__basis(node)
+        results = self.__basis(node)
         if self.__weights is not None:
-            result *= self.__weights
-            result *= 1 / sum(result)
-        return result[self.__first_index]
+            results = tuple(v * w for v, w in zip(results, self.__weights))
+            inverse = 1 / sum(results)
+            results = tuple(inverse * value for value in results)
+        return results[self.__first_index]
 
 
 class IndexableFunction(BaseFunction):

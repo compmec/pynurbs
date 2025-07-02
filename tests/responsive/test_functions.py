@@ -678,7 +678,7 @@ class TestRational:
         degree, npts = 3, 7
         knotvector = GeneratorKnotVector.random(degree, npts)
         rational = Function(knotvector)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             rational.weights = 1
         with pytest.raises(ValueError):
             rational.weights = 1 * np.ones(degree)
