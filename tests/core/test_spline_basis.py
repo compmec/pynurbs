@@ -200,6 +200,19 @@ class TestBezier:
         assert bezier[1] == PiecewisePolynomial([2 * x * (1 - x)], [0, 1])
         assert bezier[2] == PiecewisePolynomial([x**2], [0, 1])
 
+        knots = 0, 1
+        for degree in range(6):
+            vector = [knots[0]] * (degree + 1) + [knots[1]] * (degree + 1)
+            knotvector = ImmutableKnotVector(vector)
+            bezier = ImmutableSplineBasis(knotvector)
+            assert bezier.degree == degree
+            assert bezier.npts == degree + 1
+            assert bezier.knots == knots
+            for j in range(degree + 1):
+                poly = (knots[1] - knots[0] - x) ** (degree - j) * x**j
+                good = PiecewisePolynomial([binom(degree, j) * poly], knots)
+                assert bezier[j] == good
+
     @pytest.mark.order(14)
     @pytest.mark.dependency(
         depends=[
@@ -331,6 +344,56 @@ class TestSpline:
             np.testing.assert_allclose(spline(node), good)
 
     @pytest.mark.order(14)
+    @pytest.mark.timeout(5)
+    @pytest.mark.dependency(
+        depends=[
+            "TestSpline::test_tablevalues_degree2npts4",
+            "TestSpline::test_tablevalues_degree3npts5",
+        ]
+    )
+    def test_piecewise_polynomial(self):
+        x = Polynomial([0, 1])
+
+        knotvector = [0, 0, 1, 2, 3, 3]
+        knotvector = ImmutableKnotVector(knotvector)
+        spline = ImmutableSplineBasis(knotvector)
+        knots = (0, 1, 2, 3)
+        assert spline.degree == 1
+        assert spline.npts == 4
+        assert spline.knots == knots
+
+        functions = [[1 - x, 0, 0], [x, 2 - x, 0], [0, x - 1, 3 - x]]
+        assert spline[0] == PiecewisePolynomial(functions[0], knots)
+        assert spline[1] == PiecewisePolynomial(functions[1], knots)
+        assert spline[2] == PiecewisePolynomial(functions[2], knots)
+
+        knotvector = [0, 0, 0, 2, 2, 5, 7, 7, 7]
+        knotvector = map(Fraction, knotvector)
+        knotvector = ImmutableKnotVector(knotvector)
+        spline = ImmutableSplineBasis(knotvector)
+        knots = (0, 2, 5, 7)
+        assert spline.degree == 2
+        assert spline.npts == 6
+        assert spline.knots == knots
+
+        one = Fraction(1, 1)
+        functions = [
+            [1 - x + x * x * one / 4, 0, 0],
+            [x - x * x * one / 2, 0, 0],
+            [x * x * one / 4, (25 - 10 * x + x * x) * one / 9, 0],
+            [
+                0,
+                (-92 + 62 * x - 8 * x * x) * one / 45,
+                (49 - 14 * x + x * x) * one / 10,
+            ],
+            [0, (4 - 4 * x + x * x) * one / 15, (-203 + 78 * x - 7 * x * x) * one / 20],
+            [0, 0, (25 - 10 * x + x * x) * one / 4],
+        ]
+        for i, functs in enumerate(functions):
+            good = PiecewisePolynomial(functs, knots)
+            assert spline[i] == good
+
+    @pytest.mark.order(14)
     @pytest.mark.dependency(
         depends=[
             "TestSpline::test_begin",
@@ -338,6 +401,7 @@ class TestSpline:
             "TestSpline::test_tablevalues_degree1npts3",
             "TestSpline::test_tablevalues_degree2npts4",
             "TestSpline::test_tablevalues_degree3npts5",
+            "TestSpline::test_piecewise_polynomial",
         ]
     )
     def test_all(self):
