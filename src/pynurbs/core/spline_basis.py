@@ -6,7 +6,7 @@ import numpy as np
 from .custom_math import totuple
 from .knotvector import ImmutableKnotVector
 from .piecepoly import PiecewisePolynomial
-from .polynomial import Polynomial
+from .polynomial import Polynomial, scale, shift
 
 
 def spectral_matrix(
@@ -90,8 +90,12 @@ class ImmutableSplineBasis:
         return self.__knotvector.knots
 
     def __getitem__(self, index: int) -> PiecewisePolynomial:
-        functions = self.__matrix[index]
-        return PiecewisePolynomial(functions, self.knots)
+        index = int(index)
+        basis = list(polys[index] for polys in self.__matrix)
+        for i, base in enumerate(basis):
+            knota, knotb = self.knots[i], self.knots[i + 1]
+            basis[i] = shift(scale(base, knotb - knota), knota)
+        return PiecewisePolynomial(basis, self.knots)
 
     def __call__(self, node: Real) -> Tuple[Real, ...]:
         npts = self.__knotvector.npts
