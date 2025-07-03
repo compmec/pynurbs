@@ -34,7 +34,7 @@ class Polynomial:
     """
 
     def __init__(self, coefs: Iterable[Real]):
-        coefs = tuple(coefs)
+        coefs = tuple(coefs) if not isnumber(coefs) else (coefs,)
         if len(coefs) == 0:
             raise ValueError("Cannot receive an empty tuple")
         if isnumber(coefs[0]):
@@ -105,6 +105,8 @@ class Polynomial:
         return self.__class__(coefs)
 
     def __pow__(self, other: int) -> Polynomial:
+        if other == 0:
+            return self.__class__([1 + 0 * sum(self)])
         result = self
         for _ in range(int(other) - 1):
             result = result * self
