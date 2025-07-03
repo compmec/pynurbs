@@ -113,3 +113,6 @@ class ImmutableSplineBasis:
             polynomial = self.__matrix[ind][y]
             result[i] = polynomial(shifnode)
         return tuple(result)
+
+    def __str__(self):
+        return "{" + ", ".join(f"N{i}: {self[i]}" for i in range(self.npts)) + "}"
