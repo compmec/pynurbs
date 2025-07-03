@@ -117,10 +117,13 @@ def isnumber(obj: Any) -> bool:
     if isinstance(obj, (str, tuple, list, set, dict)):
         return False
     try:
-        (1.0 * float(obj) + 0) / 4.0
-        return True
-    except Exception:
+        iter(obj)
         return False
+    except TypeError:
+        try:
+            return bool((1.0 * float(obj) + 4) * 5.0 * 0.0 == 0)
+        except (TypeError, ValueError):
+            return False
 
 
 def supports_linear_operation(obj: Any) -> bool:
