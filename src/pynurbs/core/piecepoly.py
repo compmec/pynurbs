@@ -48,7 +48,9 @@ class PiecewisePolynomial:
     """
 
     def __init__(self, functions: Iterable[Polynomial], knots: Iterable[Real]) -> None:
-        functions = tuple(functions)
+        functions = tuple(
+            f if isinstance(f, Polynomial) else Polynomial(f) for f in functions
+        )
         knots = tuple(knots)
         if len(knots) != 1 + len(functions):
             raise ValueError(f"{len(knots)} != 1 + {len(functions)}")
