@@ -91,10 +91,18 @@ class ImmutableSplineBasis:
 
     def __getitem__(self, index: int) -> PiecewisePolynomial:
         index = int(index)
-        basis = list(polys[index] for polys in self.__matrix)
-        for i, base in enumerate(basis):
+        nsegs = len(self.knots) - 1
+        basis = [Polynomial([0])] * nsegs
+        spans = tuple(map(self.__knotvector.span, self.knots))
+        for i in range(nsegs):
             knota, knotb = self.knots[i], self.knots[i + 1]
-            basis[i] = shift(scale(base, knotb - knota), knota)
+            span = self.__knotvector.span(knota)
+            ind = spans.index(span)
+            y = index + self.degree - span
+            if 0 <= y <= self.degree:
+                poly = self.__matrix[ind][y]
+                poly = scale(poly, 1 / (knotb - knota))
+                basis[i] = shift(poly, knota)
         return PiecewisePolynomial(basis, self.knots)
 
     def __call__(self, node: Real) -> Tuple[Real, ...]:
