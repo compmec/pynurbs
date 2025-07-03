@@ -146,3 +146,8 @@ class PiecewisePolynomial:
 
     def __rmul__(self, other: Real) -> PiecewisePolynomial:
         return self.__mul__(other)
+
+    def __eq__(self, other: PiecewisePolynomial) -> bool:
+        if not isinstance(other, PiecewisePolynomial):
+            return NotImplemented
+        return self.knots == other.knots and self.functions == other.functions
