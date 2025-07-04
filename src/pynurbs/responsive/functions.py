@@ -22,13 +22,7 @@ class BaseFunction:
     def __eq__(self, other: BaseFunction) -> bool:
         if not isinstance(other, BaseFunction):
             return NotImplemented
-        if self.knotvector != other.knotvector:
-            return False
-        weightleft = self.weights
-        weightrigh = other.weights
-        weightleft = np.ones(self.npts) if self.weights is None else self.weights
-        weightrigh = np.ones(self.npts) if weightrigh is None else weightrigh
-        return np.all(weightleft == weightrigh)
+        return self.knotvector == other.knotvector and self.weights == other.weights
 
     @property
     def knotvector(self) -> KnotVector:
