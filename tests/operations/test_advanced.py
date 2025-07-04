@@ -6,8 +6,8 @@ Its functions are getting derivatives, computing integrals along curves and so o
 import numpy as np
 import pytest
 
+from pynurbs.curves.curves import Curve
 from pynurbs.operations.advanced import Intersection, Projection
-from pynurbs.responsive.curves import Curve
 
 
 @pytest.mark.order(42)
@@ -15,8 +15,8 @@ from pynurbs.responsive.curves import Curve
     depends=[
         "tests/test_knotspace.py::test_end",
         "tests/test_basis_functions.py::test_end",
-        "tests/responsive/test_beziercurve.py::test_end",
-        "tests/responsive/test_splinecurve.py::test_end",
+        "tests/curves/test_bezier.py::test_end",
+        "tests/curves/test_spline.py::test_end",
         "tests/operations/test_calculus.py::test_end",
     ],
     scope="session",

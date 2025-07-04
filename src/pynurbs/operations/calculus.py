@@ -4,8 +4,8 @@ from typing import Any, Callable, Optional
 import numpy as np
 
 from ..core.custom_math import IntegratorArray, NodeSample
+from ..curves.curves import Curve
 from ..knotspace import KnotVector
-from ..responsive.curves import Curve
 from . import heavy
 
 

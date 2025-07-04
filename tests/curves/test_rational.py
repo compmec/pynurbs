@@ -5,8 +5,8 @@ from fractions import Fraction as frac
 import numpy as np
 import pytest
 
+from pynurbs.curves.curves import Curve
 from pynurbs.knotspace import GeneratorKnotVector
-from pynurbs.responsive.curves import Curve
 
 
 @pytest.mark.order(35)
@@ -14,8 +14,8 @@ from pynurbs.responsive.curves import Curve
     depends=[
         "tests/test_knotspace.py::test_end",
         "tests/test_basis_functions.py::test_end",
-        "tests/responsive/test_beziercurve.py::test_end",
-        "tests/responsive/test_splinecurve.py::test_end",
+        "tests/curves/test_bezier.py::test_end",
+        "tests/curves/test_spline.py::test_end",
     ],
     scope="session",
 )

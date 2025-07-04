@@ -7,7 +7,7 @@ from typing import Any, Tuple
 
 import numpy as np
 
-from ..responsive.curves import Curve
+from ..curves.curves import Curve
 from . import heavy
 from .calculus import Derivate
 

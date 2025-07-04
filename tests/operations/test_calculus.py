@@ -8,9 +8,9 @@ from fractions import Fraction
 import numpy as np
 import pytest
 
+from pynurbs.curves.curves import Curve
 from pynurbs.knotspace import GeneratorKnotVector, KnotVector
 from pynurbs.operations.calculus import Derivate, Integrate
-from pynurbs.responsive.curves import Curve
 
 
 @pytest.mark.order(41)
@@ -18,9 +18,9 @@ from pynurbs.responsive.curves import Curve
     depends=[
         "tests/test_knotspace.py::test_end",
         "tests/test_basis_functions.py::test_end",
-        "tests/responsive/test_beziercurve.py::test_end",
-        "tests/responsive/test_splinecurve.py::test_end",
-        "tests/responsive/test_rationalcurve.py::test_end",
+        "tests/curves/test_bezier.py::test_end",
+        "tests/curves/test_spline.py::test_end",
+        "tests/curves/test_rational.py::test_end",
     ],
     scope="session",
 )
