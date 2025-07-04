@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from copy import copy
 from numbers import Real
-from typing import Tuple, Union
-
-import numpy as np
+from typing import Iterable, Tuple, Union
 
 from pynurbs.core.spline_basis import ImmutableSplineBasis
 
@@ -14,7 +12,7 @@ from .knotspace import KnotVector
 
 class BaseFunction:
     def __init__(
-        self, knotvector: KnotVector, weights: Union[None, Tuple[Real, ...]] = None
+        self, knotvector: KnotVector, weights: Union[None, Iterable[Real]] = None
     ):
         self.knotvector = knotvector
         self.weights = weights
@@ -136,11 +134,10 @@ class BaseFunction:
         self.knotvector.degree = value
 
     @knotvector.setter
-    def knotvector(self, value: KnotVector):
-        if not isinstance(value, KnotVector):
-            value = KnotVector(value)
-        self.__basis = ImmutableSplineBasis(value.internal)
-        self.__knotvector = value
+    def knotvector(self, vector: KnotVector):
+        if not isinstance(vector, KnotVector):
+            vector = KnotVector(vector)
+        self.__knotvector = vector
 
     @weights.setter
     def weights(self, weights: Union[None, Tuple[Real, ...]]):
@@ -152,6 +149,7 @@ class BaseFunction:
             raise ValueError(f"Weights must have len {self.npts} != {len(weights)}")
         if not all(float(weight) > 0 for weight in weights):
             raise ValueError("All weights must be positive!")
+        # Still needs to check if there are no roots
         self.__weights = weights
 
     def __copy__(self) -> BaseFunction:
