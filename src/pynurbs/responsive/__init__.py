@@ -1,3 +1,3 @@
 from .curves import Curve
-from .functions import Function
+from .basis_functions import BasisFunctions
 from .knotspace import GeneratorKnotVector, KnotVector

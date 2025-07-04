@@ -60,7 +60,7 @@ def test_neg():
 @pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
 def test_add():
     """
-    Function to test if the polynomials coefficients
+    BasisFunctions to test if the polynomials coefficients
     are correctly computed
     """
     import numpy as np
@@ -100,7 +100,7 @@ def test_add():
 @pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
 def test_sub():
     """
-    Function to test if the polynomials coefficients
+    BasisFunctions to test if the polynomials coefficients
     are correctly computed
     """
     import numpy as np
@@ -140,7 +140,7 @@ def test_sub():
 @pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
 def test_mul():
     """
-    Function to test if the polynomials coefficients
+    BasisFunctions to test if the polynomials coefficients
     are correctly computed
     """
     import numpy as np
@@ -180,7 +180,7 @@ def test_mul():
 @pytest.mark.dependency(depends=["test_build", "test_degree", "test_evaluate"])
 def test_truediv():
     """
-    Function to test if the polynomials coefficients
+    BasisFunctions to test if the polynomials coefficients
     are correctly computed
     """
     import numpy as np
@@ -244,7 +244,7 @@ def test_integrate():
 )
 def test_shift():
     """
-    Function to test if the polynomials coefficients
+    BasisFunctions to test if the polynomials coefficients
     are correctly computed
     """
     import numpy as np
@@ -269,7 +269,7 @@ def test_shift():
 )
 def test_scale():
     """
-    Function to test if the polynomials coefficients
+    BasisFunctions to test if the polynomials coefficients
     are correctly computed
     """
     import numpy as np

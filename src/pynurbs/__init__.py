@@ -1,6 +1,6 @@
 from .operations.advanced import Intersection, Projection
 from .operations.calculus import Derivate, Integrate
-from .responsive import Curve, Function, GeneratorKnotVector, KnotVector
+from .responsive import BasisFunctions, Curve, GeneratorKnotVector, KnotVector
 
 __version__ = "1.1.0"
 

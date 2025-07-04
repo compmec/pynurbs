@@ -35,7 +35,7 @@ class BaseFunction:
 
         >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 2, 3, 3])
-        >>> basis = Function(knotvector)
+        >>> basis = BasisFunctions(knotvector)
         >>> basis.knotvector
         (0, 0, 2, 3, 3)
         >>> type(basis.knotvector)
@@ -57,7 +57,7 @@ class BaseFunction:
 
         >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 2, 3, 3])
-        >>> basis = Function(knotvector)
+        >>> basis = BasisFunctions(knotvector)
         >>> basis.degree
         1
 
@@ -77,7 +77,7 @@ class BaseFunction:
 
         >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 2, 3, 3])
-        >>> basis = Function(knotvector)
+        >>> basis = BasisFunctions(knotvector)
         >>> basis.npts
         3
 
@@ -97,7 +97,7 @@ class BaseFunction:
 
         >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 2, 3, 3])
-        >>> basis = Function(knotvector)
+        >>> basis = BasisFunctions(knotvector)
         >>> basis.knots
         (0, 2, 3)
 
@@ -118,7 +118,7 @@ class BaseFunction:
 
         >>> from pynurbs import KnotVector
         >>> knotvector = KnotVector([0, 0, 2, 3, 3])
-        >>> basis = Function(knotvector)
+        >>> basis = BasisFunctions(knotvector)
         >>> basis.weights
         None
 
@@ -220,16 +220,16 @@ class IndexableFunction(BaseFunction):
         return self[:, self.degree](node)
 
 
-class Function(IndexableFunction):
-    """Basis Function class, to evaluate functions
+class BasisFunctions(IndexableFunction):
+    """Basis BasisFunctions class, to evaluate functions
 
     Example use
     -----------
 
     >>> import numpy as np
-    >>> from pynurbs import Function
+    >>> from pynurbs import BasisFunctions
     >>> knotvector = [0, 0, 1, 1]
-    >>> basis = Function(knotvector)
+    >>> basis = BasisFunctions(knotvector)
     >>> basis.degree
     1
     >>> basis.npts

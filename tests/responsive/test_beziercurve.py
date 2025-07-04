@@ -14,7 +14,7 @@ from pynurbs.responsive.knotspace import GeneratorKnotVector, KnotVector
 @pytest.mark.dependency(
     depends=[
         "tests/responsive/test_knotspace.py::test_end",
-        "tests/responsive/test_functions.py::test_end",
+        "tests/responsive/test_basis_functions.py::test_end",
     ],
     scope="session",
 )

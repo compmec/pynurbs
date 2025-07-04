@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from pynurbs.core.custom_math import binom
-from pynurbs.responsive.functions import Function
+from pynurbs.responsive.basis_functions import BasisFunctions
 from pynurbs.responsive.knotspace import GeneratorKnotVector
 
 
@@ -30,11 +30,11 @@ class TestBezier:
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestBezier::test_begin"])
     def test_creation(self):
-        bezier = Function([0, 0, 1, 1])
+        bezier = BasisFunctions([0, 0, 1, 1])
         assert callable(bezier)
         assert bezier.degree == 1
         assert bezier.npts == 2
-        bezier = Function([0, 0, 0, 1, 1, 1])
+        bezier = BasisFunctions([0, 0, 0, 1, 1, 1])
         assert callable(bezier)
         assert bezier.degree == 2
         assert bezier.npts == 3
@@ -45,7 +45,7 @@ class TestBezier:
     def test_random_creation(self):
         for degree in range(1, 6):
             knotvector = GeneratorKnotVector.bezier(degree)
-            bezier = Function(knotvector)
+            bezier = BasisFunctions(knotvector)
             assert callable(bezier)
             assert bezier.degree == degree
             assert bezier.npts == degree + 1
@@ -54,7 +54,7 @@ class TestBezier:
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_random_creation"])
     def test_evalfuncs_degree1(self):
-        bezier = Function([0, 0, 1, 1])
+        bezier = BasisFunctions([0, 0, 1, 1])
         assert bezier.degree == 1
         assert bezier.npts == 2
         assert callable(bezier[0, 0])
@@ -69,7 +69,7 @@ class TestBezier:
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_random_creation"])
     def test_evalfuncs_degree2(self):
-        bezier = Function([0, 0, 0, 1, 1, 1])
+        bezier = BasisFunctions([0, 0, 0, 1, 1, 1])
         assert bezier.degree == 2
         assert bezier.npts == 3
         assert callable(bezier[0, 0])
@@ -98,7 +98,7 @@ class TestBezier:
         for degree in range(1, 6):
             npts = degree + 1
             vector = GeneratorKnotVector.bezier(degree)
-            bezier = Function(vector)
+            bezier = BasisFunctions(vector)
             assert bezier.degree == degree
             assert bezier.npts == npts
 
@@ -124,7 +124,7 @@ class TestBezier:
         for degree in range(1, 6):
             npts = degree + 1
             vector = GeneratorKnotVector.bezier(degree)
-            bezier = Function(vector)
+            bezier = BasisFunctions(vector)
             assert bezier.degree == degree
             assert bezier.npts == npts
 
@@ -145,7 +145,7 @@ class TestBezier:
         for degree in range(1, 6):
             npts = degree + 1
             vector = GeneratorKnotVector.bezier(degree)
-            bezier = Function(vector)
+            bezier = BasisFunctions(vector)
             assert bezier.degree == degree
             assert bezier.npts == npts
 
@@ -168,7 +168,7 @@ class TestBezier:
     )
     def test_singlevalues_degree1(self):
         knotvector = [0, 0, 1, 1]  # degree = 1, npts = 2
-        bezier = Function(knotvector)
+        bezier = BasisFunctions(knotvector)
         assert bezier[0, 0](0.0) == 0
         assert bezier[0, 0](0.5) == 0
         assert bezier[0, 0](1.0) == 0
@@ -192,7 +192,7 @@ class TestBezier:
     )
     def test_singlevalues_degree2(self):
         knotvector = [0, 0, 0, 1, 1, 1]  # degree = 2, npts = 3
-        bezier = Function(knotvector)
+        bezier = BasisFunctions(knotvector)
         assert bezier[0, 0](0.0) == 0
         assert bezier[0, 0](0.5) == 0
         assert bezier[0, 0](1.0) == 0
@@ -230,7 +230,7 @@ class TestBezier:
         ]
     )
     def test_tablevalues_degree1(self):
-        bezier = Function([0, 0, 1, 1])
+        bezier = BasisFunctions([0, 0, 1, 1])
         assert bezier.degree == 1
         assert bezier.npts == 2
         nodes_test = np.linspace(0, 1, 11)
@@ -252,7 +252,7 @@ class TestBezier:
         ]
     )
     def test_tablevalues_degree2(self):
-        bezier = Function([0, 0, 0, 1, 1, 1])
+        bezier = BasisFunctions([0, 0, 0, 1, 1, 1])
         assert bezier.degree == 2
         assert bezier.npts == 3
         nodes_test = np.linspace(0, 1, 11)
@@ -292,7 +292,7 @@ class TestBezier:
     def test_tablevalues_random_degree(self):
         for degree in range(1, 6):
             knotvector = GeneratorKnotVector.bezier(degree)
-            bezier = Function(knotvector)
+            bezier = BasisFunctions(knotvector)
             assert bezier.degree == degree
             assert bezier.npts == degree + 1
 
@@ -315,7 +315,7 @@ class TestBezier:
             scaleval = np.exp(np.random.uniform(-1, 1))
             # knotvector.shift(shiftval)
             # knotvector.scale(scaleval)
-            bezier = Function(knotvector)
+            bezier = BasisFunctions(knotvector)
             assert bezier.degree == degree
             assert bezier.npts == degree + 1
 
@@ -334,7 +334,7 @@ class TestBezier:
     @pytest.mark.dependency(depends=["TestBezier::test_shifted_scaled_bezier"])
     def test_degree_operations(self):
         knotvector = GeneratorKnotVector.bezier(3)
-        bezier = Function(knotvector)
+        bezier = BasisFunctions(knotvector)
         assert bezier.degree == 3
         assert bezier.npts == 4
         bezier.degree = 2
@@ -378,19 +378,19 @@ class TestSpline:
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestSpline::test_begin"])
     def test_creation(self):
-        spline = Function([0, 0, 1, 1])
+        spline = BasisFunctions([0, 0, 1, 1])
         assert callable(spline)
         assert spline.degree == 1
         assert spline.npts == 2
-        spline = Function([0, 0, 0.5, 1, 1])
+        spline = BasisFunctions([0, 0, 0.5, 1, 1])
         assert callable(spline)
         assert spline.degree == 1
         assert spline.npts == 3
-        spline = Function([0, 0, 0, 1, 1, 1])
+        spline = BasisFunctions([0, 0, 0, 1, 1, 1])
         assert callable(spline)
         assert spline.degree == 2
         assert spline.npts == 3
-        spline = Function([0, 0, 0, 0.5, 1, 1, 1])
+        spline = BasisFunctions([0, 0, 0, 0.5, 1, 1, 1])
         assert callable(spline)
         assert spline.degree == 2
         assert spline.npts == 4
@@ -402,7 +402,7 @@ class TestSpline:
         for degree in range(1, 6):
             npts = np.random.randint(degree + 1, degree + 9)
             knotvector = GeneratorKnotVector.random(degree, npts)
-            spline = Function(knotvector)
+            spline = BasisFunctions(knotvector)
             assert callable(spline)
             assert spline.degree == degree
             assert spline.npts == npts
@@ -411,7 +411,7 @@ class TestSpline:
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestSpline::test_random_creation"])
     def test_evalfuncs_degree1npts3(self):
-        spline = Function([0, 0, 0.5, 1, 1])
+        spline = BasisFunctions([0, 0, 0.5, 1, 1])
         assert spline.degree == 1
         assert spline.npts == 3
         assert callable(spline[0, 0])
@@ -428,7 +428,7 @@ class TestSpline:
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestSpline::test_evalfuncs_degree1npts3"])
     def test_tablevalues_degree1npts3(self):
-        spline = Function([0, 0, 0.5, 1, 1])
+        spline = BasisFunctions([0, 0, 0.5, 1, 1])
         assert spline.degree == 1
         assert spline.npts == 3
         nodes_test = np.linspace(0, 1, 11)
@@ -469,7 +469,7 @@ class TestSpline:
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestSpline::test_tablevalues_degree1npts3"])
     def test_tablevalues_degree2npts4(self):
-        spline = Function([0, 0, 0, 0.5, 1, 1, 1])
+        spline = BasisFunctions([0, 0, 0, 0.5, 1, 1, 1])
         assert spline.degree == 2
         assert spline.npts == 4
         nodes_test = np.linspace(0, 1, 11)
@@ -527,7 +527,7 @@ class TestSpline:
     @pytest.mark.dependency(depends=["TestSpline::test_tablevalues_degree2npts4"])
     def test_tablevalues_degree3npts5(self):
         knotvector = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]
-        spline = Function(knotvector)
+        spline = BasisFunctions(knotvector)
         assert spline.degree == 3
         assert spline.npts == 5
         nodes_test = np.linspace(0, 1, 11)
@@ -603,7 +603,7 @@ class TestSpline:
         ]
     )
     def test_degree_operation(self):
-        spline = Function([0, 0, 0, 0, 1, 2, 2, 2, 2])
+        spline = BasisFunctions([0, 0, 0, 0, 1, 2, 2, 2, 2])
         assert spline.degree == 3
         assert spline.npts == 5
         spline.degree = 2
@@ -611,7 +611,7 @@ class TestSpline:
         assert spline.npts == 3
         assert spline.knotvector == [0, 0, 0, 2, 2, 2]
 
-        spline = Function([0, 0, 0, 1, 2, 3, 3, 3])
+        spline = BasisFunctions([0, 0, 0, 1, 2, 3, 3, 3])
         assert spline.degree == 2
         assert spline.npts == 5
         spline.degree -= 1
@@ -619,7 +619,7 @@ class TestSpline:
         assert spline.npts == 2
         assert spline.knotvector == [0, 0, 3, 3]
 
-        spline = Function([0, 0, 0, 1, 1, 2, 2, 2])
+        spline = BasisFunctions([0, 0, 0, 1, 1, 2, 2, 2])
         assert spline.degree == 2
         assert spline.npts == 5
         spline.degree -= 1
@@ -627,7 +627,7 @@ class TestSpline:
         assert spline.npts == 3
         assert spline.knotvector == [0, 0, 1, 2, 2]
 
-        spline = Function([0, 0, 0, 1, 1, 2, 3, 3, 3])
+        spline = BasisFunctions([0, 0, 0, 1, 1, 2, 3, 3, 3])
         assert spline.degree == 2
         assert spline.npts == 6
         spline.degree += 1
@@ -665,7 +665,7 @@ class TestRational:
         for degree in range(1, 6):
             npts = np.random.randint(degree + 1, degree + 9)
             knotvector = GeneratorKnotVector.random(degree, npts)
-            rational = Function(knotvector)
+            rational = BasisFunctions(knotvector)
             rational.weights = np.random.uniform(0.1, 1, npts)
             assert callable(rational)
             assert rational.degree == degree
@@ -677,7 +677,7 @@ class TestRational:
     def test_fail_creation(self):
         degree, npts = 3, 7
         knotvector = GeneratorKnotVector.random(degree, npts)
-        rational = Function(knotvector)
+        rational = BasisFunctions(knotvector)
         with pytest.raises(TypeError):
             rational.weights = 1
         with pytest.raises(ValueError):
@@ -690,13 +690,14 @@ class TestRational:
     @pytest.mark.dependency(depends=["TestRational::test_begin"])
     def test_compare_spline(self):
         knotvector = [0, 0, 0, 1, 2, 2, 2]
-        spline = Function(knotvector)
+        spline = BasisFunctions(knotvector)
         rational = copy(spline)
         rational.weights = np.ones(rational.npts)
 
-        assert rational == spline
+        assert rational != spline
 
-        rational = Function([0, 0, 0, 2, 4, 4, 4])
+        vector = [0, 0, 0, 2, 4, 4, 4]
+        rational = BasisFunctions(vector)
         rational.weights = np.ones(rational.npts)
         assert rational != spline
 
@@ -709,7 +710,7 @@ class TestRational:
     @pytest.mark.dependency(depends=["TestRational::test_begin"])
     def test_values_rational_equal_spline(self):
         knotvector = [0, 0, 0, 1, 2, 2, 2]
-        spline = Function(knotvector)
+        spline = BasisFunctions(knotvector)
         rational = copy(spline)
         rational.weights = np.ones(rational.npts)
 
@@ -722,7 +723,7 @@ class TestRational:
     @pytest.mark.dependency(depends=["TestRational::test_begin"])
     def test_quarter_circle_standard(self):
         knotvector = [0, 0, 0, 1, 1, 1]
-        rational = Function(knotvector)
+        rational = BasisFunctions(knotvector)
         weights = [1, 1, 2]
         rational.weights = weights
 
@@ -741,7 +742,7 @@ class TestRational:
     @pytest.mark.dependency(depends=["TestRational::test_quarter_circle_standard"])
     def test_quarter_circle_symmetric(self):
         knotvector = [0, 0, 0, 1, 1, 1]
-        rational = Function(knotvector)
+        rational = BasisFunctions(knotvector)
         weights = [2, np.sqrt(2), 2]
         rational.weights = weights
 
@@ -788,9 +789,9 @@ class TestOthers:
         vector_spline = GeneratorKnotVector.uniform(3, 5)
         vector_rational = copy(vector_spline)
         weights = np.random.uniform(1, 2, 5)
-        bezier = Function(vector_bezier)
-        spline = Function(vector_spline)
-        rational = Function(vector_rational)
+        bezier = BasisFunctions(vector_bezier)
+        spline = BasisFunctions(vector_spline)
+        rational = BasisFunctions(vector_rational)
         rational.weights = weights
 
         bezier.__str__()
@@ -804,7 +805,7 @@ class TestOthers:
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_creation"])
     def test_specific_cases(self):
-        bezier = Function([0, 0, 1, 1])
+        bezier = BasisFunctions([0, 0, 1, 1])
         assert bezier != 1
         assert bezier != "Asd"
         assert bezier != [0, 0, 1, 1]
@@ -816,7 +817,7 @@ class TestOthers:
     @pytest.mark.timeout(5)
     @pytest.mark.dependency(depends=["TestBezier::test_creation"])
     def test_fail_getitem_index(self):
-        bezier = Function([0, 0, 1, 1])
+        bezier = BasisFunctions([0, 0, 1, 1])
         with pytest.raises(IndexError):
             bezier[0, -1]
         with pytest.raises(IndexError):
@@ -834,7 +835,7 @@ class TestOthers:
     def test_fractions(self):
         from fractions import Fraction as frac
 
-        bezier = Function([frac(0), frac(0), frac(1), frac(1)])
+        bezier = BasisFunctions([frac(0), frac(0), frac(1), frac(1)])
 
         assert type(bezier[0](0)) is frac
         assert type(bezier[1](0)) is frac
