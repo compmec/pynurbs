@@ -157,10 +157,10 @@ class Curve(BaseCurve):
         ControlPoints = [1.0, 2.0, -3.0]
 
         """
-        old_vector = self.knotvector.internal
-        new_vector = remove_knots(old_vector, nodes)
-        knots = new_vector.knots if new_vector.degree != 0 else None
-        self.update(new_vector, tolerance, knots)
+        old_tolerance = self.tolerance
+        self.tolerance = tolerance
+        self.knotvector = remove_knots(self.knotvector.internal, nodes)
+        self.tolerance = old_tolerance
 
     def knot_clean(
         self, nodes: Optional[Tuple[float]] = None, tolerance: Optional[float] = 1e-9
@@ -275,10 +275,10 @@ class Curve(BaseCurve):
         if tolerance is not None:
             float(tolerance)
             assert tolerance >= 0
-        old_vector = self.knotvector.internal
-        new_vector = decrease_degree(old_vector, times)
-        knots = new_vector.knots if new_vector.degree != 0 else None
-        self.update(new_vector, tolerance, knots)
+        old_tolerance = self.tolerance
+        self.tolerance = tolerance
+        self.knotvector = decrease_degree(self.knotvector.internal, times)
+        self.tolerance = old_tolerance
 
     def degree_clean(self, tolerance: float = 1e-9):
         """Reduces au maximum the degree of the curve for given tolerance.

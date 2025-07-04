@@ -39,6 +39,7 @@ class BaseCurve:
         self.__knotvector = knotvector
         self.__ctrlpoints = ctrlpoints
         self.__weights = weights
+        self.tolerance = 1e-9
 
     def __call__(self, nodes: np.ndarray) -> np.ndarray:
         return self.eval(nodes)
@@ -239,6 +240,10 @@ class BaseCurve:
         return newcurve
 
     @property
+    def tolerance(self) -> Union[None, float]:
+        return self.__tolerance
+
+    @property
     def knotvector(self):
         """Knot Vector
 
@@ -363,11 +368,28 @@ class BaseCurve:
             return None
         return tuple(self.__ctrlpoints)
 
+    @tolerance.setter
+    def tolerance(self, value: Union[None, float]):
+        if value is not None and (not isnumber(value) or value <= 0):
+            raise ValueError
+        self.__tolerance = value
+
     @knotvector.setter
     def knotvector(self, value: KnotVector):
         if not isinstance(value, KnotVector):
             value = KnotVector(value)
-        self.update(value)
+        if self.ctrlpoints is not None and self.knotvector != value:
+            if self.knotvector.limits != value.limits:
+                raise ValueError
+            temp_curve = self.__class__(value)
+            error = temp_curve.fit_curve(self)
+            if self.tolerance is not None and error > self.tolerance:
+                error_msg = "Cannot update knotvector cause error is "
+                error_msg += f" {float(error):.2e} > {self.tolerance}"
+                raise ValueError(error_msg)
+            self.__ctrlpoints = temp_curve.ctrlpoints
+            self.__weights = temp_curve.weights
+        self.__knotvector = value
 
     @degree.setter
     def degree(self, value: int):
@@ -470,52 +492,6 @@ class BaseCurve:
         numerator.ctrlpoints = [wi * pt for wi, pt in zip(self.weights, ctrlpoints)]
         denominator.ctrlpoints = self.weights
         return numerator, denominator
-
-    def update(
-        self,
-        newknotvector: KnotVector,
-        tolerance: Optional[float] = 1e-9,
-        nodes: Optional[tuple[float]] = None,
-    ):
-        """Update the knotvector to newknotvector
-
-        This function compute the new control points and
-        new weights such the new curve is near the old curve
-
-        If the error is bigger than tolerance, then raises a ValueError
-
-        If ``nodes`` are given, the new curve will fit on these ``nodes``
-
-        Example use
-        -----------
-
-        >>> from pynurbs import Curve
-        >>> curve = Curve([0, 0, 1, 1], [1, 2])
-        >>> curve.update([0, 0, 0.5, 1, 1])  # Insert knot [0.5]
-        >>> curve = Curve([0, 0, 1, 1], [1, 2])
-        >>> curve.update([0, 0, 0, 1, 1, 1])  # Degree elevate
-        >>> curve = Curve([0, 0, 0.5, 1, 1], [1, 2, 1])
-        >>> curve.update([0, 0, 1, 1], nodes = (0, 1))  # Remove knot [0.5]
-
-        """
-        if not isinstance(newknotvector, KnotVector):
-            newknotvector = KnotVector(newknotvector)
-        if newknotvector == self.knotvector:
-            return
-        if self.ctrlpoints is None:
-            self.__knotvector = newknotvector
-            return
-        if self.knotvector.limits != newknotvector.limits:
-            raise ValueError
-        temp_curve = self.__class__(newknotvector)
-        error = temp_curve.fit_curve(self, nodes)
-        if tolerance and error > tolerance:
-            error_msg = "Cannot update knotvector cause error is "
-            error_msg += f" {float(error):.2e} > {tolerance}"
-            raise ValueError(error_msg)
-        self.__knotvector = newknotvector
-        self.ctrlpoints = temp_curve.ctrlpoints
-        self.weights = temp_curve.weights
 
     def apply(self, newknotvector: KnotVector, matrix: Tuple[Tuple[float]]):
         """Applies the linear transformation for every control point
