@@ -13,8 +13,8 @@ from typing import Iterable, Optional, Tuple, Union
 
 import numpy as np
 
-from ..core import ImmutableKnotVector
-from ..operations.knotvector import (
+from .core import ImmutableKnotVector
+from .operations.knotvector import (
     decrease_degree,
     increase_degree,
     insert_knots,
@@ -23,7 +23,7 @@ from ..operations.knotvector import (
     split_knotvector,
     union_knotvectors,
 )
-from ..operations.tools import vectorize
+from .operations.tools import vectorize
 
 
 class KnotVector:

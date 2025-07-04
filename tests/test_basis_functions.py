@@ -3,16 +3,16 @@ from copy import copy
 import numpy as np
 import pytest
 
+from pynurbs.basis_functions import BasisFunctions
 from pynurbs.core.custom_math import binom
-from pynurbs.responsive.basis_functions import BasisFunctions
-from pynurbs.responsive.knotspace import GeneratorKnotVector
+from pynurbs.knotspace import GeneratorKnotVector
 
 
 @pytest.mark.order(32)
 @pytest.mark.dependency(
     depends=[
         "tests/core/test_spline_basis.py::test_all",
-        "tests/responsive/test_knotspace.py::test_end",
+        "tests/test_knotspace.py::test_end",
     ],
     scope="session",
 )

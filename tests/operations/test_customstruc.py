@@ -13,8 +13,8 @@ Example 1:
 
 import pytest
 
-from pynurbs.responsive.basis_functions import BasisFunctions
-from pynurbs.responsive.knotspace import KnotVector
+from pynurbs.basis_functions import BasisFunctions
+from pynurbs.knotspace import KnotVector
 
 
 class CustomFloat:
@@ -112,8 +112,8 @@ class CustomPoint:
 @pytest.mark.order(41)
 @pytest.mark.dependency(
     depends=[
-        "tests/responsive/test_knotspace.py::test_end",
-        "tests/responsive/test_basis_functions.py::test_end",
+        "tests/test_knotspace.py::test_end",
+        "tests/test_basis_functions.py::test_end",
         "tests/responsive/test_beziercurve.py::test_end",
         "tests/responsive/test_splinecurve.py::test_end",
         "tests/responsive/test_rationalcurve.py::test_end",

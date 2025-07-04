@@ -8,6 +8,7 @@ import numpy as np
 
 from ..core.custom_math import isnumber, number_type, supports_linear_operation
 from ..core.spline_basis import ImmutableSplineBasis
+from ..knotspace import KnotVector
 from ..operations import heavy
 from ..operations.knotvector import (
     decrease_degree,
@@ -16,7 +17,6 @@ from ..operations.knotvector import (
     remove_knots,
 )
 from ..operations.least_square import fit_function, func2func, spline2spline
-from .knotspace import KnotVector
 
 
 def norm(object: Union[float, Tuple[float]], L: int = 0) -> float:

@@ -6,8 +6,8 @@ from typing import Iterable, Tuple, Union
 
 from pynurbs.core.spline_basis import ImmutableSplineBasis
 
-from ..operations.tools import vectorize
 from .knotspace import KnotVector
+from .operations.tools import vectorize
 
 
 class BaseFunction:

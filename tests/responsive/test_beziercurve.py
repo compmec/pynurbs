@@ -6,15 +6,15 @@ from fractions import Fraction as frac
 import numpy as np
 import pytest
 
+from pynurbs.knotspace import GeneratorKnotVector, KnotVector
 from pynurbs.responsive.curves import Curve
-from pynurbs.responsive.knotspace import GeneratorKnotVector, KnotVector
 
 
 @pytest.mark.order(33)
 @pytest.mark.dependency(
     depends=[
-        "tests/responsive/test_knotspace.py::test_end",
-        "tests/responsive/test_basis_functions.py::test_end",
+        "tests/test_knotspace.py::test_end",
+        "tests/test_basis_functions.py::test_end",
     ],
     scope="session",
 )

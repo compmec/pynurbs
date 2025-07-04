@@ -8,16 +8,16 @@ from fractions import Fraction
 import numpy as np
 import pytest
 
+from pynurbs.knotspace import GeneratorKnotVector, KnotVector
 from pynurbs.operations.calculus import Derivate, Integrate
 from pynurbs.responsive.curves import Curve
-from pynurbs.responsive.knotspace import GeneratorKnotVector, KnotVector
 
 
 @pytest.mark.order(41)
 @pytest.mark.dependency(
     depends=[
-        "tests/responsive/test_knotspace.py::test_end",
-        "tests/responsive/test_basis_functions.py::test_end",
+        "tests/test_knotspace.py::test_end",
+        "tests/test_basis_functions.py::test_end",
         "tests/responsive/test_beziercurve.py::test_end",
         "tests/responsive/test_splinecurve.py::test_end",
         "tests/responsive/test_rationalcurve.py::test_end",

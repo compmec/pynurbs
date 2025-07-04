@@ -4,7 +4,7 @@ from fractions import Fraction
 import numpy as np
 import pytest
 
-from pynurbs.responsive.knotspace import GeneratorKnotVector, KnotVector
+from pynurbs.knotspace import GeneratorKnotVector, KnotVector
 
 
 @pytest.mark.order(30)
