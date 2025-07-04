@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import copy
-from typing import Optional, Tuple, Union
+from typing import Any, Iterable, Optional, Tuple, Union
 
 import numpy as np
 
@@ -28,12 +28,17 @@ def norm(object: Union[float, Tuple[float]], L: int = 0) -> float:
 
 
 class BaseCurve:
-    def __init__(self, knotvector: KnotVector):
-        self.__ctrlpoints = None
-        self.__weights = None
+    def __init__(
+        self,
+        knotvector: KnotVector,
+        ctrlpoints: Union[None, Iterable[Any]] = None,
+        weights: Union[None, Iterable[Any]] = None,
+    ):
         if not isinstance(knotvector, KnotVector):
             knotvector = KnotVector(knotvector)
         self.__knotvector = knotvector
+        self.__ctrlpoints = ctrlpoints
+        self.__weights = weights
 
     def __call__(self, nodes: np.ndarray) -> np.ndarray:
         return self.eval(nodes)
@@ -80,7 +85,7 @@ class BaseCurve:
         if self.weights is None and other.weights is None:
             vecta, vectb = tuple(self.knotvector), tuple(other.knotvector)
             matra, matrb = heavy.MathOperations.add_spline_curve(vecta, vectb)
-            curve = Curve(self.knotvector | other.knotvector)
+            curve = self.__class__(self.knotvector | other.knotvector)
             ctrlpoints = np.array(matra) @ self.ctrlpoints
             ctrlpoints += np.array(matrb) @ other.ctrlpoints
             curve.ctrlpoints = ctrlpoints
@@ -115,7 +120,7 @@ class BaseCurve:
                 np.moveaxis(self.ctrlpoints, 0, -1), matrix3d, axes=1
             )
             ctrlpoints = ctrlpoints @ other.ctrlpoints
-            curve = Curve(vectmul, ctrlpoints)
+            curve = self.__class__(vectmul, ctrlpoints)
             return curve
         numa, dena = self.fraction()
         numb, denb = other.fraction()
@@ -152,7 +157,7 @@ class BaseCurve:
                 newctrlpt = np.tensordot(matrix3d[:, i, :], matrix2d, axes=2)
                 newctrlpts[i] = newctrlpt
             ctrlpoints = newctrlpts
-            curve = Curve(vectmul, ctrlpoints)
+            curve = self.__class__(vectmul, ctrlpoints)
             return curve
         numa, dena = self.fraction()
         numb, denb = other.fraction()
