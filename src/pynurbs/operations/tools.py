@@ -7,6 +7,8 @@ from functools import wraps
 
 import numpy as np
 
+from ..core.custom_math import isnumber
+
 
 # Creates a decorator to vectorize functions that receives floats
 # Or an array of floats depending on the dimension
@@ -32,25 +34,25 @@ def vectorize(position: int = 0, dimension: int = 0):
         def wrapper(*args, **kwargs):
             param = args[position]
             if dimension == 0:
-                try:
+                if isnumber(param):
                     float(param)
                     return func(*args, **kwargs)
-                except TypeError:
-                    result = (
-                        func(*args[:position], p, *args[position + 1 :], **kwargs)
-                        for p in param
-                    )
-                    result = tuple(result)
-                    for key, tipo in conversion.items():
-                        if isinstance(param, key):
-                            if tipo is not None:
-                                result = tipo(result)
-                            return result
-                    if isinstance(param, np.ndarray):
-                        result = np.array(result, dtype=param.dtype)
-                    else:
-                        result = param.__class__(result)
-                    return result
+
+                result = (
+                    func(*args[:position], p, *args[position + 1 :], **kwargs)
+                    for p in param
+                )
+                result = tuple(result)
+                for key, tipo in conversion.items():
+                    if isinstance(param, key):
+                        if tipo is not None:
+                            result = tipo(result)
+                        return result
+                if isinstance(param, np.ndarray):
+                    result = np.array(result, dtype=param.dtype)
+                else:
+                    result = param.__class__(result)
+                return result
             raise NotImplementedError
 
         return wrapper
