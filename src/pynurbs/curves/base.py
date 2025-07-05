@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from copy import copy
-from typing import Any, Iterable, Optional, Tuple, Union
+from numbers import Real
+from typing import Any, Iterable, Tuple, Union
 
 import numpy as np
 
 from ..core.custom_math import isscalar, supports_linear_operation
+from ..core.spline_basis import ImmutableSplineBasis
 from ..knotspace import KnotVector
 from ..operations import heavy
+from ..operations.tools import vectorize
 
 
 def norm(object: Union[float, Tuple[float]], L: int = 0) -> float:
@@ -41,8 +44,19 @@ class BaseCurve:
         self.__weights = weights
         self.tolerance = 1e-9
 
-    def __call__(self, nodes: np.ndarray) -> np.ndarray:
-        return self.eval(nodes)
+    @vectorize(1, 0)
+    def __call__(self, node: Real) -> Any:
+        if self.ctrlpoints is None:
+            raise ValueError("Cannot evaluate")
+        vector = self.knotvector.internal
+        basis = ImmutableSplineBasis(vector)
+        result = basis(node)
+        zero = 0 * self.ctrlpoints[0]
+        if self.weights is None:
+            return sum((r * c for r, c in zip(result, self.ctrlpoints)), zero)
+        result = tuple(w * r for w, r in zip(self.weights, result))
+        denom = 1 / sum(result)
+        return sum((r * c * denom for r, c in zip(result, self.ctrlpoints)), zero)
 
     def __eq__(self, other: object) -> bool:
         if type(self) is not type(other):

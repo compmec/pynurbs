@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from fractions import Fraction
+from numbers import Real
 from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 
 from ..core.custom_math import number_type
-from ..core.spline_basis import ImmutableSplineBasis
 from ..knotspace import KnotVector
 from ..operations import heavy
 from ..operations.knotvector import (
@@ -16,6 +16,7 @@ from ..operations.knotvector import (
     remove_knots,
 )
 from ..operations.least_square import fit_function, func2func, spline2spline
+from ..operations.tools import vectorize
 from .base import BaseCurve
 
 
@@ -47,21 +48,8 @@ class Curve(BaseCurve):
         msg += "]\n"
         return msg
 
-    def __eval(self, nodes: Tuple[float]) -> Tuple[Any]:
-        """
-        Private method to evaluate points in the curve
-        """
-        vector = self.knotvector.internal
-        nodes = tuple(nodes)
-        basis = ImmutableSplineBasis(vector)
-        matrix = np.transpose(tuple(map(basis, nodes)))
-        if self.weights is not None:
-            denominators = 1 / np.dot(self.weights, matrix)
-            matrix = np.einsum("j,ij,i->ij", denominators, matrix, self.weights)
-        result = np.moveaxis(matrix, 0, -1) @ self.ctrlpoints
-        return tuple(result)
-
-    def eval(self, nodes: Union[float, Tuple[float]]) -> Union[Any, Tuple[Any]]:
+    @vectorize(1, 0)
+    def eval(self, node: Real) -> Any:
         """Point evaluation function
 
         :param nodes: The nodes to evaluates
@@ -87,19 +75,7 @@ class Curve(BaseCurve):
         (1.0, 2.0, -3.0)
 
         """
-        if self.ctrlpoints is None:
-            error_msg = "Cannot evaluate: There are no control points"
-            raise ValueError(error_msg)
-        try:
-            nodes = tuple(nodes)
-            onevalue = False
-        except TypeError:
-            nodes = (nodes,)
-            onevalue = True
-        if not self.knotvector.valid(nodes):
-            raise ValueError(f"Received invalid nodes to eval: {nodes}")
-        result = self.__eval(nodes)
-        return result[0] if onevalue else result
+        return self(node)
 
     def knot_insert(self, nodes: Tuple[float]) -> None:
         """Insert given nodes inside knotvector
