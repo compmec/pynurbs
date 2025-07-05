@@ -5,7 +5,7 @@ from typing import Any, Iterable, Optional, Tuple, Union
 
 import numpy as np
 
-from ..core.custom_math import isnumber, supports_linear_operation
+from ..core.custom_math import isscalar, supports_linear_operation
 from ..knotspace import KnotVector
 from ..operations import heavy
 
@@ -370,7 +370,7 @@ class BaseCurve:
 
     @tolerance.setter
     def tolerance(self, value: Union[None, float]):
-        if value is not None and (not isnumber(value) or value <= 0):
+        if value is not None and (not isscalar(value) or value <= 0):
             raise ValueError
         self.__tolerance = value
 
@@ -407,7 +407,7 @@ class BaseCurve:
         if value is None:
             self.__weights = None
             return
-        if not all(map(isnumber, value)):
+        if not all(map(isscalar, value)):
             raise ValueError
         if not all(number > 0 for number in value):
             raise ValueError

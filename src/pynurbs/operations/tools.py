@@ -7,7 +7,7 @@ from functools import wraps
 
 import numpy as np
 
-from ..core.custom_math import isnumber
+from ..core.custom_math import isscalar
 
 
 # Creates a decorator to vectorize functions that receives floats
@@ -34,7 +34,7 @@ def vectorize(position: int = 0, dimension: int = 0):
         def wrapper(*args, **kwargs):
             param = args[position]
             if dimension == 0:
-                if isnumber(param):
+                if isscalar(param):
                     float(param)
                     return func(*args, **kwargs)
 

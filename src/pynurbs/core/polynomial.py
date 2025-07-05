@@ -9,7 +9,7 @@ import math
 from numbers import Real
 from typing import Iterable, List, Tuple, Union
 
-from .custom_math import isnumber, supports_linear_operation
+from .custom_math import isscalar, supports_linear_operation
 
 
 class Polynomial:
@@ -34,10 +34,10 @@ class Polynomial:
     """
 
     def __init__(self, coefs: Iterable[Real]):
-        coefs = tuple(coefs) if not isnumber(coefs) else (coefs,)
+        coefs = tuple(coefs) if not isscalar(coefs) else (coefs,)
         if len(coefs) == 0:
             raise ValueError("Cannot receive an empty tuple")
-        if isnumber(coefs[0]):
+        if isscalar(coefs[0]):
             degree = max((i for i, v in enumerate(coefs) if v), default=0)
         else:
             degree = len(coefs) - 1
@@ -139,7 +139,7 @@ class Polynomial:
         if self.degree == 0:
             return str(self[0])
         msgs: List[str] = []
-        if not isnumber(self[0]):
+        if not isscalar(self[0]):
             msgs.append(f"({self[0]})")
             if self.degree > 0:
                 msgs.append(f"({self[1]}) * x")

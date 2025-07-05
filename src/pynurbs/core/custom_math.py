@@ -108,7 +108,7 @@ def binom(n: int, i: int):
     return int(prod)
 
 
-def isnumber(obj: Any) -> bool:
+def isscalar(obj: Any) -> bool:
     """
     Tells if an object is a number
     """
