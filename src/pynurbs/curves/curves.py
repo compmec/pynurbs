@@ -6,15 +6,10 @@ from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 
-from ..core.custom_math import number_type
+from ..core.custom_math import isscalar, number_type
 from ..knotspace import KnotVector
 from ..operations import heavy
-from ..operations.knotvector import (
-    decrease_degree,
-    increase_degree,
-    insert_knots,
-    remove_knots,
-)
+from ..operations.knotvector import insert_knots, remove_knots
 from ..operations.least_square import fit_function, func2func, spline2spline
 from ..operations.tools import vectorize
 from .base import BaseCurve
@@ -176,17 +171,20 @@ class Curve(BaseCurve):
         ControlPoints = [1.0, 2.0, -3.0]
 
         """
-        float(tolerance)
-        assert tolerance >= 0
+        if not isscalar(tolerance) or tolerance <= 0:
+            raise ValueError("Tolerance must be positive")
         if nodes is None:
             nodes = self.knotvector.knots
         nodes = tuple(set(nodes) - set(self.knotvector.limits))
+        oldtolerance = self.tolerance
+        self.tolerance = tolerance
         for knot in nodes:
             try:
                 while True:
-                    self.knot_remove((knot,), tolerance)
+                    self.knot_remove([knot])
             except ValueError:
                 pass
+        self.tolerance = oldtolerance
 
     def degree_increase(self, times: Optional[int] = 1):
         """Increase the degree of the curve by an amount ``times``
@@ -211,12 +209,9 @@ class Curve(BaseCurve):
         KnotVector = (0, 0, 0, 0, 0.5, 0.5, 1, 1, 1, 1)
         ControlPoints = [1.0, 1.33, 1.17, -0.17, -1.33, -3.0]
         """
-        if not isinstance(times, int) or times <= 0:
+        if not isinstance(times, int) or times < 0:
             raise ValueError
-        old_vector = self.knotvector.internal
-        new_vector = increase_degree(old_vector, times)
-        matrix = heavy.Operations.degree_increase(old_vector, times)
-        self.apply(new_vector, matrix)
+        self.degree += int(times)
 
     def degree_decrease(
         self, times: Optional[int] = 1, tolerance: Optional[float] = 1e-9
@@ -246,15 +241,16 @@ class Curve(BaseCurve):
         KnotVector = (0, 0, 0, 0.5, 1, 1, 1)
         ControlPoints = [1, 1.5, -0.5, -3]
         """
-        if not isinstance(times, int) or times <= 0:
+        if not isinstance(times, int) or times < 0:
             raise ValueError(f"times = {times}")
         if tolerance is not None:
-            float(tolerance)
-            assert tolerance >= 0
-        old_tolerance = self.tolerance
-        self.tolerance = tolerance
-        self.knotvector = decrease_degree(self.knotvector.internal, times)
-        self.tolerance = old_tolerance
+            if not isscalar(tolerance) or tolerance <= 0:
+                raise ValueError("Tolerance must be None or positive value")
+        if times > 0:
+            old_tolerance = self.tolerance
+            self.tolerance = tolerance
+            self.degree -= int(times)
+            self.tolerance = old_tolerance
 
     def degree_clean(self, tolerance: float = 1e-9):
         """Reduces au maximum the degree of the curve for given tolerance.
@@ -282,13 +278,15 @@ class Curve(BaseCurve):
         KnotVector = (0, 0, 0, 0.5, 1, 1, 1)
         ControlPoints = [1, 1.5, -0.5, -3]
         """
-        float(tolerance)
-        assert tolerance >= 0
+        if not isscalar(tolerance) or tolerance <= 0:
+            raise ValueError("Given tolerance must be positive")
+        oldtolerance = self.tolerance
         try:
+            self.tolerance = tolerance
             while True:
-                self.degree_decrease(1, tolerance)
+                self.degree -= 1
         except ValueError:
-            pass
+            self.tolerance = oldtolerance
 
     def clean(self, tolerance: float = 1e-9):
         """Calls degree_clean and knot_clean

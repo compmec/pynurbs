@@ -437,8 +437,9 @@ class TestDegreeOperations:
             [0, 0, 3 / 4, 1 / 4],
             [0, 0, 0, 1],
         ]
-        Pgood = matrix @ ctrlpoints
-        np.testing.assert_allclose(curve.ctrlpoints, Pgood)
+        Pgood = tuple(np.dot(matrix, ctrlpoints))
+        Ptest = np.array(curve.ctrlpoints, dtype="float64")
+        np.testing.assert_allclose(Ptest, Pgood)
 
     @pytest.mark.order(33)
     @pytest.mark.timeout(15)
@@ -578,10 +579,6 @@ class TestDegreeOperations:
             curve.degree_decrease("asd")
         with pytest.raises(ValueError):
             curve.degree_increase("asd")
-        with pytest.raises(ValueError):
-            curve.degree_decrease(0)
-        with pytest.raises(ValueError):
-            curve.degree_increase(0)
 
     @pytest.mark.order(33)
     @pytest.mark.dependency(

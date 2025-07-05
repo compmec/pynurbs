@@ -10,6 +10,7 @@ from ..core.custom_math import isscalar, supports_linear_operation
 from ..core.spline_basis import ImmutableSplineBasis
 from ..knotspace import KnotVector
 from ..operations import heavy
+from ..operations.knotvector import decrease_degree, increase_degree
 from ..operations.tools import vectorize
 
 
@@ -410,11 +411,10 @@ class BaseCurve:
         if not isinstance(value, int) or value < 0:
             raise ValueError(f"Cannot set degree {value}")
         times = value - self.degree
-        if times == 0:
-            return
         if times > 0:
-            return self.degree_increase(times)
-        return self.degree_decrease(-times)
+            self.knotvector = increase_degree(self.knotvector.internal, times)
+        elif times < 0:
+            self.knotvector = decrease_degree(self.knotvector.internal, -times)
 
     @weights.setter
     def weights(self, value: Tuple[float]):
