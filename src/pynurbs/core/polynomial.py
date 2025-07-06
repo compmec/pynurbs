@@ -5,11 +5,10 @@ making operations with polynomials, like adding, multiplying, etc
 
 from __future__ import annotations
 
-import math
 from numbers import Real
 from typing import Iterable, List, Tuple, Union
 
-from .custom_math import isscalar, supports_linear_operation
+from .custom_math import Math, isscalar, supports_linear_operation
 
 
 class Polynomial:
@@ -216,8 +215,7 @@ def shift(polynomial: Polynomial, amount: Real) -> Polynomial:
     newcoefs = list(polynomial)
     for i, coef in enumerate(polynomial):
         for j in range(i):
-            binom = math.comb(i, j)
-            value = binom * (amount ** (i - j))
+            value = Math.binom(i, j) * (amount ** (i - j))
             if (i + j) % 2:
                 value *= -1
             newcoefs[j] += coef * value
@@ -240,7 +238,7 @@ def derivate(polynomial: Polynomial, times: int = 1) -> Polynomial:
     if polynomial.degree < times:
         return Polynomial([0 * polynomial[0]])
     coefs = (
-        math.factorial(n + times) // math.factorial(n) * coef
+        Math.factorial(n + times) // Math.factorial(n) * coef
         for n, coef in enumerate(polynomial[times:])
     )
     return Polynomial(coefs)

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from pynurbs.basis_functions import BasisFunctions
-from pynurbs.core.custom_math import binom
+from pynurbs.core.custom_math import Math
 from pynurbs.knotspace import GeneratorKnotVector
 
 
@@ -301,7 +301,7 @@ class TestBezier:
             matrix_good = np.zeros((len(nodestest), degree + 1))
             for i, node in enumerate(nodestest):
                 for j in range(degree + 1):
-                    value = binom(degree, j) * (1 - node) ** (degree - j) * node**j
+                    value = Math.binom(degree, j) * (1 - node) ** (degree - j) * node**j
                     matrix_good[i, j] = value
             np.testing.assert_allclose(matrix_test, matrix_good)
 
@@ -325,7 +325,7 @@ class TestBezier:
             matrix_good = np.zeros((len(nodestest), degree + 1))
             for i, node in enumerate(nodesgood):
                 for j in range(degree + 1):
-                    value = binom(degree, j) * (1 - node) ** (degree - j) * node**j
+                    value = Math.binom(degree, j) * (1 - node) ** (degree - j) * node**j
                     matrix_good[i, j] = value
             np.testing.assert_allclose(matrix_test, matrix_good)
 

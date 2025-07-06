@@ -39,6 +39,16 @@ class Math:
         return x * y // Math.gcd(x, y)
 
     @staticmethod
+    def binom(n: int, i: int) -> int:
+        """
+        Returns binomial (n, i)
+        """
+        numerator = Math.factorial(n)
+        denominator = Math.factorial(i)
+        denominator *= Math.factorial(n - i)
+        return numerator // denominator
+
+    @staticmethod
     def factorial(number: int) -> int:
         if number < 2:
             return 1
@@ -46,13 +56,6 @@ class Math:
         for i in range(2, number + 1):
             prod *= i
         return prod
-
-    @staticmethod
-    def comb(upper: int, lower: int) -> int:
-        numerator = Math.factorial(upper)
-        denominator = Math.factorial(lower)
-        denominator *= Math.factorial(upper - lower)
-        return numerator // denominator
 
 
 def number_type(number: Union[int, float, Fraction]):
@@ -92,20 +95,6 @@ def totuple(array):
         return tuple(map(tuple, array))
     except TypeError:  # Cannot iterate
         return tuple(array)
-
-
-def binom(n: int, i: int):
-    """
-    Returns binomial (n, i)
-    """
-    assert isinstance(n, int)
-    assert isinstance(i, int)
-    prod = 1
-    if i <= 0 or i >= n:
-        return 1
-    for j in range(i):
-        prod *= (n - j) / (i - j)
-    return int(prod)
 
 
 def isscalar(obj: Any) -> bool:
@@ -299,7 +288,7 @@ class IntegratorArray:
         for k, uk in enumerate(nodes):
             for i in range(degree + 1):
                 matrix_bezier[i, k] = (
-                    Math.comb(degree, i) * (1 - uk) ** (degree - i) * (uk**i)
+                    Math.binom(degree, i) * (1 - uk) ** (degree - i) * (uk**i)
                 )
         matrix_bezier = totuple(matrix_bezier)
         inverse = Linalg.invert(matrix_bezier)

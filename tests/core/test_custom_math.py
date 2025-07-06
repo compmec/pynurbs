@@ -54,16 +54,22 @@ class TestMath:
 
     @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestMath::test_begin"])
-    def test_comb(self):
-        assert Math.comb(1, 0) == 1
-        assert Math.comb(1, 1) == 1
-        assert Math.comb(2, 0) == 1
-        assert Math.comb(2, 1) == 2
-        assert Math.comb(2, 2) == 1
-        assert Math.comb(3, 0) == 1
-        assert Math.comb(3, 1) == 3
-        assert Math.comb(3, 2) == 3
-        assert Math.comb(3, 3) == 1
+    def test_binom(self):
+
+        assert Math.binom(0, 0) == 1
+        assert Math.binom(1, 0) == 1
+        assert Math.binom(1, 1) == 1
+        assert Math.binom(2, 0) == 1
+        assert Math.binom(2, 1) == 2
+        assert Math.binom(2, 2) == 1
+        assert Math.binom(3, 0) == 1
+        assert Math.binom(3, 1) == 3
+        assert Math.binom(3, 2) == 3
+        assert Math.binom(3, 3) == 1
+
+        for n in range(1, 11):
+            for i in range(0, n + 1):
+                assert Math.binom(n, i) == math.comb(n, i)
 
     @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestMath::test_begin"])
@@ -87,7 +93,7 @@ class TestMath:
             "TestMath::test_begin",
             "TestMath::test_gcd",
             "TestMath::test_lcm",
-            "TestMath::test_comb",
+            "TestMath::test_binom",
             "TestMath::test_factorial",
         ]
     )
@@ -153,7 +159,7 @@ class TestLinalg:
             for n in range(side, side + 10):
                 for i in range(side):
                     for j in range(side):
-                        matrix[i, j] = Math.comb(n + j, i)
+                        matrix[i, j] = Math.binom(n + j, i)
             inverse = Linalg.invert(matrix)
             inverse = np.array(inverse, dtype="int64")
             np.testing.assert_allclose(np.dot(inverse, matrix), np.eye(side))
@@ -185,7 +191,7 @@ class TestLinalg:
             for n in range(side, side + 10):
                 for i in range(side):
                     for j in range(side):
-                        matrix[i, j] = Fraction(Math.comb(n + j, i))
+                        matrix[i, j] = Fraction(Math.binom(n + j, i))
             inverse = Linalg.invert(matrix)
             inverse = np.array(inverse, dtype="int64")
             matrix = np.array(matrix, dtype="int64")
@@ -283,7 +289,7 @@ class TestLinalg:
             for n in range(side, side + 10):
                 for i in range(side):
                     for j in range(side):
-                        matrix[i, j] = Math.comb(n + j, i)
+                        matrix[i, j] = Math.binom(n + j, i)
             solution = Linalg.solve(matrix, force)
             mult = np.dot(matrix, solution)
             np.testing.assert_allclose(mult, force)
@@ -314,7 +320,7 @@ class TestLinalg:
             for n in range(side, side + 10):
                 for i in range(side):
                     for j in range(side):
-                        matrix[i, j] = Fraction(Math.comb(n + j, i))
+                        matrix[i, j] = Fraction(Math.binom(n + j, i))
             inverse = Linalg.invert(matrix)
             inverse = np.array(inverse, dtype="int64")
             matrix = np.array(matrix, dtype="int64")

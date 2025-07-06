@@ -1,5 +1,6 @@
 import pytest
 
+from pynurbs.core.custom_math import Math
 from pynurbs.core.polynomial import Polynomial, derivate, integrate, scale, shift
 
 
