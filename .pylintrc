@@ -1,0 +1,11 @@
+[MAIN]
+
+disable=
+    too-many-lines,
+    duplicate-code,
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    invalid-name,
+    too-many-locals,
+    too-many-statements,
