@@ -25,6 +25,7 @@ class Operations:
     * degree decrease
     """
 
+    @staticmethod
     def split_curve(knotvector: ImmutableKnotVector, nodes: Tuple[float]):
         """
         Breaks curves in the nodes
@@ -72,6 +73,7 @@ class Operations:
             matrices.append(newmatrix)
         return matrices
 
+    @staticmethod
     def one_knot_insert_once(
         knotvector: ImmutableKnotVector, node: float
     ) -> Tuple[Tuple[float, ...], ...]:
@@ -109,6 +111,7 @@ class Operations:
             matrix[i, i - 1] = 1 - alpha
         return totuple(matrix)
 
+    @staticmethod
     def one_knot_insert(
         knotvector: ImmutableKnotVector, node: float, times: int
     ) -> Tuple[Tuple[float, ...], ...]:
@@ -139,6 +142,7 @@ class Operations:
             knotvector = opekv.insert_knots(knotvector, [node])
         return totuple(matrix)
 
+    @staticmethod
     def knot_insert(
         knotvector: ImmutableKnotVector, nodes: Tuple[float]
     ) -> Tuple[Tuple[float, ...], ...]:
@@ -181,6 +185,7 @@ class Operations:
             knotvector = opekv.insert_knots(knotvector, times * [node])
         return totuple(matrix)
 
+    @staticmethod
     def degree_increase_bezier_once(
         knotvector: ImmutableKnotVector,
     ) -> Tuple[Tuple[float, ...], ...]:
@@ -197,6 +202,7 @@ class Operations:
         matrix[degree + 1, degree] = one
         return totuple(matrix)
 
+    @staticmethod
     def degree_increase_bezier(
         knotvector: ImmutableKnotVector, times: int
     ) -> Tuple[Tuple[float, ...], ...]:
@@ -222,6 +228,7 @@ class Operations:
             knotvector = opekv.increase_degree(knotvector, 1)
         return totuple(matrix)
 
+    @staticmethod
     def degree_increase(
         knotvector: ImmutableKnotVector, times: int
     ) -> Tuple[Tuple[float, ...], ...]:
@@ -269,6 +276,7 @@ class Operations:
         finalmatrix = removematrix @ bigmatrix
         return totuple(finalmatrix)
 
+    @staticmethod
     def matrix_transformation(
         knotvectora: ImmutableKnotVector, knotvectorb: ImmutableKnotVector
     ):

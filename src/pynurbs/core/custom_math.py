@@ -486,6 +486,7 @@ class Linalg:
             return Linalg.solve(matrix, ident)
         return Linalg.solve(matrix.T @ matrix, matrix.T)
 
+    @staticmethod
     def invert_integer_matrix(
         matrix: Tuple[Tuple[int]],
     ) -> Tuple[Tuple[int], Tuple[Tuple[int]]]:

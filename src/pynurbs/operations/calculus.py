@@ -83,6 +83,7 @@ class Derivate:
         finalcurve.weights = dennumctrlpts
         return finalcurve
 
+    @staticmethod
     def nonrational_spline(curve: Curve) -> Curve:
         assert isinstance(curve, Curve)
         assert curve.weights is None
