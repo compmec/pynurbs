@@ -60,9 +60,10 @@ def roots_polynomial(poly: Polynomial) -> rbool.SubSetR1:
         return rbool.WholeR1() if poly[0] == 0 else rbool.EmptyR1()
     result = rbool.EmptyR1()
     for value in np.roots(tuple(poly)[::-1]):
-        if abs(round(1440 * value, 0) - 1440 * value) < 1e-6:
-            value = Fraction(round(1440 * value), 1440)
-        result |= value
+        if not isinstance(value, complex):
+            if abs(round(1440 * value, 0) - 1440 * value) < 1e-6:
+                value = Fraction(round(1440 * value), 1440)
+            result |= value
     return result
 
 
