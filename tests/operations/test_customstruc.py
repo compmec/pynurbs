@@ -93,7 +93,9 @@ class CustomFloat:
         return self.__eq__(other) or self.__gt__(other)
 
     def __abs__(self):
-        return self.__class__(self.internal if self.internal > 0 else -self.internal)
+        return self.__class__(
+            self.internal if self.internal > 0 else -self.internal
+        )
 
 
 class CustomPoint:
@@ -197,7 +199,10 @@ class TestBasisFunctions:
 
     @pytest.mark.order(41)
     @pytest.mark.dependency(
-        depends=["TestBasisFunctions::test_begin", "TestBasisFunctions::test_creation"]
+        depends=[
+            "TestBasisFunctions::test_begin",
+            "TestBasisFunctions::test_creation",
+        ]
     )
     def test_end(self):
         pass
@@ -205,7 +210,11 @@ class TestBasisFunctions:
 
 @pytest.mark.order(41)
 @pytest.mark.dependency(
-    depends=["test_begin", "TestKnotVector::test_end", "TestBasisFunctions::test_end"]
+    depends=[
+        "test_begin",
+        "TestKnotVector::test_end",
+        "TestBasisFunctions::test_end",
+    ]
 )
 def test_end():
     pass

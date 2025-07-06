@@ -168,7 +168,10 @@ class Intersection:
 
     @staticmethod
     def pairs_min_distance(
-        pairs: Tuple[float], curvea: Curve, curveb: Curve, tolerance: float = 1e-9
+        pairs: Tuple[float],
+        curvea: Curve,
+        curveb: Curve,
+        tolerance: float = 1e-9,
     ):
         """
         Filter the pairs (t*, u*) such abs(curvea(t*) - curveb(u*)) > tolerance
@@ -232,7 +235,9 @@ class Intersection:
         return tuple(pair)
 
     @staticmethod
-    def bcurve_and_bcurve(beziera: Curve, bezierb: Curve) -> Tuple[float, float]:
+    def bcurve_and_bcurve(
+        beziera: Curve, bezierb: Curve
+    ) -> Tuple[float, float]:
         """Return the parameters t*, u* such beziera(t*) = bezierb(u*)
 
         Given two bezier curves, A(t) and B(u), this function returns the
@@ -250,7 +255,9 @@ class Intersection:
         assert isinstance(bezierb, Curve)
         assert beziera.degree + 1 == beziera.npts
         assert beziera.degree + 1 == beziera.npts
-        if not Intersection._inse_retangle(beziera.ctrlpoints, bezierb.ctrlpoints):
+        if not Intersection._inse_retangle(
+            beziera.ctrlpoints, bezierb.ctrlpoints
+        ):
             return tuple()
 
         curvesa = [beziera]
@@ -264,8 +271,12 @@ class Intersection:
         uamin, uamax = beziera.knotvector.limits
         ubmin, ubmax = bezierb.knotvector.limits
         limits = ((uamin, uamax), (ubmin, ubmax))
-        nodes_a_sample = [0] + [(2 * i + 1) / (2 * nsma) for i in range(nsma)] + [1]
-        nodes_b_sample = [0] + [(2 * i + 1) / (2 * nsmb) for i in range(nsmb)] + [1]
+        nodes_a_sample = (
+            [0] + [(2 * i + 1) / (2 * nsma) for i in range(nsma)] + [1]
+        )
+        nodes_b_sample = (
+            [0] + [(2 * i + 1) / (2 * nsmb) for i in range(nsmb)] + [1]
+        )
         uasample = [uamin + (uamax - uamin) * node for node in nodes_a_sample]
         ubsample = [ubmin + (ubmax - ubmin) * node for node in nodes_b_sample]
         pairs = set()

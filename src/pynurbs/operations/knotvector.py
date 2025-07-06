@@ -48,7 +48,9 @@ def remove_knots(
     return ImmutableKnotVector(new_knots, knotvector.degree)
 
 
-def increase_degree(knotvector: ImmutableKnotVector, times: int) -> ImmutableKnotVector:
+def increase_degree(
+    knotvector: ImmutableKnotVector, times: int
+) -> ImmutableKnotVector:
     """
     Increases the degree of the given knotvector
 
@@ -70,7 +72,9 @@ def increase_degree(knotvector: ImmutableKnotVector, times: int) -> ImmutableKno
     return ImmutableKnotVector(new_knots, knotvector.degree + times)
 
 
-def decrease_degree(knotvector: ImmutableKnotVector, times: int) -> ImmutableKnotVector:
+def decrease_degree(
+    knotvector: ImmutableKnotVector, times: int
+) -> ImmutableKnotVector:
     """
     Decreases the degree of the given knotvector
 
@@ -134,13 +138,17 @@ def union_knotvectors(
     if not all(isinstance(vec, ImmutableKnotVector) for vec in knotvectors):
         raise TypeError
     left, right = knotvectors[0].knots[0], knotvectors[0].knots[-1]
-    if any(vec.knots[0] != left or vec.knots[-1] != right for vec in knotvectors):
+    if any(
+        vec.knots[0] != left or vec.knots[-1] != right for vec in knotvectors
+    ):
         raise ValueError
     maxdeg = max(vec.degree for vec in knotvectors)
     internals = {}
     for knotvector in knotvectors:
         if knotvector.degree < maxdeg:
-            knotvector = increase_degree(knotvector, maxdeg - knotvector.degree)
+            knotvector = increase_degree(
+                knotvector, maxdeg - knotvector.degree
+            )
         for knot in knotvector.knots[1:-1]:
             if knot not in internals:
                 internals[knot] = 0
@@ -162,19 +170,25 @@ def intersect_knotvectors(
     if not all(isinstance(vec, ImmutableKnotVector) for vec in knotvectors):
         raise TypeError
     left, right = knotvectors[0].knots[0], knotvectors[0].knots[-1]
-    if any(vec.knots[0] != left or vec.knots[-1] != right for vec in knotvectors):
+    if any(
+        vec.knots[0] != left or vec.knots[-1] != right for vec in knotvectors
+    ):
         raise ValueError
     mindeg = min(vec.degree for vec in knotvectors)
     internals = {}
     for knotvector in knotvectors:
         if knotvector.degree > mindeg:
-            knotvector = decrease_degree(knotvector, knotvector.degree - mindeg)
+            knotvector = decrease_degree(
+                knotvector, knotvector.degree - mindeg
+            )
         for knot in knotvector.knots[1:-1]:
             if knot not in internals:
                 internals[knot] = knotvector.mult(knot)
     for knotvector in knotvectors:
         if knotvector.degree > mindeg:
-            knotvector = decrease_degree(knotvector, knotvector.degree - mindeg)
+            knotvector = decrease_degree(
+                knotvector, knotvector.degree - mindeg
+            )
         for knot in internals.keys():
             internals[knot] = min(internals[knot], knotvector.mult(knot))
     final = [left] * (mindeg + 1)

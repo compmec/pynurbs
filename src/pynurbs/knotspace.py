@@ -315,7 +315,9 @@ class KnotVector:
         self.internal = ImmutableKnotVector(knoti * value for knoti in self)
         return self
 
-    def convert(self, cls: type, tolerance: Union[None, Real] = 1e-9) -> KnotVector:
+    def convert(
+        self, cls: type, tolerance: Union[None, Real] = 1e-9
+    ) -> KnotVector:
         """Convert the knots from current type to given type.
 
         If ``tolerance`` is too small, it raises a ValueError cause cannot convert.
@@ -584,7 +586,9 @@ class GeneratorKnotVector:
         return KnotVector(knotvector)
 
     @staticmethod
-    def integer(degree: int, npts: int, cls: Optional[type] = int) -> KnotVector:
+    def integer(
+        degree: int, npts: int, cls: Optional[type] = int
+    ) -> KnotVector:
         """Creates a KnotVector of equally integer spaced.
 
         :param degree: The degree of the curve, non-negative
@@ -623,7 +627,9 @@ class GeneratorKnotVector:
         return knotvector
 
     @staticmethod
-    def uniform(degree: int, npts: int, cls: Optional[type] = int) -> KnotVector:
+    def uniform(
+        degree: int, npts: int, cls: Optional[type] = int
+    ) -> KnotVector:
         """Creates a equally distributed knotvector between [0, 1]
 
         :param degree: The degree of the curve, non-negative
@@ -656,7 +662,9 @@ class GeneratorKnotVector:
         return knotvector
 
     @staticmethod
-    def random(degree: int, npts: int, cls: Optional[type] = float) -> KnotVector:
+    def random(
+        degree: int, npts: int, cls: Optional[type] = float
+    ) -> KnotVector:
         """Creates a random distributed knotvector between [0, 1]
 
         :param degree: The degree of the curve, non-negative

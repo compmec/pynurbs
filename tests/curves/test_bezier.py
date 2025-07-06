@@ -493,7 +493,9 @@ class TestDegreeOperations:
                 curve.degree += times
                 assert curve.degree == (degree + times)
                 np.testing.assert_allclose(curve.ctrlpoints[0], ctrlpoints[0])
-                np.testing.assert_allclose(curve.ctrlpoints[-1], ctrlpoints[-1])
+                np.testing.assert_allclose(
+                    curve.ctrlpoints[-1], ctrlpoints[-1]
+                )
 
     @pytest.mark.order(33)
     @pytest.mark.timeout(15)
@@ -513,7 +515,9 @@ class TestDegreeOperations:
                 curve.degree += times
                 assert curve.degree == (degree + times)
                 np.testing.assert_allclose(curve.ctrlpoints[0], ctrlpoints[0])
-                np.testing.assert_allclose(curve.ctrlpoints[-1], ctrlpoints[-1])
+                np.testing.assert_allclose(
+                    curve.ctrlpoints[-1], ctrlpoints[-1]
+                )
 
     @pytest.mark.order(33)
     @pytest.mark.timeout(10)
@@ -559,7 +563,10 @@ class TestDegreeOperations:
     @pytest.mark.order(33)
     @pytest.mark.timeout(10)
     @pytest.mark.dependency(
-        depends=["TestDegreeOperations::test_begin", "TestDegreeOperations::test_clean"]
+        depends=[
+            "TestDegreeOperations::test_begin",
+            "TestDegreeOperations::test_clean",
+        ]
     )
     def test_fails(self):
         U = KnotVector([0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1])

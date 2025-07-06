@@ -17,7 +17,9 @@ def is_sorted(vector: Tuple[Real, ...]) -> bool:
 
 class ImmutableKnotVector:
 
-    def __init__(self, vector: Iterable[Real], degree: Union[None, int] = None):
+    def __init__(
+        self, vector: Iterable[Real], degree: Union[None, int] = None
+    ):
         try:
             vector = tuple(vector)
         except Exception:
@@ -85,7 +87,9 @@ class ImmutableKnotVector:
         if not isscalar(node):
             raise ValueError(f"Node '{node}' must be Real instance")
         if node < self[self.degree] or self[self.npts] < node:
-            raise ValueError(f"Node {node} outside [{self.knots[0], self.knots[-1]}]")
+            raise ValueError(
+                f"Node {node} outside [{self.knots[0], self.knots[-1]}]"
+            )
         if node == self[self.npts]:  # Special case
             return self.npts - 1
         low, high = self.degree, self.npts + 1  # Do binary search
@@ -103,5 +107,7 @@ class ImmutableKnotVector:
         if not isscalar(node):
             raise ValueError(f"Node '{node}' must be Real instance")
         if node < self[self.degree] or self[self.npts] < node:
-            raise ValueError(f"Node {node} outside [{self.knots[0], self.knots[-1]}]")
+            raise ValueError(
+                f"Node {node} outside [{self.knots[0], self.knots[-1]}]"
+            )
         return sum(abs(node - knot) < 1e-9 for knot in self)

@@ -94,7 +94,10 @@ class TestAddSubMulDiv:
         reason="Standard fraction fails due to lack of precision. sympy.Rational works"
     )
     @pytest.mark.dependency(
-        depends=["TestAddSubMulDiv::test_begin", "TestAddSubMulDiv::test_bezier_known"]
+        depends=[
+            "TestAddSubMulDiv::test_begin",
+            "TestAddSubMulDiv::test_bezier_known",
+        ]
     )
     def test_random_bezier_fractions(self):
         maxdenom = 2
@@ -103,13 +106,25 @@ class TestAddSubMulDiv:
             npts = knotvector.npts
             curvea = Curve(knotvector)
             curveb = Curve(knotvector)
-            randnumbers = [np.random.randint(maxdenom + 1) for i in range(npts)]
-            curvea.ctrlpoints = [1 + frac(num, maxdenom) for num in randnumbers]
-            randnumbers = [np.random.randint(maxdenom + 1) for i in range(npts)]
+            randnumbers = [
+                np.random.randint(maxdenom + 1) for i in range(npts)
+            ]
+            curvea.ctrlpoints = [
+                1 + frac(num, maxdenom) for num in randnumbers
+            ]
+            randnumbers = [
+                np.random.randint(maxdenom + 1) for i in range(npts)
+            ]
             curvea.weights = [1 + frac(num, maxdenom) for num in randnumbers]
-            randnumbers = [np.random.randint(maxdenom + 1) for i in range(npts)]
-            curveb.ctrlpoints = [1 + frac(num, maxdenom) for num in randnumbers]
-            randnumbers = [np.random.randint(maxdenom + 1) for i in range(npts)]
+            randnumbers = [
+                np.random.randint(maxdenom + 1) for i in range(npts)
+            ]
+            curveb.ctrlpoints = [
+                1 + frac(num, maxdenom) for num in randnumbers
+            ]
+            randnumbers = [
+                np.random.randint(maxdenom + 1) for i in range(npts)
+            ]
             curveb.weights = [1 + frac(num, maxdenom) for num in randnumbers]
 
             aaddb = curvea + curveb
@@ -121,7 +136,9 @@ class TestAddSubMulDiv:
             adivb = curvea / curveb
             bdiva = curveb / curvea
 
-            randnumbers = [np.random.randint(maxdenom + 1) for i in range(npts)]
+            randnumbers = [
+                np.random.randint(maxdenom + 1) for i in range(npts)
+            ]
             usample = [frac(num, maxdenom) for num in range(maxdenom + 1)]
             avals = curvea(usample)
             bvals = curveb(usample)
@@ -138,7 +155,10 @@ class TestAddSubMulDiv:
     @pytest.mark.order(35)
     @pytest.mark.timeout(10)
     @pytest.mark.dependency(
-        depends=["TestAddSubMulDiv::test_begin", "TestAddSubMulDiv::test_bezier_known"]
+        depends=[
+            "TestAddSubMulDiv::test_begin",
+            "TestAddSubMulDiv::test_bezier_known",
+        ]
     )
     def test_random_bezier_float64(self):
         for degree in range(1, 4):
@@ -176,7 +196,10 @@ class TestAddSubMulDiv:
     @pytest.mark.order(35)
     @pytest.mark.timeout(10)
     @pytest.mark.dependency(
-        depends=["TestAddSubMulDiv::test_begin", "TestAddSubMulDiv::test_bezier_known"]
+        depends=[
+            "TestAddSubMulDiv::test_begin",
+            "TestAddSubMulDiv::test_bezier_known",
+        ]
     )
     def test_others(self):
         knotvector = GeneratorKnotVector.bezier(3)
@@ -203,7 +226,10 @@ class TestAddSubMulDiv:
     @pytest.mark.order(35)
     @pytest.mark.timeout(10)
     @pytest.mark.dependency(
-        depends=["TestAddSubMulDiv::test_begin", "TestAddSubMulDiv::test_bezier_known"]
+        depends=[
+            "TestAddSubMulDiv::test_begin",
+            "TestAddSubMulDiv::test_bezier_known",
+        ]
     )
     def test_zero_division(self):
         knotvector = GeneratorKnotVector.bezier(3)
@@ -256,7 +282,9 @@ class TestCircle:
 
     @pytest.mark.order(35)
     @pytest.mark.timeout(1)
-    @pytest.mark.dependency(depends=["TestCircle::test_quarter_circle_standard"])
+    @pytest.mark.dependency(
+        depends=["TestCircle::test_quarter_circle_standard"]
+    )
     def test_quarter_circle_symmetric(self):
         knotvector = [0, 0, 0, 1, 1, 1]
         ctrlpoints = [(1, 0), (1, 1), (0, 1)]
@@ -303,7 +331,15 @@ class TestCircle:
     )
     def test_full_circle(self):
         knotvector = [0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1]
-        ctrlpoints = [(1, 0), (1, 2), (-1, 2), (-1, 0), (-1, -2), (1, -2), (1, 0)]
+        ctrlpoints = [
+            (1, 0),
+            (1, 2),
+            (-1, 2),
+            (-1, 0),
+            (-1, -2),
+            (1, -2),
+            (1, 0),
+        ]
         weights = [3, 1, 1, 3, 1, 1, 3]
         curve = Curve(knotvector)
         curve.ctrlpoints = np.array(ctrlpoints)
@@ -412,7 +448,9 @@ class TestRandomInsertKnot:
                 knotvector = GeneratorKnotVector.uniform(degree, npts, frac)
                 randnums = [np.random.randint(denmax + 1) for i in range(npts)]
                 ctrlpoints = [frac(num, denmax) for num in randnums]
-                weights = [frac(np.random.randint(1, denmax + 1), denmax)] * npts
+                weights = [
+                    frac(np.random.randint(1, denmax + 1), denmax)
+                ] * npts
                 oldcurve = Curve(knotvector)
                 oldcurve.ctrlpoints = ctrlpoints
                 oldcurve.weights = weights
@@ -448,7 +486,9 @@ class TestRandomInsertKnot:
                 knotvector = GeneratorKnotVector.uniform(degree, npts, frac)
                 randnums = [np.random.randint(denmax + 1) for i in range(npts)]
                 ctrlpoints = [frac(num, denmax) for num in randnums]
-                randnums = [np.random.randint(1, denmax + 1) for i in range(npts)]
+                randnums = [
+                    np.random.randint(1, denmax + 1) for i in range(npts)
+                ]
                 weights = [frac(num, denmax) for num in randnums]
                 oldcurve = Curve(knotvector)
                 oldcurve.ctrlpoints = ctrlpoints
@@ -514,7 +554,9 @@ class TestInsKnotCircle:
 
     @pytest.mark.order(35)
     @pytest.mark.timeout(1)
-    @pytest.mark.dependency(depends=["TestInsKnotCircle::test_quarter_circle_standard"])
+    @pytest.mark.dependency(
+        depends=["TestInsKnotCircle::test_quarter_circle_standard"]
+    )
     def test_quarter_circle_symmetric(self):
         knotvector = [0, 0, 0, 1, 1, 1]
         ctrlpoints = [(1, 0), (1, 1), (0, 1)]
@@ -567,7 +609,15 @@ class TestInsKnotCircle:
     )
     def test_full_circle(self):
         knotvector = [0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1]
-        ctrlpoints = [(1, 0), (1, 2), (-1, 2), (-1, 0), (-1, -2), (1, -2), (1, 0)]
+        ctrlpoints = [
+            (1, 0),
+            (1, 2),
+            (-1, 2),
+            (-1, 0),
+            (-1, -2),
+            (1, -2),
+            (1, 0),
+        ]
         weights = [3, 1, 1, 3, 1, 1, 3]
         curve = Curve(knotvector)
         curve.ctrlpoints = np.array(ctrlpoints, dtype="float64")
@@ -661,7 +711,11 @@ class TestCleanRational:
 
 @pytest.mark.order(35)
 @pytest.mark.dependency(
-    depends=["test_begin", "TestCircle::test_end", "TestInsKnotCircle::test_end"]
+    depends=[
+        "test_begin",
+        "TestCircle::test_end",
+        "TestInsKnotCircle::test_end",
+    ]
 )
 def test_end():
     pass

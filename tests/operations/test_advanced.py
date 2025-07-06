@@ -71,7 +71,10 @@ class TestProjection:
 
     @pytest.mark.order(42)
     @pytest.mark.dependency(
-        depends=["TestProjection::test_begin", "TestProjection::test_point_on_curve"]
+        depends=[
+            "TestProjection::test_begin",
+            "TestProjection::test_point_on_curve",
+        ]
     )
     def test_end(self):
         pass
@@ -210,7 +213,11 @@ class TestIntersection:
 
 @pytest.mark.order(42)
 @pytest.mark.dependency(
-    depends=["test_begin", "TestProjection::test_end", "TestIntersection::test_end"]
+    depends=[
+        "test_begin",
+        "TestProjection::test_end",
+        "TestIntersection::test_end",
+    ]
 )
 def test_end():
     pass

@@ -28,7 +28,13 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from ..core.custom_math import IntegratorArray, Linalg, NodeSample, number_type, totuple
+from ..core.custom_math import (
+    IntegratorArray,
+    Linalg,
+    NodeSample,
+    number_type,
+    totuple,
+)
 from ..core.knotvector import ImmutableKnotVector
 from ..core.spline_basis import ImmutableSplineBasis
 
@@ -103,7 +109,9 @@ def spline2spline(
     newnpts = newknotvector.npts
     oldweights = [Fraction(1) for i in range(oldnpts)]
     newweights = [Fraction(1) for i in range(newnpts)]
-    result = func2func(oldknotvector, oldweights, newknotvector, newweights, fit_nodes)
+    result = func2func(
+        oldknotvector, oldweights, newknotvector, newweights, fit_nodes
+    )
     return totuple(result)
 
 
@@ -137,10 +145,12 @@ def func2func(
     newknots = newknotvector.knots
 
     oldknotvector = tuple(
-        Fraction(node) if isinstance(node, int) else node for node in oldknotvector
+        Fraction(node) if isinstance(node, int) else node
+        for node in oldknotvector
     )
     newknotvector = tuple(
-        Fraction(node) if isinstance(node, int) else node for node in newknotvector
+        Fraction(node) if isinstance(node, int) else node
+        for node in newknotvector
     )
     oldknotvector = ImmutableKnotVector(oldknotvector, olddegree)
     newknotvector = ImmutableKnotVector(newknotvector, newdegree)
@@ -189,8 +199,12 @@ def func2func(
     fit_nodes = tuple(
         Fraction(node) if isinstance(node, int) else node for node in fit_nodes
     )
-    F = eval_rational_nodes(oldknotvector, oldweights, tuple(fit_nodes), olddegree)
-    G = eval_rational_nodes(newknotvector, newweights, tuple(fit_nodes), newdegree)
+    F = eval_rational_nodes(
+        oldknotvector, oldweights, tuple(fit_nodes), olddegree
+    )
+    G = eval_rational_nodes(
+        newknotvector, newweights, tuple(fit_nodes), newdegree
+    )
     F = np.array(F, dtype="object").T
     GT = np.array(G, dtype="object")
     G = np.transpose(GT)

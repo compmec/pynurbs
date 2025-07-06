@@ -12,7 +12,9 @@ from .operations.tools import vectorize
 
 class BaseFunction:
     def __init__(
-        self, knotvector: KnotVector, weights: Union[None, Iterable[Real]] = None
+        self,
+        knotvector: KnotVector,
+        weights: Union[None, Iterable[Real]] = None,
     ):
         self.knotvector = knotvector
         self.weights = weights
@@ -20,7 +22,10 @@ class BaseFunction:
     def __eq__(self, other: BaseFunction) -> bool:
         if not isinstance(other, BaseFunction):
             return NotImplemented
-        return self.knotvector == other.knotvector and self.weights == other.weights
+        return (
+            self.knotvector == other.knotvector
+            and self.weights == other.weights
+        )
 
     @property
     def knotvector(self) -> KnotVector:
@@ -146,7 +151,9 @@ class BaseFunction:
             return
         weights = tuple(weights)
         if len(weights) != self.npts:
-            raise ValueError(f"Weights must have len {self.npts} != {len(weights)}")
+            raise ValueError(
+                f"Weights must have len {self.npts} != {len(weights)}"
+            )
         if not all(float(weight) > 0 for weight in weights):
             raise ValueError("All weights must be positive!")
         # Still needs to check if there are no roots

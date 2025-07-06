@@ -301,13 +301,19 @@ class TestBezier:
             matrix_good = np.zeros((len(nodestest), degree + 1))
             for i, node in enumerate(nodestest):
                 for j in range(degree + 1):
-                    value = Math.binom(degree, j) * (1 - node) ** (degree - j) * node**j
+                    value = (
+                        Math.binom(degree, j)
+                        * (1 - node) ** (degree - j)
+                        * node**j
+                    )
                     matrix_good[i, j] = value
             np.testing.assert_allclose(matrix_test, matrix_good)
 
     @pytest.mark.order(32)
     @pytest.mark.timeout(5)
-    @pytest.mark.dependency(depends=["TestBezier::test_tablevalues_random_degree"])
+    @pytest.mark.dependency(
+        depends=["TestBezier::test_tablevalues_random_degree"]
+    )
     def test_shifted_scaled_bezier(self):
         for degree in range(1, 6):
             knotvector = GeneratorKnotVector.bezier(degree)
@@ -325,7 +331,11 @@ class TestBezier:
             matrix_good = np.zeros((len(nodestest), degree + 1))
             for i, node in enumerate(nodesgood):
                 for j in range(degree + 1):
-                    value = Math.binom(degree, j) * (1 - node) ** (degree - j) * node**j
+                    value = (
+                        Math.binom(degree, j)
+                        * (1 - node) ** (degree - j)
+                        * node**j
+                    )
                     matrix_good[i, j] = value
             np.testing.assert_allclose(matrix_test, matrix_good)
 
@@ -426,7 +436,9 @@ class TestSpline:
 
     @pytest.mark.order(32)
     @pytest.mark.timeout(5)
-    @pytest.mark.dependency(depends=["TestSpline::test_evalfuncs_degree1npts3"])
+    @pytest.mark.dependency(
+        depends=["TestSpline::test_evalfuncs_degree1npts3"]
+    )
     def test_tablevalues_degree1npts3(self):
         spline = BasisFunctions([0, 0, 0.5, 1, 1])
         assert spline.degree == 1
@@ -467,7 +479,9 @@ class TestSpline:
 
     @pytest.mark.order(32)
     @pytest.mark.timeout(5)
-    @pytest.mark.dependency(depends=["TestSpline::test_tablevalues_degree1npts3"])
+    @pytest.mark.dependency(
+        depends=["TestSpline::test_tablevalues_degree1npts3"]
+    )
     def test_tablevalues_degree2npts4(self):
         spline = BasisFunctions([0, 0, 0, 0.5, 1, 1, 1])
         assert spline.degree == 2
@@ -524,7 +538,9 @@ class TestSpline:
 
     @pytest.mark.order(32)
     @pytest.mark.timeout(5)
-    @pytest.mark.dependency(depends=["TestSpline::test_tablevalues_degree2npts4"])
+    @pytest.mark.dependency(
+        depends=["TestSpline::test_tablevalues_degree2npts4"]
+    )
     def test_tablevalues_degree3npts5(self):
         knotvector = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]
         spline = BasisFunctions(knotvector)
@@ -739,7 +755,9 @@ class TestRational:
 
     @pytest.mark.order(32)
     @pytest.mark.timeout(1)
-    @pytest.mark.dependency(depends=["TestRational::test_quarter_circle_standard"])
+    @pytest.mark.dependency(
+        depends=["TestRational::test_quarter_circle_standard"]
+    )
     def test_quarter_circle_symmetric(self):
         knotvector = [0, 0, 0, 1, 1, 1]
         rational = BasisFunctions(knotvector)

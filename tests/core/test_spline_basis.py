@@ -290,7 +290,9 @@ class TestSpline:
 
     @pytest.mark.order(14)
     @pytest.mark.timeout(5)
-    @pytest.mark.dependency(depends=["TestSpline::test_tablevalues_degree1npts3"])
+    @pytest.mark.dependency(
+        depends=["TestSpline::test_tablevalues_degree1npts3"]
+    )
     def test_tablevalues_degree2npts4(self):
         knotvector = [0, 0, 0, 0.5, 1, 1, 1]
         knotvector = ImmutableKnotVector(knotvector)
@@ -318,7 +320,9 @@ class TestSpline:
 
     @pytest.mark.order(14)
     @pytest.mark.timeout(5)
-    @pytest.mark.dependency(depends=["TestSpline::test_tablevalues_degree2npts4"])
+    @pytest.mark.dependency(
+        depends=["TestSpline::test_tablevalues_degree2npts4"]
+    )
     def test_tablevalues_degree3npts5(self):
         knotvector = [0, 0, 0, 0, 0.5, 1, 1, 1, 1]
         knotvector = ImmutableKnotVector(knotvector)
@@ -386,7 +390,11 @@ class TestSpline:
                 (-92 + 62 * x - 8 * x * x) * one / 45,
                 (49 - 14 * x + x * x) * one / 10,
             ],
-            [0, (4 - 4 * x + x * x) * one / 15, (-203 + 78 * x - 7 * x * x) * one / 20],
+            [
+                0,
+                (4 - 4 * x + x * x) * one / 15,
+                (-203 + 78 * x - 7 * x * x) * one / 20,
+            ],
             [0, 0, (25 - 10 * x + x * x) * one / 4],
         ]
         for i, functs in enumerate(functions):

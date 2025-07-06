@@ -61,7 +61,9 @@ class Derivate:
         assert np.all(np.array(curve.weights) != 0)
 
         knotvector = curve.knotvector.internal
-        matrixup, matrixdo = heavy.Calculus.derivate_rational_bezier(knotvector)
+        matrixup, matrixdo = heavy.Calculus.derivate_rational_bezier(
+            knotvector
+        )
         num, den = curve.fraction()
         matrixup = np.dot(matrixup, den.ctrlpoints)
         matrixdo = np.dot(matrixdo, den.ctrlpoints)
@@ -69,10 +71,13 @@ class Derivate:
         dennumctrlpts = den.ctrlpoints @ matrixdo
         newnumctrlpts = np.dot(np.transpose(matrixup), num.ctrlpoints)
         newnumctrlpts = [
-            point / weight for point, weight in zip(newnumctrlpts, dennumctrlpts)
+            point / weight
+            for point, weight in zip(newnumctrlpts, dennumctrlpts)
         ]
         number_bound = 1 + 2 * curve.degree
-        newknotvector = number_bound * [knotvector[0]] + number_bound * [knotvector[-1]]
+        newknotvector = number_bound * [knotvector[0]] + number_bound * [
+            knotvector[-1]
+        ]
         finalcurve = curve.__class__(newknotvector)
         finalcurve.ctrlpoints = newnumctrlpts
         finalcurve.weights = dennumctrlpts

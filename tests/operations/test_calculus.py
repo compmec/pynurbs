@@ -131,12 +131,17 @@ class TestNumericalDeriv:
 
             dcurve = Derivate(curve)
             for node in usample:
-                dnumer = (curve(node + deltau) - curve(node - deltau)) / (2 * deltau)
+                dnumer = (curve(node + deltau) - curve(node - deltau)) / (
+                    2 * deltau
+                )
                 assert np.abs(dcurve(node) - dnumer) < 1e-6
 
     @pytest.mark.order(41)
     @pytest.mark.dependency(
-        depends=["TestNumericalDeriv::test_begin", "TestNumericalDeriv::test_bezier"]
+        depends=[
+            "TestNumericalDeriv::test_begin",
+            "TestNumericalDeriv::test_bezier",
+        ]
     )
     def test_spline(self):
         deltau = 1e-6
@@ -151,11 +156,13 @@ class TestNumericalDeriv:
 
                 dcurve = Derivate(curve)
                 for start, end in zip(knots[:-1], knots[1:]):
-                    usample = np.linspace(start + 2 * deltau, end - 2 * deltau, 5)
+                    usample = np.linspace(
+                        start + 2 * deltau, end - 2 * deltau, 5
+                    )
                     for node in usample:
-                        dnumer = (curve(node + deltau) - curve(node - deltau)) / (
-                            2 * deltau
-                        )
+                        dnumer = (
+                            curve(node + deltau) - curve(node - deltau)
+                        ) / (2 * deltau)
                         assert np.abs(dcurve(node) - dnumer) < 1e-6
 
     @pytest.mark.order(41)
@@ -206,7 +213,9 @@ class TestNumericalDeriv:
 
                 dcurve = Derivate(curve)
                 for start, end in zip(knots[:-1], knots[1:]):
-                    usample = np.linspace(start + 2 * deltau, end - 2 * deltau, 5)
+                    usample = np.linspace(
+                        start + 2 * deltau, end - 2 * deltau, 5
+                    )
                     for node in usample:
                         dnumer = curve(node + deltau) - curve(node - deltau)
                         dnumer /= 2 * deltau
@@ -311,7 +320,8 @@ class TestIntegBezier:
 
         test = Integrate.lenght(curve)
         good = sum(
-            np.linalg.norm(points[i + 1] - points[i]) for i in range(curve.npts - 1)
+            np.linalg.norm(points[i + 1] - points[i])
+            for i in range(curve.npts - 1)
         )
 
         assert abs(test - good) < 1e-9
@@ -345,7 +355,12 @@ class TestIntegBezier:
         knotvector = GeneratorKnotVector.uniform(1, 5, Fraction)
         curvex = Curve(knotvector, [1, 0, -1, 0, 1])
         curvey = Curve(knotvector, [0, 1, 0, -1, 0])
-        new_knots = [Fraction(1, 8), Fraction(3, 8), Fraction(5, 8), Fraction(7, 8)]
+        new_knots = [
+            Fraction(1, 8),
+            Fraction(3, 8),
+            Fraction(5, 8),
+            Fraction(7, 8),
+        ]
         curvex.knot_insert(new_knots)
         curvey.knot_insert(new_knots)
         knotvector += new_knots
@@ -356,7 +371,9 @@ class TestIntegBezier:
         denom = lambda u: curvex(u) ** 2 + curvey(u) ** 2
         function = lambda u: numer(u) / denom(u)
 
-        test = Integrate.function(knotvector, function, "closed-newton-cotes", 6)
+        test = Integrate.function(
+            knotvector, function, "closed-newton-cotes", 6
+        )
         assert abs(test - 2 * np.pi) < 1e-3
         test = Integrate.function(knotvector, function, "open-newton-cotes", 6)
         assert abs(test - 2 * np.pi) < 1e-3

@@ -115,7 +115,9 @@ class TestFunction:
         usample = np.linspace(0, 1, 33)
         for degree_base in range(0, 4):
             coefs = np.random.uniform(-1, 1, 1 + degree_base)
-            function = lambda u: sum([cof * u**i for i, cof in enumerate(coefs)])
+            function = lambda u: sum(
+                [cof * u**i for i, cof in enumerate(coefs)]
+            )
             for degree in range(degree_base, 7):
                 vector = GeneratorKnotVector.bezier(degree)
                 test_curve = Curve(vector)
@@ -135,7 +137,9 @@ class TestFunction:
         usample = np.linspace(0, 1, 33)
         for degree_base in range(0, 4):
             coefs = np.random.uniform(-1, 1, 1 + degree_base)
-            function = lambda u: sum([cof * u**i for i, cof in enumerate(coefs)])
+            function = lambda u: sum(
+                [cof * u**i for i, cof in enumerate(coefs)]
+            )
             for degree in range(degree_base, 7):
                 vector = GeneratorKnotVector.bezier(degree)
                 test_curve = Curve(vector)

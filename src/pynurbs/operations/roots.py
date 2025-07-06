@@ -13,7 +13,9 @@ from ..core.piecewise import PiecewisePolynomial
 from ..core.polynomial import Polynomial
 
 
-def division(poly: Polynomial, doly: Polynomial) -> Tuple[Polynomial, Polynomial]:
+def division(
+    poly: Polynomial, doly: Polynomial
+) -> Tuple[Polynomial, Polynomial]:
     """
     Given the polynomials poly and doly, finds qoly and roly such:
 

@@ -47,9 +47,12 @@ class PiecewisePolynomial:
     Defines a Polynomial piecewise function
     """
 
-    def __init__(self, functions: Iterable[Polynomial], knots: Iterable[Real]) -> None:
+    def __init__(
+        self, functions: Iterable[Polynomial], knots: Iterable[Real]
+    ) -> None:
         functions = tuple(
-            f if isinstance(f, Polynomial) else Polynomial(f) for f in functions
+            f if isinstance(f, Polynomial) else Polynomial(f)
+            for f in functions
         )
         knots = tuple(knots)
         if len(knots) != 1 + len(functions):
@@ -97,7 +100,9 @@ class PiecewisePolynomial:
         self, other: Union[Real, Polynomial, PiecewisePolynomial]
     ) -> PiecewisePolynomial:
         if not isinstance(other, PiecewisePolynomial):
-            return self.__class__((func + other for func in self.functions), self.knots)
+            return self.__class__(
+                (func + other for func in self.functions), self.knots
+            )
         allknots = sorted(set(self.knots) | set(other.knots))
         functions = [None] * (len(allknots) - 1)
         for i, (knota, knotb) in enumerate(zip(allknots, allknots[1:])):
@@ -111,7 +116,9 @@ class PiecewisePolynomial:
         self, other: Union[Real, Polynomial, PiecewisePolynomial]
     ) -> PiecewisePolynomial:
         if not isinstance(other, PiecewisePolynomial):
-            return self.__class__((func * other for func in self.functions), self.knots)
+            return self.__class__(
+                (func * other for func in self.functions), self.knots
+            )
         allknots = sorted(set(self.knots) | set(other.knots))
         functions = [None] * (len(allknots) - 1)
         for i, (knota, knotb) in enumerate(zip(allknots, allknots[1:])):
@@ -125,7 +132,9 @@ class PiecewisePolynomial:
         self, other: Union[Real, Polynomial, PiecewisePolynomial]
     ) -> PiecewisePolynomial:
         if not isinstance(other, PiecewisePolynomial):
-            return self.__class__((func @ other for func in self.functions), self.knots)
+            return self.__class__(
+                (func @ other for func in self.functions), self.knots
+            )
         allknots = sorted(set(self.knots) | set(other.knots))
         functions = [None] * (len(allknots) - 1)
         for i, (knota, knotb) in enumerate(zip(allknots, allknots[1:])):

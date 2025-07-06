@@ -133,7 +133,9 @@ def test_ValuesNumberPoints():
 
 @pytest.mark.order(30)
 @pytest.mark.timeout(2)
-@pytest.mark.dependency(depends=["test_ValuesDegree", "test_ValuesNumberPoints"])
+@pytest.mark.dependency(
+    depends=["test_ValuesDegree", "test_ValuesNumberPoints"]
+)
 def test_findspans_single():
     U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])
     assert U.degree == 1
@@ -160,7 +162,9 @@ def test_findspans_single():
 
 @pytest.mark.order(30)
 @pytest.mark.timeout(2)
-@pytest.mark.dependency(depends=["test_ValuesDegree", "test_ValuesNumberPoints"])
+@pytest.mark.dependency(
+    depends=["test_ValuesDegree", "test_ValuesNumberPoints"]
+)
 def test_findmult_single():
     U = KnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])
     assert U.degree == 1
@@ -213,7 +217,9 @@ def test_findmult_array():
 
 @pytest.mark.order(30)
 @pytest.mark.timeout(4)
-@pytest.mark.dependency(depends=["test_ValuesDegree", "test_ValuesNumberPoints"])
+@pytest.mark.dependency(
+    depends=["test_ValuesDegree", "test_ValuesNumberPoints"]
+)
 def test_CompareKnotvector():
     U1 = KnotVector([0, 0, 1, 1])
     U2 = KnotVector([0, 0, 1, 1])
@@ -895,7 +901,14 @@ def test_others():
 def test_fractions():
     from fractions import Fraction as frac
 
-    knotvect = [frac(0), frac(1, 5), frac(2, 5), frac(3, 5), frac(4, 5), frac(1)]
+    knotvect = [
+        frac(0),
+        frac(1, 5),
+        frac(2, 5),
+        frac(3, 5),
+        frac(4, 5),
+        frac(1),
+    ]
     knotvect = KnotVector(knotvect)
     assert knotvect.degree == 0
     assert knotvect.npts == 5

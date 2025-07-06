@@ -136,7 +136,9 @@ class NodeSample:
     __gauss = {1: (Fraction(1, 2),)}
 
     @staticmethod
-    def closed_linspace(npts: int, cls: Optional[type] = Fraction) -> Tuple[float]:
+    def closed_linspace(
+        npts: int, cls: Optional[type] = Fraction
+    ) -> Tuple[float]:
         """Returns equally distributed nodes in [0, 1]
         Include the extremities
 
@@ -160,7 +162,9 @@ class NodeSample:
         return nums
 
     @staticmethod
-    def open_linspace(npts: int, cls: Optional[type] = Fraction) -> Tuple[float]:
+    def open_linspace(
+        npts: int, cls: Optional[type] = Fraction
+    ) -> Tuple[float]:
         """Returns equally distributed nodes in (0, 1)
         Exclude the extremities
 

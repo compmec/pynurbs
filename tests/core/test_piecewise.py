@@ -122,7 +122,9 @@ def test_neg():
 
 
 @pytest.mark.order(13)
-@pytest.mark.dependency(depends=["test_build", "test_evaluate", "test_add", "test_neg"])
+@pytest.mark.dependency(
+    depends=["test_build", "test_evaluate", "test_add", "test_neg"]
+)
 def test_sub():
     nsegs, degree = 6, 4
 

@@ -123,4 +123,6 @@ class ImmutableSplineBasis:
         return tuple(result)
 
     def __str__(self):
-        return "{" + ", ".join(f"N{i}: {self[i]}" for i in range(self.npts)) + "}"
+        return (
+            "{" + ", ".join(f"N{i}: {self[i]}" for i in range(self.npts)) + "}"
+        )

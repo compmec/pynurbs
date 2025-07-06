@@ -60,7 +60,9 @@ class BaseCurve:
             return sum((r * c for r, c in zip(result, self.ctrlpoints)), zero)
         result = tuple(w * r for w, r in zip(self.weights, result))
         denom = 1 / sum(result)
-        return sum((r * c * denom for r, c in zip(result, self.ctrlpoints)), zero)
+        return sum(
+            (r * c * denom for r, c in zip(result, self.ctrlpoints)), zero
+        )
 
     def __eq__(self, other: object) -> bool:
         if type(self) is not type(other):
@@ -167,7 +169,8 @@ class BaseCurve:
             vectmul = heavy.MathOperations.knotvector_mul(vecta, vectb)
             matrix3d = heavy.MathOperations.mul_spline_curve(vecta, vectb)
             matrix2d = [
-                [pt0 @ pt1 for pt0 in self.ctrlpoints] for pt1 in other.ctrlpoints
+                [pt0 @ pt1 for pt0 in self.ctrlpoints]
+                for pt1 in other.ctrlpoints
             ]
             matrix3d = np.array(matrix3d)
             matrix2d = np.array(matrix2d)
@@ -202,10 +205,16 @@ class BaseCurve:
         if self.weights is None and other.weights is None:
             copyse = copy(self)
             copyot = copy(other)
-            vectora, vectorb = tuple(copyse.knotvector), tuple(copyot.knotvector)
+            vectora, vectorb = tuple(copyse.knotvector), tuple(
+                copyot.knotvector
+            )
             vectorc = tuple(copyse.knotvector | copyot.knotvector)
-            transctrlpts = heavy.Operations.matrix_transformation(vectora, vectorc)
-            transweights = heavy.Operations.matrix_transformation(vectorb, vectorc)
+            transctrlpts = heavy.Operations.matrix_transformation(
+                vectora, vectorc
+            )
+            transweights = heavy.Operations.matrix_transformation(
+                vectorb, vectorc
+            )
             weights = np.dot(transweights, copyot.ctrlpoints)
             ctrlpts = np.dot(transctrlpts, copyse.ctrlpoints)
             ctrlpts = [pti / wi for pti, wi in zip(ctrlpts, weights)]
@@ -453,11 +462,17 @@ class BaseCurve:
             for knot in self.knotvector.knots:
                 knot * point
             for otherpoint in newpoints:
-                point + otherpoint  # Verify if we can sum every point, same type
+                (
+                    point + otherpoint
+                )  # Verify if we can sum every point, same type
 
         if len(newpoints) != self.npts:
-            error_msg = f"The number of control points ({len(newpoints)}) must be "
-            error_msg += f"the same as npts of KnotVector ({self.knotvector.npts})\n"
+            error_msg = (
+                f"The number of control points ({len(newpoints)}) must be "
+            )
+            error_msg += (
+                f"the same as npts of KnotVector ({self.knotvector.npts})\n"
+            )
             error_msg += f"  knotvector.npts = {self.npts}"
             error_msg += f"  len(ctrlpoints) = {len(newpoints)}"
             raise ValueError(error_msg)
@@ -511,7 +526,9 @@ class BaseCurve:
         ctrlpoints = [copy(point) for point in self.ctrlpoints]
         numerator = self.__class__(copy(self.knotvector))
         denominator = self.__class__(copy(self.knotvector))
-        numerator.ctrlpoints = [wi * pt for wi, pt in zip(self.weights, ctrlpoints)]
+        numerator.ctrlpoints = [
+            wi * pt for wi, pt in zip(self.weights, ctrlpoints)
+        ]
         denominator.ctrlpoints = self.weights
         return numerator, denominator
 

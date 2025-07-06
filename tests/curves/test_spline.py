@@ -335,7 +335,9 @@ class TestCallShape:
                     lower = npts + degree + 2
                     upper = npts + degree + 9
                     nsample = np.random.randint(lower, upper)
-                    tparam = np.linspace(knotvector[0], knotvector[-1], nsample)
+                    tparam = np.linspace(
+                        knotvector[0], knotvector[-1], nsample
+                    )
                     curvevalues = curve(tparam)
                     assert len(curvevalues) == nsample
                     assert type(curvevalues[0]) == type(ctrlpoints[0])
@@ -884,7 +886,10 @@ class TestDegreeOperations:
     @pytest.mark.order(34)
     @pytest.mark.timeout(10)
     @pytest.mark.dependency(
-        depends=["TestDegreeOperations::test_begin", "TestDegreeOperations::test_clean"]
+        depends=[
+            "TestDegreeOperations::test_begin",
+            "TestDegreeOperations::test_clean",
+        ]
     )
     def test_fails(self):
         U = KnotVector([0, 0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1, 1])

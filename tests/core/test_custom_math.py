@@ -36,7 +36,9 @@ class TestMath:
         assert Math.gcd(6, 9, 12) == 3
 
     @pytest.mark.order(11)
-    @pytest.mark.dependency(depends=["TestMath::test_begin", "TestMath::test_gcd"])
+    @pytest.mark.dependency(
+        depends=["TestMath::test_begin", "TestMath::test_gcd"]
+    )
     def test_lcm(self):
         assert Math.lcm(0) == 0
         assert Math.lcm(1) == 1
@@ -178,7 +180,8 @@ class TestLinalg:
         for side in range(1, 10):
             zero, one = Fraction(0), Fraction(1)
             matrix = [
-                [one if i == j else zero for j in range(side)] for i in range(side)
+                [one if i == j else zero for j in range(side)]
+                for i in range(side)
             ]
             test = Linalg.invert(matrix)
             test = np.array(test, dtype="int64")
@@ -225,7 +228,10 @@ class TestLinalg:
                 for j, elem in enumerate(line):
                     fracmatrix[i, j] = Fraction(elem).limit_denominator(10)
             fracmatrix += np.transpose(fracmatrix)
-            if abs(np.linalg.det(np.array(fracmatrix, dtype="float64"))) > 1e-6:
+            if (
+                abs(np.linalg.det(np.array(fracmatrix, dtype="float64")))
+                > 1e-6
+            ):
                 break
         invfracmatrix = Linalg.invert(fracmatrix)
         product = fracmatrix @ invfracmatrix
@@ -249,28 +255,40 @@ class TestLinalg:
     )
     def test_solve_integer(self):
         side, nsols = 2, 4
-        force = [[np.random.randint(-5, 6) for j in range(nsols)] for i in range(side)]
+        force = [
+            [np.random.randint(-5, 6) for j in range(nsols)]
+            for i in range(side)
+        ]
         matrix = ((1, 0), (0, 1))
         solution = Linalg.solve(matrix, force)
         mult = np.dot(matrix, solution)
         np.testing.assert_allclose(mult, force)
 
         side, nsols = 2, 4
-        force = [[np.random.randint(-5, 6) for j in range(nsols)] for i in range(side)]
+        force = [
+            [np.random.randint(-5, 6) for j in range(nsols)]
+            for i in range(side)
+        ]
         matrix = ((1, 1), (2, 3))
         solution = Linalg.solve(matrix, force)
         mult = np.dot(matrix, solution)
         np.testing.assert_allclose(mult, force)
 
         side, nsols = 2, 4
-        force = [[np.random.randint(-5, 6) for j in range(nsols)] for i in range(side)]
+        force = [
+            [np.random.randint(-5, 6) for j in range(nsols)]
+            for i in range(side)
+        ]
         matrix = ((1, 1), (11, 12))
         solution = Linalg.solve(matrix, force)
         mult = np.dot(matrix, solution)
         np.testing.assert_allclose(mult, force)
 
         side, nsols = 4, 4
-        force = [[np.random.randint(-5, 6) for j in range(nsols)] for i in range(side)]
+        force = [
+            [np.random.randint(-5, 6) for j in range(nsols)]
+            for i in range(side)
+        ]
         matrix = (
             (1, 1, 1, 1),
             (11, 12, 13, 14),
@@ -307,7 +325,8 @@ class TestLinalg:
         for side in range(1, 10):
             zero, one = Fraction(0), Fraction(1)
             matrix = [
-                [one if i == j else zero for j in range(side)] for i in range(side)
+                [one if i == j else zero for j in range(side)]
+                for i in range(side)
             ]
             test = Linalg.invert(matrix)
             test = np.array(test, dtype="int64")
@@ -338,7 +357,15 @@ class TestLinalg:
     def test_specific_case(self):
         f = Fraction
         B = [
-            [f(1, 9), f(1, 12), f(5, 84), f(5, 126), f(1, 42), f(1, 84), f(17, 4235)],
+            [
+                f(1, 9),
+                f(1, 12),
+                f(5, 84),
+                f(5, 126),
+                f(1, 42),
+                f(1, 84),
+                f(17, 4235),
+            ],
             [
                 f(1, 36),
                 f(1, 21),
@@ -503,7 +530,10 @@ class TestNodeSample:
         np.testing.assert_allclose(nodes, good)
 
         nodes = NodeSample.chebyshev(5)
-        good = np.sin(np.pi * np.array([1 / 20, 3 / 20, 5 / 20, 7 / 20, 9 / 20])) ** 2
+        good = (
+            np.sin(np.pi * np.array([1 / 20, 3 / 20, 5 / 20, 7 / 20, 9 / 20]))
+            ** 2
+        )
         np.testing.assert_allclose(nodes, good)
 
     @pytest.mark.order(11)
@@ -525,7 +555,12 @@ class TestNodeSample:
         nodes = NodeSample.gauss_legendre(4)
         minor = np.sqrt(3 / 7 + 2 * np.sqrt(6 / 5) / 7)
         middl = np.sqrt(3 / 7 - 2 * np.sqrt(6 / 5) / 7)
-        good = [(1 - minor) / 2, (1 - middl) / 2, (1 + middl) / 2, (1 + minor) / 2]
+        good = [
+            (1 - minor) / 2,
+            (1 - middl) / 2,
+            (1 + middl) / 2,
+            (1 + minor) / 2,
+        ]
         np.testing.assert_allclose(nodes, good)
 
         nodes = NodeSample.gauss_legendre(5)
@@ -575,7 +610,10 @@ class TestUnidimentionIntegral:
             npts = max(2, degree + 1)  # Number integration points
             numers = np.random.randint(-5, 5, degree + 1)
             denoms = np.random.randint(2, 8, degree + 1)
-            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            coefs = [
+                Fraction(int(num), int(den))
+                for num, den in zip(numers, denoms)
+            ]
             good = sum(
                 ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
                 for i, ci in enumerate(coefs)
@@ -599,7 +637,10 @@ class TestUnidimentionIntegral:
             npts = degree + 1  # Number integration points
             numers = np.random.randint(-5, 5, degree + 1)
             denoms = np.random.randint(2, 8, degree + 1)
-            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            coefs = [
+                Fraction(int(num), int(den))
+                for num, den in zip(numers, denoms)
+            ]
             good = sum(
                 ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
                 for i, ci in enumerate(coefs)
@@ -623,7 +664,10 @@ class TestUnidimentionIntegral:
             npts = degree + 1  # Number integration points
             numers = np.random.randint(-5, 5, degree + 1)
             denoms = np.random.randint(2, 8, degree + 1)
-            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            coefs = [
+                Fraction(int(num), int(den))
+                for num, den in zip(numers, denoms)
+            ]
             good = sum(
                 ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
                 for i, ci in enumerate(coefs)
@@ -647,7 +691,10 @@ class TestUnidimentionIntegral:
             npts = degree + 1  # Number integration points
             numers = np.random.randint(-5, 5, degree + 1)
             denoms = np.random.randint(2, 8, degree + 1)
-            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            coefs = [
+                Fraction(int(num), int(den))
+                for num, den in zip(numers, denoms)
+            ]
             good = sum(
                 ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
                 for i, ci in enumerate(coefs)
@@ -679,7 +726,10 @@ class TestUnidimentionIntegral:
             npts = 1 + 2 * math.floor(degree / 2)  # Number integration points
             numers = np.random.randint(-5, 5, degree + 1)
             denoms = np.random.randint(2, 8, degree + 1)
-            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            coefs = [
+                Fraction(int(num), int(den))
+                for num, den in zip(numers, denoms)
+            ]
             good = sum(
                 ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
                 for i, ci in enumerate(coefs)
@@ -690,7 +740,8 @@ class TestUnidimentionIntegral:
                 weights = IntegratorArray.open_newton_cotes(npts)
                 nodes = tuple(a + (b - a) * node for node in nodes)
                 funcvals = tuple(
-                    sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+                    sum([cj * xi**j for j, cj in enumerate(coefs)])
+                    for xi in nodes
                 )
                 test = (b - a) * np.inner(weights, funcvals)
                 assert test == good
@@ -748,7 +799,8 @@ class TestUnidimentionIntegral:
                 weights = IntegratorArray.open_newton_cotes(npts)
                 nodes = tuple(a + (b - a) * node for node in nodes)
                 funcvals = tuple(
-                    sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+                    sum([cj * xi**j for j, cj in enumerate(coefs)])
+                    for xi in nodes
                 )
                 test = (b - a) * np.inner(weights, funcvals)
                 assert abs(test - good) < 1e-9

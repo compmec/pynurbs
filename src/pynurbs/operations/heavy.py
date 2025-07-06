@@ -88,7 +88,9 @@ class Operations:
         """
         knotvector = ImmutableKnotVector(knotvector)
         if not (knotvector.knots[0] <= node <= knotvector.knots[-1]):
-            raise ValueError(f"Invalid nodes {node} in knotvector {knotvector}")
+            raise ValueError(
+                f"Invalid nodes {node} in knotvector {knotvector}"
+            )
 
         oldnpts = knotvector.npts
         degree = knotvector.degree
@@ -137,7 +139,9 @@ class Operations:
             knotvector = opekv.insert_knots(knotvector, [node])
         return totuple(matrix)
 
-    def knot_insert(knotvector: ImmutableKnotVector, nodes: Tuple[float]) -> "Matrix2D":
+    def knot_insert(
+        knotvector: ImmutableKnotVector, nodes: Tuple[float]
+    ) -> "Matrix2D":
         """
         Given the knotvector and a node to be inserted, this function
         returns a matrix of transformation T of control points
@@ -156,11 +160,16 @@ class Operations:
         knotvector = ImmutableKnotVector(knotvector)
 
         if not all(
-            knotvector.knots[0] <= node <= knotvector.knots[-1] for node in nodes
+            knotvector.knots[0] <= node <= knotvector.knots[-1]
+            for node in nodes
         ):
-            raise ValueError(f"Invalid nodes {nodes} in knotvector {knotvector}")
+            raise ValueError(
+                f"Invalid nodes {nodes} in knotvector {knotvector}"
+            )
         nodes = tuple(nodes)
-        setnodes = tuple(sorted(set(nodes) - set([knotvector[0], knotvector[-1]])))
+        setnodes = tuple(
+            sorted(set(nodes) - set([knotvector[0], knotvector[-1]]))
+        )
         oldnpts = knotvector.npts
         matrix = np.eye(oldnpts, dtype="object")
         if len(nodes) == 0:
@@ -172,7 +181,9 @@ class Operations:
             knotvector = opekv.insert_knots(knotvector, times * [node])
         return totuple(matrix)
 
-    def degree_increase_bezier_once(knotvector: ImmutableKnotVector) -> "Matrix2D":
+    def degree_increase_bezier_once(
+        knotvector: ImmutableKnotVector,
+    ) -> "Matrix2D":
         knotvector = ImmutableKnotVector(knotvector)
         one = knotvector[-1] - knotvector[0]
         one /= one
@@ -211,7 +222,9 @@ class Operations:
             knotvector = opekv.increase_degree(knotvector, 1)
         return totuple(matrix)
 
-    def degree_increase(knotvector: ImmutableKnotVector, times: int) -> "Matrix2D":
+    def degree_increase(
+        knotvector: ImmutableKnotVector, times: int
+    ) -> "Matrix2D":
         """
         Given a curve A(u) associated with control points P, we want
         to do a degree elevation
@@ -235,7 +248,9 @@ class Operations:
         bigmatrix = []
         for splitedvector, splitedmatrix in zip(newvectors, matrices):
             splitedmatrix = np.array(splitedmatrix)
-            elevatedmatrix = Operations.degree_increase_bezier(splitedvector, times)
+            elevatedmatrix = Operations.degree_increase_bezier(
+                splitedvector, times
+            )
             newmatrix = elevatedmatrix @ splitedmatrix
             for linemat in newmatrix:
                 bigmatrix.append(linemat)
@@ -275,7 +290,9 @@ class Operations:
         degreea = knotvectora.degree
         degreeb = knotvectorb.degree
         assert degreea <= degreeb
-        matrix_deginc = Operations.degree_increase(knotvectora, degreeb - degreea)
+        matrix_deginc = Operations.degree_increase(
+            knotvectora, degreeb - degreea
+        )
         if degreea < degreeb:
             knotvectora = opekv.increase_degree(knotvectora, degreeb - degreea)
 

@@ -99,7 +99,9 @@ class Curve(BaseCurve):
         matrix = heavy.Operations.knot_insert(oldvector, nodes)
         self.apply(newvector, matrix)
 
-    def knot_remove(self, nodes: Tuple[float], tolerance: float = 1e-9) -> None:
+    def knot_remove(
+        self, nodes: Tuple[float], tolerance: float = 1e-9
+    ) -> None:
         """Remove given nodes from knotvector
 
         :param nodes: The nodes to be removed
@@ -134,7 +136,9 @@ class Curve(BaseCurve):
         self.tolerance = old_tolerance
 
     def knot_clean(
-        self, nodes: Optional[Tuple[float]] = None, tolerance: Optional[float] = 1e-9
+        self,
+        nodes: Optional[Tuple[float]] = None,
+        tolerance: Optional[float] = 1e-9,
     ) -> None:
         """Remove all unnecessary knots.
 
@@ -323,8 +327,12 @@ class Curve(BaseCurve):
         knotvector = tuple(self.knotvector)
         weights = tuple(self.weights)
         ctrlpoints = tuple(self.ctrlpoints)
-        mattrans, materror = func2func(knotvector, weights, knotvector, [1] * self.npts)
-        error = np.dot(np.moveaxis(ctrlpoints, 0, -1), np.dot(materror, ctrlpoints))
+        mattrans, materror = func2func(
+            knotvector, weights, knotvector, [1] * self.npts
+        )
+        error = np.dot(
+            np.moveaxis(ctrlpoints, 0, -1), np.dot(materror, ctrlpoints)
+        )
         error = np.max(abs(error))
         error = max(error, np.dot(weights, np.dot(materror, weights)))
         if error < tolerance:
@@ -418,22 +426,29 @@ class Curve(BaseCurve):
             weightsa = self.weights if self.weights else [1] * self.npts
             weightsb = other.weights if other.weights else [1] * other.npts
             lstsq = func2func
-            transmat, materror = lstsq(vectorb, weightsb, vectora, weightsa, nodes)
+            transmat, materror = lstsq(
+                vectorb, weightsb, vectora, weightsa, nodes
+            )
         transmat = np.array(transmat)
         ctrlpoints = np.dot(transmat, other.ctrlpoints)
         error = np.dot(
-            np.moveaxis(other.ctrlpoints, 0, -1), np.dot(materror, other.ctrlpoints)
+            np.moveaxis(other.ctrlpoints, 0, -1),
+            np.dot(materror, other.ctrlpoints),
         )
         error = np.max(np.abs(error))
         if other.weights is not None:
             error += np.dot(other.weights, np.dot(materror, other.ctrlpoints))
             weights = np.dot(transmat, weightsb)
-            ctrlpoints = [point / weig for point, weig in zip(ctrlpoints, weights)]
+            ctrlpoints = [
+                point / weig for point, weig in zip(ctrlpoints, weights)
+            ]
             self.weights = weights
         self.ctrlpoints = ctrlpoints
         return error
 
-    def fit_function(self, function: Callable, nodes: Tuple[float] = None) -> None:
+    def fit_function(
+        self, function: Callable, nodes: Tuple[float] = None
+    ) -> None:
         """Finds the control points such this curve keeps as near as
         possible to ``function``
 
@@ -471,7 +486,9 @@ class Curve(BaseCurve):
             raise NotImplementedError
         assert not isinstance(function, self.__class__)
         knots = self.knotvector.knots
-        npts_each = 1 + int(np.ceil(self.degree * self.npts / (len(knots) - 1)))
+        npts_each = 1 + int(
+            np.ceil(self.degree * self.npts / (len(knots) - 1))
+        )
         nodes = []
         numbtype = number_type(knots)
         if numbtype in (float, np.floating):
@@ -485,7 +502,9 @@ class Curve(BaseCurve):
         funcvals = [function(node) for node in nodes]
         return self.fit_points(funcvals, nodes)
 
-    def fit_points(self, points: Tuple[Any], nodes: Tuple[float] = None) -> None:
+    def fit_points(
+        self, points: Tuple[Any], nodes: Tuple[float] = None
+    ) -> None:
         """Finds the control points such this curve keeps as near as
         possible to ``points``
 

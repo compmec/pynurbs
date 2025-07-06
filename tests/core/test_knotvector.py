@@ -128,7 +128,9 @@ def test_ValuesNumberPoints():
 
 @pytest.mark.order(12)
 @pytest.mark.timeout(2)
-@pytest.mark.dependency(depends=["test_ValuesDegree", "test_ValuesNumberPoints"])
+@pytest.mark.dependency(
+    depends=["test_ValuesDegree", "test_ValuesNumberPoints"]
+)
 def test_findspans_single():
     U = ImmutableKnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])
     assert U.degree == 1
@@ -155,7 +157,9 @@ def test_findspans_single():
 
 @pytest.mark.order(12)
 @pytest.mark.timeout(2)
-@pytest.mark.dependency(depends=["test_ValuesDegree", "test_ValuesNumberPoints"])
+@pytest.mark.dependency(
+    depends=["test_ValuesDegree", "test_ValuesNumberPoints"]
+)
 def test_findmult_single():
     U = ImmutableKnotVector([0, 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, 1])
     assert U.degree == 1
@@ -206,7 +210,9 @@ def test_findmult_array():
 
 @pytest.mark.order(12)
 @pytest.mark.timeout(4)
-@pytest.mark.dependency(depends=["test_ValuesDegree", "test_ValuesNumberPoints"])
+@pytest.mark.dependency(
+    depends=["test_ValuesDegree", "test_ValuesNumberPoints"]
+)
 def test_CompareImmutableKnotVector():
     U1 = ImmutableKnotVector([0, 0, 1, 1])
     U2 = ImmutableKnotVector([0, 0, 1, 1])

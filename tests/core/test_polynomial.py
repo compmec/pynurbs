@@ -1,7 +1,13 @@
 import pytest
 
 from pynurbs.core.custom_math import Math
-from pynurbs.core.polynomial import Polynomial, derivate, integrate, scale, shift
+from pynurbs.core.polynomial import (
+    Polynomial,
+    derivate,
+    integrate,
+    scale,
+    shift,
+)
 
 
 @pytest.mark.order(12)
@@ -207,7 +213,13 @@ def test_pow():
 
 @pytest.mark.order(12)
 @pytest.mark.dependency(
-    depends=["test_build", "test_degree", "test_evaluate", "test_add", "test_mul"]
+    depends=[
+        "test_build",
+        "test_degree",
+        "test_evaluate",
+        "test_add",
+        "test_mul",
+    ]
 )
 def test_derivate():
     poly = Polynomial([0])
@@ -226,7 +238,13 @@ def test_derivate():
 
 @pytest.mark.order(12)
 @pytest.mark.dependency(
-    depends=["test_build", "test_degree", "test_evaluate", "test_add", "test_mul"]
+    depends=[
+        "test_build",
+        "test_degree",
+        "test_evaluate",
+        "test_add",
+        "test_mul",
+    ]
 )
 def test_integrate():
     poly = Polynomial([1])
@@ -241,7 +259,13 @@ def test_integrate():
 
 @pytest.mark.order(12)
 @pytest.mark.dependency(
-    depends=["test_build", "test_degree", "test_evaluate", "test_add", "test_mul"]
+    depends=[
+        "test_build",
+        "test_degree",
+        "test_evaluate",
+        "test_add",
+        "test_mul",
+    ]
 )
 def test_shift():
     """
@@ -266,7 +290,13 @@ def test_shift():
 
 @pytest.mark.order(12)
 @pytest.mark.dependency(
-    depends=["test_build", "test_degree", "test_evaluate", "test_add", "test_mul"]
+    depends=[
+        "test_build",
+        "test_degree",
+        "test_evaluate",
+        "test_add",
+        "test_mul",
+    ]
 )
 def test_scale():
     """
