@@ -16,92 +16,6 @@ from ..operations import knotvector as opekv
 from .least_square import eval_spline_nodes, spline2spline
 
 
-def find_roots(
-    knotvector: ImmutableKnotVector, ctrlvalues: Tuple[float]
-) -> Tuple[float]:
-    """
-    Finds the roots of given a spline function
-    Each subinterval [u_{k}, u_{k+1}] can be interpoled
-    by a polynomial of degree p.
-    Taking out the case of constant equal
-
-    We do it by sampling
-    """
-    ctrlvalues = tuple(ctrlvalues)
-    if not all(map(isscalar, ctrlvalues)):
-        raise ValueError
-    knotvector = ImmutableKnotVector(knotvector)
-    assert isinstance(ctrlvalues, tuple)
-    tolerance = 1e-8
-    for value in ctrlvalues:
-        float(value)
-    ctrlvalues = np.array(ctrlvalues, dtype="float64")
-    knots = knotvector.knots
-    degree = knotvector.degree
-    nsample = 100
-    nodes0to1 = NodeSample.open_linspace(nsample)
-    manynodes = []
-    for start, end in zip(knots[:-1], knots[1:]):
-        nodes = [start + (end - start) * node for node in nodes0to1]
-        manynodes += nodes
-    manynodes = tuple(sorted(manynodes + list(knots)))
-    matrixeval = eval_spline_nodes(knotvector, manynodes, degree)
-    manyvalues = np.dot(np.transpose(matrixeval), ctrlvalues)
-    manyvalues = tuple(manyvalues)
-    while 0 in manyvalues:
-        index = manyvalues.index(0)
-        manyvalues.pop(index)
-        manynodes.pop(index)
-    # return tuple(sorted(manynodes))
-
-    # Bissection algorithm
-    lefts = []  # a
-    righs = []  # b
-    fleft = []  # f(a)
-    frigh = []  # f(b)
-    maxdist = 0
-    for i, (aval, bval) in enumerate(zip(manyvalues[:-1], manyvalues[1:])):
-        if aval * bval < 0:
-            maxdist = max(maxdist, manynodes[i + 1] - manynodes[i])
-            lefts.append(manynodes[i])
-            righs.append(manynodes[i + 1])
-            fleft.append(aval)
-            frigh.append(bval)
-    nintervs = len(lefts)
-    if nintervs == 0:
-        return tuple()
-    lefts = np.array(lefts, dtype="float64")
-    righs = np.array(righs, dtype="float64")
-    fleft = np.array(fleft, dtype="float64")
-    frigh = np.array(frigh, dtype="float64")
-    niters = 1 + int(np.ceil(np.log2(maxdist / tolerance)))
-    for i in range(niters):
-        mednodes = (lefts + righs) / 2
-        matrixeval = eval_spline_nodes(knotvector, tuple(mednodes), degree)
-        medvals = np.dot(np.transpose(matrixeval), ctrlvalues)
-        for i, medval in enumerate(medvals):
-            if medval == 0:
-                lefts[i] = mednodes[i]
-                righs[i] = mednodes[i]
-                fleft[i] = 0
-                frigh[i] = 0
-            elif fleft[i] * medval < 0:
-                righs[i] = mednodes[i]
-                frigh[i] = medval
-            else:
-                lefts[i] = mednodes[i]
-                fleft[i] = medval
-    roots = (lefts + righs) / 2
-    filtered_roots = []
-    for root in roots:
-        for filtroot in filtered_roots:
-            if abs(root - filtroot) < tolerance:
-                break
-        else:
-            filtered_roots.append(root)
-    return tuple(sorted(filtered_roots))
-
-
 class Operations:
     """
     Contains algorithms to
@@ -256,17 +170,6 @@ class Operations:
             incmatrix = Operations.one_knot_insert(knotvector, node, times)
             matrix = incmatrix @ matrix
             knotvector = opekv.insert_knots(knotvector, times * [node])
-        return totuple(matrix)
-
-    def knot_remove(knotvector: ImmutableKnotVector, nodes: Tuple[float]) -> "Matrix2D":
-        """ """
-        knotvector = ImmutableKnotVector(knotvector)
-        if not all(
-            knotvector.knots[0] <= node <= knotvector.knots[-1] for node in nodes
-        ):
-            raise ValueError(f"Invalid nodes {nodes} in knotvector {knotvector}")
-        newknotvector = opekv.remove_knots(knotvector, nodes)
-        matrix, _ = spline2spline(knotvector, newknotvector)
         return totuple(matrix)
 
     def degree_increase_bezier_once(knotvector: ImmutableKnotVector) -> "Matrix2D":
