@@ -9,7 +9,7 @@ import numpy as np
 import rbool
 
 from ..core.custom_math import isscalar
-from ..core.piecepoly import PiecewisePolynomial
+from ..core.piecewise import PiecewisePolynomial
 from ..core.polynomial import Polynomial
 
 

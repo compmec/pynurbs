@@ -1,6 +1,6 @@
 import pytest
 
-from pynurbs.core.piecepoly import PiecewisePolynomial
+from pynurbs.core.piecewise import PiecewisePolynomial
 from pynurbs.core.polynomial import Polynomial
 from pynurbs.operations.roots import division, roots
 

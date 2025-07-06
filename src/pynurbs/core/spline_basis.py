@@ -5,7 +5,7 @@ import numpy as np
 
 from .custom_math import totuple
 from .knotvector import ImmutableKnotVector
-from .piecepoly import PiecewisePolynomial
+from .piecewise import PiecewisePolynomial
 from .polynomial import Polynomial, scale, shift
 
 

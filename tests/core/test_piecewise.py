@@ -5,7 +5,7 @@ from typing import Tuple
 import numpy as np
 import pytest
 
-from pynurbs.core.piecepoly import PiecewisePolynomial, Polynomial, find_span
+from pynurbs.core.piecewise import PiecewisePolynomial, Polynomial, find_span
 
 
 def get_random_knots(
