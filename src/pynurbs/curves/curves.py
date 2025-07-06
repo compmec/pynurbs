@@ -341,7 +341,7 @@ class Curve(BaseCurve):
             assert NotImplementedError  # Needs correction
             self.clean(tolerance)
 
-    def split(self, nodes: Optional[Tuple[float]] = None) -> Tuple[Curve]:
+    def split(self, nodes: Optional[Tuple[float]] = None) -> Tuple[Curve, ...]:
         """Separate the current curve at specified nodes
 
         If no arguments are given, it splits at every knot, returning a
@@ -377,7 +377,7 @@ class Curve(BaseCurve):
         newcurves = []
         for newvector, matrix in zip(newvectors, matrices):
             matrix = np.array(matrix)
-            newcurve = Curve(newvector)
+            newcurve = self.__class__(newvector)
             newcurve.ctrlpoints = np.dot(matrix, self.ctrlpoints)
             if self.weights is not None:
                 newcurve.weights = np.dot(matrix, self.weights)

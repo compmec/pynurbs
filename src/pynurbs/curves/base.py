@@ -479,10 +479,10 @@ class BaseCurve:
 
         self.__ctrlpoints = tuple(newpoints)
 
-    def __copy__(self) -> Curve:
+    def __copy__(self) -> BaseCurve:
         return self.__deepcopy__(None)
 
-    def __deepcopy__(self, memo) -> Curve:
+    def __deepcopy__(self, memo) -> BaseCurve:
         knotvector = copy(self.knotvector)
         curve = self.__class__(knotvector)
         if self.ctrlpoints is not None:
