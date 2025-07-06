@@ -5,12 +5,14 @@ from numbers import Real
 from typing import Any, Iterable, Tuple, Union
 
 import numpy as np
+import rbool
 
 from ..core.custom_math import isscalar, supports_linear_operation
 from ..core.spline_basis import ImmutableSplineBasis
 from ..knotspace import KnotVector
 from ..operations import heavy
 from ..operations.knotvector import decrease_degree, increase_degree
+from ..operations.roots import roots_piecewise
 from ..operations.tools import vectorize
 
 
@@ -44,6 +46,7 @@ class BaseCurve:
         self.__ctrlpoints = ctrlpoints
         self.__weights = weights
         self.tolerance = 1e-9
+        self.__denominator = None
 
     @vectorize(1, 0)
     def __call__(self, node: Real) -> Any:
@@ -421,17 +424,22 @@ class BaseCurve:
         if value is None:
             self.__weights = None
             return
+        value = tuple(value)
         if not all(map(isscalar, value)):
             raise ValueError
         if not all(number > 0 for number in value):
             raise ValueError
+        if len(value) != self.npts:
+            raise ValueError
 
         # Verify if there's roots
-        vector = tuple(self.knotvector)
-        roots = heavy.find_roots(vector, value)
-        if roots:
-            error_msg = f"Zero division at nodes {roots}"
-            raise ValueError(error_msg)
+        basis = ImmutableSplineBasis(self.knotvector.internal)
+        denominator = 0
+        for i, weight in enumerate(value):
+            denominator += weight * basis[i]
+        roots_values = roots_piecewise(denominator)
+        if roots_values != rbool.EmptyR1():
+            raise ValueError(f"Zero division at {roots_values}")
         self.__weights = tuple(value)
 
     @ctrlpoints.setter
