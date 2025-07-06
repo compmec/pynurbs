@@ -10,10 +10,10 @@ from typing import Tuple
 
 import numpy as np
 
-from ..core.custom_math import Linalg, NodeSample, isscalar, totuple
+from ..core.custom_math import Linalg, NodeSample, totuple
 from ..core.knotvector import ImmutableKnotVector
 from ..operations import knotvector as opekv
-from .least_square import eval_spline_nodes, spline2spline
+from .least_square import eval_spline_nodes
 
 
 class Operations:

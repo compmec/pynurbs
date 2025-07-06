@@ -156,7 +156,10 @@ class Integrate:
         }
         assert isinstance(curve, Curve)
         if function is None:
-            function = lambda u: 1
+
+            def function(u):
+                return 1
+
         if method is not None:
             pass
         elif isinstance(curve.knotvector[0], (int, Fraction)):
@@ -260,7 +263,10 @@ class Integrate:
         }
         assert isinstance(curve, Curve)
         if function is None:
-            function = lambda u: 1
+
+            def function(u):
+                return 1
+
         if method is not None:
             pass
         elif isinstance(curve.knotvector[0], (int, Fraction)):
