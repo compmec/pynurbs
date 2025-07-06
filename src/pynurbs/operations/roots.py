@@ -3,11 +3,13 @@ Finds the roots of polynomials
 """
 
 from fractions import Fraction
-from numbers import Real
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
+import rbool
 
+from ..core.custom_math import isscalar
+from ..core.piecepoly import PiecewisePolynomial
 from ..core.polynomial import Polynomial
 
 
@@ -38,7 +40,7 @@ def division(poly: Polynomial, doly: Polynomial) -> Tuple[Polynomial, Polynomial
     return qoly, Polynomial(roly[: doly.degree])
 
 
-def roots(poly: Polynomial) -> Tuple[Real, ...]:
+def roots_polynomial(poly: Polynomial) -> rbool.SubSetR1:
     """
     Finds the real roots of the given polynomial
 
@@ -50,8 +52,36 @@ def roots(poly: Polynomial) -> Tuple[Real, ...]:
     >>> roots(x**3 - 6*x**2 + 11*x - 6)
     (1, 2, 3)
     """
-    values = sorted(np.roots(tuple(poly)[::-1]))
-    for i, value in enumerate(values):
+    if not isinstance(poly, Polynomial):
+        raise TypeError
+    if not all(map(isscalar, poly)):
+        raise ValueError
+    if poly.degree == 0:
+        return rbool.WholeR1() if poly[0] == 0 else rbool.EmptyR1()
+    result = rbool.EmptyR1()
+    for value in np.roots(tuple(poly)[::-1]):
         if abs(round(1440 * value, 0) - 1440 * value) < 1e-6:
-            values[i] = Fraction(round(1440 * value), 1440)
-    return tuple(values)
+            value = Fraction(round(1440 * value), 1440)
+        result |= value
+    return result
+
+
+def roots_piecewise(piece: PiecewisePolynomial) -> rbool.SubSetR1:
+    """
+    Finds the real roots of the piecewise polynomial function
+    """
+    result = rbool.EmptyR1()
+    for i, poly in enumerate(piece.functions):
+        knota, knotb = piece.knots[i], piece.knots[i + 1]
+        closed_right = i + 1 == len(piece.functions)
+        interval = rbool.IntervalR1(knota, knotb, True, closed_right)
+        result |= interval & roots_polynomial(poly)
+    return result
+
+
+def roots(function: Union[Polynomial, PiecewisePolynomial]) -> rbool.SubSetR1:
+    if isinstance(function, Polynomial):
+        return roots_polynomial(function)
+    elif isinstance(function, PiecewisePolynomial):
+        return roots_piecewise(function)
+    raise ValueError

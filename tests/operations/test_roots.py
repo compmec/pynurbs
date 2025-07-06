@@ -1,5 +1,6 @@
 import pytest
 
+from pynurbs.core.piecepoly import PiecewisePolynomial
 from pynurbs.core.polynomial import Polynomial
 from pynurbs.operations.roots import division, roots
 
@@ -67,12 +68,20 @@ def test_division():
 @pytest.mark.dependency(depends=["test_begin"])
 def test_roots():
     x = Polynomial([0, 1])
-    values = roots(x**2 + 3 * x + 2)
-    print(values)
-    assert values == (-2, -1)
-    values = roots(x**3 - 6 * x**2 + 11 * x - 6)
-    print(values)
-    assert values == (1, 2, 3)
+
+    assert roots(Polynomial([0])) == (float("-inf"), float("inf"))
+    assert roots(Polynomial([1])) == {}
+
+    poly = x**2 + 3 * x + 2
+    assert roots(poly) == {-2, -1}
+    poly = x**3 - 6 * x**2 + 11 * x - 6
+    assert roots(poly) == {1, 2, 3}
+
+    functions = [x**2 + 3 * x + 2, x**3 - 6 * x**2 + 11 * x - 6]
+    piecewise = PiecewisePolynomial(functions, [-10, 0, 10])
+    assert roots(piecewise) == {-2, -1, 1, 2, 3}
+    piecewise = PiecewisePolynomial(functions, [-1.5, 0, 2.5])
+    assert roots(piecewise) == {-1, 1, 2}
 
 
 @pytest.mark.order(21)
