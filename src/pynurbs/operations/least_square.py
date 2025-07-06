@@ -95,7 +95,7 @@ def spline2spline(
     oldknotvector: ImmutableKnotVector,
     newknotvector: ImmutableKnotVector,
     fit_nodes: Tuple[float] = None,
-) -> Tuple["Matrix2D"]:
+) -> Tuple[Tuple[float, ...], ...]:
     """
     Given two bspline curves A(u) and B(u), this
     function returns a matrix [M] such

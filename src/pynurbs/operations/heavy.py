@@ -74,7 +74,7 @@ class Operations:
 
     def one_knot_insert_once(
         knotvector: ImmutableKnotVector, node: float
-    ) -> "Matrix2D":
+    ) -> Tuple[Tuple[float, ...], ...]:
         """
         Given the knotvector and a node to be inserted, this function
         returns a matrix of transformation T of control points
@@ -111,7 +111,7 @@ class Operations:
 
     def one_knot_insert(
         knotvector: ImmutableKnotVector, node: float, times: int
-    ) -> "Matrix2D":
+    ) -> Tuple[Tuple[float, ...], ...]:
         """
         Given the knotvector and a node to be inserted, this function
         returns a matrix of transformation T of control points
@@ -141,7 +141,7 @@ class Operations:
 
     def knot_insert(
         knotvector: ImmutableKnotVector, nodes: Tuple[float]
-    ) -> "Matrix2D":
+    ) -> Tuple[Tuple[float, ...], ...]:
         """
         Given the knotvector and a node to be inserted, this function
         returns a matrix of transformation T of control points
@@ -183,7 +183,7 @@ class Operations:
 
     def degree_increase_bezier_once(
         knotvector: ImmutableKnotVector,
-    ) -> "Matrix2D":
+    ) -> Tuple[Tuple[float, ...], ...]:
         knotvector = ImmutableKnotVector(knotvector)
         one = knotvector[-1] - knotvector[0]
         one /= one
@@ -199,7 +199,7 @@ class Operations:
 
     def degree_increase_bezier(
         knotvector: ImmutableKnotVector, times: int
-    ) -> "Matrix2D":
+    ) -> Tuple[Tuple[float, ...], ...]:
         """
         Given a bezier curve A(u) of degree p, we want a new bezier curve B(u)
         of degree (p+t) such B(u) = A(u) for every u
@@ -224,7 +224,7 @@ class Operations:
 
     def degree_increase(
         knotvector: ImmutableKnotVector, times: int
-    ) -> "Matrix2D":
+    ) -> Tuple[Tuple[float, ...], ...]:
         """
         Given a curve A(u) associated with control points P, we want
         to do a degree elevation
@@ -350,7 +350,7 @@ class MathOperations:
     @staticmethod
     def add_spline_curve(
         knotvectora: Tuple[float], knotvectorb: Tuple[float]
-    ) -> Tuple["Matrix2D"]:
+    ) -> Tuple[Tuple[Tuple[float, ...], ...]]:
         """
         Given two spline curves, A(u) and B(u), such
             A(u) = sum_{i=0}^{n} N_i(u) * P_i
@@ -386,7 +386,7 @@ class MathOperations:
     @staticmethod
     def mul_spline_curve(
         knotvectora: Tuple[float], knotvectorb: Tuple[float]
-    ) -> Tuple["Matrix3D"]:
+    ) -> Tuple[Tuple[Tuple[float, ...], ...], ...]:
         """
         Given two spline curves, called A(u) and B(u), it computes and returns
         a new curve C(u) such C(u) = A(u) * B(u) for every u
