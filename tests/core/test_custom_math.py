@@ -66,12 +66,29 @@ class TestMath:
         assert Math.comb(3, 3) == 1
 
     @pytest.mark.order(11)
+    @pytest.mark.dependency(depends=["TestMath::test_begin"])
+    def test_factorial(self):
+        assert Math.factorial(0) == 1
+        assert Math.factorial(1) == 1
+        assert Math.factorial(2) == 2
+        assert Math.factorial(3) == 6
+        assert Math.factorial(4) == 24
+        assert Math.factorial(5) == 120
+        assert Math.factorial(6) == 720
+
+        result = 1
+        for n in range(1, 10):
+            result *= n
+            assert Math.factorial(n) == result
+
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestMath::test_begin",
             "TestMath::test_gcd",
             "TestMath::test_lcm",
             "TestMath::test_comb",
+            "TestMath::test_factorial",
         ]
     )
     def test_end(self):
