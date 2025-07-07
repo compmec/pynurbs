@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from copy import copy
 from numbers import Real
 from typing import Any, Iterable, Tuple, Union
@@ -264,6 +265,19 @@ class BaseCurve:
         newcurve = self.__class__(newknotvector, newctrlpoints)
         newcurve.knot_clean([umaxleft])
         return newcurve
+
+    @contextmanager
+    def temporary(self, **kwargs):
+        oldvalues = {}
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                oldvalues[key] = getattr(self, key)
+                setattr(self, key, value)
+        try:
+            yield
+        finally:
+            for key, value in oldvalues.items():
+                setattr(self, key, value)
 
     @property
     def tolerance(self) -> Union[None, float]:

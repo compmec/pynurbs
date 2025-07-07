@@ -130,10 +130,8 @@ class Curve(BaseCurve):
         ControlPoints = [1.0, 2.0, -3.0]
 
         """
-        old_tolerance = self.tolerance
-        self.tolerance = tolerance
-        self.knotvector = remove_knots(self.knotvector.internal, nodes)
-        self.tolerance = old_tolerance
+        with self.temporary(tolerance=tolerance):
+            self.knotvector = remove_knots(self.knotvector.internal, nodes)
 
     def knot_clean(
         self,
@@ -180,15 +178,13 @@ class Curve(BaseCurve):
         if nodes is None:
             nodes = self.knotvector.knots
         nodes = tuple(set(nodes) - set(self.knotvector.limits))
-        oldtolerance = self.tolerance
-        self.tolerance = tolerance
-        for knot in nodes:
-            try:
-                while True:
-                    self.knot_remove([knot])
-            except ValueError:
-                pass
-        self.tolerance = oldtolerance
+        with self.temporary(tolerance=tolerance):
+            for knot in nodes:
+                try:
+                    while True:
+                        self.knot_remove([knot])
+                except ValueError:
+                    pass
 
     def degree_increase(self, times: Optional[int] = 1):
         """Increase the degree of the curve by an amount ``times``
@@ -251,10 +247,8 @@ class Curve(BaseCurve):
             if not isscalar(tolerance) or tolerance <= 0:
                 raise ValueError("Tolerance must be None or positive value")
         if times > 0:
-            old_tolerance = self.tolerance
-            self.tolerance = tolerance
-            self.degree -= int(times)
-            self.tolerance = old_tolerance
+            with self.temporary(tolerance=tolerance):
+                self.degree -= int(times)
 
     def degree_clean(self, tolerance: float = 1e-9):
         """Reduces au maximum the degree of the curve for given tolerance.
@@ -284,13 +278,12 @@ class Curve(BaseCurve):
         """
         if not isscalar(tolerance) or tolerance <= 0:
             raise ValueError("Given tolerance must be positive")
-        oldtolerance = self.tolerance
-        try:
-            self.tolerance = tolerance
-            while True:
-                self.degree -= 1
-        except ValueError:
-            self.tolerance = oldtolerance
+        with self.temporary(tolerance=tolerance):
+            try:
+                while True:
+                    self.degree -= 1
+            except ValueError:
+                pass
 
     def clean(self, tolerance: float = 1e-9):
         """Calls degree_clean and knot_clean
