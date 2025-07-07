@@ -149,12 +149,7 @@ class Polynomial:
         for i, coef in enumerate(self):
             if coef == 0:
                 continue
-            if coef < 0:
-                msg = "- "
-            elif flag:
-                msg = "+ "
-            else:
-                msg = ""
+            msg = "- " if coef < 0 else "+ " if flag else ""
             flag = True
             coef = abs(coef)
             if coef != 1 or i == 0:

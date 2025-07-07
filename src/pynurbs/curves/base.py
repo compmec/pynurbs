@@ -16,7 +16,7 @@ from ..operations.roots import roots_piecewise
 from ..operations.tools import vectorize
 
 
-def norm(object: Union[float, Tuple[float]], L: int = 0) -> float:
+def norm(obj: Union[float, Tuple[float]], L: int = 0) -> float:
     """
     Computes recursively a norm of an object.
     If L = 0, it means infinity norm
@@ -25,12 +25,12 @@ def norm(object: Union[float, Tuple[float]], L: int = 0) -> float:
     """
     try:
         soma = 0
-        for item in object:
+        for item in obj:
             norma = norm(item, L)
             soma = max(soma, norma) if L == 0 else soma + norma**L
         return soma if L == 0 else soma ** (1 / L)
     except TypeError:
-        return abs(object)
+        return abs(obj)
 
 
 class BaseCurve:
@@ -46,7 +46,6 @@ class BaseCurve:
         self.__ctrlpoints = ctrlpoints
         self.__weights = weights
         self.tolerance = 1e-9
-        self.__denominator = None
 
     @vectorize(1, 0)
     def __call__(self, node: Real) -> Any:

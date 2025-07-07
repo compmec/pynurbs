@@ -89,7 +89,7 @@ class Operations:
             [Q] = [T] @ [P]
         """
         knotvector = ImmutableKnotVector(knotvector)
-        if not (knotvector.knots[0] <= node <= knotvector.knots[-1]):
+        if not knotvector.knots[0] <= node <= knotvector.knots[-1]:
             raise ValueError(
                 f"Invalid nodes {node} in knotvector {knotvector}"
             )
@@ -127,7 +127,7 @@ class Operations:
             [Q] = [T] @ [P]
         """
         knotvector = ImmutableKnotVector(knotvector)
-        if not (knotvector.knots[0] <= node <= knotvector.knots[-1]):
+        if not knotvector.knots[0] <= node <= knotvector.knots[-1]:
             raise ValueError(f"Invalid node {node} in knotvector {knotvector}")
         if not isinstance(times, int):
             msg = f"Times must be an int, not {times}"
@@ -222,7 +222,7 @@ class Operations:
             raise ValueError(f"Times must be positive! Received {times}")
         degree = knotvector.degree
         matrix = np.eye(degree + 1, dtype="object")
-        for i in range(times):
+        for _ in range(times):
             elevateonce = Operations.degree_increase_bezier_once(knotvector)
             matrix = elevateonce @ matrix
             knotvector = opekv.increase_degree(knotvector, 1)
@@ -242,7 +242,7 @@ class Operations:
             raise TypeError(msg)
         if times == 0:
             return totuple(np.eye(knotvector.npts, dtype="object"))
-        elif times < 0:
+        if times < 0:
             raise ValueError(f"Times must be >= 0! Received {times}")
         degree = knotvector.degree
         npts = knotvector.npts
@@ -491,7 +491,7 @@ class Calculus:
         assert degree > 0
         matrix = np.zeros((degree, degree + 1), dtype="object")
         for i in range(degree):
-            matrix[i, i] = -degree
+            matrix[i, i] = -1 * degree
             matrix[i, i + 1] = degree
         matrix /= knotvector[-1] - knotvector[0]
         if reduce:

@@ -43,7 +43,6 @@ class Derivate:
 
     @staticmethod
     def nonrational_bezier(curve: Curve) -> Curve:
-        """ """
         assert curve.degree + 1 == curve.npts
         assert curve.weights is None
         vector = tuple(curve.knotvector)
@@ -158,7 +157,7 @@ class Integrate:
         assert isinstance(curve, Curve)
         if function is None:
 
-            def function(u):
+            def function(_):
                 return 1
 
         if method is not None:
@@ -265,7 +264,7 @@ class Integrate:
         assert isinstance(curve, Curve)
         if function is None:
 
-            def function(u):
+            def function(_):
                 return 1
 
         if method is not None:

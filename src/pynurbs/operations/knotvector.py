@@ -123,7 +123,7 @@ def split_knotvector(
     degree = knotvector.degree
     nodes = sorted(set(nodes) | {knotvector.knots[0], knotvector.knots[-1]})
     for a, b in zip(nodes[:-1], nodes[1:]):
-        middle = list(knot for knot in knotvector if (a < knot < b))
+        middle = list(knot for knot in knotvector if a < knot < b)
         newknotvect = (degree + 1) * [a] + middle + (degree + 1) * [b]
         yield ImmutableKnotVector(newknotvect)
 
@@ -189,7 +189,7 @@ def intersect_knotvectors(
             knotvector = decrease_degree(
                 knotvector, knotvector.degree - mindeg
             )
-        for knot in internals.keys():
+        for knot in internals:
             internals[knot] = min(internals[knot], knotvector.mult(knot))
     final = [left] * (mindeg + 1)
     for knot in sorted(internals.keys()):

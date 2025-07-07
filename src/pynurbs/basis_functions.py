@@ -200,13 +200,13 @@ class IndexableFunction(BaseFunction):
             raise TypeError
         if isinstance(index, int):
             npts = self.npts
-            if not (-npts <= index < npts):
+            if not -npts <= index < npts:
                 raise IndexError
 
     def __valid_second_index(self, index: int):
         if not isinstance(index, int):
             raise TypeError
-        if not (0 <= index <= self.degree):
+        if not 0 <= index <= self.degree:
             error_msg = f"Second index (={index}) "
             error_msg += f"must be in [0, {self.degree}]"
             raise IndexError(error_msg)
@@ -252,7 +252,7 @@ class BasisFunctions(IndexableFunction):
         """Official printing"""
         if self.npts == self.degree + 1:
             return f"Bezier function of degree {self.degree}"
-        elif self.weights is None:
+        if self.weights is None:
             msg = "Spline"
         else:
             msg = "Rational"

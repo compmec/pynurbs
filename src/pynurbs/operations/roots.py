@@ -85,6 +85,6 @@ def roots_piecewise(piece: PiecewisePolynomial) -> rbool.SubSetR1:
 def roots(function: Union[Polynomial, PiecewisePolynomial]) -> rbool.SubSetR1:
     if isinstance(function, Polynomial):
         return roots_polynomial(function)
-    elif isinstance(function, PiecewisePolynomial):
+    if isinstance(function, PiecewisePolynomial):
         return roots_piecewise(function)
     raise ValueError
