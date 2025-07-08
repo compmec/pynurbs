@@ -1,18 +1,18 @@
 [tool.poetry]
 name = "pynurbs"
-version = "1.1.0"
+version = "1.2.0"
 description = "NURBS python object-oriented library"
 readme = "README.md"
 authors = ["Carlos Adir <carlos.adir.leite@gmail.com>"]
 packages = [{ include = "pynurbs", from = "src" }]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.5"
 numpy = "^1"
 rbool = "^0"
 
 [tool.poetry.dev-dependencies]
-python = "^3.9"
+python = "^3.5"
 numpy = "^1"
 rbool = "^0"
 pytest = "^5.2"
