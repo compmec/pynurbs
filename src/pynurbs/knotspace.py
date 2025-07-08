@@ -4,18 +4,29 @@ define the parametric behavior of the curve.
 For example, the valid limits to evaluate curve, the polynomial degree, continuity
 and smoothness
 """
+
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Optional, Tuple, Union
+from numbers import Real
+from typing import Iterable, Optional, Tuple, Union
 
 import numpy as np
 
-from pynurbs.__classes__ import Intface_KnotVector
-from pynurbs.heavy import ImmutableKnotVector
+from .core import ImmutableKnotVector
+from .operations.knotvector import (
+    decrease_degree,
+    increase_degree,
+    insert_knots,
+    intersect_knotvectors,
+    remove_knots,
+    split_knotvector,
+    union_knotvectors,
+)
+from .operations.tools import vectorize
 
 
-class KnotVector(Intface_KnotVector):
+class KnotVector:
     """Creates a KnotVector instance
 
     Examples
@@ -30,25 +41,22 @@ class KnotVector(Intface_KnotVector):
 
     """
 
-    def __new__(cls, vector: Tuple[float], degree: Optional[int] = None):
-        if isinstance(vector, cls):
-            return vector
-        instance = super(KnotVector, cls).__new__(cls)
-        if not isinstance(vector, ImmutableKnotVector):
-            vector = ImmutableKnotVector(vector, degree)
-        instance.internal = vector
-        return instance
+    def __init__(self, vector: Iterable[Real], degree: Optional[int] = None):
+        if isinstance(vector, KnotVector):
+            self.__internal = vector.internal
+        elif isinstance(vector, ImmutableKnotVector):
+            self.__internal = vector
+        else:
+            self.__internal = ImmutableKnotVector(vector, degree)
 
     def __str__(self) -> str:
         return "(" + ", ".join(map(str, self)) + ")"
 
     def __repr__(self) -> str:
-        return str(self)
-        return f"KV({self.degree}, {self.npts})"
+        return str(self.internal)
 
     def __iter__(self):
-        for item in self.internal:
-            yield item
+        yield from self.internal
 
     def __getitem__(self, index: int):
         return self.internal[index]
@@ -62,7 +70,7 @@ class KnotVector(Intface_KnotVector):
         except TypeError:
             return self.insert(other)
 
-    def __isub__(self, other: Union[float, Tuple[float]]):
+    def __isub__(self, other: Union[float, Tuple[Real, ...]]):
         try:
             return self.shift(-other)
         except TypeError:
@@ -75,33 +83,33 @@ class KnotVector(Intface_KnotVector):
         return self.scale(1 / other)
 
     def __ior__(self, other: KnotVector) -> KnotVector:
-        self.internal |= other
+        self.internal = union_knotvectors([self.internal, other.internal])
         return self
 
     def __iand__(self, other: KnotVector) -> KnotVector:
-        self.internal &= other
+        self.internal = intersect_knotvectors([self.internal, other.internal])
         return self
 
-    def __add__(self, other: Union[float, Tuple[float]]):
+    def __add__(self, other: Union[float, Tuple[Real, ...]]):
         """Shifts all the knots by same given amout"""
         return deepcopy(self).__iadd__(other)
 
-    def __sub__(self, other: Union[float, Tuple[float]]):
+    def __sub__(self, other: Union[Real, Tuple[Real, ...]]):
         return deepcopy(self).__isub__(other)
 
-    def __mul__(self, other: float):
+    def __mul__(self, other: Real):
         return deepcopy(self).__imul__(other)
 
-    def __rmul__(self, other: float):
+    def __rmul__(self, other: Real):
         return deepcopy(self).__imul__(other)
 
-    def __truediv__(self, other: float):
+    def __truediv__(self, other: Real):
         return deepcopy(self).__itruediv__(other)
 
-    def __or__(self, other: float):
+    def __or__(self, other: Real):
         return deepcopy(self).__ior__(other)
 
-    def __and__(self, other: float):
+    def __and__(self, other: Real):
         return deepcopy(self).__iand__(other)
 
     def __eq__(self, other: object):
@@ -188,11 +196,11 @@ class KnotVector(Intface_KnotVector):
         return self.internal.npts
 
     @property
-    def knots(self) -> Tuple[float]:
+    def knots(self) -> Tuple[Real, ...]:
         """Non-repeted knots
 
         :getter: Non-repeted knots
-        :type: tuple[float]
+        :type: tuple[Real]
 
         Example use
         -----------
@@ -212,11 +220,11 @@ class KnotVector(Intface_KnotVector):
         return self.internal.knots
 
     @property
-    def limits(self) -> Tuple[float]:
+    def limits(self) -> Tuple[Real, Real]:
         """The knotvector limits
 
         :getter: Returns the tuple [Umin, Umax]
-        :type: tuple[float]
+        :type: tuple[Real]
 
 
         Example use
@@ -242,16 +250,16 @@ class KnotVector(Intface_KnotVector):
             self.increase(diff)
 
     @internal.setter
-    def internal(self, vector: Tuple[float]):
+    def internal(self, vector: Tuple[Real, ...]):
         if not isinstance(vector, ImmutableKnotVector):
             vector = ImmutableKnotVector(vector)
         self.__internal = vector
 
-    def shift(self, value: float) -> KnotVector:
+    def shift(self, value: Real) -> KnotVector:
         """Add ``value`` to each knot
 
         :param value: The amount to shift every knot
-        :type value: float
+        :type value: Real
         :raises TypeError: If ``value`` is not a number
         :return: The same instance
         :rtype: KnotVector
@@ -277,11 +285,11 @@ class KnotVector(Intface_KnotVector):
         self.internal = ImmutableKnotVector(vector)
         return self
 
-    def scale(self, value: float) -> KnotVector:
+    def scale(self, value: Real) -> KnotVector:
         """Multiplies every knot by amount ``value``
 
         :param value: The amount to scale every knot
-        :type value: float
+        :type value: Real
         :raises TypeError: If ``value`` is not a number
         :raises AssertionError: If ``value`` is not positive
         :return: The same instance
@@ -307,7 +315,9 @@ class KnotVector(Intface_KnotVector):
         self.internal = ImmutableKnotVector(knoti * value for knoti in self)
         return self
 
-    def convert(self, cls: type, tolerance: Optional[float] = 1e-9) -> KnotVector:
+    def convert(
+        self, cls: type, tolerance: Union[None, Real] = 1e-9
+    ) -> KnotVector:
         """Convert the knots from current type to given type.
 
         If ``tolerance`` is too small, it raises a ValueError cause cannot convert.
@@ -315,7 +325,7 @@ class KnotVector(Intface_KnotVector):
         :param cls: The class to convert the knots
         :type cls: type
         :param tolerance: The tolerance to check if each node is very far from other
-        :type tolerance: float
+        :type tolerance: Real
         :raises ValueError: If cannot convert all knots to given type for given tolerance
         :return: The same instance
         :rtype: KnotVector
@@ -374,11 +384,11 @@ class KnotVector(Intface_KnotVector):
         self.scale(1 / self[-1])
         return self
 
-    def insert(self, nodes: Tuple[float]) -> KnotVector:
+    def insert(self, nodes: Tuple[Real, ...]) -> KnotVector:
         """Insert given nodes inside knotvector
 
         :param nodes: The nodes to be inserted
-        :type nodes: tuple[float]
+        :type nodes: tuple[Real]
         :raises ValueError: If cannot insert knots
         :return: The same instance
         :rtype: KnotVector
@@ -397,14 +407,14 @@ class KnotVector(Intface_KnotVector):
         (0, 0, 1, 2, 2, 3, 3)
 
         """
-        self.internal = self.internal.insert(nodes)
+        self.internal = insert_knots(self.internal, nodes)
         return self
 
-    def remove(self, nodes: Tuple[float]) -> KnotVector:
+    def remove(self, nodes: Tuple[Real, ...]) -> KnotVector:
         """Remove given nodes inside knotvector
 
         :param nodes: The nodes to be remove
-        :type nodes: tuple[float]
+        :type nodes: tuple[Real]
         :raises ValueError: If cannot remove knots
         :return: The same instance
         :rtype: KnotVector
@@ -423,18 +433,19 @@ class KnotVector(Intface_KnotVector):
         (0, 0, 3, 3)
 
         """
-        self.internal = self.internal.remove(nodes)
+        self.internal = remove_knots(self.internal, nodes)
         return self
 
     def increase(self, times: int) -> KnotVector:
-        self.internal = self.internal.increase(times)
+        self.internal = increase_degree(self.internal, times)
         return self
 
     def decrease(self, times: int) -> KnotVector:
-        self.internal = self.internal.decrease(times)
+        self.internal = decrease_degree(self.internal, times)
         return self
 
-    def span(self, nodes: Union[float, Tuple[float]]) -> Union[int, Tuple[int]]:
+    @vectorize(1, 0)
+    def span(self, node: Real) -> int:
         """Finds the index position of a ``node`` such
         ``knotvector[span] <= node < knotvector[span+1]``
 
@@ -462,9 +473,10 @@ class KnotVector(Intface_KnotVector):
         >>> knotvector.span([0, 0.5, 1, 1.5, 2])
         (1, 1, 2, 2, 2)
         """
-        return self.internal.span(nodes)
+        return self.internal.span(node)
 
-    def mult(self, nodes: Union[float, Tuple[float]]) -> Union[int, Tuple[int]]:
+    @vectorize(1, 0)
+    def mult(self, node: Real) -> int:
         """Counts how many times a node is inside the knotvector
 
         If ``nodes`` is a vector of numbers, it returns a list of mult
@@ -491,9 +503,10 @@ class KnotVector(Intface_KnotVector):
         >>> knotvector.mult([0, 0.5, 1, 1.2, 1.8, 2])
         (2, 0, 1, 0, 0, 2)
         """
-        return self.internal.mult(nodes)
+        return self.internal.mult(node)
 
-    def valid(self, nodes: Tuple[float]) -> bool:
+    @vectorize(1, 0)
+    def valid(self, node: Real) -> bool:
         """Tells if all given nodes are valid
 
         :param nodes: The list of nodes
@@ -512,9 +525,9 @@ class KnotVector(Intface_KnotVector):
         >>> knotvector.valid([-1, 0.5, 1])
         False
         """
-        return self.internal.valid(nodes)
+        return self.knots[0] <= node <= self.knots[-1]
 
-    def split(self, nodes: Tuple[float]) -> Tuple[KnotVector]:
+    def split(self, nodes: Tuple[Real, ...]) -> Tuple[KnotVector]:
         """Split the knot vector at given nodes
 
         :param nodes: The list of nodes
@@ -532,7 +545,7 @@ class KnotVector(Intface_KnotVector):
         ((0, 0, 0.5, 0.5), (0.5, 0.5, 1, 1))
 
         """
-        vectors = self.internal.split(nodes)
+        vectors = split_knotvector(self.internal, nodes)
         return tuple(map(self.__class__, vectors))
 
 
@@ -573,7 +586,9 @@ class GeneratorKnotVector:
         return KnotVector(knotvector)
 
     @staticmethod
-    def integer(degree: int, npts: int, cls: Optional[type] = int) -> KnotVector:
+    def integer(
+        degree: int, npts: int, cls: Optional[type] = int
+    ) -> KnotVector:
         """Creates a KnotVector of equally integer spaced.
 
         :param degree: The degree of the curve, non-negative
@@ -612,7 +627,9 @@ class GeneratorKnotVector:
         return knotvector
 
     @staticmethod
-    def uniform(degree: int, npts: int, cls: Optional[type] = int) -> KnotVector:
+    def uniform(
+        degree: int, npts: int, cls: Optional[type] = int
+    ) -> KnotVector:
         """Creates a equally distributed knotvector between [0, 1]
 
         :param degree: The degree of the curve, non-negative
@@ -645,7 +662,9 @@ class GeneratorKnotVector:
         return knotvector
 
     @staticmethod
-    def random(degree: int, npts: int, cls: Optional[type] = float) -> KnotVector:
+    def random(
+        degree: int, npts: int, cls: Optional[type] = float
+    ) -> KnotVector:
         """Creates a random distributed knotvector between [0, 1]
 
         :param degree: The degree of the curve, non-negative
@@ -682,7 +701,7 @@ class GeneratorKnotVector:
         return knotvector
 
     @staticmethod
-    def weight(degree: int, weights: Tuple[float]) -> KnotVector:
+    def weight(degree: int, weights: Tuple[Real, ...]) -> KnotVector:
         """Creates a knotvector of degree ``degree`` based on
         given ``weights`` vector.
 

@@ -1,8 +1,6 @@
-from .advanced import Intersection, Projection
-from .calculus import Derivate, Integrate
-from .curves import Curve
-from .functions import Function
+from .basis_functions import BasisFunctions
 from .knotspace import GeneratorKnotVector, KnotVector
+from .operations.calculus import Derivate, Integrate
 
 __version__ = "1.1.0"
 

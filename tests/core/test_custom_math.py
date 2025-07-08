@@ -4,22 +4,22 @@ from fractions import Fraction
 import numpy as np
 import pytest
 
-from pynurbs.heavy import IntegratorArray, LeastSquare, Linalg, Math, NodeSample
+from pynurbs.core.custom_math import IntegratorArray, Linalg, Math, NodeSample
 
 
-@pytest.mark.order(1)
+@pytest.mark.order(11)
 @pytest.mark.dependency()
 def test_begin():
     pass
 
 
 class TestMath:
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestMath::test_begin"])
     def test_gcd(self):
         assert Math.gcd(0) == 0
@@ -35,8 +35,10 @@ class TestMath:
         assert Math.gcd(2, 3, 4) == 1
         assert Math.gcd(6, 9, 12) == 3
 
-    @pytest.mark.order(1)
-    @pytest.mark.dependency(depends=["TestMath::test_begin", "TestMath::test_gcd"])
+    @pytest.mark.order(11)
+    @pytest.mark.dependency(
+        depends=["TestMath::test_begin", "TestMath::test_gcd"]
+    )
     def test_lcm(self):
         assert Math.lcm(0) == 0
         assert Math.lcm(1) == 1
@@ -52,26 +54,49 @@ class TestMath:
         assert Math.lcm(2, 3, 4) == 12
         assert Math.lcm(6, 9, 12) == 36
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestMath::test_begin"])
-    def test_comb(self):
-        assert Math.comb(1, 0) == 1
-        assert Math.comb(1, 1) == 1
-        assert Math.comb(2, 0) == 1
-        assert Math.comb(2, 1) == 2
-        assert Math.comb(2, 2) == 1
-        assert Math.comb(3, 0) == 1
-        assert Math.comb(3, 1) == 3
-        assert Math.comb(3, 2) == 3
-        assert Math.comb(3, 3) == 1
+    def test_binom(self):
 
-    @pytest.mark.order(1)
+        assert Math.binom(0, 0) == 1
+        assert Math.binom(1, 0) == 1
+        assert Math.binom(1, 1) == 1
+        assert Math.binom(2, 0) == 1
+        assert Math.binom(2, 1) == 2
+        assert Math.binom(2, 2) == 1
+        assert Math.binom(3, 0) == 1
+        assert Math.binom(3, 1) == 3
+        assert Math.binom(3, 2) == 3
+        assert Math.binom(3, 3) == 1
+
+        for n in range(1, 11):
+            for i in range(0, n + 1):
+                assert Math.binom(n, i) == math.comb(n, i)
+
+    @pytest.mark.order(11)
+    @pytest.mark.dependency(depends=["TestMath::test_begin"])
+    def test_factorial(self):
+        assert Math.factorial(0) == 1
+        assert Math.factorial(1) == 1
+        assert Math.factorial(2) == 2
+        assert Math.factorial(3) == 6
+        assert Math.factorial(4) == 24
+        assert Math.factorial(5) == 120
+        assert Math.factorial(6) == 720
+
+        result = 1
+        for n in range(1, 10):
+            result *= n
+            assert Math.factorial(n) == result
+
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestMath::test_begin",
             "TestMath::test_gcd",
             "TestMath::test_lcm",
-            "TestMath::test_comb",
+            "TestMath::test_binom",
+            "TestMath::test_factorial",
         ]
     )
     def test_end(self):
@@ -79,19 +104,19 @@ class TestMath:
 
 
 class TestLinalg:
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["test_begin", "TestMath::test_end"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestLinalg::test_begin"])
     def test_invert_float(self):
         identit = np.eye(4)
         inverse = Linalg.invert(identit)
         np.testing.assert_allclose(inverse, identit)
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=["TestLinalg::test_begin", "TestLinalg::test_invert_float"]
     )
@@ -136,13 +161,13 @@ class TestLinalg:
             for n in range(side, side + 10):
                 for i in range(side):
                     for j in range(side):
-                        matrix[i, j] = Math.comb(n + j, i)
+                        matrix[i, j] = Math.binom(n + j, i)
             inverse = Linalg.invert(matrix)
             inverse = np.array(inverse, dtype="int64")
             np.testing.assert_allclose(np.dot(inverse, matrix), np.eye(side))
             np.testing.assert_allclose(np.dot(matrix, inverse), np.eye(side))
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestLinalg::test_begin",
@@ -155,7 +180,8 @@ class TestLinalg:
         for side in range(1, 10):
             zero, one = Fraction(0), Fraction(1)
             matrix = [
-                [one if i == j else zero for j in range(side)] for i in range(side)
+                [one if i == j else zero for j in range(side)]
+                for i in range(side)
             ]
             test = Linalg.invert(matrix)
             test = np.array(test, dtype="int64")
@@ -168,7 +194,7 @@ class TestLinalg:
             for n in range(side, side + 10):
                 for i in range(side):
                     for j in range(side):
-                        matrix[i, j] = Fraction(Math.comb(n + j, i))
+                        matrix[i, j] = Fraction(Math.binom(n + j, i))
             inverse = Linalg.invert(matrix)
             inverse = np.array(inverse, dtype="int64")
             matrix = np.array(matrix, dtype="int64")
@@ -202,14 +228,17 @@ class TestLinalg:
                 for j, elem in enumerate(line):
                     fracmatrix[i, j] = Fraction(elem).limit_denominator(10)
             fracmatrix += np.transpose(fracmatrix)
-            if abs(np.linalg.det(np.array(fracmatrix, dtype="float64"))) > 1e-6:
+            if (
+                abs(np.linalg.det(np.array(fracmatrix, dtype="float64")))
+                > 1e-6
+            ):
                 break
         invfracmatrix = Linalg.invert(fracmatrix)
         product = fracmatrix @ invfracmatrix
         product = np.array(product, dtype="float64")
         np.testing.assert_allclose(product, np.eye(size))
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=["TestLinalg::test_begin", "TestLinalg::test_invert_fraction"]
     )
@@ -220,34 +249,46 @@ class TestLinalg:
         solution = Linalg.solve(matrix, force)
         np.testing.assert_allclose(np.dot(matrix, solution), force)
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=["TestLinalg::test_begin", "TestLinalg::test_solve_float"]
     )
     def test_solve_integer(self):
         side, nsols = 2, 4
-        force = [[np.random.randint(-5, 6) for j in range(nsols)] for i in range(side)]
+        force = [
+            [np.random.randint(-5, 6) for j in range(nsols)]
+            for i in range(side)
+        ]
         matrix = ((1, 0), (0, 1))
         solution = Linalg.solve(matrix, force)
         mult = np.dot(matrix, solution)
         np.testing.assert_allclose(mult, force)
 
         side, nsols = 2, 4
-        force = [[np.random.randint(-5, 6) for j in range(nsols)] for i in range(side)]
+        force = [
+            [np.random.randint(-5, 6) for j in range(nsols)]
+            for i in range(side)
+        ]
         matrix = ((1, 1), (2, 3))
         solution = Linalg.solve(matrix, force)
         mult = np.dot(matrix, solution)
         np.testing.assert_allclose(mult, force)
 
         side, nsols = 2, 4
-        force = [[np.random.randint(-5, 6) for j in range(nsols)] for i in range(side)]
+        force = [
+            [np.random.randint(-5, 6) for j in range(nsols)]
+            for i in range(side)
+        ]
         matrix = ((1, 1), (11, 12))
         solution = Linalg.solve(matrix, force)
         mult = np.dot(matrix, solution)
         np.testing.assert_allclose(mult, force)
 
         side, nsols = 4, 4
-        force = [[np.random.randint(-5, 6) for j in range(nsols)] for i in range(side)]
+        force = [
+            [np.random.randint(-5, 6) for j in range(nsols)]
+            for i in range(side)
+        ]
         matrix = (
             (1, 1, 1, 1),
             (11, 12, 13, 14),
@@ -266,12 +307,12 @@ class TestLinalg:
             for n in range(side, side + 10):
                 for i in range(side):
                     for j in range(side):
-                        matrix[i, j] = Math.comb(n + j, i)
+                        matrix[i, j] = Math.binom(n + j, i)
             solution = Linalg.solve(matrix, force)
             mult = np.dot(matrix, solution)
             np.testing.assert_allclose(mult, force)
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestLinalg::test_begin",
@@ -284,7 +325,8 @@ class TestLinalg:
         for side in range(1, 10):
             zero, one = Fraction(0), Fraction(1)
             matrix = [
-                [one if i == j else zero for j in range(side)] for i in range(side)
+                [one if i == j else zero for j in range(side)]
+                for i in range(side)
             ]
             test = Linalg.invert(matrix)
             test = np.array(test, dtype="int64")
@@ -297,14 +339,14 @@ class TestLinalg:
             for n in range(side, side + 10):
                 for i in range(side):
                     for j in range(side):
-                        matrix[i, j] = Fraction(Math.comb(n + j, i))
+                        matrix[i, j] = Fraction(Math.binom(n + j, i))
             inverse = Linalg.invert(matrix)
             inverse = np.array(inverse, dtype="int64")
             matrix = np.array(matrix, dtype="int64")
             np.testing.assert_allclose(np.dot(inverse, matrix), np.eye(side))
             np.testing.assert_allclose(np.dot(matrix, inverse), np.eye(side))
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestLinalg::test_begin",
@@ -315,7 +357,15 @@ class TestLinalg:
     def test_specific_case(self):
         f = Fraction
         B = [
-            [f(1, 9), f(1, 12), f(5, 84), f(5, 126), f(1, 42), f(1, 84), f(17, 4235)],
+            [
+                f(1, 9),
+                f(1, 12),
+                f(5, 84),
+                f(5, 126),
+                f(1, 42),
+                f(1, 84),
+                f(17, 4235),
+            ],
             [
                 f(1, 36),
                 f(1, 21),
@@ -354,7 +404,7 @@ class TestLinalg:
         diff = np.array(mult - B, dtype="float64")
         np.testing.assert_allclose(diff, np.zeros(B.shape))
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestLinalg::test_begin",
@@ -387,7 +437,7 @@ class TestLinalg:
         prod = np.dot(inverse, matrix).astype("float64")
         np.testing.assert_allclose(prod, np.eye(3))
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestLinalg::test_begin",
@@ -405,14 +455,14 @@ class TestLinalg:
 
 
 class TestNodeSample:
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=["test_begin", "TestMath::test_end", "TestLinalg::test_end"]
     )
     def test_begin(self):
         pass
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestNodeSample::test_begin"])
     def test_closed_linspace(self):
         nodes = NodeSample.closed_linspace(2)
@@ -432,7 +482,7 @@ class TestNodeSample:
         good = (0, 1 / 4, 2 / 4, 3 / 4, 1)
         assert nodes == good
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestNodeSample::test_begin"])
     def test_open_linspace(self):
         nodes = NodeSample.open_linspace(1)
@@ -457,7 +507,7 @@ class TestNodeSample:
         good = (1 / 10, 3 / 10, 5 / 10, 7 / 10, 9 / 10)
         np.testing.assert_allclose(nodes, good)
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestNodeSample::test_begin"])
     def test_chebyshev(self):
         nodes = NodeSample.chebyshev(1)
@@ -480,10 +530,13 @@ class TestNodeSample:
         np.testing.assert_allclose(nodes, good)
 
         nodes = NodeSample.chebyshev(5)
-        good = np.sin(np.pi * np.array([1 / 20, 3 / 20, 5 / 20, 7 / 20, 9 / 20])) ** 2
+        good = (
+            np.sin(np.pi * np.array([1 / 20, 3 / 20, 5 / 20, 7 / 20, 9 / 20]))
+            ** 2
+        )
         np.testing.assert_allclose(nodes, good)
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestNodeSample::test_begin"])
     def test_gauss_legendre(self):
         nodes = NodeSample.gauss_legendre(1)
@@ -502,7 +555,12 @@ class TestNodeSample:
         nodes = NodeSample.gauss_legendre(4)
         minor = np.sqrt(3 / 7 + 2 * np.sqrt(6 / 5) / 7)
         middl = np.sqrt(3 / 7 - 2 * np.sqrt(6 / 5) / 7)
-        good = [(1 - minor) / 2, (1 - middl) / 2, (1 + middl) / 2, (1 + minor) / 2]
+        good = [
+            (1 - minor) / 2,
+            (1 - middl) / 2,
+            (1 + middl) / 2,
+            (1 + minor) / 2,
+        ]
         np.testing.assert_allclose(nodes, good)
 
         nodes = NodeSample.gauss_legendre(5)
@@ -517,7 +575,7 @@ class TestNodeSample:
         ]
         np.testing.assert_allclose(nodes, good)
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestNodeSample::test_begin",
@@ -532,7 +590,7 @@ class TestNodeSample:
 
 
 class TestUnidimentionIntegral:
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "test_begin",
@@ -544,7 +602,7 @@ class TestUnidimentionIntegral:
     def test_begin(self):
         pass
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestUnidimentionIntegral::test_begin"])
     def test_closed_newton_cotes(self):
         a, b = Fraction(3), Fraction(5)
@@ -552,7 +610,10 @@ class TestUnidimentionIntegral:
             npts = max(2, degree + 1)  # Number integration points
             numers = np.random.randint(-5, 5, degree + 1)
             denoms = np.random.randint(2, 8, degree + 1)
-            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            coefs = [
+                Fraction(int(num), int(den))
+                for num, den in zip(numers, denoms)
+            ]
             good = sum(
                 ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
                 for i, ci in enumerate(coefs)
@@ -568,7 +629,7 @@ class TestUnidimentionIntegral:
 
             assert test == good
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestUnidimentionIntegral::test_begin"])
     def test_open_newton_cotes(self):
         a, b = Fraction(3), Fraction(5)
@@ -576,7 +637,10 @@ class TestUnidimentionIntegral:
             npts = degree + 1  # Number integration points
             numers = np.random.randint(-5, 5, degree + 1)
             denoms = np.random.randint(2, 8, degree + 1)
-            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            coefs = [
+                Fraction(int(num), int(den))
+                for num, den in zip(numers, denoms)
+            ]
             good = sum(
                 ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
                 for i, ci in enumerate(coefs)
@@ -592,7 +656,7 @@ class TestUnidimentionIntegral:
 
             assert test == good
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestUnidimentionIntegral::test_begin"])
     def test_chebyshev(self):
         a, b = Fraction(3), Fraction(7)
@@ -600,7 +664,10 @@ class TestUnidimentionIntegral:
             npts = degree + 1  # Number integration points
             numers = np.random.randint(-5, 5, degree + 1)
             denoms = np.random.randint(2, 8, degree + 1)
-            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            coefs = [
+                Fraction(int(num), int(den))
+                for num, den in zip(numers, denoms)
+            ]
             good = sum(
                 ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
                 for i, ci in enumerate(coefs)
@@ -616,7 +683,7 @@ class TestUnidimentionIntegral:
 
             assert abs(test - good) < 1e-9
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(depends=["TestUnidimentionIntegral::test_begin"])
     def test_gauss_legendre(self):
         a, b = Fraction(3), Fraction(7)
@@ -624,7 +691,10 @@ class TestUnidimentionIntegral:
             npts = degree + 1  # Number integration points
             numers = np.random.randint(-5, 5, degree + 1)
             denoms = np.random.randint(2, 8, degree + 1)
-            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            coefs = [
+                Fraction(int(num), int(den))
+                for num, den in zip(numers, denoms)
+            ]
             good = sum(
                 ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
                 for i, ci in enumerate(coefs)
@@ -640,7 +710,7 @@ class TestUnidimentionIntegral:
 
             assert abs(test - good) < 1e-9
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestUnidimentionIntegral::test_begin",
@@ -656,7 +726,10 @@ class TestUnidimentionIntegral:
             npts = 1 + 2 * math.floor(degree / 2)  # Number integration points
             numers = np.random.randint(-5, 5, degree + 1)
             denoms = np.random.randint(2, 8, degree + 1)
-            coefs = [Fraction(int(num), int(den)) for num, den in zip(numers, denoms)]
+            coefs = [
+                Fraction(int(num), int(den))
+                for num, den in zip(numers, denoms)
+            ]
             good = sum(
                 ci * (b ** (i + 1) - a ** (i + 1)) / (i + 1)
                 for i, ci in enumerate(coefs)
@@ -667,7 +740,8 @@ class TestUnidimentionIntegral:
                 weights = IntegratorArray.open_newton_cotes(npts)
                 nodes = tuple(a + (b - a) * node for node in nodes)
                 funcvals = tuple(
-                    sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+                    sum([cj * xi**j for j, cj in enumerate(coefs)])
+                    for xi in nodes
                 )
                 test = (b - a) * np.inner(weights, funcvals)
                 assert test == good
@@ -699,7 +773,7 @@ class TestUnidimentionIntegral:
             test = (b - a) * np.inner(weights, funcvals)
             assert abs(test - good) < 1e-9
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestUnidimentionIntegral::test_begin",
@@ -725,7 +799,8 @@ class TestUnidimentionIntegral:
                 weights = IntegratorArray.open_newton_cotes(npts)
                 nodes = tuple(a + (b - a) * node for node in nodes)
                 funcvals = tuple(
-                    sum([cj * xi**j for j, cj in enumerate(coefs)]) for xi in nodes
+                    sum([cj * xi**j for j, cj in enumerate(coefs)])
+                    for xi in nodes
                 )
                 test = (b - a) * np.inner(weights, funcvals)
                 assert abs(test - good) < 1e-9
@@ -757,7 +832,7 @@ class TestUnidimentionIntegral:
             test = (b - a) * np.inner(weights, funcvals)
             assert abs(test - good) < 1e-9
 
-    @pytest.mark.order(1)
+    @pytest.mark.order(11)
     @pytest.mark.dependency(
         depends=[
             "TestUnidimentionIntegral::test_begin",
@@ -773,76 +848,14 @@ class TestUnidimentionIntegral:
         pass
 
 
-class TestLeastSquare:
-    @pytest.mark.order(1)
-    @pytest.mark.dependency(
-        depends=[
-            "test_begin",
-            "TestMath::test_end",
-            "TestLinalg::test_end",
-            "TestNodeSample::test_end",
-            "TestUnidimentionIntegral::test_end",
-        ]
-    )
-    def test_begin(self):
-        pass
-
-    @pytest.mark.order(1)
-    @pytest.mark.dependency(depends=["TestLeastSquare::test_begin"])
-    def test_leastsquarespline_identity(self):
-        U0 = [0, 0, 1, 1]
-        U1 = [0, 0, 1, 1]
-        T, E = LeastSquare.spline2spline(U0, U1)
-        np.testing.assert_almost_equal(T, np.eye(2))
-        assert np.all(np.abs(E) < 1e-9)
-
-        U0 = [0, 0, 0, 1, 1, 1]
-        U1 = [0, 0, 0, 1, 1, 1]
-        T, E = LeastSquare.spline2spline(U0, U1)
-        np.testing.assert_almost_equal(T, np.eye(3))
-        assert np.all(np.abs(E) < 1e-9)
-
-        U0 = [0, 0, 0, 0.5, 1, 1, 1]
-        U1 = [0, 0, 0, 0.5, 1, 1, 1]
-        T, E = LeastSquare.spline2spline(U0, U1)
-        np.testing.assert_almost_equal(T, np.eye(4))
-        assert np.all(np.abs(E) < 1e-9)
-
-    @pytest.mark.order(1)
-    @pytest.mark.dependency(depends=["TestLeastSquare::test_begin"])
-    def test_leastsquarespline_eval_error(self):
-        # knot insertion
-        U0 = [0, 0, 0, 1, 1, 1]
-        U1 = [0, 0, 0, 0.5, 1, 1, 1]
-        _, E = LeastSquare.spline2spline(U0, U1)
-        assert np.all(np.abs(E) < 1e-9)
-
-        # degree elevate
-        U0 = [0, 0, 1, 1]
-        U1 = [0, 0, 0, 1, 1, 1]
-        _, E = LeastSquare.spline2spline(U0, U1)
-        assert np.all(np.abs(E) < 1e-9)
-
-    @pytest.mark.order(1)
-    @pytest.mark.dependency(
-        depends=[
-            "TestLeastSquare::test_begin",
-            "TestLeastSquare::test_leastsquarespline_identity",
-            "TestLeastSquare::test_leastsquarespline_eval_error",
-        ]
-    )
-    def test_end(self):
-        pass
-
-
-@pytest.mark.order(1)
+@pytest.mark.order(11)
 @pytest.mark.dependency(
     depends=[
+        "test_begin",
         "TestMath::test_end",
         "TestLinalg::test_end",
         "TestNodeSample::test_end",
         "TestUnidimentionIntegral::test_end",
-        "TestLeastSquare::test_end",
     ]
 )
 def test_end():

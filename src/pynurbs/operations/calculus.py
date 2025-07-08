@@ -3,9 +3,10 @@ from typing import Any, Callable, Optional
 
 import numpy as np
 
-from pynurbs import heavy
-from pynurbs.curves import Curve
-from pynurbs.knotspace import KnotVector
+from ..core.custom_math import IntegratorArray, NodeSample
+from ..curves.curves import Curve
+from ..knotspace import KnotVector
+from . import heavy
 
 
 class Derivate:
@@ -42,7 +43,6 @@ class Derivate:
 
     @staticmethod
     def nonrational_bezier(curve: Curve) -> Curve:
-        """ """
         assert curve.degree + 1 == curve.npts
         assert curve.weights is None
         vector = tuple(curve.knotvector)
@@ -60,7 +60,9 @@ class Derivate:
         assert np.all(np.array(curve.weights) != 0)
 
         knotvector = curve.knotvector.internal
-        matrixup, matrixdo = heavy.Calculus.derivate_rational_bezier(knotvector)
+        matrixup, matrixdo = heavy.Calculus.derivate_rational_bezier(
+            knotvector
+        )
         num, den = curve.fraction()
         matrixup = np.dot(matrixup, den.ctrlpoints)
         matrixdo = np.dot(matrixdo, den.ctrlpoints)
@@ -68,15 +70,19 @@ class Derivate:
         dennumctrlpts = den.ctrlpoints @ matrixdo
         newnumctrlpts = np.dot(np.transpose(matrixup), num.ctrlpoints)
         newnumctrlpts = [
-            point / weight for point, weight in zip(newnumctrlpts, dennumctrlpts)
+            point / weight
+            for point, weight in zip(newnumctrlpts, dennumctrlpts)
         ]
         number_bound = 1 + 2 * curve.degree
-        newknotvector = number_bound * [knotvector[0]] + number_bound * [knotvector[-1]]
+        newknotvector = number_bound * [knotvector[0]] + number_bound * [
+            knotvector[-1]
+        ]
         finalcurve = curve.__class__(newknotvector)
         finalcurve.ctrlpoints = newnumctrlpts
         finalcurve.weights = dennumctrlpts
         return finalcurve
 
+    @staticmethod
     def nonrational_spline(curve: Curve) -> Curve:
         assert isinstance(curve, Curve)
         assert curve.weights is None
@@ -113,7 +119,7 @@ class Integrate:
         method: Optional[str] = None,
         nnodes: Optional[int] = None,
     ) -> float:
-        """Computes the integral I
+        r"""Computes the integral I
 
         If no ``function`` is given, it supposes that :math:`g(u)=1`
 
@@ -137,20 +143,23 @@ class Integrate:
 
         """
         nodes_functs = {
-            "closed-newton-cotes": heavy.NodeSample.closed_linspace,
-            "open-newton-cotes": heavy.NodeSample.open_linspace,
-            "chebyshev": heavy.NodeSample.chebyshev,
-            "gauss-legendre": heavy.NodeSample.gauss_legendre,
+            "closed-newton-cotes": NodeSample.closed_linspace,
+            "open-newton-cotes": NodeSample.open_linspace,
+            "chebyshev": NodeSample.chebyshev,
+            "gauss-legendre": NodeSample.gauss_legendre,
         }
         array_functs = {
-            "closed-newton-cotes": heavy.IntegratorArray.closed_newton_cotes,
-            "open-newton-cotes": heavy.IntegratorArray.open_newton_cotes,
-            "chebyshev": heavy.IntegratorArray.chebyshev,
-            "gauss-legendre": heavy.IntegratorArray.gauss_legendre,
+            "closed-newton-cotes": IntegratorArray.closed_newton_cotes,
+            "open-newton-cotes": IntegratorArray.open_newton_cotes,
+            "chebyshev": IntegratorArray.chebyshev,
+            "gauss-legendre": IntegratorArray.gauss_legendre,
         }
         assert isinstance(curve, Curve)
         if function is None:
-            function = lambda u: 1
+
+            def function(_):
+                return 1
+
         if method is not None:
             pass
         elif isinstance(curve.knotvector[0], (int, Fraction)):
@@ -182,7 +191,7 @@ class Integrate:
         method: Optional[str] = None,
         nnodes: Optional[int] = None,
     ) -> float:
-        """Computes the integral I
+        r"""Computes the integral I
 
         The operation ``@`` is needed cause ``norm(curve(u)) = numpy.sqrt(curve(u) @ curve(u))``
 
@@ -215,7 +224,7 @@ class Integrate:
         method: Optional[str] = None,
         nnodes: Optional[int] = None,
     ) -> float:
-        """Computes the integral I
+        r"""Computes the integral I
 
         The operation ``@`` is needed cause ``norm(curve(u)) = numpy.sqrt(curve(u) @ curve(u))``
 
@@ -241,20 +250,23 @@ class Integrate:
 
         """
         nodes_functs = {
-            "closed-newton-cotes": heavy.NodeSample.closed_linspace,
-            "open-newton-cotes": heavy.NodeSample.open_linspace,
-            "chebyshev": heavy.NodeSample.chebyshev,
-            "gauss-legendre": heavy.NodeSample.gauss_legendre,
+            "closed-newton-cotes": NodeSample.closed_linspace,
+            "open-newton-cotes": NodeSample.open_linspace,
+            "chebyshev": NodeSample.chebyshev,
+            "gauss-legendre": NodeSample.gauss_legendre,
         }
         array_functs = {
-            "closed-newton-cotes": heavy.IntegratorArray.closed_newton_cotes,
-            "open-newton-cotes": heavy.IntegratorArray.open_newton_cotes,
-            "chebyshev": heavy.IntegratorArray.chebyshev,
-            "gauss-legendre": heavy.IntegratorArray.gauss_legendre,
+            "closed-newton-cotes": IntegratorArray.closed_newton_cotes,
+            "open-newton-cotes": IntegratorArray.open_newton_cotes,
+            "chebyshev": IntegratorArray.chebyshev,
+            "gauss-legendre": IntegratorArray.gauss_legendre,
         }
         assert isinstance(curve, Curve)
         if function is None:
-            function = lambda u: 1
+
+            def function(_):
+                return 1
+
         if method is not None:
             pass
         elif isinstance(curve.knotvector[0], (int, Fraction)):
@@ -287,7 +299,7 @@ class Integrate:
         method: Optional[str] = None,
         nnodes: Optional[int] = None,
     ) -> float:
-        """Computes the integral I
+        r"""Computes the integral I
 
         .. math::
             I = \int_{a}^{b} g ( u ) \ du
@@ -316,16 +328,16 @@ class Integrate:
 
         """
         nodes_functs = {
-            "closed-newton-cotes": heavy.NodeSample.closed_linspace,
-            "open-newton-cotes": heavy.NodeSample.open_linspace,
-            "chebyshev": heavy.NodeSample.chebyshev,
-            "gauss-legendre": heavy.NodeSample.gauss_legendre,
+            "closed-newton-cotes": NodeSample.closed_linspace,
+            "open-newton-cotes": NodeSample.open_linspace,
+            "chebyshev": NodeSample.chebyshev,
+            "gauss-legendre": NodeSample.gauss_legendre,
         }
         array_functs = {
-            "closed-newton-cotes": heavy.IntegratorArray.closed_newton_cotes,
-            "open-newton-cotes": heavy.IntegratorArray.open_newton_cotes,
-            "chebyshev": heavy.IntegratorArray.chebyshev,
-            "gauss-legendre": heavy.IntegratorArray.gauss_legendre,
+            "closed-newton-cotes": IntegratorArray.closed_newton_cotes,
+            "open-newton-cotes": IntegratorArray.open_newton_cotes,
+            "chebyshev": IntegratorArray.chebyshev,
+            "gauss-legendre": IntegratorArray.gauss_legendre,
         }
         if method is not None:
             pass

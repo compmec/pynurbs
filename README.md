@@ -47,6 +47,13 @@ The documentation can be found at [pynurbs.readthedocs.io][docs-url]
 
 Please use the [Issues][issues-url] or refer to the email ```compmecgit@gmail.com```
 
+For developers, please use `poetry` as virtual enviroment 
+
+```
+poetry shell
+pytest
+```
+
 <!-- Badges: -->
 
 <!-- Badges: -->

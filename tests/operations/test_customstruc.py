@@ -11,13 +11,10 @@ Example 1:
     We expect all final computations returns CustomFloats
 """
 
-import numpy as np
 import pytest
 
-from pynurbs import calculus
-from pynurbs.curves import Curve
-from pynurbs.functions import Function
-from pynurbs.knotspace import GeneratorKnotVector, KnotVector
+from pynurbs.basis_functions import BasisFunctions
+from pynurbs.knotspace import KnotVector
 
 
 class CustomFloat:
@@ -96,7 +93,9 @@ class CustomFloat:
         return self.__eq__(other) or self.__gt__(other)
 
     def __abs__(self):
-        return self.__class__(self.internal if self.internal > 0 else -self.internal)
+        return self.__class__(
+            self.internal if self.internal > 0 else -self.internal
+        )
 
 
 class CustomPoint:
@@ -112,14 +111,14 @@ class CustomPoint:
         return self.__class__(other * self.internal)
 
 
-@pytest.mark.order(7)
+@pytest.mark.order(41)
 @pytest.mark.dependency(
     depends=[
         "tests/test_knotspace.py::test_end",
-        "tests/test_functions.py::test_end",
-        "tests/test_beziercurve.py::test_end",
-        "tests/test_splinecurve.py::test_end",
-        "tests/test_rationalcurve.py::test_end",
+        "tests/test_basis_functions.py::test_end",
+        "tests/curves/test_bezier.py::test_end",
+        "tests/curves/test_spline.py::test_end",
+        "tests/curves/test_rational.py::test_end",
     ],
     scope="session",
 )
@@ -127,7 +126,7 @@ def test_begin():
     pass
 
 
-@pytest.mark.order(7)
+@pytest.mark.order(41)
 @pytest.mark.dependency(depends=["test_begin"])
 def test_custom_float():
     a = CustomFloat(1)
@@ -156,12 +155,12 @@ def test_custom_float():
 
 
 class TestKnotVector:
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["test_begin", "test_custom_float"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.timeout(1)
     @pytest.mark.dependency(depends=["TestKnotVector::test_begin"])
     def test_creation(self):
@@ -173,7 +172,7 @@ class TestKnotVector:
         assert type(vector[3]) is CustomFloat
         tuple(vector)
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=["TestKnotVector::test_begin", "TestKnotVector::test_creation"]
     )
@@ -182,33 +181,40 @@ class TestKnotVector:
 
 
 class TestBasisFunctions:
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["test_begin", "TestKnotVector::test_end"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.timeout(1)
     # @pytest.mark.skip(reason="Needs correction")
     @pytest.mark.dependency(depends=["TestBasisFunctions::test_begin"])
     def test_creation(self):
         a, b = CustomFloat(0), CustomFloat(1)
         vector = KnotVector([a, a, b, b])
-        N = Function(vector)
+        N = BasisFunctions(vector)
         assert type(N[0](a)) is CustomFloat
         assert type(N[0](b)) is CustomFloat
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
-        depends=["TestBasisFunctions::test_begin", "TestBasisFunctions::test_creation"]
+        depends=[
+            "TestBasisFunctions::test_begin",
+            "TestBasisFunctions::test_creation",
+        ]
     )
     def test_end(self):
         pass
 
 
-@pytest.mark.order(7)
+@pytest.mark.order(41)
 @pytest.mark.dependency(
-    depends=["test_begin", "TestKnotVector::test_end", "TestBasisFunctions::test_end"]
+    depends=[
+        "test_begin",
+        "TestKnotVector::test_end",
+        "TestBasisFunctions::test_end",
+    ]
 )
 def test_end():
     pass

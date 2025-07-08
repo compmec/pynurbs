@@ -1,16 +1,25 @@
 [tool.poetry]
 name = "pynurbs"
-version = "1.1.0"
+version = "1.2.0"
 description = "NURBS python object-oriented library"
 readme = "README.md"
 authors = ["Carlos Adir <carlos.adir.leite@gmail.com>"]
 packages = [{ include = "pynurbs", from = "src" }]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.5"
+numpy = "^1"
+rbool = "^0"
 
 [tool.poetry.dev-dependencies]
+python = "^3.5"
+numpy = "^1"
+rbool = "^0"
 pytest = "^5.2"
+coverage = "^7"
+pytest-order = "^1.0"
+pytest-timeout = "^1.0"
+pytest-dependency = "^0.6"
 pre-commit = "^2.19.0"
 scriv = {extras = ["toml"], version = "^0.15.2"}
 
@@ -21,3 +30,6 @@ version = "literal: src/pynurbs/__init__.py: __version__"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 79

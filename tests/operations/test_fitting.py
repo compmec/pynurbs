@@ -1,18 +1,18 @@
 import numpy as np
 import pytest
 
-from pynurbs.curves import Curve
+from pynurbs.curves.curves import Curve
 from pynurbs.knotspace import GeneratorKnotVector
 
 
-@pytest.mark.order(7)
+@pytest.mark.order(41)
 @pytest.mark.dependency(
     depends=[
         "tests/test_knotspace.py::test_end",
-        "tests/test_functions.py::test_end",
-        "tests/test_beziercurve.py::test_end",
-        "tests/test_splinecurve.py::test_end",
-        "tests/test_rationalcurve.py::test_end",
+        "tests/test_basis_functions.py::test_end",
+        "tests/curves/test_bezier.py::test_end",
+        "tests/curves/test_spline.py::test_end",
+        "tests/curves/test_rational.py::test_end",
     ],
     scope="session",
 )
@@ -21,12 +21,12 @@ def test_begin():
 
 
 class TestCurve:
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["TestCurve::test_begin"])
     def test_constant(self):
         vector = GeneratorKnotVector.bezier(0)
@@ -39,7 +39,7 @@ class TestCurve:
             test_curve.fit(good_curve)
             assert test_curve == good_curve
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=["TestCurve::test_begin", "TestCurve::test_constant"]
     )
@@ -55,7 +55,7 @@ class TestCurve:
                 test_curve.fit(good_curve)
                 assert test_curve == good_curve
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=[
             "TestCurve::test_begin",
@@ -76,7 +76,7 @@ class TestCurve:
                 test_curve.fit(good_curve)
                 assert test_curve == good_curve
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=[
             "TestCurve::test_begin",
@@ -90,12 +90,12 @@ class TestCurve:
 
 
 class TestFunction:
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["TestFunction::test_begin"])
     def test_constant(self):
         constval = np.random.uniform(-1, 1)
@@ -107,7 +107,7 @@ class TestFunction:
             for point in test_curve.ctrlpoints:
                 assert np.abs(point - constval) < 1e-9
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=["TestFunction::test_begin", "TestFunction::test_constant"]
     )
@@ -115,7 +115,9 @@ class TestFunction:
         usample = np.linspace(0, 1, 33)
         for degree_base in range(0, 4):
             coefs = np.random.uniform(-1, 1, 1 + degree_base)
-            function = lambda u: sum([cof * u**i for i, cof in enumerate(coefs)])
+            function = lambda u: sum(
+                [cof * u**i for i, cof in enumerate(coefs)]
+            )
             for degree in range(degree_base, 7):
                 vector = GeneratorKnotVector.bezier(degree)
                 test_curve = Curve(vector)
@@ -123,7 +125,7 @@ class TestFunction:
                 for ui in usample:
                     assert np.abs(test_curve(ui) - function(ui)) < 1e-9
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=[
             "TestFunction::test_begin",
@@ -135,7 +137,9 @@ class TestFunction:
         usample = np.linspace(0, 1, 33)
         for degree_base in range(0, 4):
             coefs = np.random.uniform(-1, 1, 1 + degree_base)
-            function = lambda u: sum([cof * u**i for i, cof in enumerate(coefs)])
+            function = lambda u: sum(
+                [cof * u**i for i, cof in enumerate(coefs)]
+            )
             for degree in range(degree_base, 7):
                 vector = GeneratorKnotVector.bezier(degree)
                 test_curve = Curve(vector)
@@ -144,7 +148,7 @@ class TestFunction:
                 for ui in usample:
                     assert np.abs(test_curve(ui) - function(ui)) < 1e-9
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=[
             "TestFunction::test_begin",
@@ -158,13 +162,13 @@ class TestFunction:
 
 
 class TestPoints:
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     # @pytest.mark.skip(reason="Needs implementation")
     @pytest.mark.dependency(depends=["test_begin"])
     def test_begin(self):
         pass
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(depends=["TestPoints::test_begin"])
     def test_constant(self):
         usample = np.linspace(0, 1, 9)
@@ -177,7 +181,7 @@ class TestPoints:
             for point in test_curve.ctrlpoints:
                 assert np.abs(point - constval) < 1e-9
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=["TestPoints::test_begin", "TestPoints::test_constant"]
     )
@@ -195,7 +199,7 @@ class TestPoints:
                 for ui, valui in zip(usample, values):
                     assert np.abs(test_curve(ui) - valui) < 1e-9
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=[
             "TestPoints::test_begin",
@@ -218,7 +222,7 @@ class TestPoints:
                 for ui, valui in zip(usample, values):
                     assert np.abs(test_curve(ui) - valui) < 1e-9
 
-    @pytest.mark.order(7)
+    @pytest.mark.order(41)
     @pytest.mark.dependency(
         depends=[
             "TestPoints::test_begin",
@@ -231,7 +235,7 @@ class TestPoints:
         pass
 
 
-@pytest.mark.order(7)
+@pytest.mark.order(41)
 @pytest.mark.dependency(
     depends=[
         "test_begin",
