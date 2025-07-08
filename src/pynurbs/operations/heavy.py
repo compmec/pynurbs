@@ -12,8 +12,8 @@ import numpy as np
 
 from ..core.custom_math import Linalg, NodeSample, totuple
 from ..core.knotvector import ImmutableKnotVector
+from ..curves.least_square import eval_spline_nodes
 from ..operations import knotvector as opekv
-from .least_square import eval_spline_nodes
 
 
 class Operations:

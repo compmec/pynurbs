@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pynurbs.operations.least_square import spline2spline
+from pynurbs.curves.least_square import spline2spline
 
 
 @pytest.mark.order(21)

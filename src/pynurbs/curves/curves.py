@@ -10,9 +10,9 @@ from ..core.custom_math import isscalar, number_type
 from ..knotspace import KnotVector
 from ..operations import heavy
 from ..operations.knotvector import insert_knots, remove_knots
-from ..operations.least_square import fit_function, func2func, spline2spline
 from ..operations.tools import vectorize
 from .base import BaseCurve
+from .least_square import fit_function, func2func, spline2spline
 
 
 class Curve(BaseCurve):
