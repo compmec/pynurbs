@@ -1,3 +1,11 @@
+"""
+Module that contains mathematical functions used in the module.
+Some functions are already defined in the standard library `math` but
+* some are not available in lower versions (ex. math.comb was added
+  only in py3.8, math.lcm was added in py3.9),
+* conversions to base types (int/float) are made and custom types are lost
+"""
+
 import math
 from copy import deepcopy
 from fractions import Fraction
@@ -8,8 +16,23 @@ import numpy as np
 
 
 class Math:
+    """
+    Defines some mathematical functions
+
+    """
+
     @staticmethod
-    def gcd(*numbers: Tuple[int]) -> int:
+    def gcd(*numbers: int) -> int:
+        """
+        Return the greatest common divisor of the specified integer arguments
+
+        Example
+        -------
+        >>> gcd(12, 9)
+        3
+        >>> gcd(120, 35)
+        5
+        """
         lenght = len(numbers)
         if lenght == 1:
             return abs(numbers[0])
@@ -24,7 +47,17 @@ class Math:
         return abs(x)
 
     @staticmethod
-    def lcm(*numbers: Tuple[int]) -> int:
+    def lcm(*numbers: int) -> int:
+        """
+        Return the least common multiple of the specified integer arguments
+
+        Example
+        -------
+        >>> lcm(12, 9)
+        36
+        >>> gcd(120, 35)
+        840
+        """
         lenght = len(numbers)
         if lenght == 1:
             return numbers[0]
@@ -41,7 +74,16 @@ class Math:
     @staticmethod
     def binom(n: int, i: int) -> int:
         """
-        Returns binomial (n, i)
+        Return the binomial number (n, i)
+
+        Evaluates to `n! / (i! * (n - i)!)` when `0 <= i <= n`.
+
+        Example
+        -------
+        >>> binom(2, 3)
+        2
+        >>> binom(5, 2)
+        10
         """
         numerator = Math.factorial(n)
         denominator = Math.factorial(i)
@@ -50,6 +92,24 @@ class Math:
 
     @staticmethod
     def factorial(number: int) -> int:
+        """
+        Return factorial of the nonnegative integer n.
+
+        Example
+        -------
+        >>> factorial(0)
+        1
+        >>> factorial(1)
+        1
+        >>> factorial(2)
+        2
+        >>> factorial(3)
+        6
+        >>> factorial(4)
+        24
+        >>> factorial(5)
+        120
+        """
         if number < 2:
             return 1
         prod = 1
